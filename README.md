@@ -23,6 +23,7 @@ Open http://localhost:3000 and create an account. Data lives in `./data` (Postgr
 | `PORT` | `3000` | Port on the host. |
 | `SIGNUPS_ENABLED` | `true` | Set to `false` after creating your accounts. |
 | `SERVER_NAME` | `Closet` | Shown on the sign-in screen. |
+| `TRUST_PROXY` | `false` | Set to `true` if a reverse proxy (Caddy, nginx, Traefik) sits in front of the app, so sign-in rate limits apply per visitor. Leave `false` if the app is reached directly. |
 | `POSTGRES_PASSWORD` | `closet` | Database password (internal to the stack). |
 
 ## Develop

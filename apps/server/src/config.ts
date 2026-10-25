@@ -17,6 +17,10 @@ const configSchema = z.object({
   DATA_DIR: z.string().default("./data"),
   // Directory with the built web app. When set, the server also serves the UI.
   WEB_DIST: z.string().optional(),
+  // Set to true when running behind a reverse proxy (Caddy, nginx, Traefik…) that sets X-Forwarded-For.
+  TRUST_PROXY: booleanFromEnv.default(false),
+  // Let link import reach private network addresses. Leave off unless you need it.
+  ALLOW_PRIVATE_FETCH: booleanFromEnv.default(false),
   // Override where migrations are read from (the Docker image sets this).
   MIGRATIONS_DIR: z.string().optional(),
 });

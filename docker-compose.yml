@@ -12,6 +12,7 @@ services:
       DEPLOYMENT: selfhost
       SIGNUPS_ENABLED: ${SIGNUPS_ENABLED:-true}
       SERVER_NAME: ${SERVER_NAME:-Closet}
+      TRUST_PROXY: ${TRUST_PROXY:-false}
     volumes:
       - ./data/files:/data
     depends_on:

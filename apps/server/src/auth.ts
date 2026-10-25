@@ -1,6 +1,7 @@
 import { type Db, schema } from "@closet/db";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { CLIENT_IP_HEADER } from "./client-ip.js";
 import type { Config } from "./config.js";
 
 export function createAuth(config: Config, db: Db) {
@@ -11,6 +12,10 @@ export function createAuth(config: Config, db: Db) {
     secret: config.AUTH_SECRET,
     trustedOrigins: [config.PUBLIC_URL],
     database: drizzleAdapter(db, { provider: "pg", schema }),
+    advanced: {
+      // Set by our server from the connection (see client-ip.ts), so rate limits are per client.
+      ipAddress: { ipAddressHeaders: [CLIENT_IP_HEADER] },
+    },
     emailAndPassword: {
       enabled: true,
       disableSignUp: !config.SIGNUPS_ENABLED,

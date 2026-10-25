@@ -1,18 +1,15 @@
-import type { Db } from "@closet/db";
 import type { ServerInfo } from "@closet/shared";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { logger } from "hono/logger";
-import type { Auth } from "./auth.js";
-import type { Config } from "./config.js";
+import { clientIp, withClientIp } from "./client-ip.js";
+import { closetRoutes } from "./closet/routes.js";
+import type { AppEnv, AuthedEnv, Deps } from "./env.js";
 
-type Variables = {
-  user: Auth["$Infer"]["Session"]["user"] | null;
-};
-
-export function createApp({ config, db, auth }: { config: Config; db: Db; auth: Auth }) {
-  const app = new Hono<{ Variables: Variables }>();
+export function createApp(deps: Deps) {
+  const { config, db, auth } = deps;
+  const app = new Hono<AppEnv>();
 
   if (process.env.NODE_ENV !== "test") app.use(logger());
 
@@ -23,7 +20,9 @@ export function createApp({ config, db, auth }: { config: Config; db: Db; auth: 
     await next();
   });
 
-  app.on(["GET", "POST"], "/api/auth/*", (c) => auth.handler(c.req.raw));
+  app.on(["GET", "POST"], "/api/auth/*", (c) =>
+    auth.handler(withClientIp(c.req.raw, clientIp(c, config.TRUST_PROXY))),
+  );
 
   app.get("/api/health", async (c) => {
     try {
@@ -49,6 +48,15 @@ export function createApp({ config, db, auth }: { config: Config; db: Db; auth: 
     if (!user) return c.json({ error: "unauthorized" }, 401);
     return c.json({ id: user.id, name: user.name, email: user.email, image: user.image ?? null });
   });
+
+  // Everything below requires a signed-in user.
+  const authed = new Hono<AuthedEnv>();
+  authed.use(async (c, next) => {
+    if (!c.get("user")) return c.json({ error: "unauthorized" }, 401);
+    await next();
+  });
+  authed.route("/", closetRoutes(deps));
+  app.route("/api", authed);
 
   app.all("/api/*", (c) => c.json({ error: "not_found" }, 404));
 

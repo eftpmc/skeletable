@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { NavLink, Outlet } from "react-router";
+import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { signOut } from "../lib/auth-client";
+import { useAddItem } from "./AddItem";
 import { ClosetIcon, DiscoverIcon, PlusIcon, SavedIcon } from "./icons";
 
 const tabs = [
@@ -12,6 +13,10 @@ const tabs = [
 type User = { name: string; email: string; image?: string | null };
 
 export function AppShell({ user }: { user: User }) {
+  const openAdd = useAddItem();
+  // The add button belongs to the main tabs, not detail pages where it would cover content.
+  const { pathname } = useLocation();
+  const showAdd = tabs.some((tab) => tab.to === pathname);
   return (
     <div className="flex min-h-full flex-col">
       <header className="sticky top-0 z-20 border-b border-line bg-canvas/90 backdrop-blur">
@@ -40,14 +45,16 @@ export function AppShell({ user }: { user: User }) {
         <Outlet />
       </main>
 
-      <button
-        type="button"
-        aria-label="Add"
-        title="Add (coming soon)"
-        className="fixed right-5 bottom-24 z-30 flex size-14 items-center justify-center rounded-full bg-ink text-canvas shadow-lg transition-transform hover:scale-105 active:scale-95 md:bottom-8"
-      >
-        <PlusIcon />
-      </button>
+      {showAdd && (
+        <button
+          type="button"
+          aria-label="Add"
+          onClick={openAdd}
+          className="fixed right-5 bottom-24 z-30 flex size-14 items-center justify-center rounded-full bg-ink text-canvas shadow-lg transition-transform hover:scale-105 active:scale-95 md:bottom-8"
+        >
+          <PlusIcon />
+        </button>
+      )}
 
       <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-canvas/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
         <div className="mx-auto flex max-w-md justify-around">
@@ -101,6 +108,13 @@ function AccountMenu({ user }: { user: User }) {
             <div className="truncate text-xs text-muted">{user.email}</div>
           </div>
           <div className="my-1 h-px bg-line" />
+          <Link
+            to="/profile"
+            onClick={() => setOpen(false)}
+            className="block w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-canvas"
+          >
+            Profile &amp; sizes
+          </Link>
           <button
             type="button"
             onClick={() => void signOut()}

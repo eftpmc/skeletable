@@ -1,45 +1,9 @@
-import { createDb, runMigrations } from "@closet/db";
 import { serverInfoSchema } from "@closet/shared";
-import { sql } from "drizzle-orm";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { createApp } from "../src/app.js";
-import { createAuth } from "../src/auth.js";
-import { type Config, loadConfig } from "../src/config.js";
+import { describe, expect, it } from "vitest";
+import { loadConfig } from "../src/config.js";
+import { post, signUp, useTestApp } from "./helpers/setup.js";
 
-const DATABASE_URL = process.env.TEST_DATABASE_URL ?? "postgres://postgres:postgres@localhost:5432/closet_test";
-const PUBLIC_URL = "http://localhost:3000";
-
-const { db, close } = createDb(DATABASE_URL);
-
-function setup(overrides: Partial<Record<string, string>> = {}) {
-  const config: Config = loadConfig({
-    DATABASE_URL,
-    PUBLIC_URL,
-    AUTH_SECRET: "test-secret-that-is-at-least-32-characters-long",
-    ...overrides,
-  });
-  return createApp({ config, db, auth: createAuth(config, db) });
-}
-
-function post(path: string, body: unknown, headers: Record<string, string> = {}) {
-  return new Request(`${PUBLIC_URL}${path}`, {
-    method: "POST",
-    headers: { "content-type": "application/json", origin: PUBLIC_URL, ...headers },
-    body: JSON.stringify(body),
-  });
-}
-
-beforeAll(async () => {
-  await runMigrations(DATABASE_URL);
-});
-
-beforeEach(async () => {
-  await db.execute(sql`truncate table "user" cascade`);
-});
-
-afterAll(async () => {
-  await close();
-});
+const { setup } = useTestApp();
 
 describe("public endpoints", () => {
   it("reports health", async () => {
@@ -55,9 +19,11 @@ describe("public endpoints", () => {
     expect(info.signupsEnabled).toBe(false);
   });
 
-  it("returns 404 json for unknown api routes", async () => {
-    const response = await setup().request("/api/nope");
-    expect(response.status).toBe(404);
+  it("returns 401 for unknown api routes when signed out, 404 when signed in", async () => {
+    const app = setup();
+    expect((await app.request("/api/nope")).status).toBe(401);
+    const user = await signUp(app);
+    expect((await user.get("/api/nope")).status).toBe(404);
   });
 });
 
