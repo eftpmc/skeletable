@@ -1,1 +1,57 @@
-# skeleton
+# Closet (working name)
+
+Your closet plus a feed that learns your taste. Clean, minimal, and yours: use the cloud or host it yourself.
+
+See [`docs/DESIGN.md`](docs/DESIGN.md) for the product and architecture plan.
+
+## Self-host
+
+Requirements: Docker with Compose.
+
+```sh
+curl -O https://raw.githubusercontent.com/eftpmc/skeleton/main/docker-compose.yml
+echo "AUTH_SECRET=$(openssl rand -base64 32)" > .env
+docker compose up -d
+```
+
+Open http://localhost:3000 and create an account. Data lives in `./data` (Postgres and uploaded files). Back up that folder.
+
+| Variable | Default | Notes |
+|---|---|---|
+| `AUTH_SECRET` | required | Long random string. Keep it secret and don't change it. |
+| `PUBLIC_URL` | `http://localhost:3000` | The URL you open the app at. Must match, or sign-in fails. |
+| `PORT` | `3000` | Port on the host. |
+| `SIGNUPS_ENABLED` | `true` | Set to `false` after creating your accounts. |
+| `SERVER_NAME` | `Closet` | Shown on the sign-in screen. |
+| `POSTGRES_PASSWORD` | `closet` | Database password (internal to the stack). |
+
+## Develop
+
+Requirements: Node 22+, pnpm 10 (`corepack enable`), and Postgres 16.
+
+```sh
+pnpm install
+cp .env.example .env        # then set AUTH_SECRET
+pnpm db:migrate
+pnpm dev                    # web on :5173, API on :3000
+```
+
+| Command | What it does |
+|---|---|
+| `pnpm dev` | Run web and server with reload |
+| `pnpm test` | Server tests (needs Postgres; uses `TEST_DATABASE_URL` or `closet_test` locally) |
+| `pnpm typecheck` | Type-check every package |
+| `pnpm build` | Production builds |
+| `pnpm db:generate` | Create a migration after changing `packages/db/src/schema` |
+
+Build the Docker image locally with `docker build -f docker/Dockerfile -t closet .`.
+
+### Layout
+
+```
+apps/server     Hono API, auth, (later) MCP and jobs. Serves the web build in production.
+apps/web        React + Vite + Tailwind
+packages/db     Drizzle schema and migrations (applied automatically on server start)
+packages/shared Types and zod schemas shared by server and clients
+docker/         Dockerfile and entrypoint
+```
