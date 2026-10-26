@@ -1,6 +1,6 @@
-# Closet (working name)
+# Working name TBD
 
-Your closet plus a feed that learns your taste. Clean, minimal, and yours: use the cloud or host it yourself.
+One search for every store: new, used and refurbished, with price verdicts and alerts. Use the cloud or host it yourself.
 
 See [`docs/DESIGN.md`](docs/DESIGN.md) for the product and architecture plan.
 

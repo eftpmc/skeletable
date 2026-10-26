@@ -1,281 +1,218 @@
-# Design Doc — working name: "Closet"
+# Design Doc — working name TBD
 
-> Status: draft v0.1 · Owner: Zack · Last updated: 2026-10-25
-> The name is a placeholder. Everything here is open to change.
+> Status: draft v0.2 · Owner: Zack · Last updated: 2026-10-26
+> v0.2 replaces the closet-first plan (v0.1) with a search-first shopping app for any product.
+> Design canvas (round 4 is current): https://claude.ai/artifact/TPisFH2xJrgToKDWu5DTgb
 
 ## 1. Summary
 
-A clean, minimal app that combines **your closet** with **a feed that learns your taste**. It feels like Shop and Pinterest, not like a spreadsheet.
+**One search for every store.** Type what you want, paste a link or snap a photo, and see it from every store: new, used and refurbished. The app tells you whether a price is good, watches prices and searches for you, and pings you when something shows up or drops.
 
-It solves two problems:
+It works for **any product**: clothes, sneakers, tech, gaming, home, gear. You buy from the seller, not from us.
 
-1. **"I don't know where to look."** A visual discovery feed built from the brands you follow and the things you save, tuned to what you already own and wear.
-2. **"I don't know what I have / what goes together."** A good-looking digital closet with outfits, boards and wear stats.
+It runs in **our cloud** (sign up and go) or **self-hosted** (`docker compose up`), and the same apps work with both. AI works **behind the scenes** for image search, matching the same product across stores, and tagging. **Chat** happens in the user's own assistant through **MCP**.
 
-It runs in **our cloud** (sign up and go) or **self-hosted** (`docker compose up`). The same apps work with both.
-AI runs **behind the scenes** for tagging, cutouts and recommendations. **Chat** happens in the user's own assistant (Claude, ChatGPT, …) through **MCP**.
+Main design reference: **Gem** (one search across resale sites, saved-search alerts, a quiet white UI). Look: **Cosmos**-style black-and-white image grid.
 
 ## 2. Principles
 
-1. **Clean and minimal.** Few tabs, few buttons, lots of whitespace, photos first. If a screen needs a tutorial, redesign it.
-2. **Adding clothes must be effortless.** Wardrobe apps die at data entry. Every way in (link, photo, chat, order email) should take seconds.
-3. **AI is a tool, not a feature.** No chat box in the app. AI fills in tags, removes backgrounds and ranks the feed. The user confirms and moves on.
-4. **Works without AI.** A self-hosted instance with AI turned off is still a complete, useful closet.
-5. **Your data is yours.** Full export at any time. Self-hosting is a first-class option, not an afterthought.
-6. **Discovery is earned, not pushed.** The feed comes from brands you follow and things you save. No ads in the feed.
+1. **Search is the product.** The app opens on a search bar. Everything else (alerts, saved items, verdicts) comes from searching.
+2. **Restraint.** White background, system font, black type, real photos. Color comes from the products. The only accent is a red "new" dot.
+3. **Answer, don't list.** Each product shows one clear verdict and one best price. The full comparison is one tap away.
+4. **New, used and refurb are equal.** The cheapest good option is often secondhand. Show it right next to new.
+5. **We work for the shopper.** No sponsored results and no paid ranking. Affiliate links are disclosed and never change the order.
+6. **Your data is yours.** Full export, self-hosting as a first-class option, no tracking for ads.
 
 ## 3. Target user
 
-Starting persona: **a 20-something who wants to dress better but doesn't know which brands fit their style or where to shop**. They save outfits they see online but never act on them, and own clothes they forget about.
+Starting persona: **a 20-something who buys things online regularly and hates overpaying or digging through ten tabs**. They know roughly what they want (headphones under $250, a specific sneaker in their size, a used camera) and want the best option without the work.
 
-Later: anyone who likes clothes, plus the self-hosting crowd (Immich / Jellyfin users), who want a private closet app.
+Later: anyone who shops online, plus self-hosters who want a private price tracker.
 
 ## 4. Product
 
-### 4.1 Navigation — three tabs
+### 4.1 Navigation — four icon tabs, no labels
 
 | Tab | Purpose |
 |---|---|
-| **Discover** | Masonry feed with search at the top: products from followed brands, "more like your saves", gap fillers |
-| **Closet** | What you own, shown as clean product cards. A segmented control at the top switches **Items · Outfits** |
-| **Saved** | Pinterest-style boards: wishlist, inspo, collections |
+| **Search** (home) | Search bar (text, pasted link, camera), category chips, new alert matches, price drops on your list |
+| **Camera** | Point at anything (or pick a screenshot) and search by image |
+| **Alerts** | **New:** feed of price drops and new matches · **Searches:** saved searches by channel (push, morning email) and watched prices |
+| **Saved** | **Saved:** products you're watching, grouped by day · **Owned:** what you already have, with what it's worth used |
 
-- **Profile and settings** are behind the avatar in the top corner: sizes and fit notes, followed brands, server, MCP, export.
-- **Add (+)** is a single floating button available everywhere. It opens one sheet: *Paste link · Take photo · From photos · Save inspo*.
-- **Search** sits at the top of Discover and searches both stores and your closet, with a toggle.
+Account, sizes, sources (self-host), MCP and export sit behind the avatar on Search.
 
-### 4.2 Key screens
+### 4.2 Key screens (canvas round 4)
 
-- **Product / item page**: built like a store product page. Large cutout photo, brand, price (product) or size/cost-per-wear (owned item), fit notes, **"More like this"**, **"Pairs with"** (from your closet), and Save / Own-this buttons.
-- **Brand page**: logo, follow button, product grid, new drops, items from this brand you already own.
-- **Outfit page**: a lookbook-style layout of the pieces with a "Wore this today" button.
-- **Board**: masonry grid of anything saved (products, owned items, inspo images, outfits).
+- **Home:** "Find anything, from every store." A big search bar (also takes links), black category chips (Sneakers, Tech, Clothing, Home, Used & refurb), "New for your alerts" (horizontal cards with "12 new" badges), "Dropped on your list" (grid with "−$70" badges).
+- **Results:** search field with back and clear, then chips: **Filter**, **Save search** (turns into "Saved · alerts on"), condition, price and brand. Then "2,418 results from 312 stores" over a two-column masonry grid of photos with white price pills. Small labels like *Good price*, *Refurb* or *Used · like new* appear only where they help.
+- **Product:** a large photo with save and back. Brand and short model name. A **New / Refurb / Used** switch, each with its best price, drives a big price, the store, and a one-line verdict. Then "Compare all 14 stores", and at the bottom **Track price** plus **Buy at [store]**.
+- **Alerts:** Gem-style cards ("12 NEW" with three photos) and price-drop cards. The Searches tab holds iOS-style grouped lists with counts and red dots.
+- **Saved:** a photo grid with price pills grouped by date. The **Owned** toggle shows items you have, with estimated resale value ("38 items · worth about $1,900").
 
 ### 4.3 Core flows
 
-**Add an item to the closet**
-1. *Paste link* → the server scrapes structured product data (schema.org JSON-LD / OpenGraph) → name, brand, price, images and colors are prefilled → pick a size → done.
-2. *Photo* → on-device cutout (iOS Vision subject lifting; the server does it for web uploads) → AI suggests category, color, material and formality → confirm with chips → done.
-3. *Chat (MCP)* → "I own the Carhartt Detroit jacket in brown, size M" → the assistant researches it and calls `add_item` → it appears in the closet with a "Added via Claude" note.
-4. *Order emails (later)* → connect email or forward receipts → purchases become items automatically.
+**Search**
+1. Type, paste a link or use the camera.
+2. The server queries every enabled source at once, normalizes results into offers, groups offers for the same product, and ranks them by relevance, then price.
+3. Results stream in. The count and grid update as sources answer.
 
-**Taste onboarding (first run)**
-- Swipe through about 30 outfits and items (like / skip), pick a few brands, enter basic sizes. That seeds the taste profile so Discover is useful on day one.
-- Skippable. Taste also builds from saves, follows and wear logs.
+**Paste a link** (carries over from the Phase 1 importer)
+- The server reads the product page (JSON-LD / OpenGraph / Shopify), finds the product's identifiers (GTIN/UPC, MPN, brand plus model), then searches every source for the same product. It opens the product page with all the offers.
 
-**Daily loop**
-- Open the app → "Wore this today" (one tap on an outfit or items) → scroll Discover → save things.
+**Price verdict**
+- From the price history we record for that product and condition: current price vs. the 60-day low, the median and the typical used price.
+- Labels: *Good price* (at or near the 60-day low), *Typical*, *High* (well above the median). Plus one plain sentence: "Lowest in 60 days", "Usually $349 new, ~$180 used".
+- With no history yet, compare against the other current offers instead ("$19 below the next cheapest").
 
-**Wishlist and price tracking**
-- Save a product → we track its price → sale badge in Saved, with optional notifications (push in the cloud, ntfy/Apprise for self-host).
+**Save search → alerts**
+- Saving stores the query, filters and your size. A background job re-runs it on a schedule, diffs against listings it has already seen, and creates "N new" events.
+- Delivery: push (app), a morning email digest, and ntfy/Apprise for self-hosters.
 
-## 5. Platforms and feature parity (open question)
+**Track a product**
+- Saving or tracking a product records prices across its offers over time. Drops below your target, or meaningful drops (more than 5% or $10 by default), create alerts.
 
-We haven't decided whether web and phone should match. **Recommendation: same core, each platform plays to its strengths.**
+**Own it**
+- "I own this" (or a purchase found in a forwarded receipt) moves a product to **Owned**, with the price paid. Resale value comes from current used offers.
 
-| | Phone (native) | Web |
+**Share extension (native app)**
+- In Safari or any store app, tap Share → our app to search everything for that product, or save it.
+
+### 4.4 Sizes
+
+You set your sizes once (shoe 10, tops M, waist 31, plus per-brand fit notes, carried over from Phase 1). Results and alerts filter by them automatically when a category uses sizes.
+
+## 5. Where results come from (the hard part)
+
+Search quality depends on sources. Each source is an adapter with the same interface: `search(query, filters) → offers[]` and `lookup(identifiers) → offers[]`.
+
+| Source type | Examples | Notes |
 |---|---|---|
-| Browse Discover / Closet / Saved | ✅ | ✅ |
-| Save, boards, outfits, wear logging | ✅ | ✅ |
-| Add by link | ✅ (also via share sheet) | ✅ |
-| Add by photo | ✅ **best here** (camera, on-device cutout) | ✅ upload |
-| Taste swipe onboarding | ✅ **best here** | ✅ (buttons or keys) |
-| Bulk edit / import / organize | basic | ✅ **best here** |
-| Export, server admin, MCP setup, API tokens | view only | ✅ **best here** |
-| Self-host admin (users, AI provider, storage) | — | ✅ |
+| Official retail and marketplace APIs | eBay Browse API, Best Buy Products API, Etsy, Walmart/Target affiliate APIs, Amazon Product Advertising API | The most reliable. Most need an API key, and some require affiliate status or minimum sales. |
+| Shopping search APIs | Paid Google Shopping result providers | Broad coverage fast, but costs per query. Cloud-only, or a self-hoster's own key. |
+| Shopify stores | Public product JSON of stores we index | Covers a huge long tail of indie and secondhand stores, which is how Gem-style coverage works. |
+| Resale marketplaces | eBay, Depop, Grailed, Poshmark, Back Market, Swappa, StockX/GOAT | Use official APIs or partner feeds where they exist, and respect terms where they don't. |
+| User links | Any product page | The Phase 1 importer. Each link also adds to our catalog. |
 
-Rules:
-- **Every core feature exists on both.** Nobody should *have* to switch devices for everyday use.
-- **Power and admin tasks can be web-only.**
-- **Capture tasks can be better on the phone**, but must still be possible on the web.
-- Both clients use the **same API and shared packages**, so parity is cheap to maintain.
-- Until the native app ships, the web app is **responsive and installable (PWA)**, so the phone experience exists from day one.
+- **Cloud:** we hold the keys, cache results aggressively and earn affiliate revenue.
+- **Self-host:** a **Sources** settings page where users plug in their own keys (eBay and Best Buy are free). Shopify and link import work with no keys at all.
+- **Matching the same product:** identifiers first (GTIN/UPC/EAN, then MPN plus brand). Fall back to brand plus normalized model name, then image embedding similarity. Low-confidence matches show as "similar", never as the same product.
+- **Rules:** official APIs before scraping, rate limits, caching, honest User-Agent, and drop any source on request.
 
-## 6. Architecture
+## 6. Platforms
+
+**Decision: Expo (React Native) for iOS and Android, plus React for web, all TypeScript.** It shares code (types, API client, validation) with the server and web. It's one language, and it can still feel native.
+
+Native where it counts:
+- **Expo Router native tabs** (the real UITabBar, including the iOS 26 glass look), native search bars, sheets and context menus.
+- **SF Symbols** through `expo-symbols`. **Expo UI** (`@expo/ui`) for real SwiftUI controls where they're needed.
+- **`expo-image`** plus FlashList for fast photo grids, and haptics.
+- **Native targets in Swift** for a **share extension** (core), **widgets** ("3 price drops today") and, later, Live Activities.
+
+We'd reconsider pure SwiftUI only if the app became iPhone-only.
+
+**Feature parity:** core features (search, product, alerts, saved, owned) everywhere. The phone does camera search, the share extension and push best. The web does bulk management, source keys, export, admin and MCP setup best.
+
+## 7. Architecture
 
 ```
-            ┌── Web (React + Vite, PWA)
- Clients ───┼── iOS / Android (Expo / React Native)
-            └── AI assistants via MCP (Claude, ChatGPT, …)
+            ┌── iOS / Android (Expo)  ── share extension, widgets (Swift)
+ Clients ───┼── Web (React + Vite)
+            └── AI assistants via MCP
                          │
            server URL: cloud (default) or self-hosted
                          │
-        ┌────────────────┴─────────────────┐
-        │ Server (one TypeScript codebase) │
-        │ REST/tRPC API · auth · /mcp      │
-        │ job worker (scrape, price, AI)   │
-        └───┬───────────┬───────────┬──────┘
+        ┌────────────────┴──────────────────┐
+        │ Server (TypeScript, Hono)         │
+        │ API · auth · /mcp                 │
+        │ search fan-out → source adapters  │
+        │ jobs: saved searches, price checks│
+        └───┬───────────┬───────────┬───────┘
         Postgres     File storage   AI provider
         + pgvector   disk | S3/R2   cloud | Ollama | off
 ```
 
-### 6.1 Deployments
+- **Deployments:** unchanged from v0.1. Cloud (our keys, OAuth, R2, push) or self-hosted (Docker, the user's keys, local disk, ntfy).
+- **Repo:** `apps/server`, `apps/web`, `apps/mobile` (Expo), `packages/shared`, `packages/db`.
+- **Stack:** Hono, Drizzle, Postgres + pgvector, pg-boss (jobs), Better Auth, sharp, React + Vite + Tailwind, Expo + Expo Router.
 
-| | Cloud | Self-hosted |
-|---|---|---|
-| Who runs it | Us | The user (PC, NAS, Pi, VPS) |
-| Setup | Sign up in the app | `docker compose up` (app + Postgres, optional Ollama) |
-| Accounts | Email, Apple, Google | Email; OIDC later |
-| Storage | S3/R2 | Local disk volume |
-| AI | Included (limited on free tier) | Ollama, the user's own API key, or off |
-| MCP auth | OAuth (needed for Claude connectors) | API token (OAuth optional) |
-| Cost | Freemium | Free, open source |
+## 8. Data model (v0.2)
 
-Apps start with a **server picker**: "Continue with Closet Cloud" (default), or "Use my own server" → enter a URL.
-
-### 6.2 Repo layout (monorepo, pnpm workspaces)
-
-```
-apps/
-  web/        React + Vite + Tailwind, PWA
-  mobile/     Expo (React Native)
-  server/     Hono API, MCP endpoint, worker
-packages/
-  shared/     zod schemas, types, constants
-  api-client/ typed client used by web + mobile
-  db/         Drizzle schema + migrations
-docker/       Dockerfile, compose files
-docs/
-```
-
-### 6.3 Stack
-
-- **Language:** TypeScript everywhere
-- **Server:** Hono, Drizzle ORM, Postgres + pgvector, pg-boss (job queue on Postgres, no Redis)
-- **Auth:** Better Auth (email, OAuth providers, works with Drizzle)
-- **Web:** React, Vite, Tailwind, TanStack Query
-- **Mobile:** Expo, Expo Router, TanStack Query
-- **MCP:** the official TypeScript SDK, Streamable HTTP at `/mcp`
-- **CI/CD:** GitHub Actions → multi-arch images (amd64 + arm64) on GHCR
-
-## 7. Data model (first pass)
-
-Key distinction: a **product** is something in the catalog (it can be bought). An **item** is something a user owns. An item may link to a product.
+Phase 1 tables carry over: `item` becomes **owned**, `media`, `brand`, `brand_fit` (sizes), `wear_log` (optional, may retire).
 
 | Table | Key fields |
 |---|---|
-| `users` | id, email, name, avatar |
-| `profiles` | user_id, budget range, style notes, default sizes |
-| `brand_fits` | user_id, brand_id, size, fit note ("runs big") |
-| `brands` | id, name, domain, logo, platform (shopify/other), feed_url |
-| `follows` | user_id, brand_id |
-| `products` | id, brand_id, title, url, price, currency, images, colors, category, tags, embedding, last_seen_at |
-| `price_points` | product_id, price, seen_at |
-| `items` | id, user_id, product_id?, title, brand_id?, category, colors, size, material, formality, season, purchase_price, purchased_at, embedding, source (link/photo/mcp/email) |
-| `media` | id, owner (item/product/inspo), url, kind (original/cutout/thumb) |
-| `inspo` | id, user_id, image, source_url, embedding |
-| `outfits` | id, user_id, name, cover |
-| `outfit_items` | outfit_id, item_id, position |
-| `boards` | id, user_id, name, kind (wishlist/inspo/custom), private |
-| `board_entries` | board_id, entity_type (product/item/inspo/outfit), entity_id, note |
-| `wear_logs` | user_id, item_id or outfit_id, worn_on |
-| `taste_events` | user_id, entity, action (like/skip/save/follow/wear), at |
-| `api_tokens` | user_id, name, scopes (read / write), hash |
+| `product` | id, brand_id, title, model, category, gtin, mpn, image, embedding |
+| `store` | id, name, domain, kind (retail / marketplace / indie), source |
+| `offer` | id, product_id?, store_id, url, title, price_cents, currency, condition (new / refurb / used), size?, image, in_stock, first_seen, last_seen |
+| `price_point` | offer_id, price_cents, seen_at |
+| `saved_search` | id, user_id, query, filters (json), channel (push / email / both / none), last_run_at |
+| `saved_search_seen` | saved_search_id, offer_id (to diff for "N new") |
+| `watch` | user_id, product_id, condition?, target_price_cents?, created_at |
+| `alert_event` | id, user_id, kind (new_matches / price_drop / back_in_stock), payload, read_at |
+| `item` (owned) | + product_id?, paid_cents, category (general taxonomy) |
+| `user_size` | user_id, kind (shoe / top / waist / …), value |
+| `source_key` | user_id or instance, source, encrypted credentials (self-host) |
+| `push_token`, `api_token` | for devices and MCP |
 
-## 8. AI pipeline and recommendations
+**General categories:** Clothing, Shoes, Bags & accessories, Tech, Gaming, Home, Outdoors & sports, Beauty, Other.
 
-**Pipeline (async jobs, run on new items, products and inspo):**
-1. **Cutout:** on-device on iOS. On the server, an open-source segmentation model.
-2. **Tagging:** a vision model suggests category, colors, material, pattern, formality and season. The user confirms.
-3. **Embedding:** an image (and text) embedding stored in pgvector.
+## 9. AI (behind the scenes)
 
-**What embeddings power:**
-- **More like this:** nearest neighbors over products, items and inspo
-- **Taste profile:** a weighted average of liked, saved and worn embeddings, minus skips
-- **Discover ranking:** score = taste similarity + freshness + followed-brand boost + "fills a gap" boost − already-own-similar penalty
-- **Pairs with:** embedding compatibility plus rules (color harmony, formality match, season)
-
-**Provider abstraction:** one `AIProvider` interface (`tag(image)`, `embed(image|text)`, `cutout(image)`) with cloud, Ollama and none implementations. With none, tagging is manual and similarity falls back to tags and colors.
-
-## 9. Catalog (where Discover's products come from)
-
-1. **Followed brands:** many indie and streetwear brands run on Shopify, which usually exposes a public product feed. Following a brand pulls its catalog on a schedule. This works for cloud and self-host alike.
-2. **Affiliate network feeds (cloud):** official feeds from larger retailers. They also bring revenue.
-3. **User saves:** every pasted link adds a product.
-4. **Rules:** prefer official feeds, cache aggressively, rate-limit, respect robots.txt and terms, and remove a brand on request.
-
-Self-hosted instances build their own catalog from what their users follow and save. We could later offer an optional "cloud catalog" feed to self-hosters.
+- **Image search:** describe the photo (vision model) → query plus attributes, and image-embedding similarity against our catalog.
+- **Matching:** embeddings and rules to group offers into products when identifiers are missing.
+- **Tagging:** category and attributes for owned items and products.
+- **Provider switch:** cloud, Ollama or off. With AI off, search still works by text, link and identifiers.
 
 ## 10. MCP
 
-The chat side of the product. It is exposed at `/mcp` on every server.
+Same approach as v0.1, retargeted at search:
 
-**Tools**
 | Tool | Scope | Purpose |
 |---|---|---|
-| `search_closet` | read | Filter by category, color, season, tags, or free text |
-| `get_item` / `get_item_image` | read | Details plus the actual image, so vision models can see it |
-| `get_profile` | read | Sizes, brand fits, budget, style notes |
-| `wear_stats` | read | Most/least worn, cost per wear, unworn items |
-| `list_outfits` / `list_boards` | read | |
-| `search_catalog` | read | Search products in this server's catalog |
-| `add_item` | write | Add an owned item (with image URLs and details) |
-| `save_to_board` | write | Save a product, inspo or link to a board |
-| `save_outfit` | write | Create an outfit from items |
-| `log_wear` | write | |
-| `follow_brand` | write | |
-| `update_style_notes` | write | |
+| `search_products` | read | One search across every source, with filters |
+| `get_product` | read | Offers, verdict and price history |
+| `list_saved` / `list_owned` / `list_alerts` | read | |
+| `save_search` / `track_product` | write | Create alerts from chat ("tell me when a used XM5 is under $180") |
+| `mark_owned` | write | "I just bought these" |
 
-**Prompts:** "Style me for…", "What's missing from my closet?", "Shop for X in my style", "Add what I just bought".
+Auth: OAuth on cloud, tokens for self-host, writes opt-in.
 
-**Auth:** OAuth on the cloud (Claude custom connectors require it). Self-hosted servers use tokens or OAuth. Read-only by default, with writes opt-in per token.
+## 11. Business model (cloud)
 
-**Companion skill (later):** a downloadable skill that teaches assistants how to style and how to find where to shop, using these tools.
+- **Affiliate commissions** on purchases through **Buy at [store]**, disclosed, and never affecting ranking.
+- **Free:** search, saving, a few saved searches.
+- **Paid:** unlimited alerts, faster checks, price history charts, receipt import.
+- **Self-host:** free and open source (AGPL proposed). Users bring their own source keys.
 
-## 11. Privacy and data ownership
+## 12. Roadmap
 
-- Export everything (JSON + media zip) from settings, on both deployments.
-- Delete the account → hard delete within 30 days (cloud).
-- Body-related data (sizes, fit) is never used for ads or shared.
-- Self-host: no telemetry by default.
+| Phase | Scope | Status |
+|---|---|---|
+| 0 Foundation | Monorepo, auth, Docker, CI | ✅ done |
+| 1 Closet | Items, link import (JSON-LD/Shopify, SSRF-safe), images, sizes, export | ✅ done, becomes **Owned** and the link importer |
+| 2 Search core | Source adapters (eBay, Best Buy, Shopify index, link), search API with fan-out, results + product pages on web, offers and price history, verdict v0 | next |
+| 3 Alerts | Saved searches, watches, scheduler, alert events, email digest, ntfy | |
+| 4 Mobile | Expo app: search, results, product, alerts, saved/owned, push, share extension | |
+| 5 Camera + matching | Image search, AI matching and tagging | |
+| 6 MCP | Read tools, then write tools | |
+| 7 Cloud launch | Affiliate links, billing, OAuth MCP, App Store | |
 
-## 12. Business model (cloud)
+## 13. Open questions
 
-- **Free:** closet, boards, Discover, limited AI tagging per month.
-- **Paid:** unlimited AI, price alerts, email import, more storage.
-- **Affiliate links** on purchases from Discover and the wishlist (always disclosed).
-- **Self-host:** free and open source (AGPL proposed, like Immich, so nobody can resell it as a closed service).
-
-## 13. Roadmap
-
-**Phase 0 — Foundation**
-Monorepo, Postgres + Drizzle, Better Auth, Docker compose, CI building images.
-
-**Phase 1 — Closet (web, responsive PWA)**
-Add by link and photo, items grid, item page, brand fits, wear logging, export.
-
-**Phase 2 — Saved + Discover**
-Boards, wishlist and price tracking, follow brands (Shopify feeds), first Discover feed (follows + recency).
-
-**Phase 3 — AI**
-Provider abstraction, tagging, cutouts, embeddings, More like this, taste-ranked Discover, swipe onboarding.
-
-**Phase 4 — MCP**
-Read tools + token auth, then write tools, then prompts.
-
-**Phase 5 — Native app**
-Expo app: capture, share sheet, swipe onboarding, push.
-
-**Phase 6 — Cloud launch**
-OAuth MCP, R2 storage, billing, affiliate links, App Store release.
-
-## 14. Open questions
-
-1. **Web vs phone parity:** is the recommendation in §5 right?
-2. **Name and brand.**
-3. **Social features?** Following friends, public boards, sharing outfits. Explicitly **not** in v1.
-4. **Resale:** "sell what you don't wear" could fit later.
-5. **Self-host catalog:** offer an optional shared cloud catalog to self-hosters?
+1. **Name and brand.**
+2. **First sources:** eBay plus Best Buy plus a Shopify index is free and broad. Is it worth a paid shopping-search API from day one?
+3. **Country:** US first (stores, currency, affiliate programs)?
+4. **Secondhand weight:** should used results be on by default everywhere, or per category?
+5. **Owned:** keep it in Saved (current) or drop it for v1?
 6. **License:** AGPL vs MIT.
-7. **DB:** Postgres-only (proposed) vs also supporting SQLite for lighter self-hosting.
 
-## 15. Risks
+## 14. Risks
 
 | Risk | Mitigation |
 |---|---|
-| Scope is large for one developer | Strict phase order, web first, native later |
-| Data entry fatigue | Link import, photo batch, MCP, email import |
-| Catalog scraping gets blocked or breaks | Prefer Shopify feeds and affiliate APIs, cache, degrade gracefully |
-| AI cost in the cloud | On-device cutouts, cheap embedding models, free-tier limits |
-| Empty Discover on day one | Swipe onboarding, a curated starter brand list |
-| App Store review (affiliate, accounts) | Follow guidelines: Sign in with Apple, clear disclosures |
+| Source access (API approval, terms, blocking) | Official APIs first, many small sources, link import as the fallback, cache |
+| Bad matches across stores | Identifiers first, show "similar" when unsure, user can unlink |
+| Stale prices | Show "checked 2h ago", re-check before buying, background refresh for watched items |
+| Affiliate trust | Disclose it, never rank by commission |
+| Scope for one developer | Web first for Phase 2–3, mobile in Phase 4 |
