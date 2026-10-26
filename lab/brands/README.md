@@ -49,6 +49,9 @@ and hard to tell by rules, so we grade a random sample by eye from contact sheet
 0–1 score; `rank.py` drops brands below 0.4 and gives neighbors a small boost for quality.
 Ratings on the test page ("good find" / "not it") are the next source of grades.
 
+`labels.json` holds the grades so far (250: a random 150, then the 100 the model was least sure
+about) and `stats.json` the counts from the last run, which the page shows.
+
 ## Crawling rules
 
 Identify ourselves in the User-Agent, one request per store for catalogs, follow robots.txt, never
