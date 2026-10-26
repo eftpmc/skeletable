@@ -1,5 +1,5 @@
 import type { ElementType, ReactNode } from "react";
-import { Dot } from "./Badge";
+import { Badge } from "./Badge";
 import { cn, focusRing } from "./cn";
 import { ChevronRightIcon } from "./icons";
 
@@ -23,7 +23,7 @@ export type ListRowProps = {
   leading?: ReactNode;
   /** Right side value: a price, "Connected". */
   value?: ReactNode;
-  /** New-items count; shows the red dot beside it. */
+  /** New-items count, shown as a "12 new" badge. */
   count?: number;
   chevron?: boolean;
   as?: ElementType;
@@ -44,10 +44,7 @@ export function ListRow({ title, detail, leading, value, count, chevron, as, cla
         </span>
         {value && <span className="shrink-0 tabular-nums">{value}</span>}
         {count ? (
-          <span className="flex shrink-0 items-center gap-2 tabular-nums">
-            {count}
-            <Dot label={`${count} new`} />
-          </span>
+          <Badge className="shrink-0 tabular-nums">{count} new</Badge>
         ) : null}
         {chevron && <ChevronRightIcon size={18} className="shrink-0 text-muted" />}
       </Component>

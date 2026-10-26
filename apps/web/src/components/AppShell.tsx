@@ -1,4 +1,4 @@
-import { Avatar, BellIcon, BookmarkIcon, NavPills, PackageIcon, SearchIcon, TabBar, cn, focusRing } from "@closet/ui";
+import { Avatar, BellIcon, BookmarkIcon, PackageIcon, SearchIcon, SideNav, TabBar, cn, focusRing } from "@closet/ui";
 import { useEffect, useRef, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router";
 import { signOut } from "../lib/auth-client";
@@ -22,19 +22,35 @@ export function AppShell({ user }: { user: User }) {
   }));
 
   return (
-    <div className="flex min-h-full flex-col">
-      <header className="sticky top-0 z-20 hidden border-b border-line bg-canvas/90 backdrop-blur md:block">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
-          <Link to="/" className={cn("rounded-sm text-title-3 text-ink", focusRing)}>
-            search
+    <div className="flex min-h-full">
+      <SideNav
+        as={Link}
+        items={items}
+        className="sticky top-0 hidden h-dvh md:flex"
+        brand={
+          <Link to="/" className={cn("self-start rounded-sm px-3 py-2 text-title-2 font-extrabold tracking-[-0.03em] text-ink", focusRing)}>
+            skeleton
           </Link>
-          <NavPills as={Link} items={items} />
-          <AccountMenu user={user} />
-        </div>
-      </header>
+        }
+        footer={
+          <Link
+            to="/profile"
+            aria-current={pathname.startsWith("/profile") ? "page" : undefined}
+            className={cn("flex h-[52px] items-center gap-3 rounded-lg px-3 hover:bg-surface aria-[current=page]:bg-surface", focusRing)}
+          >
+            <Avatar name={user.name || user.email} image={user.image} size={32} />
+            <span className="min-w-0">
+              <span className="block truncate text-callout font-semibold text-ink">{user.name || user.email}</span>
+              <span className="block text-footnote text-muted">Profile &amp; settings</span>
+            </span>
+          </Link>
+        }
+      />
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-4 pb-28 md:px-6 md:pt-8 md:pb-12">
-        <Outlet context={{ user }} />
+      <main className="min-w-0 flex-1 px-4 pt-4 pb-28 md:px-10 md:pt-6 md:pb-16">
+        <div className="mx-auto w-full max-w-6xl">
+          <Outlet context={{ user }} />
+        </div>
       </main>
 
       <TabBar as={Link} items={items} className="fixed inset-x-0 bottom-0 z-20 md:hidden" />
@@ -42,6 +58,7 @@ export function AppShell({ user }: { user: User }) {
   );
 }
 
+/** Account button and menu, for phones (desktop has the sidebar footer). */
 export function AccountMenu({ user }: { user: User }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);

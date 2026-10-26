@@ -1,7 +1,8 @@
-import { Button, IconButton, ListGroup, ListRow, ScreenTitle, TextField, XIcon, buttonClass } from "@closet/ui";
+import { type AccentName, Button, IconButton, ListGroup, ListRow, ScreenTitle, TextField, XIcon, accents, buttonClass, cn, focusRing } from "@closet/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 import { api } from "../lib/api";
+import { useAccent } from "../lib/accent";
 import { signOut } from "../lib/auth-client";
 
 type User = { name: string; email: string };
@@ -10,6 +11,7 @@ export function SettingsPage({ user }: { user: User }) {
   return (
     <section className="mx-auto max-w-xl space-y-10">
       <ScreenTitle className="pt-4 md:pt-0">Profile</ScreenTitle>
+      <ThemeColor />
       <Sources />
       <SizesAndFit />
       <div>
@@ -29,6 +31,33 @@ export function SettingsPage({ user }: { user: User }) {
         </Button>
       </div>
     </section>
+  );
+}
+
+function ThemeColor() {
+  const { name: current, setName } = useAccent();
+  return (
+    <div>
+      <h2 className="text-title-3 text-ink">Theme color</h2>
+      <p className="mt-1 text-callout font-normal text-muted">Colors the home page art and the sidebar. Saved in this browser.</p>
+      <div role="group" aria-label="Theme color" className="mt-4 flex gap-3">
+        {(Object.keys(accents) as AccentName[]).map((name) => (
+          <button
+            key={name}
+            type="button"
+            aria-pressed={name === current}
+            onClick={() => setName(name)}
+            className={cn(
+              "flex h-11 items-center gap-2 rounded-full bg-surface pr-4 pl-1.5 text-callout text-ink ring-2 ring-transparent transition-shadow aria-pressed:ring-ink",
+              focusRing,
+            )}
+          >
+            <span aria-hidden="true" className="size-8 rounded-full" style={{ background: accents[name].accent }} />
+            {accents[name].label}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 

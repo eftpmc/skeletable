@@ -12,6 +12,7 @@
   "dependencies": {
     "@closet/shared": "workspace:*",
     "@closet/ui": "workspace:*",
+    "@paper-design/shaders-react": "0.0.81",
     "@tanstack/react-query": "^5.104.5",
     "better-auth": "^1.7.13",
     "react": "^19.3.1",
