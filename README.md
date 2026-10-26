@@ -41,6 +41,19 @@ Pasting a product link always works. Searching by name needs at least one source
 
 Store logos are read from each store's own site. When a site has none the server can read, it asks Google's favicon service, which only sees the store's domain. Set `STORE_ICON_FALLBACK=none` to keep every request on the store itself; those stores then show their initial.
 
+### Alerts
+
+Saved searches re-run and tracked prices are checked every `ALERTS_INTERVAL_MINUTES` (default 360; `0` turns it off). Each person picks where alerts go under **Profile → Get alerts**:
+
+- **Phone, with [ntfy](https://ntfy.sh):** paste a topic link (`https://ntfy.sh/<topic>` or your own ntfy server). Alerts arrive as they're found. To reach an ntfy server on your own network, set `ALLOW_PRIVATE_FETCH=true`.
+- **Morning email:** one digest a day at `DIGEST_HOUR` (default 8) in each person's time zone, only when there's something new. Needs the server to send email:
+
+| Variable | Notes |
+|---|---|
+| `EMAIL_FROM` | Sender, e.g. `skeleton <alerts@example.com>` |
+| `SMTP_URL` | `smtp://user:pass@host:587` (or `smtps://…:465`) |
+| `RESEND_API_KEY` | Instead of SMTP: a [Resend](https://resend.com) key. Use this where outbound SMTP is blocked, as on some Railway plans. |
+
 ## Develop
 
 Requirements: Node 22+, pnpm 10 (`corepack enable`), and Postgres 16 with the pgvector extension (`pgvector/pgvector:pg16` in Docker, or your distro's `postgresql-16-pgvector`).

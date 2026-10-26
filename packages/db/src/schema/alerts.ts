@@ -1,4 +1,4 @@
-import { index, integer, pgTable, primaryKey, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import { boolean, index, integer, pgTable, primaryKey, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 import { user } from "./auth.js";
 import { product } from "./search.js";
 
@@ -77,6 +77,25 @@ export const alertEvent = pgTable(
     currency: text("currency"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     readAt: timestamp("read_at", { withTimezone: true }),
+    // When it went out by ntfy and in a morning email.
+    pushedAt: timestamp("pushed_at", { withTimezone: true }),
+    emailedAt: timestamp("emailed_at", { withTimezone: true }),
   },
   (table) => [index("alert_event_user_idx").on(table.userId, table.createdAt)],
 );
+
+/** Where someone wants alerts sent outside the app. */
+export const notifySettings = pgTable("notify_settings", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  // An ntfy topic URL (https://ntfy.sh/<topic> or a self-hosted server). Null means off.
+  ntfyUrl: text("ntfy_url"),
+  emailDigest: boolean("email_digest").notNull().default(false),
+  // IANA zone, so the digest arrives in their morning.
+  timezone: text("timezone").notNull().default("UTC"),
+  // Only alerts from after a channel was turned on go out on it, not the backlog.
+  ntfySince: timestamp("ntfy_since", { withTimezone: true }),
+  emailSince: timestamp("email_since", { withTimezone: true }),
+  lastDigestAt: timestamp("last_digest_at", { withTimezone: true }),
+});

@@ -22,6 +22,14 @@ services:
       EBAY_CLIENT_SECRET: ${EBAY_CLIENT_SECRET:-}
       BESTBUY_API_KEY: ${BESTBUY_API_KEY:-}
       STORE_ICON_FALLBACK: ${STORE_ICON_FALLBACK:-google}
+      # Alerts: how often to check (minutes), and email for the morning digest. See README.
+      ALERTS_INTERVAL_MINUTES: ${ALERTS_INTERVAL_MINUTES:-360}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      SMTP_URL: ${SMTP_URL:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      DIGEST_HOUR: ${DIGEST_HOUR:-8}
+      # Lets alerts reach an ntfy server on your own network (and link import reach private addresses).
+      ALLOW_PRIVATE_FETCH: ${ALLOW_PRIVATE_FETCH:-false}
     volumes:
       - ./data/files:/data
     depends_on:

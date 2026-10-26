@@ -33,12 +33,12 @@ export function useTestApp() {
     rmSync(dataDir, { recursive: true, force: true });
   });
 
-  function setup(overrides: Partial<Record<string, string>> = {}, extra: Partial<Pick<Deps, "sources">> = {}) {
+  function setup(overrides: Partial<Record<string, string>> = {}, extra: Partial<Pick<Deps, "sources" | "mailer">> = {}) {
     return setupWithServices(overrides, extra).app;
   }
 
   /** Same as setup, plus the services behind it (to run scheduled jobs in tests). */
-  function setupWithServices(overrides: Partial<Record<string, string>> = {}, extra: Partial<Pick<Deps, "sources">> = {}) {
+  function setupWithServices(overrides: Partial<Record<string, string>> = {}, extra: Partial<Pick<Deps, "sources" | "mailer">> = {}) {
     const config: Config = loadConfig({
       DATABASE_URL,
       PUBLIC_URL,

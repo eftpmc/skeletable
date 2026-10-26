@@ -5,6 +5,8 @@ import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { hasAccounts } from "./auth.js";
 import { clientIp, withClientIp } from "./client-ip.js";
+import { mailerFromConfig } from "./alerts/mailer.js";
+import { NotifyService } from "./alerts/notify.js";
 import { alertsRoutes } from "./alerts/routes.js";
 import { AlertsService } from "./alerts/service.js";
 import { catalogRoutes } from "./catalog/routes.js";
@@ -27,14 +29,21 @@ export function createServices(deps: Deps) {
     allowPrivate: config.ALLOW_PRIVATE_FETCH,
     fallback: config.STORE_ICON_FALLBACK,
   });
-  return { search, sourceInfo, icons, alerts: new AlertsService(db, search), catalog: new CatalogService(db) };
+  const notify = new NotifyService(db, {
+    publicUrl: config.PUBLIC_URL.replace(/\/$/, ""),
+    serverName: config.SERVER_NAME,
+    mailer: deps.mailer !== undefined ? deps.mailer : mailerFromConfig(config),
+    digestHour: config.DIGEST_HOUR,
+    allowPrivate: config.ALLOW_PRIVATE_FETCH,
+  });
+  return { search, sourceInfo, icons, alerts: new AlertsService(db, search), notify, catalog: new CatalogService(db) };
 }
 
 export type Services = ReturnType<typeof createServices>;
 
 export function createApp(deps: Deps, services: Services = createServices(deps)) {
   const { config, db, auth } = deps;
-  const { search, sourceInfo, icons, alerts, catalog } = services;
+  const { search, sourceInfo, icons, alerts, notify, catalog } = services;
   const app = new Hono<AppEnv>();
 
   if (process.env.NODE_ENV !== "test") app.use(logger());
@@ -103,7 +112,7 @@ export function createApp(deps: Deps, services: Services = createServices(deps))
   });
   if (!config.PUBLIC_SEARCH) authed.route("/", searchRoutes(search, sourceInfo, icons));
   authed.route("/", closetRoutes(deps));
-  authed.route("/", alertsRoutes(alerts));
+  authed.route("/", alertsRoutes(alerts, notify));
   authed.route("/", catalogRoutes(catalog));
   app.route("/api", authed);
 

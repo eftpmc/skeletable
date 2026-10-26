@@ -28,6 +28,13 @@ export function AlertsPage() {
   return (
     <section className="pt-4 lg:pt-0">
       <ScreenTitle className="lg:text-[40px] lg:leading-[44px]">Alerts</ScreenTitle>
+      <p className="mt-1 text-callout font-normal text-muted">
+        Get them on your phone or by email in{" "}
+        <Link to="/profile" className="underline">
+          Profile
+        </Link>
+        .
+      </p>
 
       {nothing ? (
         <EmptyState

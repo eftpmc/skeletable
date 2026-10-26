@@ -1,7 +1,8 @@
 import { type AccentName, Button, IconButton, ListGroup, ListRow, ScreenTitle, TextField, XIcon, accents, buttonClass, cn, focusRing } from "@closet/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
-import { api } from "../lib/api";
+import type { NotifySettings } from "@closet/shared";
+import { ApiError, api } from "../lib/api";
 import { useAccent } from "../lib/accent";
 import { signOut } from "../lib/auth-client";
 
@@ -15,6 +16,7 @@ export function SettingsPage({ user }: { user: User }) {
   return (
     <section className="mx-auto max-w-xl space-y-10">
       <ScreenTitle className="pt-4 md:pt-0">Profile</ScreenTitle>
+      <AlertDelivery />
       <ThemeColor />
       <Sources />
       <SizesAndFit />
@@ -35,6 +37,141 @@ export function SettingsPage({ user }: { user: User }) {
         </Button>
       </div>
     </section>
+  );
+}
+
+const timezone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+
+/** A topic nobody else will guess: anyone who knows an ntfy.sh topic can read it. */
+const newTopic = () => `https://ntfy.sh/skeleton-${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}`;
+
+function hourLabel(hour: number) {
+  return new Date(2000, 0, 1, hour).toLocaleTimeString([], { hour: "numeric" });
+}
+
+function AlertDelivery() {
+  const queryClient = useQueryClient();
+  const { data: settings } = useQuery({ queryKey: ["notifications"], queryFn: api.notifications });
+  const [ntfyDraft, setNtfyDraft] = useState<string | null>(null);
+  const [note, setNote] = useState<{ text: string; error?: boolean } | null>(null);
+
+  const save = useMutation({
+    mutationFn: (changes: Partial<Pick<NotifySettings, "ntfyUrl" | "emailDigest">>) =>
+      api.saveNotifications({
+        ntfyUrl: settings?.ntfyUrl ?? null,
+        emailDigest: settings?.emailDigest ?? false,
+        ...changes,
+        timezone: timezone(),
+      }),
+    // Show the change at once (the email switch flips on click); the server's answer replaces it.
+    onMutate: (changes) => queryClient.setQueryData<NotifySettings>(["notifications"], (old) => old && { ...old, ...changes }),
+    onSuccess: (data) => {
+      queryClient.setQueryData(["notifications"], data);
+      setNtfyDraft(null);
+    },
+    onError: (error) => {
+      void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      setNote({ text: error instanceof ApiError ? error.message : "Couldn't save that.", error: true });
+    },
+  });
+  const test = useMutation({
+    mutationFn: api.testNotification,
+    onSuccess: (_, channel) => setNote({ text: channel === "ntfy" ? "Sent. Check your phone." : `Sent to ${settings?.email}.` }),
+    onError: (error) => setNote({ text: error instanceof ApiError ? error.message : "Couldn't send it.", error: true }),
+  });
+
+  if (!settings) return null;
+  const ntfy = ntfyDraft ?? settings.ntfyUrl ?? "";
+  const ntfyChanged = ntfy.trim() !== (settings.ntfyUrl ?? "");
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    setNote(null);
+    save.mutate({ ntfyUrl: ntfy.trim() || null });
+  }
+
+  return (
+    <div>
+      <h2 className="text-title-3 text-ink">Get alerts</h2>
+      <p className="mt-1 text-callout font-normal text-muted">New matches and price drops, without opening the app.</p>
+
+      <h3 className="mt-6 text-body font-semibold text-ink">On your phone</h3>
+      <p className="mt-1 text-callout font-normal text-muted">
+        Install the free{" "}
+        <a href="https://ntfy.sh" target="_blank" rel="noreferrer" className="underline">
+          ntfy
+        </a>{" "}
+        app, subscribe to a topic, and paste its link here. Anyone who knows the topic can read it, so keep it hard to guess.
+      </p>
+      <form onSubmit={submit} className="mt-3 flex flex-col gap-2 sm:flex-row">
+        <TextField
+          aria-label="ntfy topic link"
+          type="url"
+          inputMode="url"
+          placeholder="https://ntfy.sh/your-secret-topic"
+          value={ntfy}
+          onChange={(event) => setNtfyDraft(event.target.value)}
+          className="min-w-0 sm:flex-1"
+        />
+        {/* Keys keep these two separate buttons: reusing one would turn the click on "Make a topic" into a submit. */}
+        {ntfyChanged ? (
+          <Button key="save" type="submit" disabled={save.isPending}>
+            Save
+          </Button>
+        ) : (
+          !ntfy && (
+            <Button key="make" type="button" variant="secondary" onClick={() => setNtfyDraft(newTopic())}>
+              Make a topic
+            </Button>
+          )
+        )}
+      </form>
+      {settings.ntfyUrl && !ntfyChanged && (
+        <div className="mt-2 flex gap-2">
+          <Button variant="secondary" disabled={test.isPending} onClick={() => test.mutate("ntfy")}>
+            Send a test
+          </Button>
+          <Button variant="secondary" onClick={() => save.mutate({ ntfyUrl: null })}>
+            Turn off
+          </Button>
+        </div>
+      )}
+
+      <h3 className="mt-6 text-body font-semibold text-ink">By email</h3>
+      <label className="mt-3 flex min-h-[52px] items-center gap-3 rounded-xl bg-surface px-4 text-body text-ink has-disabled:opacity-60">
+        <input
+          type="checkbox"
+          className="size-5 accent-ink"
+          checked={settings.emailDigest}
+          disabled={!settings.emailAvailable || save.isPending}
+          onChange={(event) => {
+            setNote(null);
+            save.mutate({ emailDigest: event.target.checked });
+          }}
+        />
+        <span className="min-w-0 flex-1">
+          A morning digest at {hourLabel(settings.digestHour)}
+          <span className="block truncate text-footnote text-muted">{settings.email}</span>
+        </span>
+      </label>
+      {settings.emailAvailable ? (
+        settings.emailDigest && (
+          <Button variant="secondary" className="mt-2" disabled={test.isPending} onClick={() => test.mutate("email")}>
+            Send a test
+          </Button>
+        )
+      ) : (
+        <p className="mt-2 px-4 text-footnote text-muted">
+          This server can't send email yet. Set <code>EMAIL_FROM</code> and <code>SMTP_URL</code> or <code>RESEND_API_KEY</code>.
+        </p>
+      )}
+
+      {note && (
+        <p role="status" className={cn("mt-3 text-callout font-normal", note.error ? "text-alert" : "text-muted")}>
+          {note.text}
+        </p>
+      )}
+    </div>
   );
 }
 

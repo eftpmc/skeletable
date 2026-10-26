@@ -12,6 +12,8 @@ import {
   type ItemPatch,
   type LinkPreview,
   type MediaRef,
+  type NotifySettings,
+  type NotifySettingsInput,
   type ProductDetail,
   type SavedSearchInput,
   type SavedSearchSummary,
@@ -79,6 +81,9 @@ export const api = {
   alerts: () => request<AlertsResponse>("GET", "/api/alerts"),
   unreadAlerts: () => request<{ unread: number }>("GET", "/api/alerts/unread"),
   readAlerts: () => request<void>("POST", "/api/alerts/read"),
+  notifications: () => request<NotifySettings>("GET", "/api/notifications"),
+  saveNotifications: (input: NotifySettingsInput) => request<NotifySettings>("PUT", "/api/notifications", input),
+  testNotification: (channel: "ntfy" | "email") => request<void>("POST", "/api/notifications/test", { channel }),
   items: (filters: ItemFilters = {}) => {
     const params = new URLSearchParams();
     for (const [key, value] of Object.entries(filters)) if (value) params.set(key, value);

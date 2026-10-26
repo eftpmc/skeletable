@@ -65,3 +65,37 @@ export type AlertEvent =
     };
 
 export type AlertsResponse = { unread: number; events: AlertEvent[] };
+
+export const notifySettingsInputSchema = z.object({
+  /** An ntfy topic URL, like https://ntfy.sh/my-secret-topic. Null turns it off. */
+  ntfyUrl: z
+    .url({ protocol: /^https?$/ })
+    .max(500)
+    .nullable(),
+  emailDigest: z.boolean(),
+  /** IANA time zone from the browser, so the digest comes in their morning. */
+  timezone: z
+    .string()
+    .max(64)
+    .refine((zone) => {
+      try {
+        new Intl.DateTimeFormat("en-US", { timeZone: zone });
+        return true;
+      } catch {
+        return false;
+      }
+    }, "Unknown time zone"),
+});
+export type NotifySettingsInput = z.input<typeof notifySettingsInputSchema>;
+
+export type NotifySettings = {
+  ntfyUrl: string | null;
+  emailDigest: boolean;
+  timezone: string;
+  /** Where the digest goes. */
+  email: string;
+  /** False when the server has no way to send email set up. */
+  emailAvailable: boolean;
+  /** Local hour the digest is sent. */
+  digestHour: number;
+};

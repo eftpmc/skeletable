@@ -17,7 +17,7 @@ const storage = new DiskStorage(config.DATA_DIR);
 const deps = { config, db, auth, storage };
 const services = createServices(deps);
 const app = createApp(deps, services);
-const stopAlerts = config.ALERTS_INTERVAL_MINUTES > 0 ? startAlertsScheduler(services.alerts, config.ALERTS_INTERVAL_MINUTES) : () => {};
+const stopAlerts = config.ALERTS_INTERVAL_MINUTES > 0 ? startAlertsScheduler(services.alerts, services.notify, config.ALERTS_INTERVAL_MINUTES) : () => {};
 
 const server = serve({ fetch: app.fetch, port: config.PORT }, (info) => {
   console.log(`${config.SERVER_NAME} listening on http://localhost:${info.port} (${config.DEPLOYMENT})`);
