@@ -1,0 +1,17 @@
+@import "tailwindcss";
+@import "@closet/ui/tokens.css";
+@import "@closet/ui/theme.css";
+@source "../../../packages/ui/src";
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}

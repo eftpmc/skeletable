@@ -1,0 +1,88 @@
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { createDb, runMigrations } from "@closet/db";
+import { sql } from "drizzle-orm";
+import { afterAll, beforeAll, beforeEach } from "vitest";
+import { createApp } from "../../src/app.js";
+import { createAuth } from "../../src/auth.js";
+import { type Config, loadConfig } from "../../src/config.js";
+import type { Deps } from "../../src/env.js";
+import { DiskStorage } from "../../src/storage.js";
+
+export const DATABASE_URL =
+  process.env.TEST_DATABASE_URL ?? "postgres://postgres:postgres@localhost:5432/closet_test";
+export const PUBLIC_URL = "http://localhost:3000";
+
+/** A real app on the test database, with a fresh temp folder for files. Resets tables before each test. */
+export function useTestApp() {
+  const { db, close } = createDb(DATABASE_URL);
+  const dataDir = mkdtempSync(path.join(tmpdir(), "closet-test-"));
+  const storage = new DiskStorage(dataDir);
+
+  beforeAll(async () => {
+    await runMigrations(DATABASE_URL);
+  });
+
+  beforeEach(async () => {
+    await db.execute(sql`truncate table "user", "brand", "store", "product" cascade`);
+  });
+
+  afterAll(async () => {
+    await close();
+    rmSync(dataDir, { recursive: true, force: true });
+  });
+
+  function setup(overrides: Partial<Record<string, string>> = {}, extra: Partial<Pick<Deps, "sources">> = {}) {
+    const config: Config = loadConfig({
+      DATABASE_URL,
+      PUBLIC_URL,
+      AUTH_SECRET: "test-secret-that-is-at-least-32-characters-long",
+      DATA_DIR: dataDir,
+      ...overrides,
+    });
+    return createApp({ config, db, auth: createAuth(config, db), storage, ...extra });
+  }
+
+  return { db, storage, dataDir, setup };
+}
+
+export type TestApp = ReturnType<ReturnType<typeof useTestApp>["setup"]>;
+
+export function post(path: string, body: unknown, headers: Record<string, string> = {}) {
+  return new Request(`${PUBLIC_URL}${path}`, {
+    method: "POST",
+    headers: { "content-type": "application/json", origin: PUBLIC_URL, ...headers },
+    body: JSON.stringify(body),
+  });
+}
+
+/** Sign up a user and return a client that sends their session cookie. */
+export async function signUp(app: TestApp, email = "zack@example.com") {
+  const response = await app.request(post("/api/auth/sign-up/email", { name: "Zack", email, password: "correct-horse" }));
+  if (response.status !== 200) throw new Error(`sign-up failed: ${response.status}`);
+  const cookie = response.headers.get("set-cookie")!.split(";")[0]!;
+  const send = (method: string, path: string, body?: unknown) =>
+    app.request(`${PUBLIC_URL}${path}`, {
+      method,
+      headers: {
+        cookie,
+        origin: PUBLIC_URL,
+        ...(body !== undefined && !(body instanceof FormData) ? { "content-type": "application/json" } : {}),
+      },
+      body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body),
+    });
+  return {
+    cookie,
+    get: (path: string) => send("GET", path),
+    post: (path: string, body?: unknown) => send("POST", path, body ?? {}),
+    patch: (path: string, body: unknown) => send("PATCH", path, body),
+    put: (path: string, body: unknown) => send("PUT", path, body),
+    delete: (path: string) => send("DELETE", path),
+    upload: (data: Buffer, name = "photo.jpg") => {
+      const form = new FormData();
+      form.append("file", new File([new Uint8Array(data)], name));
+      return send("POST", "/api/media", form);
+    },
+  };
+}

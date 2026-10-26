@@ -1,0 +1,218 @@
+# Design Doc — working name TBD
+
+> Status: draft v0.2 · Owner: Zack · Last updated: 2026-10-26
+> v0.2 replaces the closet-first plan (v0.1) with a search-first shopping app for any product.
+> Design canvas (round 4 is current): https://claude.ai/artifact/TPisFH2xJrgToKDWu5DTgb
+
+## 1. Summary
+
+**One search for every store.** Type what you want, paste a link or snap a photo, and see it from every store: new, used and refurbished. The app tells you whether a price is good, watches prices and searches for you, and pings you when something shows up or drops.
+
+It works for **any product**: clothes, sneakers, tech, gaming, home, gear. You buy from the seller, not from us.
+
+It runs in **our cloud** (sign up and go) or **self-hosted** (`docker compose up`), and the same apps work with both. AI works **behind the scenes** for image search, matching the same product across stores, and tagging. **Chat** happens in the user's own assistant through **MCP**.
+
+Main design reference: **Gem** (one search across resale sites, saved-search alerts, a quiet white UI). Look: **Cosmos**-style black-and-white image grid.
+
+## 2. Principles
+
+1. **Search is the product.** The app opens on a search bar. Everything else (alerts, saved items, verdicts) comes from searching.
+2. **Restraint.** White background, system font, black type, real photos. Color comes from the products. The only accent is a red "new" dot.
+3. **Answer, don't list.** Each product shows one clear verdict and one best price. The full comparison is one tap away.
+4. **New, used and refurb are equal.** The cheapest good option is often secondhand. Show it right next to new.
+5. **We work for the shopper.** No sponsored results and no paid ranking. Affiliate links are disclosed and never change the order.
+6. **Your data is yours.** Full export, self-hosting as a first-class option, no tracking for ads.
+
+## 3. Target user
+
+Starting persona: **a 20-something who buys things online regularly and hates overpaying or digging through ten tabs**. They know roughly what they want (headphones under $250, a specific sneaker in their size, a used camera) and want the best option without the work.
+
+Later: anyone who shops online, plus self-hosters who want a private price tracker.
+
+## 4. Product
+
+### 4.1 Navigation — four icon tabs, no labels
+
+| Tab | Purpose |
+|---|---|
+| **Search** (home) | Search bar (text, pasted link, camera), category chips, new alert matches, price drops on your list |
+| **Camera** | Point at anything (or pick a screenshot) and search by image |
+| **Alerts** | **New:** feed of price drops and new matches · **Searches:** saved searches by channel (push, morning email) and watched prices |
+| **Saved** | **Saved:** products you're watching, grouped by day · **Owned:** what you already have, with what it's worth used |
+
+Account, sizes, sources (self-host), MCP and export sit behind the avatar on Search.
+
+### 4.2 Key screens (canvas round 4)
+
+- **Home:** "Find anything, from every store." A big search bar (also takes links), black category chips (Sneakers, Tech, Clothing, Home, Used & refurb), "New for your alerts" (horizontal cards with "12 new" badges), "Dropped on your list" (grid with "−$70" badges).
+- **Results:** search field with back and clear, then chips: **Filter**, **Save search** (turns into "Saved · alerts on"), condition, price and brand. Then "2,418 results from 312 stores" over a two-column masonry grid of photos with white price pills. Small labels like *Good price*, *Refurb* or *Used · like new* appear only where they help.
+- **Product:** a large photo with save and back. Brand and short model name. A **New / Refurb / Used** switch, each with its best price, drives a big price, the store, and a one-line verdict. Then "Compare all 14 stores", and at the bottom **Track price** plus **Buy at [store]**.
+- **Alerts:** Gem-style cards ("12 NEW" with three photos) and price-drop cards. The Searches tab holds iOS-style grouped lists with counts and red dots.
+- **Saved:** a photo grid with price pills grouped by date. The **Owned** toggle shows items you have, with estimated resale value ("38 items · worth about $1,900").
+
+### 4.3 Core flows
+
+**Search**
+1. Type, paste a link or use the camera.
+2. The server queries every enabled source at once, normalizes results into offers, groups offers for the same product, and ranks them by relevance, then price.
+3. Results stream in. The count and grid update as sources answer.
+
+**Paste a link** (carries over from the Phase 1 importer)
+- The server reads the product page (JSON-LD / OpenGraph / Shopify), finds the product's identifiers (GTIN/UPC, MPN, brand plus model), then searches every source for the same product. It opens the product page with all the offers.
+
+**Price verdict**
+- From the price history we record for that product and condition: current price vs. the 60-day low, the median and the typical used price.
+- Labels: *Good price* (at or near the 60-day low), *Typical*, *High* (well above the median). Plus one plain sentence: "Lowest in 60 days", "Usually $349 new, ~$180 used".
+- With no history yet, compare against the other current offers instead ("$19 below the next cheapest").
+
+**Save search → alerts**
+- Saving stores the query, filters and your size. A background job re-runs it on a schedule, diffs against listings it has already seen, and creates "N new" events.
+- Delivery: push (app), a morning email digest, and ntfy/Apprise for self-hosters.
+
+**Track a product**
+- Saving or tracking a product records prices across its offers over time. Drops below your target, or meaningful drops (more than 5% or $10 by default), create alerts.
+
+**Own it**
+- "I own this" (or a purchase found in a forwarded receipt) moves a product to **Owned**, with the price paid. Resale value comes from current used offers.
+
+**Share extension (native app)**
+- In Safari or any store app, tap Share → our app to search everything for that product, or save it.
+
+### 4.4 Sizes
+
+You set your sizes once (shoe 10, tops M, waist 31, plus per-brand fit notes, carried over from Phase 1). Results and alerts filter by them automatically when a category uses sizes.
+
+## 5. Where results come from (the hard part)
+
+Search quality depends on sources. Each source is an adapter with the same interface: `search(query, filters) → offers[]` and `lookup(identifiers) → offers[]`.
+
+| Source type | Examples | Notes |
+|---|---|---|
+| Official retail and marketplace APIs | eBay Browse API, Best Buy Products API, Etsy, Walmart/Target affiliate APIs, Amazon Product Advertising API | The most reliable. Most need an API key, and some require affiliate status or minimum sales. |
+| Shopping search APIs | Paid Google Shopping result providers | Broad coverage fast, but costs per query. Cloud-only, or a self-hoster's own key. |
+| Shopify stores | Public product JSON of stores we index | Covers a huge long tail of indie and secondhand stores, which is how Gem-style coverage works. |
+| Resale marketplaces | eBay, Depop, Grailed, Poshmark, Back Market, Swappa, StockX/GOAT | Use official APIs or partner feeds where they exist, and respect terms where they don't. |
+| User links | Any product page | The Phase 1 importer. Each link also adds to our catalog. |
+
+- **Cloud:** we hold the keys, cache results aggressively and earn affiliate revenue.
+- **Self-host:** a **Sources** settings page where users plug in their own keys (eBay and Best Buy are free). Shopify and link import work with no keys at all.
+- **Matching the same product:** identifiers first (GTIN/UPC/EAN, then MPN plus brand). Fall back to brand plus normalized model name, then image embedding similarity. Low-confidence matches show as "similar", never as the same product.
+- **Rules:** official APIs before scraping, rate limits, caching, honest User-Agent, and drop any source on request.
+
+## 6. Platforms
+
+**Decision: Expo (React Native) for iOS and Android, plus React for web, all TypeScript.** It shares code (types, API client, validation) with the server and web. It's one language, and it can still feel native.
+
+Native where it counts:
+- **Expo Router native tabs** (the real UITabBar, including the iOS 26 glass look), native search bars, sheets and context menus.
+- **SF Symbols** through `expo-symbols`. **Expo UI** (`@expo/ui`) for real SwiftUI controls where they're needed.
+- **`expo-image`** plus FlashList for fast photo grids, and haptics.
+- **Native targets in Swift** for a **share extension** (core), **widgets** ("3 price drops today") and, later, Live Activities.
+
+We'd reconsider pure SwiftUI only if the app became iPhone-only.
+
+**Feature parity:** core features (search, product, alerts, saved, owned) everywhere. The phone does camera search, the share extension and push best. The web does bulk management, source keys, export, admin and MCP setup best.
+
+## 7. Architecture
+
+```
+            ┌── iOS / Android (Expo)  ── share extension, widgets (Swift)
+ Clients ───┼── Web (React + Vite)
+            └── AI assistants via MCP
+                         │
+           server URL: cloud (default) or self-hosted
+                         │
+        ┌────────────────┴──────────────────┐
+        │ Server (TypeScript, Hono)         │
+        │ API · auth · /mcp                 │
+        │ search fan-out → source adapters  │
+        │ jobs: saved searches, price checks│
+        └───┬───────────┬───────────┬───────┘
+        Postgres     File storage   AI provider
+        + pgvector   disk | S3/R2   cloud | Ollama | off
+```
+
+- **Deployments:** unchanged from v0.1. Cloud (our keys, OAuth, R2, push) or self-hosted (Docker, the user's keys, local disk, ntfy).
+- **Repo:** `apps/server`, `apps/web`, `apps/mobile` (Expo), `packages/shared`, `packages/db`.
+- **Stack:** Hono, Drizzle, Postgres + pgvector, pg-boss (jobs), Better Auth, sharp, React + Vite + Tailwind, Expo + Expo Router.
+
+## 8. Data model (v0.2)
+
+Phase 1 tables carry over: `item` becomes **owned**, `media`, `brand`, `brand_fit` (sizes), `wear_log` (optional, may retire).
+
+| Table | Key fields |
+|---|---|
+| `product` | id, brand_id, title, model, category, gtin, mpn, image, embedding |
+| `store` | id, name, domain, kind (retail / marketplace / indie), source |
+| `offer` | id, product_id?, store_id, url, title, price_cents, currency, condition (new / refurb / used), size?, image, in_stock, first_seen, last_seen |
+| `price_point` | offer_id, price_cents, seen_at |
+| `saved_search` | id, user_id, query, filters (json), channel (push / email / both / none), last_run_at |
+| `saved_search_seen` | saved_search_id, offer_id (to diff for "N new") |
+| `watch` | user_id, product_id, condition?, target_price_cents?, created_at |
+| `alert_event` | id, user_id, kind (new_matches / price_drop / back_in_stock), payload, read_at |
+| `item` (owned) | + product_id?, paid_cents, category (general taxonomy) |
+| `user_size` | user_id, kind (shoe / top / waist / …), value |
+| `source_key` | user_id or instance, source, encrypted credentials (self-host) |
+| `push_token`, `api_token` | for devices and MCP |
+
+**General categories:** Clothing, Shoes, Bags & accessories, Tech, Gaming, Home, Outdoors & sports, Beauty, Other.
+
+## 9. AI (behind the scenes)
+
+- **Image search:** describe the photo (vision model) → query plus attributes, and image-embedding similarity against our catalog.
+- **Matching:** embeddings and rules to group offers into products when identifiers are missing.
+- **Tagging:** category and attributes for owned items and products.
+- **Provider switch:** cloud, Ollama or off. With AI off, search still works by text, link and identifiers.
+
+## 10. MCP
+
+Same approach as v0.1, retargeted at search:
+
+| Tool | Scope | Purpose |
+|---|---|---|
+| `search_products` | read | One search across every source, with filters |
+| `get_product` | read | Offers, verdict and price history |
+| `list_saved` / `list_owned` / `list_alerts` | read | |
+| `save_search` / `track_product` | write | Create alerts from chat ("tell me when a used XM5 is under $180") |
+| `mark_owned` | write | "I just bought these" |
+
+Auth: OAuth on cloud, tokens for self-host, writes opt-in.
+
+## 11. Business model (cloud)
+
+- **Affiliate commissions** on purchases through **Buy at [store]**, disclosed, and never affecting ranking.
+- **Free:** search, saving, a few saved searches.
+- **Paid:** unlimited alerts, faster checks, price history charts, receipt import.
+- **Self-host:** free and open source (AGPL proposed). Users bring their own source keys.
+
+## 12. Roadmap
+
+| Phase | Scope | Status |
+|---|---|---|
+| 0 Foundation | Monorepo, auth, Docker, CI | ✅ done |
+| 1 Closet | Items, link import (JSON-LD/Shopify, SSRF-safe), images, sizes, export | ✅ done, becomes **Owned** and the link importer |
+| 2 Search core | Source adapters (eBay, Best Buy, Shopify index, link), search API with fan-out, results + product pages on web, offers and price history, verdict v0 | next |
+| 3 Alerts | Saved searches, watches, scheduler, alert events, email digest, ntfy | |
+| 4 Mobile | Expo app: search, results, product, alerts, saved/owned, push, share extension | |
+| 5 Camera + matching | Image search, AI matching and tagging | |
+| 6 MCP | Read tools, then write tools | |
+| 7 Cloud launch | Affiliate links, billing, OAuth MCP, App Store | |
+
+## 13. Open questions
+
+1. **Name and brand.**
+2. **First sources:** eBay plus Best Buy plus a Shopify index is free and broad. Is it worth a paid shopping-search API from day one?
+3. **Country:** US first (stores, currency, affiliate programs)?
+4. **Secondhand weight:** should used results be on by default everywhere, or per category?
+5. **Owned:** keep it in Saved (current) or drop it for v1?
+6. **License:** AGPL vs MIT.
+
+## 14. Risks
+
+| Risk | Mitigation |
+|---|---|
+| Source access (API approval, terms, blocking) | Official APIs first, many small sources, link import as the fallback, cache |
+| Bad matches across stores | Identifiers first, show "similar" when unsure, user can unlink |
+| Stale prices | Show "checked 2h ago", re-check before buying, background refresh for watched items |
+| Affiliate trust | Disclose it, never rank by commission |
+| Scope for one developer | Web first for Phase 2–3, mobile in Phase 4 |

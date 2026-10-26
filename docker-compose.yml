@@ -1,0 +1,42 @@
+# Self-host Closet: copy this file and .env.example, set AUTH_SECRET, then `docker compose up -d`.
+services:
+  app:
+    image: ghcr.io/eftpmc/skeleton:latest
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      DATABASE_URL: postgres://closet:${POSTGRES_PASSWORD:-closet}@db:5432/closet
+      AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET (openssl rand -base64 32)}
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:3000}
+      DEPLOYMENT: selfhost
+      SIGNUPS_ENABLED: ${SIGNUPS_ENABLED:-true}
+      SERVER_NAME: ${SERVER_NAME:-Closet}
+      TRUST_PROXY: ${TRUST_PROXY:-false}
+      # Search sources (each is off until set). See README.
+      SHOPIFY_STORES: ${SHOPIFY_STORES:-}
+      EBAY_CLIENT_ID: ${EBAY_CLIENT_ID:-}
+      EBAY_CLIENT_SECRET: ${EBAY_CLIENT_SECRET:-}
+      BESTBUY_API_KEY: ${BESTBUY_API_KEY:-}
+      STORE_ICON_FALLBACK: ${STORE_ICON_FALLBACK:-google}
+    volumes:
+      - ./data/files:/data
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    # Postgres with pgvector, used later for recommendations.
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: closet
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-closet}
+      POSTGRES_DB: closet
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U closet -d closet"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
