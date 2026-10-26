@@ -3,11 +3,14 @@
 Usage: python3 -I select.py <brands.json> <candidates.jsonl> [<candidates.jsonl> ...]
 The same website from two sources is kept once, preferring the Shopify catalog (fresher, fuller).
 """
-import collections, json, sys
+import collections, json, re, sys
+
+# Storefronts inside marketplaces and wholesale sites: never one brand's own shop.
+MARKETPLACE = re.compile(r"alibaba|aliexpress|made-in-china|dhgate|etsy|ebay|amazon|temu|shein|depop|poshmark|vinted|catalogmode")
 
 
 def keep(c):
-    if c["placeholder"] or c["merch"] or c["pod"]:
+    if c["placeholder"] or c["merch"] or c["pod"] or MARKETPLACE.search(c["host"]):
         return False
     if c["apparel"] < 0.4 or c["blank_share"] > 0.15:
         return False

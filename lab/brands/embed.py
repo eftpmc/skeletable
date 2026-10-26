@@ -109,9 +109,13 @@ def main(brands_path, out_path):
     text = TextEmbedding("Qdrant/clip-ViT-B-32-text")
     label_vecs = {name: np.stack([np.asarray(v) / np.linalg.norm(v) for v in text.embed(texts)]) for name, texts in FASHION_LABELS.items()}
 
-    out, vecs = [], []
-    for b in live:
+    out, vecs, sites = [], [], set()
+    # Shopify catalogs first, so a store found by both sources keeps the fuller record.
+    for b in sorted(live, key=lambda b: b["source"] != "shopify"):
         m = metas[b["id"]]
+        site = m["site"].lower().replace("://www.", "://")
+        if site in sites:
+            continue
         rate = USD.get(m["currency"])
         ks = [(i, key_of(i["image"])) for i in b["items"][:PHOTOS_PER_BRAND]]
         ks = [(i, k) for i, k in ks if k in cache]
@@ -121,6 +125,7 @@ def main(brands_path, out_path):
             continue
         v = np.mean([cache[k] for _, k in fashion], axis=0)
         vecs.append(v / np.linalg.norm(v))
+        sites.add(site)
         out.append({
             "id": b["id"], "name": m["name"], "site": m["site"], "source": b["source"], "platform": b["platform"],
             "country": m["country"], "city": m["city"], "description": m["description"], "currency": m["currency"],
