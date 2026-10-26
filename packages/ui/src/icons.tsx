@@ -23,6 +23,14 @@ function Icon({ size = 22, children, ...props }: IconProps & { children: ReactNo
   );
 }
 
+export const MenuIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M4 6h16" />
+    <path d="M4 12h16" />
+    <path d="M4 18h16" />
+  </Icon>
+);
+
 export const SearchIcon = (props: IconProps) => (
   <Icon {...props}>
     <path d="m21 21-4.34-4.34" />

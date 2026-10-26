@@ -1,3 +1,4 @@
+export { type AccentName, accents, defaultAccent, isAccentName } from "./accents";
 export { AlertCard, type AlertCardProps, DropCard, type DropCardProps } from "./AlertCard";
 export { Badge, type BadgeProps, type BadgeTone, Dot, PricePill, type PricePillProps } from "./Badge";
 export { Button, buttonClass, type ButtonProps, type ButtonVariant, IconButton, type IconButtonProps } from "./Button";
@@ -7,7 +8,7 @@ export { Field, TextArea, TextField } from "./Field";
 export * from "./icons";
 export { Avatar, EmptyState, ScreenTitle, SectionHeader, type SectionHeaderProps, Skeleton } from "./Layout";
 export { ListGroup, type ListGroupProps, ListRow, type ListRowProps, Thumb } from "./List";
-export { type NavItem, NavPills, TabBar } from "./Navigation";
+export { NavDrawer, type NavItem, NavPills, SideNav, TabBar } from "./Navigation";
 export { ProductTile, type ProductTileProps, TileGrid } from "./ProductTile";
 export { SearchField, type SearchFieldProps } from "./SearchField";
 export { type Segment, SegmentedControl, type SegmentedControlProps } from "./SegmentedControl";

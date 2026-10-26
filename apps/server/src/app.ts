@@ -4,6 +4,8 @@ import { sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { clientIp, withClientIp } from "./client-ip.js";
+import { alertsRoutes } from "./alerts/routes.js";
+import { AlertsService } from "./alerts/service.js";
 import { closetRoutes } from "./closet/routes.js";
 import { searchRoutes } from "./search/routes.js";
 import { SearchService } from "./search/service.js";
@@ -11,8 +13,9 @@ import { sourcesFromConfig } from "./search/sources/index.js";
 import { StoreIcons } from "./search/store-icons.js";
 import type { AppEnv, AuthedEnv, Deps } from "./env.js";
 
-export function createApp(deps: Deps) {
-  const { config, db, auth } = deps;
+/** The services behind the routes, shared with background jobs (the alerts scheduler). */
+export function createServices(deps: Deps) {
+  const { config, db } = deps;
   const { sources, info: sourceInfo } = deps.sources ?? sourcesFromConfig(config);
   const search = new SearchService(db, sources, { allowPrivate: config.ALLOW_PRIVATE_FETCH });
   const icons = new StoreIcons(db, deps.storage, {
@@ -20,6 +23,14 @@ export function createApp(deps: Deps) {
     allowPrivate: config.ALLOW_PRIVATE_FETCH,
     fallback: config.STORE_ICON_FALLBACK,
   });
+  return { search, sourceInfo, icons, alerts: new AlertsService(db, search) };
+}
+
+export type Services = ReturnType<typeof createServices>;
+
+export function createApp(deps: Deps, services: Services = createServices(deps)) {
+  const { config, db, auth } = deps;
+  const { search, sourceInfo, icons, alerts } = services;
   const app = new Hono<AppEnv>();
 
   if (process.env.NODE_ENV !== "test") app.use(logger());
@@ -68,6 +79,7 @@ export function createApp(deps: Deps) {
   });
   authed.route("/", searchRoutes(search, sourceInfo, icons));
   authed.route("/", closetRoutes(deps));
+  authed.route("/", alertsRoutes(alerts));
   app.route("/api", authed);
 
   app.all("/api/*", (c) => c.json({ error: "not_found" }, 404));

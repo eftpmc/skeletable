@@ -1,4 +1,5 @@
 import {
+  type AlertsResponse,
   type BrandFit,
   type BrandFitInput,
   type Category,
@@ -9,10 +10,14 @@ import {
   type LinkPreview,
   type MediaRef,
   type ProductDetail,
+  type SavedSearchInput,
+  type SavedSearchSummary,
   type SearchResponse,
   type Condition,
   type SourceInfo,
   type ServerInfo,
+  type WatchInput,
+  type WatchSummary,
   serverInfoSchema,
 } from "@closet/shared";
 
@@ -60,6 +65,16 @@ export const api = {
   resolveLink: (url: string) => request<{ productId: string }>("POST", "/api/search/link", { url }),
   product: (id: string) => request<ProductDetail>("GET", `/api/products/${id}`),
   sources: () => request<SourceInfo[]>("GET", "/api/sources"),
+  watches: () => request<WatchSummary[]>("GET", "/api/watches"),
+  watch: (input: WatchInput) => request<WatchSummary>("POST", "/api/watches", input),
+  unwatch: (productId: string) => request<void>("DELETE", `/api/watches/${productId}`),
+  savedSearches: () => request<SavedSearchSummary[]>("GET", "/api/saved-searches"),
+  saveSearch: (input: SavedSearchInput) => request<SavedSearchSummary>("POST", "/api/saved-searches", input),
+  deleteSearch: (id: string) => request<void>("DELETE", `/api/saved-searches/${id}`),
+  searchViewed: (id: string) => request<void>("POST", `/api/saved-searches/${id}/viewed`),
+  alerts: () => request<AlertsResponse>("GET", "/api/alerts"),
+  unreadAlerts: () => request<{ unread: number }>("GET", "/api/alerts/unread"),
+  readAlerts: () => request<void>("POST", "/api/alerts/read"),
   items: (filters: ItemFilters = {}) => {
     const params = new URLSearchParams();
     for (const [key, value] of Object.entries(filters)) if (value) params.set(key, value);

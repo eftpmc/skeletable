@@ -7,7 +7,7 @@ export type SegmentedControlProps = {
   segments: Segment[];
   value: string;
   onValueChange: (value: string) => void;
-  /** `lg`: full width with a second line (New $279 / Refurb $189). `sm`: compact header toggle (Saved / Owned). */
+  /** `lg`: full width with a second line (New $279 / Refurb $189). `sm`: compact header toggle (Saved / Collection). */
   size?: "lg" | "sm";
   label: string;
   className?: string;

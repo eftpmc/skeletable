@@ -10,6 +10,8 @@
   --color-on-image: var(--on-image);
   --color-on-image-ink: var(--on-image-ink);
   --color-alert: var(--alert);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
   --color-scrim: var(--scrim);
   --color-focus: var(--focus);
   --font-sans: var(--font-sans);

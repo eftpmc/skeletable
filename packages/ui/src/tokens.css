@@ -10,6 +10,8 @@
   --on-image: #ffffff;
   --on-image-ink: #000000;
   --alert: #ff3b30;
+  --accent: #ff48b0;
+  --on-accent: #000000;
   --scrim: rgba(0,0,0,0.4);
   --focus: var(--ink);
   --elevation-field: 0 2px 14px rgba(0,0,0,0.12);

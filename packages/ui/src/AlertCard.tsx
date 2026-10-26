@@ -25,7 +25,7 @@ export function AlertCard({ badge, title, detail, images, as: Component = "a", c
       </div>
       <div className="mt-3 grid grid-cols-3 gap-1.5">
         {images.slice(0, 3).map((image, i) => (
-          <img key={i} src={image.src} alt={image.alt ?? ""} className="h-[104px] w-full rounded-md bg-tile object-cover" />
+          <img key={i} src={image.src} alt={image.alt ?? ""} referrerPolicy="no-referrer" className="h-[104px] w-full rounded-md bg-tile object-cover" />
         ))}
       </div>
     </Component>
@@ -44,7 +44,7 @@ export type DropCardProps = LinkProps & {
 export function DropCard({ image, title, price, was, as: Component = "a", className, ...props }: DropCardProps) {
   return (
     <Component className={cn("flex items-center gap-3 rounded-xl bg-canvas p-3 shadow-field", focusRing, className)} {...props}>
-      <img src={image} alt="" className="size-14 shrink-0 rounded-md bg-tile object-cover" />
+      <img src={image} alt="" referrerPolicy="no-referrer" className="size-14 shrink-0 rounded-md bg-tile object-cover" />
       <div className="min-w-0 flex-1">
         <div className="text-section-label text-muted uppercase">Price drop</div>
         <div className="truncate text-body font-semibold text-ink">{title}</div>
