@@ -21,6 +21,8 @@ embed what's new.
 | Neighbors | `rank.py` | `scored.json`, `embedded.npy` | `lab.json` + `lab.npy` |
 | Test page | `page/build.py` | `lab.json`, `lab.npy`, `img/` | one HTML file |
 | Learn from use | `feedback.py` | the page's votes, `labels.json` | merged grades for `quality.py train` |
+| Brand name index | `names.py add` / `index` | brand mentions from `sources/wdc.py` | `names.db`, brands known by name |
+| All of it, in rounds | `grow.py` | everything above | the page, `grow.log` |
 
 A candidate is one website that sells products, before we know it's a clothing brand (fields in
 `common.py`). Sources only have to produce candidates; everything after is platform-agnostic.
@@ -38,6 +40,15 @@ covers about 3.3 million sites in 1,658 gzipped N-Quads files of about 150 MB
 `Product_lookup.csv` maps each site to its file). No requests to stores are needed to read it. It's a
 late-2024 snapshot, so `embed.py` checks each site is still up and photo downloads fail for products
 that are gone.
+
+**Brand names.** Stores that stock or resell other labels list them under schema.org `brand`. For
+each site, `sources/wdc.py` treats its own label (its domain name, or any brand on half its
+products) as the store's, and every other brand's clothing as a mention: a photo of that brand seen
+somewhere else. `names.py` keeps mentions in SQLite (`brand_key` in `common.py` folds spellings like
+"UNIQLO" and "Uniqlo Official Store" together) and indexes brands seen at 2+ stores with 8+ photos.
+Those become starting points (start from Uniqlo without reading uniqlo.com), never results; a name
+that matches a store we have is that store. The index links a brand's own domain when Web Data
+Commons has it.
 
 Platform is read from photo URLs (`common.platform_of`), which is how the page labels each brand.
 
@@ -78,6 +89,13 @@ unless at least two people voted on the brand and disagree with it.
 
 `labels.json` holds the grades so far (250: a random 150, then the 100 the model was least sure
 about) and `stats.json` the counts from the last run, which the page shows.
+
+## Growing
+
+`grow.py` runs everything in rounds over the 1,658 Web Data Commons files in a fixed random order,
+100 per round by default. Each round only pays for what's new: parts already read are skipped,
+live checks are cached for two weeks, photos and their vectors are cached by URL. A stopped run
+resumes from `grow_state.json`; `grow.log` has one line of counts per round.
 
 ## Crawling rules
 

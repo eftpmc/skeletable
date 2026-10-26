@@ -1,6 +1,8 @@
-"""Read Web Data Commons schema.org Product parts and write one candidate store per website.
+"""Read Web Data Commons schema.org Product parts: candidate stores, and the brands stores sell.
 
 Usage: python3 -I wdc.py <out.jsonl> <part.gz> [<part.gz> ...]
+Writes <out.jsonl> (candidates that might sell clothing), <out>.names.jsonl (clothing listed under
+a brand other than the site's own label: stockists, department stores, resale) and <out>.count.json.
 
 Web Data Commons extracts the schema.org Product markup that stores put on their product pages
 (for Google Shopping) out of Common Crawl. Every platform emits it, so this source is not tied to
@@ -9,7 +11,7 @@ Shopify. Parts are N-Quads, gzipped, with each page's quads next to each other.
 import collections, gzip, json, re, sys, urllib.parse
 
 sys.path.insert(0, __file__.rsplit("/", 2)[0])
-from common import candidate  # noqa: E402
+from common import APPAREL, USD, brand_key, candidate  # noqa: E402
 
 QUAD = re.compile(r'^(\S+) <([^>]+)> (.+) <([^>]*)>\s*\.\s*$')
 S = "http://schema.org/"
@@ -85,31 +87,56 @@ def site_of(url):
     return host[4:] if host.startswith("www.") else host
 
 
+MENTIONS_PER_BRAND_AND_SITE = 3
+
+
 def run(out_path, parts):
-    stores = collections.defaultdict(dict)  # host -> {title: item}
+    stores = collections.defaultdict(dict)  # host -> {title: item}, the first 40 products
+    labels = collections.defaultdict(collections.Counter)  # host -> brand key -> products, over every product
+    mentions = collections.defaultdict(lambda: collections.defaultdict(list))  # host -> brand key -> clothing items
     for part in parts:
         for page, nodes in pages(part):
             host = site_of(page)
             bucket = stores[host]
-            if len(bucket) >= 40:
-                continue
             for p in products(nodes):
-                if p["title"] not in bucket:
+                if len(bucket) < 40 and p["title"] not in bucket:
                     bucket[p["title"]] = dict(p, url=page)
+                key = brand_key(p["brand"])
+                if not key:
+                    continue
+                labels[host][key] += 1
+                listed = mentions[host][key]
+                if len(listed) < MENTIONS_PER_BRAND_AND_SITE and APPAREL.search(p["title"]) and p["currency"] in USD:
+                    listed.append({"key": key, "name": p["brand"], "host": host, "title": p["title"], "image": p["image"],
+                                   "price_usd": round(p["price"] * USD[p["currency"]], 2), "url": page})
         print(part, len(stores), "sites so far", flush=True)
-    kept = 0
-    with open(out_path, "w") as out:
+    sites = kept = named = 0
+    base = out_path.rsplit(".", 1)[0]
+    with open(out_path, "w") as out, open(base + ".names.jsonl", "w") as names:
         for host, items in stores.items():
+            # The site's own label: its own name, or any brand on half its products. Everything else it
+            # lists is a brand it stocks or resells, which is how we learn brands we can't crawl.
+            own = {brand_key(host.split(".")[0])}
+            total = sum(labels[host].values())
+            own |= {k for k, n in labels[host].items() if n >= total / 2}
+            for key, listed in mentions[host].items():
+                if key not in own:
+                    for m in listed:
+                        names.write(json.dumps(m) + "\n")
+                        named += 1
             items = list(items.values())
             if len(items) < 8:
                 continue
+            sites += 1
             brands = collections.Counter(i["brand"].lower() for i in items if i["brand"])
             name = brands.most_common(1)[0][0] if brands else ""
             c = candidate(source="wdc", host=host, site=f"https://{host}", name=name, items=items,
                           vendors=[i["brand"] for i in items])
-            out.write(json.dumps(c) + "\n")
-            kept += 1
-    print(f"done: {len(stores)} sites, {kept} with 8+ products", flush=True)
+            if c["apparel"] >= 0.3:  # selection needs 0.4; the rest can't become a clothing brand
+                out.write(json.dumps(c) + "\n")
+                kept += 1
+    json.dump({"sites": len(stores), "sites_8plus": sites, "candidates": kept, "brand_mentions": named}, open(base + ".count.json", "w"))
+    print(f"done: {len(stores)} sites, {sites} with 8+ products, {kept} might sell clothing, {named} brand mentions", flush=True)
 
 
 if __name__ == "__main__":

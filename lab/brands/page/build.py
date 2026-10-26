@@ -8,6 +8,9 @@ import base64, io, json, os, sys
 import numpy as np
 from PIL import Image
 
+# One HTML page can only carry so much; the full catalog belongs in the app's backend.
+PAGE_BRANDS, PAGE_STARTS = 1500, 600
+
 
 def strip(b):
     """Four of the brand's clothing photos side by side, 100px squares, as a data URI."""
@@ -30,8 +33,9 @@ def strip(b):
 def main(lab_path, out_path, start=None):
     lab = json.load(open(lab_path))
     V = np.load(lab_path.rsplit(".", 1)[0] + ".npy")
+    best = sorted(range(len(lab["brands"])), key=lambda i: -lab["brands"][i]["quality"])[:PAGE_BRANDS]
     slim, rows = [], []
-    for b, v in zip(lab["brands"], V):
+    for b, v in ((lab["brands"][i], V[i]) for i in sorted(best)):
         s = strip(b)
         if not s:
             continue
@@ -46,15 +50,22 @@ def main(lab_path, out_path, start=None):
     ids = {b["id"] for b in slim}
     for b in slim:
         b["n"] = [x for x in b["n"] if x[0] in ids][:10]
+    # Starting points from the name index: a photo strip, where we saw the brand, its neighbors.
+    starts = []
+    for b in sorted(lab.get("starts", []), key=lambda b: -b["seen_at"])[:PAGE_STARTS]:
+        s = strip(b)
+        if s:
+            starts.append({"id": b["id"], "name": b["name"], "site": b["site"], "strip": s, "seen": b["seen_at"],
+                           "stores": b["stores"][:3], "n": [[x["id"], x["score"]] for x in b["neighbors"] if x["id"] in ids][:10]})
     if start not in ids:
         start = max(slim, key=lambda b: next((x["quality"] for x in lab["brands"] if x["id"] == b["id"]), 0))["id"]
     q8 = np.clip(np.round(np.stack(rows) * 127 / np.abs(np.stack(rows)).max()), -127, 127).astype(np.int8)
-    data = {"brands": slim, "start": start, "stats": lab["stats"], "dim": int(q8.shape[1]),
+    data = {"brands": slim, "starts": starts, "start": start, "stats": lab["stats"], "dim": int(q8.shape[1]),
             "vecs": base64.b64encode(q8.tobytes()).decode()}
     template = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "page.html")).read()
     html = template.replace("__DATA__", json.dumps(data, separators=(",", ":")).replace("</", "<\\/"))
     open(out_path, "w").write(html)
-    print(len(slim), "brands,", round(len(html) / 1e6, 2), "MB, starting from", start)
+    print(len(slim), "brands,", len(starts), "starting points,", round(len(html) / 1e6, 2), "MB, starting from", start)
 
 
 if __name__ == "__main__":

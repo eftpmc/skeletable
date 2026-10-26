@@ -118,7 +118,7 @@ details ol { margin: 12px 0 0; padding-left: 20px; display: flex; flex-direction
   </div>
 
   <div class="controls" role="search" id="controls">
-    <input type="search" id="brand-search" list="brand-list" placeholder="Pick a starting brand" aria-label="Pick a starting brand" autocomplete="off">
+    <input type="search" id="brand-search" list="brand-list" placeholder="Start from any brand, like Uniqlo" aria-label="Start from any brand" autocomplete="off">
     <datalist id="brand-list"></datalist>
     <button type="button" id="surprise">Surprise me</button>
   </div>
@@ -146,6 +146,9 @@ details ol { margin: 12px 0 0; padding-left: 20px; display: flex; flex-direction
   const data = JSON.parse(document.getElementById("data").textContent);
   const brands = data.brands;
   const byId = new Map(brands.map((b, i) => [b.id, Object.assign(b, { i })]));
+  // Brands we know by name from other stores' listings: starting points only, never results.
+  const starts = data.starts || [];
+  for (const st of starts) byId.set(st.id, Object.assign(st, { start: true }));
   const $ = (id) => document.getElementById(id);
   const el = (tag, attrs = {}, ...kids) => {
     const n = document.createElement(tag);
@@ -192,6 +195,7 @@ details ol { margin: 12px 0 0; padding-left: 20px; display: flex; flex-direction
     "Kept sites that mostly sell apparel under one name, dropping merch, printed blanks, print-on-demand, marketplaces and multi-brand shops, and sites that no longer answer.",
     "An open-source image model (CLIP) looked at up to 16 product photos per site and dropped sites whose photos aren't mostly clothing.",
     `Quality: ${num(s.graded)} brands were graded by eye to start (distinct label, generic, or not a discovery), and a small model learned those grades from the photos so every brand gets a score. From here, likes and "not a real brand" flags from everyone who uses this page are added to those grades and the model is retrained.`,
+    `Brands you already know: stores that stock or resell other brands list them by name, so we keep a name index from those listings. ${num(s.starts || 0)} brands seen at two or more stores, Uniqlo for example, can be starting points even though we don't read their own sites. They're never offered as finds.`,
     `For you: your likes, minus what you mark "not for me", make a taste profile in the same photo space. Brands are ranked by how close they are to it, nudged by quality. ${EXPLORE} of every 10 slots go to brands nobody has voted on yet, so new brands keep getting a chance instead of the same ones winning.`,
     "Your likes shape your own ranking only. What's shared is each vote, one per person per brand, which is how the quality score learns.",
     "Prices are converted to US dollars at rough rates. Product data from other platforms is from late 2024, so a few prices and products are out of date; the stores were checked live.",
@@ -311,13 +315,23 @@ details ol { margin: 12px 0 0; padding-left: 20px; display: flex; flex-direction
       const b = byId.get(current);
       from = `brand:${b.id}`;
       $("results-title").textContent = tt ? "Closest brands, ordered with your taste" : "Closest brands";
-      fill(box,
-        el("span", { class: "eyebrow", text: "Starting from" }),
-        el("h2", { text: b.name }),
-        el("p", { text: [b.where, range(b), PLATFORM[b.platform] || "Own site", b.desc].filter(Boolean).join(" · ") }),
-        el("img", { src: b.strip, alt: `Product photos from ${b.name}` }),
-        el("a", { class: "btn", href: b.site, target: "_blank", rel: "noopener noreferrer", text: "Visit their store ↗" }),
-      );
+      if (b.start) {
+        fill(box,
+          el("span", { class: "eyebrow", text: "Starting from a brand we know by name" }),
+          el("h2", { text: b.name }),
+          el("p", { text: `Seen at ${num(b.seen)} stores that sell or resell it, including ${b.stores.join(", ")}. We don't read its own site, so its look comes from those listings, and it isn't offered as a find itself.` }),
+          el("img", { src: b.strip, alt: `${b.name} products listed at other stores` }),
+          b.site ? el("a", { class: "btn", href: b.site, target: "_blank", rel: "noopener noreferrer", text: "Visit their site ↗" }) : null,
+        );
+      } else {
+        fill(box,
+          el("span", { class: "eyebrow", text: "Starting from" }),
+          el("h2", { text: b.name }),
+          el("p", { text: [b.where, range(b), PLATFORM[b.platform] || "Own site", b.desc].filter(Boolean).join(" · ") }),
+          el("img", { src: b.strip, alt: `Product photos from ${b.name}` }),
+          el("a", { class: "btn", href: b.site, target: "_blank", rel: "noopener noreferrer", text: "Visit their store ↗" }),
+        );
+      }
       entries = b.n.map(([id, sc]) => ({ b: byId.get(id), sc: tt ? sc + 0.15 * dot(tt.t, byId.get(id).i) : sc }));
       if (tt) entries.sort((a, c) => c.sc - a.sc);
     }
@@ -347,9 +361,15 @@ details ol { margin: 12px 0 0; padding-left: 20px; display: flex; flex-direction
     names.set(label.toLowerCase(), b.id);
     $("brand-list").append(el("option", { value: label }));
   }
+  for (const st of starts) {
+    const label = `${st.name} — seen at ${st.seen} stores`;
+    names.set(label.toLowerCase(), st.id);
+    $("brand-list").append(el("option", { value: label }));
+  }
   $("brand-search").addEventListener("change", (e) => {
     const q = e.target.value.trim().toLowerCase();
-    const id = names.get(q) || brands.find((b) => b.name.toLowerCase().includes(q))?.id;
+    const id = names.get(q) || [...brands, ...starts].find((b) => b.name.toLowerCase() === q)?.id ||
+      [...brands, ...starts].find((b) => b.name.toLowerCase().includes(q))?.id;
     if (id) { go(id); e.target.value = ""; }
   });
   $("surprise").addEventListener("click", () => go(brands[Math.floor(Math.random() * brands.length)].id));

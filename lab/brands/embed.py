@@ -2,20 +2,20 @@
 
 Usage: venv/bin/python -I embed.py <brands.json> <embedded.json>
 Writes <embedded.json> plus <embedded>.npy (one normalized CLIP vector per kept brand, same order).
-Photos are cached in img/ and photo vectors in vectors.npz, both keyed by a hash of the photo URL,
-so a re-run only fetches and embeds what is new.
+Photos are cached in img/ (kept at 112px once embedded) and photo vectors in vectors.npz, both keyed
+by a hash of the photo URL; live checks are cached in meta_cache.json for two weeks. So a re-run only
+fetches and embeds what is new. Brands from the name index (source "names") have no site to check:
+their photos come from other stores' listings.
 """
-import concurrent.futures as cf, hashlib, io, json, os, re, subprocess, sys, urllib.parse
+import concurrent.futures as cf, hashlib, io, json, os, re, subprocess, sys, time, urllib.parse
 import numpy as np
 from PIL import Image
 from fastembed import ImageEmbedding, TextEmbedding
 
+sys.path.insert(0, __file__.rsplit("/", 1)[0])
+from common import USD  # noqa: E402
+
 UA = "skeleton-lab/0.1 (research crawl)"
-USD = {"USD": 1, "CAD": 0.73, "AUD": 0.66, "NZD": 0.6, "EUR": 1.08, "GBP": 1.27, "JPY": 0.0067, "SEK": 0.095, "DKK": 0.145,
-       "NOK": 0.094, "CHF": 1.12, "INR": 0.012, "SGD": 0.74, "HKD": 0.128, "KRW": 0.00073, "MXN": 0.055, "ZAR": 0.055, "PHP": 0.017,
-       "MYR": 0.21, "IDR": 0.000063, "BRL": 0.18, "AED": 0.27, "PLN": 0.25, "CZK": 0.043, "THB": 0.028, "TWD": 0.031, "ILS": 0.27,
-       "CNY": 0.14, "TRY": 0.03, "RON": 0.22, "HUF": 0.0028, "ISK": 0.0072, "CLP": 0.0011, "COP": 0.00025, "ARS": 0.001, "PEN": 0.27,
-       "VND": 0.00004, "NGN": 0.00065, "KES": 0.0077, "SAR": 0.27, "QAR": 0.27, "EGP": 0.02, "PKR": 0.0036, "BGN": 0.55, "UAH": 0.024}
 # Country-code domains that are used as generic ones.
 GENERIC_TLDS = {"co", "io", "me", "tv", "ai", "cc", "ly", "gg", "is", "to", "fm", "vc", "ws", "la", "sh", "so", "st", "us"}
 FASHION_LABELS = {
@@ -23,7 +23,9 @@ FASHION_LABELS = {
     "other": ["a graphic t-shirt mockup with a printed logo", "a book cover", "a poster", "a sticker", "a mug", "a placeholder image",
               "a photo of food", "a vinyl record", "a toy", "a piece of jewelry", "a pair of shoes", "a bag"],
 }
-PHOTOS_PER_BRAND = 16
+PHOTOS_PER_BRAND = 12
+META_DAYS = 14
+KEPT_PX = 112
 
 
 def run(args, timeout=25):
@@ -39,6 +41,9 @@ def key_of(url):
 
 def meta(b):
     """Is the site up, where does it live, and for Shopify stores the name, place and currency they publish."""
+    if b["source"] == "names":
+        return b["id"], {"alive": True, "name": b["name"], "country": None, "city": None, "currency": "USD",
+                         "description": "", "site": b["site"]}
     out = run(["-L", "-o", "/dev/null", "-w", "%{http_code} %{url_effective}", b["site"] + "/"], 20).decode(errors="ignore").split(" ", 1)
     code, final = (int(out[0]) if out and out[0].isdigit() else 0), (out[1] if len(out) > 1 else "")
     host = urllib.parse.urlsplit(final).hostname or b["host"]
@@ -61,6 +66,7 @@ def meta(b):
 
 def thumb(url):
     if re.search(r"cdn\.shopify\.com|/cdn/shop/", url):
+        url = re.sub(r"([?&])width=\d+&?", r"\1", url).rstrip("?&")
         return url + ("&" if "?" in url else "?") + "width=256"
     return url
 
@@ -80,15 +86,22 @@ def fetch_image(url):
 def load_cache():
     if os.path.exists("vectors.npz"):
         z = np.load("vectors.npz")
-        return dict(zip(z["keys"].tolist(), z["vecs"]))
+        return dict(zip(z["keys"].tolist(), z["vecs"].astype(np.float32)))
     return {}
 
 
 def main(brands_path, out_path):
     brands = json.load(open(brands_path))
     os.makedirs("img", exist_ok=True)
+    cached = json.load(open("meta_cache.json")) if os.path.exists("meta_cache.json") else {}
+    now = time.time()
+    fresh = {k: v for k, v in cached.items() if now - v.get("checked", 0) < META_DAYS * 86400}
+    todo = [b for b in brands if b["id"] not in fresh]
     with cf.ThreadPoolExecutor(16) as pool:
-        metas = dict(pool.map(meta, brands))
+        for k, m in pool.map(meta, todo):
+            fresh[k] = dict(m, checked=now)
+    json.dump(fresh, open("meta_cache.json", "w"))
+    metas = {b["id"]: fresh[b["id"]] for b in brands}
     live = [b for b in brands if metas[b["id"]]["alive"]]
     print("live sites", len(live), "of", len(brands), flush=True)
 
@@ -103,7 +116,9 @@ def main(brands_path, out_path):
         model = ImageEmbedding("Qdrant/clip-ViT-B-32-vision")
         for k, v in zip(todo, model.embed([paths[k] for k in todo], batch_size=64)):
             cache[k] = np.asarray(v, dtype=np.float32) / np.linalg.norm(v)
-        np.savez("vectors.npz", keys=np.array(list(cache)), vecs=np.stack(list(cache.values())))
+        for k in todo:  # vectors are cached, so keep only a small copy for sheets and the page
+            Image.open(paths[k]).resize((KEPT_PX, KEPT_PX)).save(paths[k], quality=82)
+        np.savez("vectors.npz", keys=np.array(list(cache)), vecs=np.stack(list(cache.values())).astype(np.float16))
     print("embedded", len(todo), "new photos", flush=True)
 
     text = TextEmbedding("Qdrant/clip-ViT-B-32-text")
@@ -113,10 +128,10 @@ def main(brands_path, out_path):
     # Shopify catalogs first, so a store found by both sources keeps the fuller record.
     for b in sorted(live, key=lambda b: b["source"] != "shopify"):
         m = metas[b["id"]]
-        site = m["site"].lower().replace("://www.", "://")
+        site = m["site"].lower().replace("://www.", "://") or b["id"]
         if site in sites:
             continue
-        rate = USD.get(m["currency"])
+        rate = 1 if b["source"] == "names" else USD.get(m["currency"])
         ks = [(i, key_of(i["image"])) for i in b["items"][:PHOTOS_PER_BRAND]]
         ks = [(i, k) for i, k in ks if k in cache]
         fashion = [(i, k) for i, k in ks if (label_vecs["fashion"] @ cache[k]).max() > (label_vecs["other"] @ cache[k]).max()]
@@ -133,6 +148,7 @@ def main(brands_path, out_path):
             "price_high_usd": round(b["price_high"] * rate), "fashion_share": round(share, 2),
             "photos": [k for _, k in fashion],
             "items": [{"title": i["title"], "price_usd": round(i["price"] * rate, 2), "url": i["url"], "photo": k} for i, k in fashion][:8],
+            **({"key": b["key"], "seen_at": b["seen_at"], "stores": b["stores"]} if b["source"] == "names" else {}),
         })
     json.dump(out, open(out_path, "w"))
     np.save(out_path.rsplit(".", 1)[0] + ".npy", np.stack(vecs))
