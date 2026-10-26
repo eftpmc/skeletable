@@ -46,7 +46,7 @@ Selection rules and the photo check remove what's plainly not a clothing label. 
 mixes distinct labels with generic boutiques, resale and dropshipping. That's easy to tell by eye
 and hard to tell by rules, so we grade a random sample by eye from contact sheets (grades in
 `quality.py`), and a logistic regression on the brand photo vectors learns them. Every brand gets a
-0–1 score; `rank.py` drops brands below 0.35 and gives neighbors a small boost for quality.
+0–1 score; `rank.py` drops brands below 0.45 and gives neighbors a small boost for quality.
 Ratings on the test page ("good find" / "not it") are the next source of grades.
 
 ## Crawling rules

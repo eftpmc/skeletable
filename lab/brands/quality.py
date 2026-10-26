@@ -1,7 +1,7 @@
 """Grade brands by hand from photo sheets, learn those grades from the photo vectors, and score every brand.
 
 Usage:
-  venv/bin/python -I quality.py sheets <embedded.json> <out-dir> [count] [seed]   # contact sheets to grade
+  venv/bin/python -I quality.py sheets <embedded.json> <out-dir> [count] [seed] [scored.json]   # contact sheets to grade
   venv/bin/python -I quality.py train <embedded.json> <labels.json> <scored.json>
 
 Grades (labels.json is {brand id: grade}):
@@ -9,14 +9,17 @@ Grades (labels.json is {brand id: grade}):
   1  real but generic: own label, nothing you'd tell a friend about
   0  not a discovery: boutique wholesale stock, dropshipping, graphic print shops, resale,
      uniforms and promo wear, costumes, placeholders
-The score is the model's expected grade divided by two, so 0 to 1. Every brand gets one,
-graded or not, so a new source is ranked by the same judgment without being graded again.
+With a scored file, sheets show the ungraded brands the model is least sure about (scores nearest
+the bar), which teach it the most per grade.
+The score is the model's expected grade divided by two, so 0 to 1. Every brand gets one, graded
+or not, so a new source is ranked by the same judgment without being graded again.
 """
 import json, random, sys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 PER_SHEET, PHOTOS, TILE = 10, 6, 112
+BAR = 0.45  # rank.py's quality bar
 
 
 def font(size):
@@ -28,11 +31,16 @@ def font(size):
     return ImageFont.load_default()
 
 
-def sheets(embedded_path, out_dir, count=200, seed=1):
+def sheets(embedded_path, out_dir, count=200, seed=1, scored_path=None):
     import os
     brands = json.load(open(embedded_path))
     random.seed(seed)
-    pick = random.sample(brands, min(count, len(brands)))
+    if scored_path:
+        scored = [b for b in json.load(open(scored_path)) if "grade" not in b]
+        pick = sorted(scored, key=lambda b: abs(b["quality"] - BAR))[:count]
+        random.shuffle(pick)
+    else:
+        pick = random.sample(brands, min(count, len(brands)))
     os.makedirs(out_dir, exist_ok=True)
     f = font(15)
     index = []
@@ -80,6 +88,6 @@ def train(embedded_path, labels_path, out_path):
 
 if __name__ == "__main__":
     if sys.argv[1] == "sheets":
-        sheets(sys.argv[2], sys.argv[3], *(int(a) for a in sys.argv[4:6]))
+        sheets(sys.argv[2], sys.argv[3], *(int(a) for a in sys.argv[4:6]), *sys.argv[6:7])
     else:
         train(sys.argv[2], sys.argv[3], sys.argv[4])

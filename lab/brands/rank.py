@@ -6,7 +6,7 @@ score(a, b) = cosine(a, b) - 0.04 * |log(price_a / price_b)| + 0.10 * quality(b)
 import json, math, sys
 import numpy as np
 
-QUALITY_MIN = 0.35
+QUALITY_MIN = 0.45
 NEIGHBORS = 12
 
 
