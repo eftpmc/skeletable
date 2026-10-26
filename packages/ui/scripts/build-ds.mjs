@@ -2,7 +2,7 @@
 //   ds/components/bundle.js   one classic script assigning window.Search (React from window.React)
 //   ds/components/bundle.css  Tailwind base + the utilities the components use
 import { execFileSync } from "node:child_process";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { build } from "esbuild";
 
 const root = new URL("../", import.meta.url).pathname;
