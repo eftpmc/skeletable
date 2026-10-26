@@ -1,9 +1,11 @@
 """Build the Brand Neighbors test page: one HTML file with the data and photo strips inlined.
 
 Usage: venv/bin/python -I build.py <lab.json> <out.html> [start brand id]
-Run from the work directory (photos are read from img/).
+Run from the work directory (photos are read from img/). Reads <lab>.npy from rank.py and inlines
+the photo vectors as int8, so the page can rank brands by a viewer's likes without a server.
 """
 import base64, io, json, os, sys
+import numpy as np
 from PIL import Image
 
 
@@ -27,16 +29,18 @@ def strip(b):
 
 def main(lab_path, out_path, start=None):
     lab = json.load(open(lab_path))
-    slim = []
-    for b in lab["brands"]:
+    V = np.load(lab_path.rsplit(".", 1)[0] + ".npy")
+    slim, rows = [], []
+    for b, v in zip(lab["brands"], V):
         s = strip(b)
         if not s:
             continue
+        rows.append(v)
         slim.append({
             "id": b["id"], "name": b["name"], "site": b["site"], "platform": b["platform"],
             "where": ", ".join(x for x in [b.get("city"), b.get("country")] if x),
             "desc": (b.get("description") or "")[:220], "low": b["price_low_usd"], "high": b["price_high_usd"],
-            "strip": s, "n": [[x["id"], x["score"]] for x in b["neighbors"]],
+            "strip": s, "q": b["quality"], "n": [[x["id"], x["score"]] for x in b["neighbors"]],
             "sample": [{"t": it["title"][:60], "p": it["price_usd"]} for it in b["items"][:1]],
         })
     ids = {b["id"] for b in slim}
@@ -44,7 +48,9 @@ def main(lab_path, out_path, start=None):
         b["n"] = [x for x in b["n"] if x[0] in ids][:10]
     if start not in ids:
         start = max(slim, key=lambda b: next((x["quality"] for x in lab["brands"] if x["id"] == b["id"]), 0))["id"]
-    data = {"brands": slim, "start": start, "stats": lab["stats"]}
+    q8 = np.clip(np.round(np.stack(rows) * 127 / np.abs(np.stack(rows)).max()), -127, 127).astype(np.int8)
+    data = {"brands": slim, "start": start, "stats": lab["stats"], "dim": int(q8.shape[1]),
+            "vecs": base64.b64encode(q8.tobytes()).decode()}
     template = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "page.html")).read()
     html = template.replace("__DATA__", json.dumps(data, separators=(",", ":")).replace("</", "<\\/"))
     open(out_path, "w").write(html)

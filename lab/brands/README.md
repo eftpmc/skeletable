@@ -18,8 +18,9 @@ embed what's new.
 | Live, photos, mostly clothing | `embed.py` | `brands.json` | `embedded.json` + `embedded.npy` |
 | Grade by eye | `quality.py sheets` | `embedded.json` | contact sheets to grade into `labels.json` |
 | Learn the grades | `quality.py train` | `embedded.json`, `labels.json` | `scored.json` |
-| Neighbors | `rank.py` | `scored.json`, `embedded.npy` | `lab.json` |
-| Test page | `page/build.py` | `lab.json`, `img/` | one HTML file |
+| Neighbors | `rank.py` | `scored.json`, `embedded.npy` | `lab.json` + `lab.npy` |
+| Test page | `page/build.py` | `lab.json`, `lab.npy`, `img/` | one HTML file |
+| Learn from use | `feedback.py` | the page's votes, `labels.json` | merged grades for `quality.py train` |
 
 A candidate is one website that sells products, before we know it's a clothing brand (fields in
 `common.py`). Sources only have to produce candidates; everything after is platform-agnostic.
@@ -47,7 +48,32 @@ mixes distinct labels with generic boutiques, resale and dropshipping. That's ea
 and hard to tell by rules, so we grade a random sample by eye from contact sheets (grades in
 `quality.py`), and a logistic regression on the brand photo vectors learns them. Every brand gets a
 0–1 score; `rank.py` drops brands below 0.4 and gives neighbors a small boost for quality.
-Ratings on the test page ("good find" / "not it") are the next source of grades.
+## Learning from use
+
+The test page has three buttons on every brand, and each teaches something different:
+
+- **♥ Like**: the brand is a find. Feeds your taste and, for everyone, the quality score.
+- **Not for me**: taste only. It pushes your "For you" away from that look and says nothing about
+  whether the brand is real.
+- **Not a real brand**: resale, dropshipping, wholesale stock, uniforms, merch. Quality only.
+
+Votes live in the page's `votes` collection, one document per person per brand (`<brand>~<user>`),
+so nobody's vote counts twice. **For you** opens after 5 likes and runs in the page: the mean photo
+vector of what you liked minus half the mean of what you skipped or flagged, ranked by closeness
+plus a small quality nudge. Two of every ten slots go to brands nobody has voted on yet, so new
+brands keep getting seen instead of the first popular ones winning. With a taste, "Brands like…"
+lists are re-ordered by it too.
+
+To fold everyone's votes into the quality model:
+
+```sh
+# export the votes (ArtifactData list on the page's `votes` collection with out_dir=votes/), then
+python3 -I feedback.py votes labels.json labels-merged.json
+venv/bin/python -I quality.py train embedded.json labels-merged.json scored.json
+```
+
+A like counts as grade 2 and a flag as grade 0; "not for me" is left out. A hand grade stands
+unless at least two people voted on the brand and disagree with it.
 
 `labels.json` holds the grades so far (250: a random 150, then the 100 the model was least sure
 about) and `stats.json` the counts from the last run, which the page shows.

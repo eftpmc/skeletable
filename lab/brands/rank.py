@@ -1,6 +1,7 @@
 """Find each brand's nearest brands by look and price, among brands that pass the quality bar.
 
 Usage: venv/bin/python -I rank.py <scored.json> <embedded.npy> <stats.json> <lab.json>
+Also writes <lab>.npy: the photo vectors of the kept brands, same order, for the page's taste ranking.
 score(a, b) = cosine(a, b) - 0.04 * |log(price_a / price_b)| + 0.10 * quality(b)
 """
 import json, math, sys, urllib.parse
@@ -31,6 +32,7 @@ def main(scored_path, vectors_path, stats_path, out_path):
         b["neighbors"] = [{"id": pool[j]["id"], "score": round(float(score[i, j]), 3)} for j in order]
     stats = json.load(open(stats_path)) | {"scored": len(brands), "brands": len(pool)}
     json.dump({"brands": pool, "stats": stats}, open(out_path, "w"))
+    np.save(out_path.rsplit(".", 1)[0] + ".npy", P)
     print(len(pool), "of", len(brands), "brands pass the quality bar")
 
 
