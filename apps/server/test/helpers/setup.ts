@@ -33,17 +33,19 @@ export function useTestApp() {
     rmSync(dataDir, { recursive: true, force: true });
   });
 
-  function setup(overrides: Partial<Record<string, string>> = {}, extra: Partial<Pick<Deps, "sources">> = {}) {
+  function setup(overrides: Partial<Record<string, string>> = {}, extra: Partial<Pick<Deps, "sources" | "mailer">> = {}) {
     return setupWithServices(overrides, extra).app;
   }
 
   /** Same as setup, plus the services behind it (to run scheduled jobs in tests). */
-  function setupWithServices(overrides: Partial<Record<string, string>> = {}, extra: Partial<Pick<Deps, "sources">> = {}) {
+  function setupWithServices(overrides: Partial<Record<string, string>> = {}, extra: Partial<Pick<Deps, "sources" | "mailer">> = {}) {
     const config: Config = loadConfig({
       DATABASE_URL,
       PUBLIC_URL,
       AUTH_SECRET: "test-secret-that-is-at-least-32-characters-long",
       DATA_DIR: dataDir,
+      // Most tests sign up more than one person; the closed-by-default behavior has its own tests.
+      SIGNUPS_ENABLED: "true",
       ...overrides,
     });
     const deps: Deps = { config, db, auth: createAuth(config, db), storage, ...extra };

@@ -32,7 +32,7 @@ type StoredOffer = RawOffer & { id: string; productId: string };
 
 const SOURCE_TIMEOUT_MS = 8000;
 const CACHE_TTL_MS = 10 * 60 * 1000;
-const MIN_RELEVANCE = 0.6;
+export const MIN_RELEVANCE = 0.6;
 
 export class SearchService {
   private cache = new Map<string, { at: number; value: SearchResponse }>();

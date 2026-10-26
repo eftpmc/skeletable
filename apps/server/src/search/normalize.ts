@@ -50,13 +50,64 @@ export function isAccessoryFor(query: string, title: string): boolean {
   return ACCESSORY.test(title) && !ACCESSORY.test(query);
 }
 
-/** Share of query words found in the title (0–1). Used to drop junk and rank results. */
+/**
+ * Spellings that name the same thing, folded to one form on both sides before matching, so
+ * "ps5" finds "PlayStation 5" and "New Balance 990v6" finds "nb 990v6".
+ */
+const ALIASES: [RegExp, string][] = [
+  [/\bplay\s?station\s?(\d)\b/g, "ps$1"],
+  [/\bnew balance\b/g, "nb"],
+  [/\bair force (?:1|one)\b/g, "af1"],
+  [/\b(?:air )?jordan (\d{1,2})\b/g, "aj$1"],
+];
+
+/** Words people add to a query that titles often leave out ("airpods pro 2nd gen"). */
+const FILLER = new Set(["gen", "generation"]);
+
+/** Words for relevance: aliases folded, ordinals as numbers ("2nd" → "2"), sizes and filler dropped. */
+export function matchWords(text: string): string[] {
+  let folded = text.toLowerCase().replace(/\bsize\s*:?\s*[0-9][0-9./]*\b/g, " ");
+  for (const [pattern, replacement] of ALIASES) folded = folded.replace(pattern, replacement);
+  return tokens(folded)
+    .map((word) => word.replace(/^(\d+)(?:st|nd|rd|th)$/, "$1"))
+    .filter((word) => !FILLER.has(word));
+}
+
+/** Words with a digit (model codes, generations, sizes of things): a wrong one means a different product. */
+const isCode = (word: string) => /\d/.test(word);
+
+function wordFound(word: string, have: Set<string>, compact: string): boolean {
+  if (have.has(word)) return true;
+  if (isCode(word)) {
+    // Part of a model code: "xm5" in "WH-1000XM5", "wh1000xm5" across "WH-1000XM5".
+    if (/[a-z]/.test(word)) return word.length >= 3 && compact.includes(word);
+    // A number that starts a code: "990" in "990v6", but not "100" in "1000xm5".
+    return [...have].some((h) => h.startsWith(word) && /^[a-z]/.test(h.slice(word.length)));
+  }
+  if (word.length > 3 && word.endsWith("s") && have.has(word.slice(0, -1))) return true;
+  return word.length > 3 && [...have].some((h) => h.startsWith(word));
+}
+
+/**
+ * Share of query words found in the title (0–1). Used to drop junk and rank results.
+ * Missing a word with a digit caps the score below the cut, so "iphone 15 pro" doesn't keep "iPhone 14 Pro".
+ */
 export function relevance(query: string, title: string, brand: string | null): number {
-  const wanted = tokens(query);
+  const titleWords = [...matchWords(title), ...(brand ? matchWords(brand) : [])];
+  const have = new Set(titleWords);
+  const compact = titleWords.join("");
+  // A code typed with a space ("990 v6") counts as one word when the title writes it as one.
+  const wanted: string[] = [];
+  for (const word of matchWords(query)) {
+    const previous = wanted.at(-1);
+    if (previous && (isCode(previous) || isCode(word)) && !have.has(previous) && compact.includes(previous + word)) {
+      wanted[wanted.length - 1] = previous + word;
+    } else wanted.push(word);
+  }
   if (wanted.length === 0) return 0;
-  const have = new Set([...tokens(title), ...(brand ? tokens(brand) : [])]);
-  const hits = wanted.filter((word) => have.has(word) || (word.length > 3 && [...have].some((h) => h.startsWith(word))));
-  return hits.length / wanted.length;
+  const missed = wanted.filter((word) => !wordFound(word, have, compact));
+  const score = (wanted.length - missed.length) / wanted.length;
+  return missed.some(isCode) ? Math.min(score, 0.5) : score;
 }
 
 /** Map a store's condition wording to ours. */

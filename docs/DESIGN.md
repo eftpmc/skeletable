@@ -136,6 +136,7 @@ We'd reconsider pure SwiftUI only if the app became iPhone-only.
 ```
 
 - **Deployments:** unchanged from v0.1. Cloud (our keys, OAuth, R2, push) or self-hosted (Docker, the user's keys, local disk, ntfy).
+- **Front door:** the cloud's landing page is the search itself. Signed-out visitors can search and open products (rate limited per address); saving, tracking, alerts and Collection ask them to sign up and bring them back. What the app does sits under the search bar. A self-hosted server is private: sign-in only, and the first account to sign up owns it and closes sign-ups behind it. `PUBLIC_SEARCH` and `SIGNUPS_ENABLED` switch either behavior on any server. Later, public search can grow into a search engine of its own (browser search provider, public product pages for search engines).
 - **Repo:** `apps/server`, `apps/web`, `apps/mobile` (Expo), `packages/shared`, `packages/db`.
 - **Stack:** Hono, Drizzle, Postgres + pgvector, pg-boss (jobs), Better Auth, sharp, React + Vite + Tailwind, Expo + Expo Router.
 
@@ -149,10 +150,11 @@ Phase 1 tables carry over: `item` becomes **owned**, `media`, `brand`, `brand_fi
 | `store` | id, name, domain, kind (retail / marketplace / indie), source |
 | `offer` | id, product_id?, store_id, url, title, price_cents, currency, condition (new / refurb / used), size?, image, in_stock, first_seen, last_seen |
 | `price_point` | offer_id, price_cents, seen_at |
-| `saved_search` | id, user_id, query, filters (json), channel (push / email / both / none), last_run_at |
+| `saved_search` | id, user_id, query, condition, max_price, last_run_at, last_viewed_at |
 | `saved_search_seen` | saved_search_id, offer_id (to diff for "N new") |
 | `watch` | user_id, product_id, condition?, target_price_cents?, created_at |
-| `alert_event` | id, user_id, kind (new_matches / price_drop / back_in_stock), payload, read_at |
+| `alert_event` | id, user_id, kind (new_matches / price_drop / back_in_stock), payload, read_at, pushed_at, emailed_at |
+| `notify_settings` | user_id, ntfy_url, email_digest, timezone, last_digest_at (channels are per person, not per search) |
 | `item` (owned) | + product_id?, paid_cents, category (general taxonomy) |
 | `user_size` | user_id, kind (shoe / top / waist / …), value |
 | `source_key` | user_id or instance, source, encrypted credentials (self-host) |
@@ -194,16 +196,17 @@ Auth: OAuth on cloud, tokens for self-host, writes opt-in.
 |---|---|---|
 | 0 Foundation | Monorepo, auth, Docker, CI | ✅ done |
 | 1 Closet | Items, link import (JSON-LD/Shopify, SSRF-safe), images, sizes, export | ✅ done, becomes **Collection** and the link importer |
-| 2 Search core | Source adapters (eBay, Best Buy, Shopify index, link), search API with fan-out, results + product pages on web, offers and price history, verdict v0 | next |
-| 3 Alerts | Saved searches, watches, scheduler, alert events, email digest, ntfy | |
-| 4 Mobile | Expo app: search, results, product, alerts, saved/collection, push, share extension | |
+| 2 Search core | Source adapters (eBay, Best Buy, Shopify index, link), search API with fan-out, results + product pages on web, offers and price history, verdict v0 | ✅ done. Matching handles model codes, nicknames and generations ("sony xm5", "ps5 slim", "airpods pro 2"), judged on `apps/server/test/search-queries.ts`. On the cloud, signed-out visitors can search (rate limited). |
+| 3 Alerts | Saved searches, watches, scheduler, alert events, email digest, ntfy | ✅ done: in-app feed, ntfy pushes, morning email digest (SMTP or Resend). Left for later: back-in-stock and target-price alerts. |
+| Catalog | Brand discovery and the product catalog ([CATALOG.md](CATALOG.md)) | First slice done: Discover, brand pages, votes, For you, catalog pack shipped in the image. Next is C1 (job queue, connectors, crawling). |
+| 4 Mobile | Expo app: search, results, product, alerts, saved/collection, push, share extension | next |
 | 5 Camera + matching | Image search, AI matching and tagging | |
 | 6 MCP | Read tools, then write tools | |
-| 7 Cloud launch | Affiliate links, billing, OAuth MCP, App Store | |
+| 7 Cloud launch | Affiliate links, billing, OAuth MCP, App Store | Started: deployed on Railway, public front door. Small next steps toward being a search engine: an OpenSearch file so browsers can add skeleton, then server-rendered product pages so search engines can index them. |
 
 ## 13. Open questions
 
-1. **Name and brand.**
+1. **Name and brand.** Working name **skeleton**, possibly a play on it.
 2. **First sources:** eBay plus Best Buy plus a Shopify index is free and broad. Is it worth a paid shopping-search API from day one?
 3. **Country:** US first (stores, currency, affiliate programs)?
 4. **Secondhand weight:** should used results be on by default everywhere, or per category?

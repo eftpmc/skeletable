@@ -1,5 +1,5 @@
-import { Avatar, BellIcon, BookmarkIcon, CompassIcon, IconButton, MenuIcon, NavDrawer, PackageIcon, SearchIcon, SideNav, cn, focusRing } from "@closet/ui";
-import { useEffect, useState } from "react";
+import { Avatar, BellIcon, BookmarkIcon, CompassIcon, IconButton, MenuIcon, NavDrawer, PackageIcon, SearchIcon, SideNav, XIcon, cn, focusRing } from "@closet/ui";
+import { type ReactNode, useEffect, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router";
 import { useUnreadAlerts } from "../lib/alerts";
 
@@ -13,11 +13,24 @@ const tabs = [
 
 type User = { name: string; email: string; image?: string | null };
 
-function Wordmark({ className, onClick }: { className?: string; onClick?: () => void }) {
+export function Wordmark({ className, onClick }: { className?: string; onClick?: () => void }) {
   return (
-    <Link to="/" onClick={onClick} className={cn("rounded-sm px-3 py-2 text-title-2 font-extrabold tracking-[-0.03em] text-ink", focusRing, className)}>
+    <Link to="/" onClick={onClick} className={cn("rounded-sm font-extrabold tracking-[-0.03em] text-ink", focusRing, className)}>
       skeleton
     </Link>
+  );
+}
+
+/**
+ * The narrow-screen top bar. The page header and the open drawer both use it, so opening the menu
+ * only turns the menu button into a close button; nothing else moves.
+ */
+function TopBar({ button, onNavigate }: { button: ReactNode; onNavigate?: () => void }) {
+  return (
+    <div className="box-content flex h-14 items-center border-b border-line px-2 pt-[env(safe-area-inset-top)]">
+      {button}
+      <Wordmark onClick={onNavigate} className="px-0.5 py-1 text-title-3" />
+    </div>
   );
 }
 
@@ -40,14 +53,15 @@ export function AppShell({ user }: { user: User }) {
     count: to === "/alerts" ? unread : undefined,
   }));
 
-  const sidebar = (className: string, inDrawer = false) => {
+  const sidebar = (className?: string, inDrawer = false) => {
     const close = inDrawer ? () => setMenuOpen(false) : undefined;
     return (
       <SideNav
         as={Link}
         items={items.map((item) => ({ ...item, onClick: close }))}
+        inDrawer={inDrawer}
         className={className}
-        brand={<Wordmark onClick={close} className="self-start" />}
+        brand={inDrawer ? undefined : <Wordmark className="self-start px-3 py-2 text-title-2" />}
         footer={
           <Link
             to="/profile"
@@ -70,14 +84,25 @@ export function AppShell({ user }: { user: User }) {
     <div className="flex min-h-full flex-col lg:flex-row">
       {sidebar("sticky top-0 hidden h-dvh lg:flex")}
 
-      <header className="sticky top-0 z-20 flex h-14 items-center gap-1 border-b border-line bg-canvas/90 px-2 backdrop-blur lg:hidden">
-        <IconButton label="Menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)}>
-          <MenuIcon size={22} />
-        </IconButton>
-        <Wordmark className="px-1 py-1 text-title-3 font-extrabold" />
+      <header className="sticky top-0 z-20 bg-canvas/90 backdrop-blur lg:hidden">
+        <TopBar
+          button={
+            <IconButton label="Menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)}>
+              <MenuIcon size={22} />
+            </IconButton>
+          }
+        />
       </header>
       <NavDrawer open={menuOpen} onOpenChange={setMenuOpen}>
-        {sidebar("h-full w-full border-r-0 px-3 py-2", true)}
+        <TopBar
+          onNavigate={() => setMenuOpen(false)}
+          button={
+            <IconButton label="Close menu" onClick={() => setMenuOpen(false)}>
+              <XIcon size={22} />
+            </IconButton>
+          }
+        />
+        {sidebar(undefined, true)}
       </NavDrawer>
 
       <main className="min-w-0 flex-1 px-4 pt-4 pb-10 lg:px-10 lg:pt-6 lg:pb-16">

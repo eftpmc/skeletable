@@ -2,10 +2,12 @@ import { Badge, Button, Chip, ChipRow, EmptyState, ProductTile, SectionHeader, c
 import { useQuery } from "@tanstack/react-query";
 import { Suspense, lazy } from "react";
 import { Link, useNavigate } from "react-router";
+import { Landing } from "../components/Landing";
 import { SearchBar } from "../components/SearchBar";
 import { searchDetail, searchHref, useSavedSearches, useWatches } from "../lib/alerts";
 import { api } from "../lib/api";
 import { formatMoney } from "../lib/format";
+import { useSignedIn } from "../lib/viewer";
 
 // The shader library is only needed here, so it loads with this screen.
 const HalftoneArt = lazy(() => import("../components/HalftoneArt"));
@@ -20,6 +22,7 @@ const shortcuts = [
 
 export function SearchHome() {
   const navigate = useNavigate();
+  const signedIn = useSignedIn();
   const { data: sources = [] } = useQuery({ queryKey: ["sources"], queryFn: api.sources });
   const noSources = sources.length > 0 && !sources.some((s) => s.enabled);
   const { data: searches = [] } = useSavedSearches();
@@ -63,57 +66,64 @@ export function SearchHome() {
         </div>
       </div>
 
-      {noSources && (
-        <EmptyState
-          className="mt-8"
-          title="No stores connected yet"
-          body="Pasting a product link works now. To search by name, add Shopify stores or free eBay and Best Buy keys."
-          action={<Button onClick={() => navigate("/profile")}>Connect stores</Button>}
-        />
-      )}
-
-      <SectionHeader className="mt-12" title="New for your alerts" action={{ label: "See all", as: Link, to: "/alerts" }} />
-      {alertCards.length === 0 ? (
-        <p className="mt-2 text-callout font-normal text-muted">Save a search and new matches show up here.</p>
+      {/* Signed out (public search): what this is, in place of your alerts and list. */}
+      {!signedIn ? (
+        <Landing />
       ) : (
-        <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-5">
-          {alertCards.map((s) => (
-            <Link key={s.id} to={searchHref(s)} className={cn("group flex flex-col gap-2.5 rounded-xl", focusRing)}>
-              <div className="relative overflow-hidden rounded-xl bg-tile">
-                <img
-                  src={s.images[0]}
-                  alt=""
-                  referrerPolicy="no-referrer"
-                  className="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                />
-                {s.newCount > 0 && <Badge className="absolute top-2.5 left-2.5">{s.newCount} new</Badge>}
-              </div>
-              <div className="px-0.5">
-                <div className="line-clamp-1 text-callout font-semibold text-ink">{s.query}</div>
-                <div className="line-clamp-1 text-footnote text-muted">{searchDetail(s) || "Any price, any condition"}</div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
-
-      {drops.length > 0 && (
         <>
-          <SectionHeader className="mt-12" title="Dropped on your list" action={{ label: "See all", as: Link, to: "/saved" }} />
-          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 lg:gap-4">
-            {drops.map((w) => (
-              <ProductTile
-                key={w.productId}
-                as={Link}
-                to={`/p/${w.productId}`}
-                image={w.imageUrl}
-                alt={w.title}
-                price={formatMoney(w.currentPriceCents, w.currency) ?? ""}
-                badge={{ text: `−${formatMoney(w.dropCents, w.currency)}` }}
-                title={w.title}
-              />
-            ))}
-          </div>
+          {noSources && (
+            <EmptyState
+              className="mt-8"
+              title="No stores connected yet"
+              body="Pasting a product link works now. To search by name, add Shopify stores or free eBay and Best Buy keys."
+              action={<Button onClick={() => navigate("/profile")}>Connect stores</Button>}
+            />
+          )}
+
+          <SectionHeader className="mt-12" title="New for your alerts" action={{ label: "See all", as: Link, to: "/alerts" }} />
+          {alertCards.length === 0 ? (
+            <p className="mt-2 text-callout font-normal text-muted">Save a search and new matches show up here.</p>
+          ) : (
+            <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-5">
+              {alertCards.map((s) => (
+                <Link key={s.id} to={searchHref(s)} className={cn("group flex flex-col gap-2.5 rounded-xl", focusRing)}>
+                  <div className="relative overflow-hidden rounded-xl bg-tile">
+                    <img
+                      src={s.images[0]}
+                      alt=""
+                      referrerPolicy="no-referrer"
+                      className="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                    />
+                    {s.newCount > 0 && <Badge className="absolute top-2.5 left-2.5">{s.newCount} new</Badge>}
+                  </div>
+                  <div className="px-0.5">
+                    <div className="line-clamp-1 text-callout font-semibold text-ink">{s.query}</div>
+                    <div className="line-clamp-1 text-footnote text-muted">{searchDetail(s) || "Any price, any condition"}</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {drops.length > 0 && (
+            <>
+              <SectionHeader className="mt-12" title="Dropped on your list" action={{ label: "See all", as: Link, to: "/saved" }} />
+              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 lg:gap-4">
+                {drops.map((w) => (
+                  <ProductTile
+                    key={w.productId}
+                    as={Link}
+                    to={`/p/${w.productId}`}
+                    image={w.imageUrl}
+                    alt={w.title}
+                    price={formatMoney(w.currentPriceCents, w.currency) ?? ""}
+                    badge={{ text: `−${formatMoney(w.dropCents, w.currency)}` }}
+                    title={w.title}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </>
       )}
     </section>

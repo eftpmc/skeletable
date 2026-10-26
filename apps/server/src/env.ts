@@ -3,6 +3,7 @@ import type { Auth } from "./auth.js";
 import type { Config } from "./config.js";
 import type { SourceInfo } from "@closet/shared";
 import type { Source } from "./search/sources/index.js";
+import type { Mailer } from "./alerts/mailer.js";
 import type { Storage } from "./storage.js";
 
 export type SessionUser = Auth["$Infer"]["Session"]["user"];
@@ -26,4 +27,6 @@ export type Deps = {
   storage: Storage;
   /** Override the configured search sources (tests). */
   sources?: { sources: Source[]; info: SourceInfo[] };
+  /** Override how email is sent (tests). Null means no email. */
+  mailer?: Mailer | null;
 };

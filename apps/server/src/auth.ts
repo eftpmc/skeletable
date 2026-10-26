@@ -1,8 +1,15 @@
 import { type Db, schema } from "@closet/db";
 import { betterAuth } from "better-auth";
+import { APIError } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { CLIENT_IP_HEADER } from "./client-ip.js";
 import type { Config } from "./config.js";
+
+/** True once the server has an account. Until then, the first sign-up sets it up whatever SIGNUPS_ENABLED says. */
+export async function hasAccounts(db: Db) {
+  const [row] = await db.select({ id: schema.user.id }).from(schema.user).limit(1);
+  return row !== undefined;
+}
 
 export function createAuth(config: Config, db: Db) {
   return betterAuth({
@@ -18,8 +25,18 @@ export function createAuth(config: Config, db: Db) {
     },
     emailAndPassword: {
       enabled: true,
-      disableSignUp: !config.SIGNUPS_ENABLED,
       minPasswordLength: 8,
+    },
+    databaseHooks: {
+      user: {
+        create: {
+          before: async () => {
+            if (!config.SIGNUPS_ENABLED && (await hasAccounts(db))) {
+              throw new APIError("FORBIDDEN", { message: "Sign-ups are closed on this server." });
+            }
+          },
+        },
+      },
     },
   });
 }

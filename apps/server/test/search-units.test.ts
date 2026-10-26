@@ -1,16 +1,22 @@
 import { describe, expect, it } from "vitest";
 import sharp from "sharp";
 import { matchKey, normalizeGtin, parseCondition, relevance } from "../src/search/normalize.js";
+import { MIN_RELEVANCE } from "../src/search/service.js";
 import { parseShopifyStores } from "../src/search/sources/shopify.js";
+import { queryCases } from "./search-queries.js";
 import { iconLinks, toPng } from "../src/search/store-icons.js";
 import { verdictFor } from "../src/search/verdict.js";
 
 describe("normalize", () => {
   it("scores relevance by query words found", () => {
-    expect(relevance("sony xm5 headphones", "Sony WH-1000XM5 Wireless Headphones", null)).toBeCloseTo(2 / 3);
+    expect(relevance("sony wireless headphones", "Sony WH-1000XM5 Headphones", null)).toBeCloseTo(2 / 3);
     expect(relevance("sony headphones", "Sony WH-1000XM5 Wireless Headphones", null)).toBe(1);
     expect(relevance("sony headphones", "Phone case", null)).toBe(0);
     expect(relevance("carhartt jacket", "Detroit Jacket", "Carhartt WIP")).toBe(1);
+  });
+
+  it.each(queryCases)("$query → $title: $match", ({ query, title, brand, match }) => {
+    expect(relevance(query, title, brand ?? null) >= MIN_RELEVANCE).toBe(match);
   });
 
   it("builds the same match key for the same product across stores", () => {

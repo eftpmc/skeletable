@@ -2,13 +2,13 @@ import { searchQuerySchema } from "@closet/shared";
 import { Hono } from "hono";
 import { z } from "zod";
 import { FetchError } from "../net/safe-fetch.js";
-import type { AuthedEnv } from "../env.js";
+import type { AppEnv } from "../env.js";
 import type { SourceInfo } from "@closet/shared";
 import { NotFoundError, type SearchService } from "./service.js";
 import type { StoreIcons } from "./store-icons.js";
 
 export function searchRoutes(search: SearchService, sourceInfo: SourceInfo[], icons: StoreIcons) {
-  const app = new Hono<AuthedEnv>();
+  const app = new Hono<AppEnv>();
 
   app.get("/search", async (c) => {
     const parsed = searchQuerySchema.safeParse(c.req.query());

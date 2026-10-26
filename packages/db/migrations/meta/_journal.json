@@ -43,6 +43,13 @@
       "when": 1793041212196,
       "tag": "0005_catalog_pack",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793048751204,
+      "tag": "0006_alert_delivery",
+      "breakpoints": true
     }
   ]
 }

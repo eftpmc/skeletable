@@ -11,8 +11,12 @@ const configSchema = z.object({
   PUBLIC_URL: z.string().url(),
   PORT: z.coerce.number().int().positive().default(3000),
   DEPLOYMENT: deploymentSchema.default("selfhost"),
-  SIGNUPS_ENABLED: booleanFromEnv.default(true),
-  SERVER_NAME: z.string().default("Closet"),
+  // Anyone can create an account. The first account (the owner) can always be created.
+  // Defaults to on in the cloud, off when self-hosting.
+  SIGNUPS_ENABLED: booleanFromEnv.optional(),
+  // Signed-out visitors can search and open products. Defaults to on in the cloud, off when self-hosting.
+  PUBLIC_SEARCH: booleanFromEnv.optional(),
+  SERVER_NAME: z.string().default("skeleton"),
   APP_VERSION: z.string().default("0.0.0-dev"),
   DATA_DIR: z.string().default("./data"),
   // Directory with the built web app. When set, the server also serves the UI.
@@ -36,6 +40,13 @@ const configSchema = z.object({
   STORE_ICON_FALLBACK: z.enum(["google", "none"]).default("google"),
   // How often saved searches re-run and watched prices are checked. 0 turns it off.
   ALERTS_INTERVAL_MINUTES: z.coerce.number().int().min(0).default(360),
+  // Email for the morning alert digest. Set EMAIL_FROM and one way to send: an SMTP URL
+  // (smtp://user:pass@host:587) or a Resend API key (works where outbound SMTP is blocked).
+  EMAIL_FROM: z.string().optional(),
+  SMTP_URL: z.string().url().optional(),
+  RESEND_API_KEY: z.string().optional(),
+  // Local hour (in each person's time zone) the digest goes out.
+  DIGEST_HOUR: z.coerce.number().int().min(0).max(23).default(8),
   // Override where migrations are read from (the Docker image sets this).
   MIGRATIONS_DIR: z.string().optional(),
   // A catalog pack (gzipped JSON lines from lab/brands/export.py) to import on start when it's new.
@@ -43,10 +54,17 @@ const configSchema = z.object({
   CATALOG_PACK: z.string().optional(),
 });
 
-export type Config = z.infer<typeof configSchema>;
+// Settings whose default depends on the deployment.
+const resolvedSchema = configSchema.transform((config) => ({
+  ...config,
+  SIGNUPS_ENABLED: config.SIGNUPS_ENABLED ?? config.DEPLOYMENT === "cloud",
+  PUBLIC_SEARCH: config.PUBLIC_SEARCH ?? config.DEPLOYMENT === "cloud",
+}));
+
+export type Config = z.infer<typeof resolvedSchema>;
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
-  const result = configSchema.safeParse(env);
+  const result = resolvedSchema.safeParse(env);
   if (!result.success) {
     const issues = result.error.issues.map((issue) => `  ${issue.path.join(".")}: ${issue.message}`);
     throw new Error(`Invalid configuration:\n${issues.join("\n")}`);
