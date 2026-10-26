@@ -8,12 +8,18 @@ import { closetRoutes } from "./closet/routes.js";
 import { searchRoutes } from "./search/routes.js";
 import { SearchService } from "./search/service.js";
 import { sourcesFromConfig } from "./search/sources/index.js";
+import { StoreIcons } from "./search/store-icons.js";
 import type { AppEnv, AuthedEnv, Deps } from "./env.js";
 
 export function createApp(deps: Deps) {
   const { config, db, auth } = deps;
   const { sources, info: sourceInfo } = deps.sources ?? sourcesFromConfig(config);
   const search = new SearchService(db, sources, { allowPrivate: config.ALLOW_PRIVATE_FETCH });
+  const icons = new StoreIcons(db, deps.storage, {
+    protocol: config.SHOPIFY_PROTOCOL,
+    allowPrivate: config.ALLOW_PRIVATE_FETCH,
+    fallback: config.STORE_ICON_FALLBACK,
+  });
   const app = new Hono<AppEnv>();
 
   if (process.env.NODE_ENV !== "test") app.use(logger());
@@ -60,7 +66,7 @@ export function createApp(deps: Deps) {
     if (!c.get("user")) return c.json({ error: "unauthorized" }, 401);
     await next();
   });
-  authed.route("/", searchRoutes(search, sourceInfo));
+  authed.route("/", searchRoutes(search, sourceInfo, icons));
   authed.route("/", closetRoutes(deps));
   app.route("/api", authed);
 

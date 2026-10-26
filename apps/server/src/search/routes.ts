@@ -5,8 +5,9 @@ import { FetchError } from "../net/safe-fetch.js";
 import type { AuthedEnv } from "../env.js";
 import type { SourceInfo } from "@closet/shared";
 import { NotFoundError, type SearchService } from "./service.js";
+import type { StoreIcons } from "./store-icons.js";
 
-export function searchRoutes(search: SearchService, sourceInfo: SourceInfo[]) {
+export function searchRoutes(search: SearchService, sourceInfo: SourceInfo[], icons: StoreIcons) {
   const app = new Hono<AuthedEnv>();
 
   app.get("/search", async (c) => {
@@ -42,6 +43,15 @@ export function searchRoutes(search: SearchService, sourceInfo: SourceInfo[]) {
   });
 
   app.get("/sources", (c) => c.json(sourceInfo));
+
+  // The store's own icon as a 64px PNG, for offer lists and the Buy menu.
+  app.get("/store-icons/:domain", async (c) => {
+    const domain = c.req.param("domain").toLowerCase();
+    if (!/^[a-z0-9.-]+(:\d+)?$/.test(domain)) return c.json({ error: "not_found" }, 404);
+    const icon = await icons.get(domain);
+    if (!icon) return c.json({ error: "not_found" }, 404);
+    return c.body(new Uint8Array(icon), 200, { "content-type": "image/png", "cache-control": "private, max-age=86400" });
+  });
 
   return app;
 }

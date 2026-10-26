@@ -12,4 +12,5 @@ export { ProductTile, type ProductTileProps, TileGrid } from "./ProductTile";
 export { SearchField, type SearchFieldProps } from "./SearchField";
 export { type Segment, SegmentedControl, type SegmentedControlProps } from "./SegmentedControl";
 export { Sheet, type SheetProps } from "./Sheet";
+export { StoreIcon, type StoreIconProps, StoreStack } from "./StoreIcon";
 export { Verdict, type VerdictLabel, type VerdictProps } from "./Verdict";

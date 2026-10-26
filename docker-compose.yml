@@ -18,6 +18,7 @@ services:
       EBAY_CLIENT_ID: ${EBAY_CLIENT_ID:-}
       EBAY_CLIENT_SECRET: ${EBAY_CLIENT_SECRET:-}
       BESTBUY_API_KEY: ${BESTBUY_API_KEY:-}
+      STORE_ICON_FALLBACK: ${STORE_ICON_FALLBACK:-google}
     volumes:
       - ./data/files:/data
     depends_on:

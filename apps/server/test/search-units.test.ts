@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
+import sharp from "sharp";
 import { matchKey, normalizeGtin, parseCondition, relevance } from "../src/search/normalize.js";
 import { parseShopifyStores } from "../src/search/sources/shopify.js";
+import { iconLinks, toPng } from "../src/search/store-icons.js";
 import { verdictFor } from "../src/search/verdict.js";
 
 describe("normalize", () => {
@@ -46,5 +48,37 @@ describe("verdictFor", () => {
     expect(verdictFor(27900, [], [29800, 31000])).toEqual({ label: "good", text: "$19 less than the next store" });
     expect(verdictFor(27900, [], [28000]).label).toBe("typical");
     expect(verdictFor(27900, [], []).label).toBe("unknown");
+  });
+});
+
+describe("store icon helpers", () => {
+  it("prefers apple-touch-icon, then the biggest declared icon", () => {
+    const html = `<link rel="icon" href="/a.png" sizes="16x16"><link rel="shortcut icon" href="/b.ico">
+      <link rel="icon" href="/c.png" sizes="96x96"><link rel="apple-touch-icon" href="https://cdn.shop.com/t.png">`;
+    expect(iconLinks(html, "https://shop.com/")).toEqual([
+      "https://cdn.shop.com/t.png",
+      "https://shop.com/c.png",
+      "https://shop.com/a.png",
+      "https://shop.com/b.ico",
+    ]);
+  });
+
+  it("reads the PNG inside a .ico and scales it to 64px", async () => {
+    const png = await sharp({ create: { width: 48, height: 48, channels: 4, background: "#00f" } }).png().toBuffer();
+    const header = Buffer.alloc(6 + 16);
+    header.writeUInt16LE(1, 2);
+    header.writeUInt16LE(1, 4);
+    header[6] = 48;
+    header[7] = 48;
+    header.writeUInt32LE(png.length, 6 + 8);
+    header.writeUInt32LE(header.length, 6 + 12);
+    const icon = await toPng(Buffer.concat([header, png]));
+    expect(icon).not.toBeNull();
+    const meta = await sharp(icon!).metadata();
+    expect([meta.width, meta.height]).toEqual([64, 64]);
+  });
+
+  it("rejects things that aren't images", async () => {
+    expect(await toPng(Buffer.from("<html></html>"))).toBeNull();
   });
 });

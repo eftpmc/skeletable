@@ -1,16 +1,18 @@
-import { type Condition, conditionLabels } from "@closet/shared";
+import { type Condition, type OfferSummary, conditionLabels } from "@closet/shared";
 import {
   ArrowUpRightIcon,
   BookmarkIcon,
   Button,
-  buttonClass,
   ChevronLeftIcon,
   EmptyState,
   IconButton,
   ListGroup,
   ListRow,
   SegmentedControl,
+  Sheet,
   Skeleton,
+  StoreIcon,
+  StoreStack,
   Verdict,
 } from "@closet/ui";
 import { useQuery } from "@tanstack/react-query";
@@ -26,7 +28,7 @@ export function ProductPage() {
   const addItem = useAddItem();
   const { data: product, isPending, isError } = useQuery({ queryKey: ["product", id], queryFn: () => api.product(id) });
   const [picked, setPicked] = useState<Condition | null>(null);
-  const [showAll, setShowAll] = useState(false);
+  const [buying, setBuying] = useState(false);
 
   if (isPending) return <Skeleton className="mx-auto mt-4 aspect-square max-w-xl rounded-xl" />;
   if (isError || !product) {
@@ -100,34 +102,10 @@ export function ProductPage() {
           </>
         )}
 
-        <ListGroup className="mt-5">
-          <ListRow
-            as="button"
-            type="button"
-            onClick={() => setShowAll((v) => !v)}
-            aria-expanded={showAll}
-            className="w-full text-left"
-            title={`Compare all ${product.offers.length} ${product.offers.length === 1 ? "offer" : "offers"}`}
-            value={<span className="text-callout font-normal text-muted">{showAll ? "Hide" : "Show"}</span>}
-          />
-          {showAll &&
-            product.offers.map((o) => (
-              <ListRow
-                key={o.id}
-                href={o.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                title={<span className="font-semibold">{o.store.name}</span>}
-                detail={`${conditionLabels[o.condition]} · ${o.title}`}
-                value={
-                  <span className="flex items-center gap-2 text-price">
-                    {formatMoney(o.priceCents, o.currency)}
-                    <ArrowUpRightIcon size={16} className="text-muted" />
-                  </span>
-                }
-              />
-            ))}
-        </ListGroup>
+        <p className="mt-3 text-footnote text-muted">
+          {product.offers.length} {product.offers.length === 1 ? "offer" : "offers"} from {storesOf(product.offers).length}{" "}
+          {storesOf(product.offers).length === 1 ? "store" : "stores"}
+        </p>
 
         <Button
           variant="quiet"
@@ -146,22 +124,67 @@ export function ProductPage() {
           I already own this
         </Button>
 
-        {best && (
+        {best && current && (
           <div className="fixed inset-x-0 bottom-14 z-10 flex gap-2 border-t border-line bg-canvas px-4 py-3 md:static md:mt-6 md:border-0 md:p-0">
             <IconButton label="Track price (coming soon)" tone="surface" size="lg" onClick={() => navigate("/saved")}>
               <BookmarkIcon size={20} />
             </IconButton>
-            <a
-              href={best.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={buttonClass({ className: "flex-1" })}
-            >
-              Buy at {best.store.name}
-            </a>
+            <Button className="flex-1" aria-haspopup="dialog" onClick={() => setBuying(true)}>
+              <StoreStack stores={storesOf(sortOffers(product.offers, current.condition)).map(storeIconProps)} size={22} />
+              Buy from {formatMoney(best.priceCents, best.currency)}
+            </Button>
           </div>
         )}
       </div>
+
+      {current && (
+        <Sheet open={buying} onOpenChange={setBuying} title="Where to buy">
+          <BuyMenu offers={product.offers} condition={current.condition} />
+        </Sheet>
+      )}
     </article>
+  );
+}
+
+const storeIconProps = (store: OfferSummary["store"]) => ({ name: store.name, src: storeIconUrl(store.domain) });
+const storeIconUrl = (domain: string) => `/api/store-icons/${encodeURIComponent(domain)}`;
+
+/** Each store once, in the order given. */
+function storesOf(offers: OfferSummary[]) {
+  return [...new Map(offers.map((o) => [o.store.domain, o.store])).values()];
+}
+
+/** The picked condition first, cheapest first within each condition. */
+function sortOffers(offers: OfferSummary[], condition: Condition) {
+  return [...offers].sort((a, b) => Number(b.condition === condition) - Number(a.condition === condition) || a.priceCents - b.priceCents);
+}
+
+/** Every store selling this product: the picked condition first, then the others. Each row opens the store. */
+function BuyMenu({ offers, condition }: { offers: OfferSummary[]; condition: Condition }) {
+  const sorted = sortOffers(offers, condition);
+  const picked = sorted.filter((o) => o.condition === condition);
+  const others = sorted.filter((o) => o.condition !== condition);
+  const row = (o: OfferSummary, index: number, group: OfferSummary[]) => (
+    <ListRow
+      key={o.id}
+      href={o.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      leading={<StoreIcon {...storeIconProps(o.store)} size={36} />}
+      title={o.store.name}
+      detail={group === others ? conditionLabels[o.condition] : group.length === 1 ? undefined : index === 0 ? "Lowest price" : `+${formatMoney(o.priceCents - group[0]!.priceCents, o.currency)}`}
+      value={
+        <span className="flex items-center gap-2 text-price">
+          {formatMoney(o.priceCents, o.currency)}
+          <ArrowUpRightIcon size={16} className="text-muted" />
+        </span>
+      }
+    />
+  );
+  return (
+    <div className="space-y-6">
+      <ListGroup label={conditionLabels[condition]}>{picked.map((o, i) => row(o, i, picked))}</ListGroup>
+      {others.length > 0 && <ListGroup label="Other conditions">{others.map((o, i) => row(o, i, others))}</ListGroup>}
+    </div>
   );
 }

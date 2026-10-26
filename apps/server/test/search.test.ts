@@ -1,6 +1,7 @@
 import http from "node:http";
 import type { AddressInfo } from "node:net";
 import type { ProductDetail, SearchResponse } from "@closet/shared";
+import sharp from "sharp";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { bestBuySource } from "../src/search/sources/bestbuy.js";
 import { ebaySource } from "../src/search/sources/ebay.js";
@@ -14,9 +15,11 @@ const { setup } = useTestApp();
 let server: http.Server;
 let base = "";
 let host = "";
-const seen: { ebayAuth?: string; bestBuyPath?: string; ebayFilter?: string | null } = {};
+const seen: { ebayAuth?: string; bestBuyPath?: string; ebayFilter?: string | null; iconHits: number } = { iconHits: 0 };
+let touchIcon: Buffer;
 
 beforeAll(async () => {
+  touchIcon = await sharp({ create: { width: 180, height: 180, channels: 4, background: "#e11" } }).png().toBuffer();
   server = http.createServer((req, res) => {
     const url = new URL(req.url ?? "/", "http://localhost");
     const json = (body: unknown) => res.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify(body));
@@ -65,6 +68,14 @@ beforeAll(async () => {
         },
       });
     }
+    if (url.pathname === "/") {
+      res.writeHead(200, { "content-type": "text/html" });
+      return res.end(`<html><head><link rel="icon" sizes="32x32" href="/small.png"><link rel="apple-touch-icon" href="/touch.png"></head></html>`);
+    }
+    if (url.pathname === "/touch.png") {
+      seen.iconHits++;
+      return res.writeHead(200, { "content-type": "image/png" }).end(touchIcon);
+    }
     if (url.pathname === "/brand/xm5") {
       res.writeHead(200, { "content-type": "text/html" });
       return res.end(`<html><head><script type="application/ld+json">${JSON.stringify({
@@ -97,7 +108,7 @@ function testSources(extra: Source[] = []) {
 }
 
 async function client(extra: Source[] = []) {
-  const app = setup({ ALLOW_PRIVATE_FETCH: "true" }, { sources: testSources(extra) });
+  const app = setup({ ALLOW_PRIVATE_FETCH: "true", SHOPIFY_PROTOCOL: "http" }, { sources: testSources(extra) });
   return signUp(app);
 }
 
@@ -215,5 +226,28 @@ describe("sources", () => {
     const user = await signUp(setup({ BESTBUY_API_KEY: "k" }));
     const info = (await (await user.get("/api/sources")).json()) as { id: string; enabled: boolean }[];
     expect(Object.fromEntries(info.map((s) => [s.id, s.enabled]))).toEqual({ shopify: false, ebay: false, bestbuy: true });
+  });
+});
+
+describe("store icons", () => {
+  it("serves a store's own icon at 64px, fetched once", async () => {
+    const user = await client();
+    await user.get("/api/search?q=sony%20wh-1000xm5%20headphones");
+    const before = seen.iconHits;
+
+    const response = await user.get(`/api/store-icons/${host}`);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("image/png");
+    const meta = await sharp(Buffer.from(await response.arrayBuffer())).metadata();
+    expect([meta.width, meta.height]).toEqual([64, 64]);
+
+    expect((await user.get(`/api/store-icons/${host}`)).status).toBe(200);
+    expect(seen.iconHits - before).toBe(1);
+  });
+
+  it("only fetches icons for stores we have offers from", async () => {
+    const user = await client();
+    expect((await user.get("/api/store-icons/example.org")).status).toBe(404);
+    expect((await user.get("/api/store-icons/..%2Fetc")).status).toBe(404);
   });
 });

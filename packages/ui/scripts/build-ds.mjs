@@ -32,7 +32,7 @@ const globals = {
 // are exported on window.Search too and documented with their parent component.
 const names = [
   "Button", "IconButton", "SearchField", "Chip", "ProductTile", "PricePill", "Badge", "Verdict",
-  "SegmentedControl", "ListGroup", "TextField", "AlertCard", "DropCard", "SectionHeader", "EmptyState", "TabBar", "Sheet",
+  "SegmentedControl", "ListGroup", "StoreIcon", "TextField", "AlertCard", "DropCard", "SectionHeader", "EmptyState", "TabBar", "Sheet",
 ];
 
 const result = await build({

@@ -31,6 +31,9 @@ const configSchema = z.object({
   EBAY_API_BASE: z.string().url().optional(),
   BESTBUY_API_KEY: z.string().optional(),
   BESTBUY_API_BASE: z.string().url().optional(),
+  // Store logos come from each store's own site. When a site has none we can read, ask Google's
+  // favicon service (it only sees the store's domain). "none" keeps every request on the store itself.
+  STORE_ICON_FALLBACK: z.enum(["google", "none"]).default("google"),
   // Override where migrations are read from (the Docker image sets this).
   MIGRATIONS_DIR: z.string().optional(),
 });
