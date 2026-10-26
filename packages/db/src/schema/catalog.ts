@@ -1,4 +1,4 @@
-import { index, integer, pgTable, primaryKey, real, text, timestamp, uuid, vector } from "drizzle-orm/pg-core";
+import { index, integer, jsonb, pgTable, primaryKey, real, text, timestamp, uuid, vector } from "drizzle-orm/pg-core";
 import { user } from "./auth.js";
 import { brand } from "./closet.js";
 
@@ -78,3 +78,10 @@ export const brandVote = pgTable(
   },
   (table) => [primaryKey({ columns: [table.userId, table.brandId] }), index("brand_vote_brand_idx").on(table.brandId)],
 );
+
+/** Catalog packs already imported (by content hash), so a restart doesn't import the same one again. */
+export const catalogPack = pgTable("catalog_pack", {
+  hash: text("hash").primaryKey(),
+  counts: jsonb("counts").notNull(),
+  importedAt: timestamp("imported_at", { withTimezone: true }).notNull().defaultNow(),
+});

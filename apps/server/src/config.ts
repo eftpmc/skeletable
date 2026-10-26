@@ -38,6 +38,9 @@ const configSchema = z.object({
   ALERTS_INTERVAL_MINUTES: z.coerce.number().int().min(0).default(360),
   // Override where migrations are read from (the Docker image sets this).
   MIGRATIONS_DIR: z.string().optional(),
+  // A catalog pack (gzipped JSON lines from lab/brands/export.py) to import on start when it's new.
+  // The Docker image sets this to the pack it ships.
+  CATALOG_PACK: z.string().optional(),
 });
 
 export type Config = z.infer<typeof configSchema>;

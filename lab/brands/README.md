@@ -90,6 +90,14 @@ unless at least two people voted on the brand and disagree with it.
 `labels.json` holds the grades so far (250: a random 150, then the 100 the model was least sure
 about) and `stats.json` the counts from the last run, which the page shows.
 
+## Shipping to the app
+
+`export.py` writes the catalog the server imports. Written as `apps/server/catalog/pack.jsonl.gz`, it
+ships in the app image as the catalog pack: on start the server imports it in the background when
+its content hash is new (`catalog_pack` remembers which were imported). So shipping a new catalog is
+export, commit, deploy; votes and Collection links survive because imports match brands, never
+replace them.
+
 ## Growing
 
 `grow.py` runs everything in rounds over the 1,658 Web Data Commons files in a fixed random order,

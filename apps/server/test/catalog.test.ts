@@ -1,8 +1,13 @@
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { gzipSync } from "node:zlib";
 import { schema } from "@closet/db";
 import type { BrandCard, BrandDetail, ForYou } from "@closet/shared";
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { type CatalogRecord, importCatalog } from "../src/catalog/import.js";
+import { importPackIfNew } from "../src/catalog/pack.js";
 import { signUp, useTestApp } from "./helpers/setup.js";
 
 const { db, setup } = useTestApp();
@@ -161,6 +166,22 @@ describe("catalog", () => {
     expect(picks[0]!.because?.name).toMatch(/Loud|Neon|Acid/);
     const detail = (await (await user.get(`/api/catalog/brands/${await idOf(user, "Winfield")}`)).json()) as BrandDetail;
     expect(detail.personal).toBe(true);
+  });
+
+  it("imports a catalog pack once, and again only when it changes", async () => {
+    await db.delete(schema.catalogPack);
+    const dir = mkdtempSync(path.join(tmpdir(), "closet-pack-"));
+    const write = (records: CatalogRecord[]) => {
+      const file = path.join(dir, `pack-${records.length}.jsonl.gz`);
+      writeFileSync(file, gzipSync(records.map((r) => JSON.stringify(r)).join("\n") + "\n"));
+      return file;
+    };
+    const first = write([...quiet, uniqlo]);
+    expect(await importPackIfNew(db, first)).toMatchObject({ imported: true, added: 4 });
+    expect(await importPackIfNew(db, first)).toMatchObject({ imported: false });
+    expect(await importPackIfNew(db, write([...quiet, uniqlo, ...loud]))).toMatchObject({ imported: true, added: 2, updated: 4 });
+    const user = await signUp(setup());
+    expect(((await (await user.get("/api/catalog/brands?q=acid")).json()) as BrandCard[])[0]?.name).toBe("Acid Club");
   });
 
   it("imports onto brands people already added, and keeps same-named stores apart", async () => {

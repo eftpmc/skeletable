@@ -2,6 +2,7 @@ import { createDb, runMigrations } from "@closet/db";
 import { serve } from "@hono/node-server";
 import { startAlertsScheduler } from "./alerts/scheduler.js";
 import { createApp, createServices } from "./app.js";
+import { importPackIfNew } from "./catalog/pack.js";
 import { createAuth } from "./auth.js";
 import { loadConfig } from "./config.js";
 import { DiskStorage } from "./storage.js";
@@ -21,6 +22,14 @@ const stopAlerts = config.ALERTS_INTERVAL_MINUTES > 0 ? startAlertsScheduler(ser
 const server = serve({ fetch: app.fetch, port: config.PORT }, (info) => {
   console.log(`${config.SERVER_NAME} listening on http://localhost:${info.port} (${config.DEPLOYMENT})`);
 });
+
+// In the background: the app serves while a new catalog pack loads.
+if (config.CATALOG_PACK) {
+  importPackIfNew(db, config.CATALOG_PACK).then(
+    (result) => console.log("catalog pack", result.imported ? "imported" : "already imported", result),
+    (error) => console.error("catalog pack import failed:", error),
+  );
+}
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.on(signal, () => {

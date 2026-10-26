@@ -1,4 +1,4 @@
--- Photo vectors for brand neighbors. Railway's and the self-host image's Postgres ship pgvector.
+-- Photo vectors for brand neighbors. Railway's postgres-ssl image and the self-host image ship pgvector.
 CREATE EXTENSION IF NOT EXISTS vector;--> statement-breakpoint
 CREATE TABLE "brand_photo" (
 	"brand_id" uuid NOT NULL,
@@ -33,6 +33,12 @@ CREATE TABLE "brand_vote" (
 	"context" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "brand_vote_user_id_brand_id_pk" PRIMARY KEY("user_id","brand_id")
+);
+--> statement-breakpoint
+CREATE TABLE "catalog_pack" (
+	"hash" text PRIMARY KEY NOT NULL,
+	"counts" jsonb NOT NULL,
+	"imported_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 ALTER TABLE "brand_photo" ADD CONSTRAINT "brand_photo_brand_id_brand_id_fk" FOREIGN KEY ("brand_id") REFERENCES "public"."brand"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
