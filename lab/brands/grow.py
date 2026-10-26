@@ -24,22 +24,26 @@ def sh(*args, **kw):
 
 
 def read_part(i):
-    """Download one part, parse it, delete it. Returns the part number once its counts exist."""
+    """Download one part, parse it, delete it. Returns (part, ok). A cut-off download is fetched
+    again once; a part that still fails is logged and skipped, and later rounds retry it."""
     out = f"wdc/cand_{i}.jsonl"
     if os.path.exists(f"wdc/cand_{i}.count.json"):
-        return i
+        return i, True
     gz = f"wdc/part_{i}.gz"
-    for attempt in range(4):
-        r = subprocess.run(["curl", "-sS", "-m", "900", "-o", gz, f"{WDC}/part_{i}.gz"])
-        if r.returncode == 0:
-            break
-        time.sleep(2 ** (attempt + 1))
     try:
-        subprocess.run([PY, "-I", f"{HERE}/sources/wdc.py", out, gz], check=True, capture_output=True)
+        for attempt in range(2):
+            for wait in (2, 4, 8, 16):
+                if subprocess.run(["curl", "-sS", "--fail", "-m", "900", "-o", gz, f"{WDC}/part_{i}.gz"]).returncode == 0:
+                    break
+                time.sleep(wait)
+            r = subprocess.run([PY, "-I", f"{HERE}/sources/wdc.py", out, gz], capture_output=True, text=True)
+            if r.returncode == 0:
+                return i, True
+        print(f"part {i} failed:", r.stderr.strip().splitlines()[-1:] if r.stderr else "", flush=True)
+        return i, False
     finally:
         if os.path.exists(gz):
             os.remove(gz)
-    return i
 
 
 def stats(state):
@@ -65,7 +69,9 @@ def round_(state, n):
     todo = [i for i in state["order"] if i not in state["done"]][:n]
     if todo:
         with cf.ThreadPoolExecutor(WORKERS) as pool:
-            for i in pool.map(read_part, todo):
+            for i, ok in pool.map(read_part, todo):
+                if not ok:
+                    continue
                 state["done"].append(i)
                 json.dump(state, open("grow_state.json", "w"))
                 print("read part", i, f'({len(state["done"])}/{TOTAL_PARTS})', flush=True)
