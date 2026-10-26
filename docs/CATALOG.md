@@ -44,19 +44,27 @@ The catalog is the product. The feed, search, alerts, recommendations and the MC
      └──► MCP server   └──► catalog sync (self-hosted copies read from the hosted catalog)
 ```
 
+There is no hand-picked starting list. The catalog bootstraps from the open web, ranked by how the web links to each shop, and grows toward whatever people search for and paste.
+
 Every arrow is a job in a durable queue (pg-boss in Postgres to start). Jobs are idempotent and keyed, so they can retry and re-run. Each stage writes its output with the version of the code that produced it, so changing the enrich or match logic means re-running that stage over existing data, not recrawling.
 
 ## 4. Finding stores
 
+No hand-picked starting list. Stores come from the open web and from use:
+
 | Source | What it gives | Notes |
 |---|---|---|
-| **Web Data Commons** (schema.org extractions from Common Crawl) | Millions of pages with `Product` markup, so a list of domains that sell things | Free, released roughly yearly. The best bulk seed. |
-| **Curated seed list** (in the repo) | Hand-picked stores per category | Sets the taste at launch. Every install starts here. |
-| **Pasted links** | A store we don't know | Detect the platform; if it's crawlable, add the whole store. The catalog grows from usage. |
+| **Web Data Commons** (schema.org extractions from Common Crawl) | Pages with `Product` markup, so a list of domains that sell things | Free, released periodically. The bulk bootstrap. |
+| **Common Crawl web graph** | Host-level rank (PageRank-style) from how the web links to each site | An objective, uncurated order to crawl in: most-linked shops first. |
+| **Demand** | Stores behind live-source results (eBay, Best Buy, APIs) for what people search | The catalog gets deepest where people look. |
+| **Pasted links** | A store we don't know | Detect the platform; if it's crawlable, add the whole store. |
+| **Shop-to-shop links** | Brand "stockists" and "where to buy" pages, links to collaborators and sister brands | Crawling outward surfaces independent shops that web rank undervalues. |
 | **Profiles and link-in-bio** | Instagram profile, Linktree → the brand's store | How small brands from Instagram get in with one paste. |
 | **Add your shop** | Stores submit themselves | Free listing for indie brands; the supply side of the network. |
 | **Affiliate networks** | Full catalogs from large retailers and brands | Impact, CJ, Rakuten, Awin. Approval per retailer, usually after launch. |
 | **Marketplace APIs** | eBay, Etsy, Best Buy | Live queries plus periodic pulls for watched products. |
+
+**Crawl budget split.** Web rank alone favors big brands. A fixed share of the crawl budget goes to stores found through demand, pasted links and shop-to-shop links (the long tail), so independent shops are never crowded out.
 
 **Platform detection** runs on every new domain: Shopify (`/products.json`, `cdn.shopify.com` assets), WooCommerce (`/wp-json/wc/store/products`), BigCommerce, Squarespace, Wix, or custom. The result picks the connector.
 
@@ -99,7 +107,8 @@ New and changed tables, extending what exists:
 
 | Table | Key fields |
 |---|---|
-| `store` | + platform, connector, crawl_interval, last_crawled_at, next_crawl_at, product_count, quality_score, discovered_via (seed / wdc / link / submit / affiliate), robots_ok, opted_out |
+| `store` | + platform, connector, crawl_interval, last_crawled_at, next_crawl_at, product_count, quality_score, web_rank, discovered_via (wdc / demand / link / stockist / submit / affiliate), robots_ok, opted_out |
+| `store_link` | from_store_id, to_store_id, kind (stockist / collab / outbound), seen_at |
 | `crawl_run` | store_id, started_at, finished_at, pages, products_seen, changed, errors |
 | `listing` | One product page at one store (today's `offer`, widened): store_id, url, title, brand, description_hash, images, identifiers, product_id |
 | `variant` | listing_id, size, color, sku, gtin, price_cents, compare_at_cents, currency, in_stock, last_seen_at |
@@ -176,7 +185,7 @@ Hybrid retrieval over the catalog: full-text (Postgres `tsvector`, brand and tit
 ## 14. Hosted and self-hosted
 
 - **Hosted** runs the full pipeline over the whole catalog and serves a **catalog sync API**: public product, store and price data only, versioned, incremental.
-- **Self-hosted** copies crawl their own configured stores (the seed list plus anything their users paste) and can optionally sync from the hosted catalog to start large. Personal data never leaves the instance.
+- **Self-hosted** copies either sync from the hosted catalog to start large, or start empty and grow from their users' searches and pasted links. No starting list either way. Personal data never leaves the instance.
 - **Optional contribution:** a self-hosted copy can share anonymous price observations and new stores back, opt-in.
 
 ## 15. Measurement
@@ -218,16 +227,16 @@ Each phase stands on its own and ends with measurable exit criteria.
 
 | Phase | Scope | Exit criteria |
 |---|---|---|
-| **C1 Foundation** | Job queue (pg-boss) replacing the in-process scheduler; connector framework; Shopify feed, page reader and a Uniqlo adapter; store registry with platform detection; crawl planner; `listing` / `variant` / `price_point`; measurement scaffolding | 10 Instagram brands plus Uniqlo crawled nightly; dashboards live; test sets created |
-| **C2 Understanding** | Enrich, embeddings, matching v1, quality score v0, deal truth | Match and enrich targets met on test sets |
+| **C1 Foundation** | Job queue (pg-boss) replacing the in-process scheduler; connector framework; Shopify feed, page reader and a Uniqlo adapter; store registry with platform detection; crawl planner; discovery from demand, pasted links and stockists pages; quality score v0 (it gates everything, since nothing is hand-picked); `listing` / `variant` / `price_point`; measurement scaffolding | The catalog grows on its own from searches and links; first 1,000 stores crawled nightly; dropshipping filter measured on a labeled sample; dashboards live |
+| **C2 Understanding** | Enrich, embeddings, matching v1, quality score v1, deal truth | Match and enrich targets met on test sets |
 | **C3 Feed** | Feed API, interactions, taste profiles, controls, explanations; Home becomes the feed; taste quiz | Feed junk rate < 2%; save rate baseline set |
-| **C4 Discovery at scale** | Web Data Commons import, platform detection at scale, add-your-shop, link-in-bio resolution | 10k stores indexed, freshness target met |
+| **C4 Discovery at scale** | Web Data Commons import ranked by the Common Crawl web graph, platform detection at scale, add-your-shop, link-in-bio resolution | 10k stores indexed, long-tail share of the budget held, freshness target met |
 | **C5 Network** | Catalog sync API for self-hosted copies, MCP read tools on the catalog, affiliate feeds | One self-hosted copy syncing; one assistant using the MCP tools |
 
 ## 19. Open questions
 
 1. **Launch categories.** Best index of a few categories (fashion and home, indie plus brands like Uniqlo) first, or breadth from day one?
-2. **Seed list.** Which shops set the taste? Starting from about 10 brands found on Instagram, plus Uniqlo.
+2. ~~**Seed list.**~~ Decided: no hand-picked list. The catalog bootstraps from the open web (web-graph rank) and grows from demand, links and stockists pages.
 3. **Embedding model.** Hosted embeddings vs. open models we run ourselves; this decides the cost per product and self-host parity.
 4. **Affiliate timing.** When to apply to networks, and whether affiliate feeds count as an independent data source or a partnership.
 5. **Catalog sync terms.** Free for self-hosted copies, or a paid tier above some volume?
@@ -237,7 +246,8 @@ Each phase stands on its own and ends with measurable exit criteria.
 
 | Risk | Mitigation |
 |---|---|
-| Junk floods a broad index | Quality score gates the feed; image fingerprints catch dropshipping |
+| Junk floods a broad index | Quality score gates the feed from phase C1; image fingerprints catch dropshipping |
+| Web rank favors big brands | A reserved share of crawl budget and feed exploration for long-tail shops |
 | False product matches erode trust | Conservative merging, model verification, a test set run on every change |
 | Stores block or object | Polite crawling, fast opt-out, affiliate and partnership paths |
 | Costs grow with the catalog | Tiered freshness, content hashes to skip unchanged work, per-item AI only at ingest |
