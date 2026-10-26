@@ -24,6 +24,7 @@ FASHION_LABELS = {
               "a photo of food", "a vinyl record", "a toy", "a piece of jewelry", "a pair of shoes", "a bag"],
 }
 PHOTOS_PER_BRAND = 12
+EMBED_CHUNK = 4000
 META_DAYS = 14
 KEPT_PX = 112
 
@@ -64,6 +65,11 @@ def meta(b):
     }
 
 
+def save_json(data, path):
+    json.dump(data, open(path + ".tmp", "w"))
+    os.replace(path + ".tmp", path)
+
+
 def thumb(url):
     if re.search(r"cdn\.shopify\.com|/cdn/shop/", url):
         url = re.sub(r"([?&])width=\d+&?", r"\1", url).rstrip("?&")
@@ -97,10 +103,14 @@ def main(brands_path, out_path):
     now = time.time()
     fresh = {k: v for k, v in cached.items() if now - v.get("checked", 0) < META_DAYS * 86400}
     todo = [b for b in brands if b["id"] not in fresh]
+    # Saved as it goes, so a stopped run keeps the checks it already made.
     with cf.ThreadPoolExecutor(16) as pool:
-        for k, m in pool.map(meta, todo):
+        for n, (k, m) in enumerate(pool.map(meta, todo), 1):
             fresh[k] = dict(m, checked=now)
-    json.dump(fresh, open("meta_cache.json", "w"))
+            if n % 250 == 0:
+                save_json(fresh, "meta_cache.json")
+                print("checked", n, "of", len(todo), "sites", flush=True)
+    save_json(fresh, "meta_cache.json")
     metas = {b["id"]: fresh[b["id"]] for b in brands}
     live = [b for b in brands if metas[b["id"]]["alive"]]
     print("live sites", len(live), "of", len(brands), flush=True)
@@ -114,11 +124,15 @@ def main(brands_path, out_path):
     todo = [k for k in paths if k not in cache]
     if todo:
         model = ImageEmbedding("Qdrant/clip-ViT-B-32-vision")
-        for k, v in zip(todo, model.embed([paths[k] for k in todo], batch_size=64)):
-            cache[k] = np.asarray(v, dtype=np.float32) / np.linalg.norm(v)
-        for k in todo:  # vectors are cached, so keep only a small copy for sheets and the page
-            Image.open(paths[k]).resize((KEPT_PX, KEPT_PX)).save(paths[k], quality=82)
-        np.savez("vectors.npz", keys=np.array(list(cache)), vecs=np.stack(list(cache.values())).astype(np.float16))
+        for start in range(0, len(todo), EMBED_CHUNK):  # saved per chunk, so a stopped run keeps its work
+            chunk = todo[start:start + EMBED_CHUNK]
+            for k, v in zip(chunk, model.embed([paths[k] for k in chunk], batch_size=64)):
+                cache[k] = np.asarray(v, dtype=np.float32) / np.linalg.norm(v)
+            for k in chunk:  # vectors are cached, so keep only a small copy for sheets and the page
+                Image.open(paths[k]).resize((KEPT_PX, KEPT_PX)).save(paths[k], quality=82)
+            np.savez("vectors.tmp.npz", keys=np.array(list(cache)), vecs=np.stack(list(cache.values())).astype(np.float16))
+            os.replace("vectors.tmp.npz", "vectors.npz")
+            print("embedded", start + len(chunk), "of", len(todo), "photos", flush=True)
     print("embedded", len(todo), "new photos", flush=True)
 
     text = TextEmbedding("Qdrant/clip-ViT-B-32-text")
