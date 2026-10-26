@@ -3,6 +3,7 @@
 > Status: draft v0.2 · Owner: Zack · Last updated: 2026-10-26
 > v0.2 replaces the closet-first plan (v0.1) with a search-first shopping app for any product.
 > Design canvas (round 4 is current): https://claude.ai/artifact/TPisFH2xJrgToKDWu5DTgb
+> The catalog underneath (crawling, matching, feed, measurement): [`CATALOG.md`](CATALOG.md).
 
 ## 1. Summary
 
