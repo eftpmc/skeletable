@@ -1,6 +1,7 @@
 import { Avatar, BellIcon, BookmarkIcon, IconButton, MenuIcon, NavDrawer, PackageIcon, SearchIcon, SideNav, cn, focusRing } from "@closet/ui";
 import { useEffect, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router";
+import { useUnreadAlerts } from "../lib/alerts";
 
 const tabs = [
   { to: "/", label: "Search", icon: SearchIcon, end: true },
@@ -23,6 +24,7 @@ function Wordmark({ className, onClick }: { className?: string; onClick?: () => 
 export function AppShell({ user }: { user: User }) {
   const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { data: unread = 0 } = useUnreadAlerts();
 
   // Navigating closes the drawer.
   useEffect(() => setMenuOpen(false), [pathname]);
@@ -32,6 +34,7 @@ export function AppShell({ user }: { user: User }) {
     ...tab,
     to,
     active: end ? pathname === "/" || pathname.startsWith("/search") || pathname.startsWith("/p/") : pathname.startsWith(to),
+    count: to === "/alerts" ? unread : undefined,
   }));
 
   const sidebar = (className: string, inDrawer = false) => {

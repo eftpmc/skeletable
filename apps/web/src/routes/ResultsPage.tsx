@@ -1,8 +1,10 @@
 import { type Condition, type ResultCard, conditionLabels, conditions } from "@closet/shared";
-import { Chip, ChipDivider, ChipRow, EmptyState, ProductTile, Skeleton, TileGrid, cn } from "@closet/ui";
+import { BellIcon, CheckIcon, Chip, ChipDivider, ChipRow, EmptyState, ProductTile, Skeleton, TileGrid, cn, focusRing } from "@closet/ui";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { Link, useSearchParams } from "react-router";
 import { SearchBar } from "../components/SearchBar";
+import { useSavedSearch } from "../lib/alerts";
 import { api } from "../lib/api";
 import { formatMoney } from "../lib/format";
 
@@ -24,6 +26,33 @@ export function ResultsPage() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const saved = useSavedSearch(q, condition, max);
+  const savedId = saved.saved?.id;
+  const hasNew = (saved.saved?.newCount ?? 0) > 0;
+  const { markViewed } = saved;
+  // Looking at a saved search's results means nothing in it is new any more.
+  useEffect(() => {
+    if (data && savedId && hasNew) markViewed(savedId);
+  }, [data, savedId, hasNew, markViewed]);
+
+  const saveButton = (className?: string) => (
+    <button
+      type="button"
+      aria-pressed={saved.saved !== null}
+      disabled={saved.pending || !q}
+      onClick={saved.toggle}
+      className={cn(
+        "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-callout transition-colors disabled:opacity-60",
+        saved.saved ? "bg-ink font-medium text-on-ink" : "bg-surface font-normal text-ink",
+        focusRing,
+        className,
+      )}
+    >
+      {saved.saved ? <CheckIcon size={16} /> : <BellIcon size={16} />}
+      {saved.saved ? "Saved · alerts on" : "Save search"}
+    </button>
+  );
+
   const set = (key: string, value: string | undefined) => {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
@@ -42,6 +71,8 @@ export function ResultsPage() {
 
       {/* Phones: filters as chips. Wide screens get the sidebar instead. */}
       <ChipRow className="mt-3 lg:hidden">
+        {saveButton()}
+        <ChipDivider />
         {conditions.map((c) => (
           <Chip key={c} selected={condition === c} onClick={() => set("condition", condition === c ? undefined : c)}>
             {conditionLabels[c]}
@@ -96,7 +127,8 @@ export function ResultsPage() {
                     {data.storeCount === 1 ? "store" : "stores"}
                   </span>
                 </h1>
-                <label className="ml-auto hidden h-10 items-center gap-1.5 rounded-full border border-line pr-2 pl-4 text-callout font-normal text-muted lg:flex">
+                <div className="ml-auto hidden lg:block">{saveButton("h-10")}</div>
+                <label className="hidden h-10 items-center gap-1.5 rounded-full border border-line pr-2 pl-4 text-callout font-normal text-muted lg:flex">
                   Sort
                   <select
                     value={sort}

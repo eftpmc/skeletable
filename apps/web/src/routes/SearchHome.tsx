@@ -1,9 +1,11 @@
-import { Button, Chip, ChipRow, EmptyState, SectionHeader } from "@closet/ui";
+import { Badge, Button, Chip, ChipRow, EmptyState, ProductTile, SectionHeader, cn, focusRing } from "@closet/ui";
 import { useQuery } from "@tanstack/react-query";
 import { Suspense, lazy } from "react";
 import { Link, useNavigate } from "react-router";
 import { SearchBar } from "../components/SearchBar";
+import { searchDetail, searchHref, useSavedSearches, useWatches } from "../lib/alerts";
 import { api } from "../lib/api";
+import { formatMoney } from "../lib/format";
 
 // The shader library is only needed here, so it loads with this screen.
 const HalftoneArt = lazy(() => import("../components/HalftoneArt"));
@@ -20,6 +22,11 @@ export function SearchHome() {
   const navigate = useNavigate();
   const { data: sources = [] } = useQuery({ queryKey: ["sources"], queryFn: api.sources });
   const noSources = sources.length > 0 && !sources.some((s) => s.enabled);
+  const { data: searches = [] } = useSavedSearches();
+  const { data: watches = [] } = useWatches();
+  // Searches with something new first, then the rest, so the row is never empty once you've saved one.
+  const alertCards = [...searches].sort((a, b) => b.newCount - a.newCount).filter((s) => s.images.length > 0).slice(0, 4);
+  const drops = watches.filter((w) => w.dropCents > 0).slice(0, 5);
 
   return (
     <section>
@@ -66,7 +73,49 @@ export function SearchHome() {
       )}
 
       <SectionHeader className="mt-12" title="New for your alerts" action={{ label: "See all", as: Link, to: "/alerts" }} />
-      <p className="mt-2 text-callout font-normal text-muted">Save a search and new matches show up here.</p>
+      {alertCards.length === 0 ? (
+        <p className="mt-2 text-callout font-normal text-muted">Save a search and new matches show up here.</p>
+      ) : (
+        <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-5">
+          {alertCards.map((s) => (
+            <Link key={s.id} to={searchHref(s)} className={cn("group flex flex-col gap-2.5 rounded-xl", focusRing)}>
+              <div className="relative overflow-hidden rounded-xl bg-tile">
+                <img
+                  src={s.images[0]}
+                  alt=""
+                  referrerPolicy="no-referrer"
+                  className="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                />
+                {s.newCount > 0 && <Badge className="absolute top-2.5 left-2.5">{s.newCount} new</Badge>}
+              </div>
+              <div className="px-0.5">
+                <div className="line-clamp-1 text-callout font-semibold text-ink">{s.query}</div>
+                <div className="line-clamp-1 text-footnote text-muted">{searchDetail(s) || "Any price, any condition"}</div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {drops.length > 0 && (
+        <>
+          <SectionHeader className="mt-12" title="Dropped on your list" action={{ label: "See all", as: Link, to: "/saved" }} />
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 lg:gap-4">
+            {drops.map((w) => (
+              <ProductTile
+                key={w.productId}
+                as={Link}
+                to={`/p/${w.productId}`}
+                image={w.imageUrl}
+                alt={w.title}
+                price={formatMoney(w.currentPriceCents, w.currency) ?? ""}
+                badge={{ text: `−${formatMoney(w.dropCents, w.currency)}` }}
+                title={w.title}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </section>
   );
 }

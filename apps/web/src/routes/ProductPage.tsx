@@ -22,6 +22,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useAddItem } from "../components/AddItem";
+import { useToggleWatch } from "../lib/alerts";
 import { api } from "../lib/api";
 import { formatMoney } from "../lib/format";
 
@@ -32,6 +33,7 @@ export function ProductPage() {
   const { data: product, isPending, isError } = useQuery({ queryKey: ["product", id], queryFn: () => api.product(id) });
   const [picked, setPicked] = useState<Condition | null>(null);
   const [buying, setBuying] = useState(false);
+  const tracking = useToggleWatch(id);
 
   if (isPending) return <Skeleton className="mx-auto mt-4 aspect-square max-w-xl rounded-xl" />;
   if (isError || !product) {
@@ -126,8 +128,15 @@ export function ProductPage() {
             <>
               {/* Narrow screens: a bar along the bottom; Buy opens every store in a sheet. */}
               <div className="fixed inset-x-0 bottom-0 z-10 flex gap-2 border-t border-line bg-canvas px-4 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] lg:hidden">
-                <IconButton label="Track price (coming soon)" tone="surface" size="lg" onClick={() => navigate("/saved")}>
-                  <BookmarkIcon size={20} />
+                <IconButton
+                  label={tracking.watching ? "Stop tracking price" : "Track price"}
+                  aria-pressed={tracking.watching}
+                  tone="surface"
+                  size="lg"
+                  disabled={tracking.pending}
+                  onClick={() => tracking.toggle()}
+                >
+                  <BookmarkIcon size={20} fill={tracking.watching ? "currentColor" : "none"} />
                 </IconButton>
                 <Button className="flex-1" aria-haspopup="dialog" onClick={() => setBuying(true)}>
                   <StoreStack stores={storesOf(sorted).map(storeIconProps)} size={22} />
@@ -141,8 +150,15 @@ export function ProductPage() {
                   Buy at {best.store.name}
                   <ArrowUpRightIcon size={18} />
                 </a>
-                <Button variant="secondary" className="h-14 whitespace-nowrap" icon={<BookmarkIcon size={18} />} onClick={() => navigate("/saved")}>
-                  Track price
+                <Button
+                  variant="secondary"
+                  className="h-14 whitespace-nowrap"
+                  aria-pressed={tracking.watching}
+                  disabled={tracking.pending}
+                  icon={<BookmarkIcon size={18} fill={tracking.watching ? "currentColor" : "none"} />}
+                  onClick={() => tracking.toggle()}
+                >
+                  {tracking.watching ? "Tracking price" : "Track price"}
                 </Button>
               </div>
             </>
