@@ -1,7 +1,6 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import type { ElementType, ReactNode } from "react";
 import { cn, focusRing } from "./cn";
-import { XIcon } from "./icons";
 
 export type NavItem = {
   label: string;
@@ -49,23 +48,32 @@ export function TabBar({ items, as: Component = "a", className }: { items: NavIt
 
 /**
  * The desktop sidebar: wordmark, one row per section (icon and name), and a footer slot for the
- * account. The current section is filled with the theme color.
+ * account. The current section is filled with the theme color. `inDrawer` fills a `NavDrawer`
+ * instead, with icons on the header button's column.
  */
 export function SideNav({
   items,
   as: Component = "a",
   brand,
   footer,
+  inDrawer = false,
   className,
 }: {
   items: NavItem[];
   as?: ElementType;
-  brand: ReactNode;
+  brand?: ReactNode;
   footer?: ReactNode;
+  inDrawer?: boolean;
   className?: string;
 }) {
   return (
-    <aside className={cn("flex w-[232px] shrink-0 flex-col gap-6 border-r border-line px-4 py-5", className)}>
+    <aside
+      className={cn(
+        "flex shrink-0 flex-col gap-6",
+        inDrawer ? "min-h-0 w-full flex-1 overflow-y-auto px-1.5 py-4" : "w-[232px] border-r border-line px-4 py-5",
+        className,
+      )}
+    >
       {brand}
       <nav aria-label="Main" className="flex flex-col gap-0.5">
         {items.map(({ label, icon: Icon, active, count, ...linkProps }) => (
@@ -112,23 +120,20 @@ export function NavPills({ items, as: Component = "a", className }: { items: Nav
   );
 }
 
-/** The sidebar on narrow screens, fullscreen. The close button and Escape close it. */
+/**
+ * The sidebar on narrow screens, fullscreen. Children bring their own close control, ideally in the
+ * page header's place so opening the drawer reads as the header staying put; Escape also closes it.
+ */
 export function NavDrawer({ open, onOpenChange, children }: { open: boolean; onOpenChange: (open: boolean) => void; children: ReactNode }) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Content
           aria-describedby={undefined}
-          className="fixed inset-0 z-50 flex bg-canvas pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] text-ink outline-none"
+          className="fixed inset-0 z-50 flex flex-col bg-canvas pb-[env(safe-area-inset-bottom)] text-ink outline-none"
         >
           <Dialog.Title className="sr-only">Menu</Dialog.Title>
           {children}
-          <Dialog.Close
-            aria-label="Close menu"
-            className={cn("absolute top-[calc(env(safe-area-inset-top)+22px)] right-2 flex size-10 items-center justify-center rounded-full text-ink", focusRing)}
-          >
-            <XIcon size={22} />
-          </Dialog.Close>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
