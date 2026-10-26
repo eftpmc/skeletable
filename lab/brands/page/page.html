@@ -1,0 +1,273 @@
+<title>Brand Neighbors</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column — the starting brand on top, its ten neighbors as a grid of photo-strip cards below. */
+:root {
+  --bg: #fbfbfa;
+  --surface: #f0f0ed;
+  --ink: #141416;
+  --muted: #64646b;
+  --line: #e2e2de;
+  --accent: #e8329a;
+  --on-accent: #ffffff;
+  --good: #1d7a48;
+  --bad: #b3262f;
+  --display: "Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f0f11; --surface: #1b1b1f; --ink: #f1f1f2; --muted: #a2a2aa; --line: #2b2b30;
+    --accent: #ff5cb4; --on-accent: #120910; --good: #4fc184; --bad: #ff7077; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f0f11; --surface: #1b1b1f; --ink: #f1f1f2; --muted: #a2a2aa; --line: #2b2b30;
+  --accent: #ff5cb4; --on-accent: #120910; --good: #4fc184; --bad: #ff7077; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font: 15px/1.5 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+.wrap { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(30px, 5vw, 44px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.05; }
+.lede { margin: 8px 0 0; color: var(--muted); max-width: 62ch; }
+.stats { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 14px; font: 13px/1.4 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.stats b { color: var(--ink); font-weight: 500; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.controls label { font-size: 13px; color: var(--muted); }
+input[type="search"] {
+  flex: 1 1 260px; min-width: 0; height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line);
+  background: var(--bg); color: var(--ink); font: 15px var(--body);
+}
+button, .btn {
+  height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface);
+  color: var(--ink); font: 500 14px var(--body); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;
+}
+button:hover, .btn:hover { border-color: var(--muted); }
+button:focus-visible, .btn:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+.source { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; padding: 20px; border-radius: 18px; background: var(--surface); }
+.source .eyebrow { font: 12px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.source h2 { font-size: 26px; font-weight: 700; letter-spacing: -0.01em; }
+.source .btn { justify-self: start; }
+.source p { margin: 0; color: var(--muted); max-width: 70ch; }
+.source img { width: 100%; max-width: 480px; aspect-ratio: 4 / 1; object-fit: cover; border-radius: 10px; display: block; }
+
+.summary { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; }
+.summary h3 { font-size: 20px; font-weight: 600; }
+.summary .score { font: 13px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 16px; }
+.card { display: flex; flex-direction: column; gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--bg); min-width: 0; }
+.card[data-verdict="good"] { border-color: var(--good); }
+.card[data-verdict="not"] { opacity: 0.55; }
+.card img { width: 100%; aspect-ratio: 4 / 1; object-fit: cover; border-radius: 8px; display: block; background: var(--surface); }
+.card .top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.card h4 { margin: 0; font: 600 17px/1.25 var(--display); overflow-wrap: anywhere; }
+.card h4 a { color: inherit; text-decoration: none; }
+.card h4 a:hover { text-decoration: underline; }
+.rank { font: 12px var(--mono); color: var(--muted); }
+.meta { font-size: 13px; color: var(--muted); }
+.price { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.bar { height: 4px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.bar span { display: block; height: 100%; background: var(--accent); }
+.sample { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; }
+.actions button { height: 36px; padding: 0 12px; font-size: 13px; }
+.good[aria-pressed="true"] { background: var(--good); border-color: var(--good); color: var(--bg); }
+.not[aria-pressed="true"] { background: var(--bad); border-color: var(--bad); color: var(--bg); }
+.more { margin-left: auto; }
+
+details { border-top: 1px solid var(--line); padding-top: 18px; }
+summary { cursor: pointer; font: 600 16px var(--display); }
+details ol { margin: 12px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; max-width: 72ch; color: var(--muted); }
+.note { font-size: 13px; color: var(--muted); }
+@media (prefers-reduced-motion: no-preference) { .card { transition: opacity .2s, border-color .2s; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Brand Neighbors</h1>
+    <p class="lede">A test of one idea: start from a brand you like and find clothing brands you've never heard of. Every brand here was found automatically from the open web, with no hand-picked list. Mark each suggestion so we can measure how often it finds something real.</p>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <div class="controls" role="search">
+    <input type="search" id="brand-search" list="brand-list" placeholder="Pick a starting brand" aria-label="Search the brands we found" autocomplete="off">
+    <datalist id="brand-list"></datalist>
+    <button type="button" id="surprise">Surprise me</button>
+  </div>
+
+  <section class="source" id="source" aria-live="polite"></section>
+
+  <section aria-labelledby="results-title" style="display:flex;flex-direction:column;gap:14px">
+    <div class="summary">
+      <h3 id="results-title">Closest brands</h3>
+      <span class="score" id="tally"></span>
+    </div>
+    <div class="grid" id="results"></div>
+    <p class="note" id="saving"></p>
+  </section>
+
+  <details>
+    <summary>How this test works</summary>
+    <ol id="method"></ol>
+  </details>
+</div>
+
+<script type="application/json" id="data">__DATA__</script>
+<script>
+(() => {
+  const data = JSON.parse(document.getElementById("data").textContent);
+  const byId = new Map(data.brands.map((b) => [b.id, b]));
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, attrs = {}, ...kids) => {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (k === "text") n.textContent = v;
+      else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+      else n.setAttribute(k, v);
+    }
+    for (const kid of kids) if (kid) n.append(kid);
+    return n;
+  };
+  const money = (n) => "$" + Math.round(n).toLocaleString("en-US");
+  const range = (b) => (b.low === b.high ? money(b.low) : `${money(b.low)}–${money(b.high)}`);
+
+  // Stats and method, from the real run.
+  const s = data.stats;
+  const n = (x) => x.toLocaleString("en-US");
+  $("stats").append(
+    el("span", {}, el("b", { text: n(s.shopify_catalogs + s.wdc_sites) }), " stores read"),
+    el("span", {}, el("b", { text: n(s.selected) }), " looked like clothing labels"),
+    el("span", {}, el("b", { text: n(s.embedded) }), " passed the photo check"),
+    el("span", {}, el("b", { text: n(s.brands) }), " passed the quality bar"),
+  );
+  [
+    `Shopify: listed every *.myshopify.com store in one Common Crawl index (${n(s.shopify_stores)}) and read each public catalog once. ${n(s.shopify_catalogs)} answered.`,
+    `Every other platform: Web Data Commons pulls the product markup stores publish for Google Shopping out of Common Crawl. We read ${s.wdc_parts} of its ${n(s.wdc_parts_total)} files at random: ${n(s.wdc_sites)} sites with 8+ products, from WooCommerce, Squarespace, Big Cartel, custom builds and Shopify stores on their own domains.`,
+    "Kept sites that mostly sell apparel under one name, dropping merch, printed blanks, print-on-demand and multi-brand shops, and sites that no longer answer.",
+    "An open-source image model (CLIP) looked at up to 16 product photos per site and dropped sites whose photos aren't mostly clothing.",
+    `Quality: we graded ${n(s.graded)} brands by eye from their photos (distinct label, generic, or not a discovery), and a small model learned those grades from the photos so every brand gets a score. Brands below the bar are left out.`,
+    "Neighbors are the closest brands by look, nudged by price and quality.",
+    "Prices are converted to US dollars at rough rates. Product data from other platforms is from late 2024, so a few prices and products are out of date; the stores were checked live.",
+  ].forEach((t) => $("method").append(el("li", { text: t })));
+  const PLATFORM = { shopify: "Shopify", woocommerce: "WooCommerce", squarespace: "Squarespace", bigcartel: "Big Cartel", wix: "Wix",
+    bigcommerce: "BigCommerce", shopline: "Shopline", salesforce: "Salesforce", other: "Own site" };
+
+  // Ratings: shared store when the page can reach it, this browser otherwise.
+  const ratings = new Map();
+  let db = null;
+  const keyOf = (src, brandId) => `${src.kind}.${src.id}~${brandId}`;
+  const localKey = "brand-neighbors-ratings";
+  try { Object.entries(JSON.parse(localStorage.getItem(localKey) || "{}")).forEach(([k, v]) => ratings.set(k, v)); } catch {}
+  const saveLocal = () => { try { localStorage.setItem(localKey, JSON.stringify(Object.fromEntries(ratings))); } catch {} };
+
+  let current = { kind: "brand", id: data.start };
+
+  async function rate(src, brand, verdict) {
+    const k = keyOf(src, brand.id);
+    const next = ratings.get(k) === verdict ? null : verdict;
+    if (next) ratings.set(k, next); else ratings.delete(k);
+    saveLocal();
+    render();
+    if (!db) return;
+    const ref = db.collection("ratings").doc(k.replace(/[^A-Za-z0-9_.~:@+-]/g, "-").slice(0, 190));
+    try {
+      if (next) await ref.set({ source: `${src.kind}:${src.id}`, brand: brand.id, name: brand.name, verdict: next, at: new Date().toISOString() });
+      else await ref.delete();
+    } catch {
+      $("saving").textContent = "Couldn't save that rating to the shared store; it's kept in this browser.";
+    }
+  }
+
+  function sourceOf() {
+    const b = byId.get(current.id);
+    return { title: b.name, eyebrow: "Starting from a brand we found", text: [b.where, range(b), b.desc].filter(Boolean).join(" · "), list: b.n, brand: b };
+  }
+
+  function render() {
+    const src = sourceOf();
+    const box = $("source");
+    box.replaceChildren(
+      el("span", { class: "eyebrow", text: src.eyebrow }),
+      el("h2", { text: src.title }),
+      el("p", { text: src.text }),
+      src.brand ? el("img", { src: src.brand.strip, alt: `Product photos from ${src.brand.name}` }) : null,
+      src.brand ? el("a", { class: "btn", href: src.brand.site, target: "_blank", rel: "noopener noreferrer", text: "Visit their store ↗" }) : null,
+    );
+
+    const scores = src.list.map(([, sc]) => sc);
+    const hi = Math.max(...scores), lo = Math.min(...scores);
+    let good = 0, rated = 0;
+    const cards = src.list.map(([id, sc], i) => {
+      const b = byId.get(id);
+      const verdict = ratings.get(keyOf(current, id));
+      if (verdict) rated++;
+      if (verdict === "good") good++;
+      const pct = hi === lo ? 100 : Math.round(40 + (60 * (sc - lo)) / (hi - lo));
+      const first = b.sample[0];
+      return el("article", { class: "card", "data-verdict": verdict || "" },
+        el("div", { class: "top" },
+          el("h4", {}, el("a", { href: b.site, target: "_blank", rel: "noopener noreferrer", text: b.name })),
+          el("span", { class: "rank", text: `#${i + 1}` })),
+        el("div", { class: "meta" }, b.where ? `${b.where} · ` : "", el("span", { class: "price", text: range(b) }), ` · ${PLATFORM[b.platform] || "Own site"}`),
+        el("img", { src: b.strip, alt: `Product photos from ${b.name}`, loading: "lazy" }),
+        el("div", { class: "bar", title: `Similarity ${sc.toFixed(3)}` }, el("span", { style: `width:${pct}%` })),
+        first ? el("div", { class: "sample", text: `${first.t} · ${money(first.p)}` }) : null,
+        el("div", { class: "actions" },
+          el("button", { type: "button", class: "good", "aria-pressed": String(verdict === "good"), onclick: () => rate(current, b, "good"), text: "Good find" }),
+          el("button", { type: "button", class: "not", "aria-pressed": String(verdict === "not"), onclick: () => rate(current, b, "not"), text: "Not it" }),
+          el("button", { type: "button", class: "more", onclick: () => go({ kind: "brand", id }), text: "Brands like this →" })));
+    });
+    $("results").replaceChildren(...cards);
+    $("tally").textContent = rated ? `${good} of ${rated} rated are good finds (${Math.round((100 * good) / rated)}%)` : "Rate each one: good find or not it";
+  }
+
+  function go(next) {
+    current = next;
+    render();
+    window.scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  }
+
+  // Search and surprise.
+  const names = new Map();
+  for (const b of data.brands) {
+    const label = b.where ? `${b.name} — ${b.where}` : b.name;
+    names.set(label.toLowerCase(), b.id);
+    $("brand-list").append(el("option", { value: label }));
+  }
+  $("brand-search").addEventListener("change", (e) => {
+    const id = names.get(e.target.value.trim().toLowerCase()) ||
+      data.brands.find((b) => b.name.toLowerCase().includes(e.target.value.trim().toLowerCase()))?.id;
+    if (id) { go({ kind: "brand", id }); e.target.value = ""; }
+  });
+  $("surprise").addEventListener("click", () => go({ kind: "brand", id: data.brands[Math.floor(Math.random() * data.brands.length)].id }));
+
+  render();
+
+  // Light up the shared ratings store once the viewer answers.
+  window.claude?.use?.("db").then((handle) => {
+    db = handle;
+    if (!db) { $("saving").textContent = "Ratings are kept in this browser."; return; }
+    $("saving").textContent = "Ratings are saved so we can read the results together.";
+    db.collection("ratings").onSnapshot((snap) => {
+      for (const d of snap.docs) {
+        const v = d.data();
+        if (v && v.source && v.brand) ratings.set(`${v.source.replace(":", ".")}~${v.brand}`, v.verdict);
+      }
+      render();
+    }, () => { $("saving").textContent = "Ratings are kept in this browser."; });
+  });
+})();
+</script>
