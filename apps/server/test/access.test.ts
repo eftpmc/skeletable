@@ -52,10 +52,10 @@ describe("public search", () => {
 
     const search = await app.request("/api/search?q=sony%20headphones");
     expect(search.status).toBe(200);
-    const { results } = await search.json();
+    const { results } = (await search.json()) as { results: { productId: string }[] };
     expect(results.length).toBe(1);
 
-    expect((await app.request(`/api/products/${results[0].productId}`)).status).toBe(200);
+    expect((await app.request(`/api/products/${results[0]!.productId}`)).status).toBe(200);
     expect((await app.request("/api/sources")).status).toBe(200);
   });
 
@@ -113,7 +113,7 @@ describe("owner setup", () => {
 
     const second = await app.request(post("/api/auth/sign-up/email", person("guest@example.com")));
     expect(second.status).toBe(403);
-    expect((await second.json()).message).toMatch(/closed/);
+    expect(((await second.json()) as { message: string }).message).toMatch(/closed/);
   });
 
   it("keeps sign-ups open when enabled", async () => {
