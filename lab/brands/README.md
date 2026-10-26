@@ -48,6 +48,7 @@ mixes distinct labels with generic boutiques, resale and dropshipping. That's ea
 and hard to tell by rules, so we grade a random sample by eye from contact sheets (grades in
 `quality.py`), and a logistic regression on the brand photo vectors learns them. Every brand gets a
 0–1 score; `rank.py` drops brands below 0.4 and gives neighbors a small boost for quality.
+
 ## Learning from use
 
 The test page has three buttons on every brand, and each teaches something different:
