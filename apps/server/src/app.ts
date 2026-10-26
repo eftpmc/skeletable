@@ -6,6 +6,8 @@ import { logger } from "hono/logger";
 import { clientIp, withClientIp } from "./client-ip.js";
 import { alertsRoutes } from "./alerts/routes.js";
 import { AlertsService } from "./alerts/service.js";
+import { catalogRoutes } from "./catalog/routes.js";
+import { CatalogService } from "./catalog/service.js";
 import { closetRoutes } from "./closet/routes.js";
 import { searchRoutes } from "./search/routes.js";
 import { SearchService } from "./search/service.js";
@@ -23,14 +25,14 @@ export function createServices(deps: Deps) {
     allowPrivate: config.ALLOW_PRIVATE_FETCH,
     fallback: config.STORE_ICON_FALLBACK,
   });
-  return { search, sourceInfo, icons, alerts: new AlertsService(db, search) };
+  return { search, sourceInfo, icons, alerts: new AlertsService(db, search), catalog: new CatalogService(db) };
 }
 
 export type Services = ReturnType<typeof createServices>;
 
 export function createApp(deps: Deps, services: Services = createServices(deps)) {
   const { config, db, auth } = deps;
-  const { search, sourceInfo, icons, alerts } = services;
+  const { search, sourceInfo, icons, alerts, catalog } = services;
   const app = new Hono<AppEnv>();
 
   if (process.env.NODE_ENV !== "test") app.use(logger());
@@ -80,6 +82,7 @@ export function createApp(deps: Deps, services: Services = createServices(deps))
   authed.route("/", searchRoutes(search, sourceInfo, icons));
   authed.route("/", closetRoutes(deps));
   authed.route("/", alertsRoutes(alerts));
+  authed.route("/", catalogRoutes(catalog));
   app.route("/api", authed);
 
   app.all("/api/*", (c) => c.json({ error: "not_found" }, 404));

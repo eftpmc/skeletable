@@ -14,7 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16
+        # pgvector for the catalog's photo vectors, like the self-host and Railway databases.
+        image: pgvector/pgvector:pg16
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: closet_test

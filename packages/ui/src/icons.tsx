@@ -119,3 +119,22 @@ export const SlidersIcon = (props: IconProps) => (
     <path d="M8 12H3" />
   </Icon>
 );
+
+export const HeartIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5" />
+  </Icon>
+);
+
+export const CompassIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z" />
+    <circle cx="12" cy="12" r="10" />
+  </Icon>
+);
+
+export const FlagIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528" />
+  </Icon>
+);
