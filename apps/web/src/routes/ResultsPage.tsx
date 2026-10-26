@@ -1,5 +1,5 @@
 import { type Condition, type ResultCard, conditionLabels, conditions } from "@closet/shared";
-import { Chip, ChipDivider, ChipRow, EmptyState, ProductTile, Skeleton, TileGrid } from "@closet/ui";
+import { Chip, ChipDivider, ChipRow, EmptyState, ProductTile, Skeleton, TileGrid, cn } from "@closet/ui";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router";
 import { SearchBar } from "../components/SearchBar";
@@ -7,12 +7,15 @@ import { api } from "../lib/api";
 import { formatMoney } from "../lib/format";
 
 const prices = [50, 100, 250, 500];
+const sorts = { best: "Best match", price: "Lowest price" } as const;
+type Sort = keyof typeof sorts;
 
 export function ResultsPage() {
   const [params, setParams] = useSearchParams();
   const q = params.get("q") ?? "";
   const condition = (params.get("condition") as Condition | null) ?? undefined;
   const max = params.get("max") ? Number(params.get("max")) : undefined;
+  const sort: Sort = params.get("sort") === "price" ? "price" : "best";
 
   const { data, isPending, isError } = useQuery({
     queryKey: ["search", q, condition, max],
@@ -29,14 +32,16 @@ export function ResultsPage() {
   };
 
   const failed = data?.sources.filter((s) => s.status !== "ok") ?? [];
+  const results = data ? (sort === "price" ? [...data.results].sort((a, b) => a.best.priceCents - b.best.priceCents) : data.results) : [];
 
   return (
     <section>
-      <div className="mx-auto max-w-2xl">
+      <div className="mx-auto max-w-2xl lg:mx-0 lg:max-w-[640px]">
         <SearchBar key={q} initial={q} back />
       </div>
 
-      <ChipRow className="mt-3 md:justify-center">
+      {/* Phones: filters as chips. Wide screens get the sidebar instead. */}
+      <ChipRow className="mt-3 lg:hidden">
         {conditions.map((c) => (
           <Chip key={c} selected={condition === c} onClick={() => set("condition", condition === c ? undefined : c)}>
             {conditionLabels[c]}
@@ -50,38 +55,117 @@ export function ResultsPage() {
         ))}
       </ChipRow>
 
-      {isPending ? (
-        <TileGrid className="mt-14">
-          {[220, 170, 200, 160, 240, 180].map((h, i) => (
-            <Skeleton key={i} className="mb-2" style={{ height: h }} />
-          ))}
-        </TileGrid>
-      ) : isError ? (
-        <EmptyState className="mt-10" title="Search isn't working right now" body="Try again in a moment." />
-      ) : data.results.length === 0 ? (
-        <EmptyState className="mt-10" title="Nothing found" body="Try fewer words, or paste a product link." />
-      ) : (
-        <>
-          <div className="mt-5 flex items-baseline gap-2 px-1">
-            <span className="text-title-2 text-ink">
-              {data.results.length.toLocaleString()} {data.results.length === 1 ? "result" : "results"}
-            </span>
-            <span className="text-footnote text-muted">
-              {data.total.toLocaleString()} {data.total === 1 ? "offer" : "offers"} from {data.storeCount}{" "}
-              {data.storeCount === 1 ? "store" : "stores"}
-            </span>
-          </div>
-          {failed.length > 0 && (
-            <p className="mt-1 px-1 text-footnote text-muted">{failed.map((s) => s.label).join(", ")} didn't answer this time.</p>
+      <div className="mt-5 lg:mt-8 lg:flex lg:items-start lg:gap-12">
+        <aside aria-label="Filters" className="hidden w-52 shrink-0 flex-col gap-7 lg:flex">
+          <FilterGroup
+            legend="Condition"
+            name="condition"
+            value={condition ?? ""}
+            onChange={(value) => set("condition", value || undefined)}
+            options={[{ value: "", label: "Any condition" }, ...conditions.map((c) => ({ value: c, label: conditionLabels[c] }))]}
+          />
+          <FilterGroup
+            legend="Price"
+            name="max"
+            value={max ? String(max) : ""}
+            onChange={(value) => set("max", value || undefined)}
+            options={[{ value: "", label: "Any price" }, ...prices.map((p) => ({ value: String(p), label: `Under $${p}` }))]}
+          />
+        </aside>
+
+        <div className="min-w-0 flex-1">
+          {isPending ? (
+            <TileGrid className="mt-2">
+              {[220, 170, 200, 160, 240, 180, 210, 190].map((h, i) => (
+                <Skeleton key={i} className="mb-2 lg:mb-5" style={{ height: h }} />
+              ))}
+            </TileGrid>
+          ) : isError ? (
+            <EmptyState title="Search isn't working right now" body="Try again in a moment." />
+          ) : results.length === 0 ? (
+            <EmptyState title="Nothing found" body="Try fewer words, or paste a product link." />
+          ) : (
+            <>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-1">
+                <h1 className="flex flex-wrap items-baseline gap-x-2">
+                  <span className="text-title-2 text-ink lg:text-[28px] lg:leading-8">
+                    {results.length.toLocaleString()} {results.length === 1 ? "result" : "results"}
+                  </span>
+                  <span className="text-footnote text-muted lg:text-callout lg:font-normal">
+                    {data.total.toLocaleString()} {data.total === 1 ? "offer" : "offers"} from {data.storeCount}{" "}
+                    {data.storeCount === 1 ? "store" : "stores"}
+                  </span>
+                </h1>
+                <label className="ml-auto hidden h-10 items-center gap-1.5 rounded-full border border-line pr-2 pl-4 text-callout font-normal text-muted lg:flex">
+                  Sort
+                  <select
+                    value={sort}
+                    onChange={(event) => set("sort", event.target.value === "best" ? undefined : event.target.value)}
+                    className="bg-transparent text-callout text-ink outline-none"
+                  >
+                    {(Object.keys(sorts) as Sort[]).map((key) => (
+                      <option key={key} value={key}>
+                        {sorts[key]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              {failed.length > 0 && (
+                <p className="mt-1 px-1 text-footnote text-muted">{failed.map((s) => s.label).join(", ")} didn't answer this time.</p>
+              )}
+              <TileGrid className="mt-4">
+                {results.map((card) => (
+                  <Tile key={card.productId} card={card} />
+                ))}
+              </TileGrid>
+            </>
           )}
-          <TileGrid className="mt-3">
-            {data.results.map((card) => (
-              <Tile key={card.productId} card={card} />
-            ))}
-          </TileGrid>
-        </>
-      )}
+        </div>
+      </div>
     </section>
+  );
+}
+
+type FilterOption = { value: string; label: string };
+
+/** One sidebar filter: a radio group, so exactly one option is always on ("Any" clears it). */
+function FilterGroup({
+  legend,
+  name,
+  value,
+  options,
+  onChange,
+}: {
+  legend: string;
+  name: string;
+  value: string;
+  options: FilterOption[];
+  onChange: (value: string) => void;
+}) {
+  return (
+    <fieldset className="flex flex-col gap-1">
+      <legend className="mb-2 text-section-label text-muted uppercase">{legend}</legend>
+      {options.map((option) => (
+        <label
+          key={option.value}
+          className={cn(
+            "flex h-9 cursor-pointer items-center gap-2.5 rounded-lg px-2 text-callout text-ink hover:bg-surface has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-focus",
+            option.value === value ? "font-semibold" : "font-normal",
+          )}
+        >
+          <input
+            type="radio"
+            name={name}
+            value={option.value}
+            checked={option.value === value}
+            onChange={() => onChange(option.value)}
+            className="size-4 accent-ink outline-none"
+          />
+          {option.label}
+        </label>
+      ))}
+    </fieldset>
   );
 }
 
@@ -102,7 +186,8 @@ function Tile({ card }: { card: ResultCard }) {
       alt={card.title}
       price={formatMoney(card.best.priceCents, card.best.currency) ?? ""}
       badge={badgeFor(card)}
-      caption={`${card.storeCount > 1 ? `${card.storeCount} stores` : card.best.store.name} · ${card.title}`}
+      title={card.title}
+      caption={card.storeCount > 1 ? `from ${card.storeCount} stores` : card.best.store.name}
     />
   );
 }

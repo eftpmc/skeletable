@@ -1,3 +1,4 @@
+import * as Dialog from "@radix-ui/react-dialog";
 import type { ElementType, ReactNode } from "react";
 import { cn, focusRing } from "./cn";
 
@@ -107,5 +108,23 @@ export function NavPills({ items, as: Component = "a", className }: { items: Nav
         </Component>
       ))}
     </nav>
+  );
+}
+
+/** The sidebar on narrow screens: slides in from the left over a scrim. Escape and the scrim close it. */
+export function NavDrawer({ open, onOpenChange, children }: { open: boolean; onOpenChange: (open: boolean) => void; children: ReactNode }) {
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-scrim" />
+        <Dialog.Content
+          aria-describedby={undefined}
+          className="fixed inset-y-0 left-0 z-50 flex w-[280px] max-w-[85vw] bg-canvas pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] text-ink shadow-float outline-none"
+        >
+          <Dialog.Title className="sr-only">Menu</Dialog.Title>
+          {children}
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }

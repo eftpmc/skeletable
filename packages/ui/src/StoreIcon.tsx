@@ -42,7 +42,7 @@ export function StoreStack({ stores, size = 24, className }: { stores: { name: s
     <span className={cn("inline-flex", className)}>
       {/* Each icon sits in a ring of the text color, so overlaps read on ink buttons and canvas alike. */}
       {stores.slice(0, 3).map((store, index) => (
-        <span key={store.name} className={cn("rounded-full bg-current p-0.5", index > 0 && "-ml-2")}>
+        <span key={`${index}-${store.name}`} className={cn("rounded-full bg-current p-0.5", index > 0 && "-ml-2")}>
           <StoreIcon name={store.name} src={store.src} size={size} shape="circle" />
         </span>
       ))}

@@ -1,8 +1,7 @@
 import { Button, Chip, ChipRow, EmptyState, SectionHeader } from "@closet/ui";
 import { useQuery } from "@tanstack/react-query";
 import { Suspense, lazy } from "react";
-import { Link, useNavigate, useOutletContext } from "react-router";
-import { AccountMenu } from "../components/AppShell";
+import { Link, useNavigate } from "react-router";
 import { SearchBar } from "../components/SearchBar";
 import { api } from "../lib/api";
 
@@ -18,37 +17,32 @@ const shortcuts = [
 ];
 
 export function SearchHome() {
-  const { user } = useOutletContext<{ user: { name: string; email: string } }>();
   const navigate = useNavigate();
   const { data: sources = [] } = useQuery({ queryKey: ["sources"], queryFn: api.sources });
   const noSources = sources.length > 0 && !sources.some((s) => s.enabled);
 
   return (
     <section>
-      <div className="flex justify-end pt-2 md:hidden">
-        <AccountMenu user={user} />
-      </div>
-
       {/* The hero is a printed piece: paper and black type in light and dark mode alike. */}
-      <div className="relative mt-3 overflow-hidden rounded-[28px] bg-[#f6f1e7] text-black md:mt-0 md:flex md:min-h-[600px] md:items-center">
-        <div className="relative h-56 md:absolute md:inset-0 md:h-auto">
+      <div className="relative overflow-hidden rounded-[28px] bg-[#f6f1e7] text-black lg:flex lg:min-h-[600px] lg:items-center">
+        <div className="relative h-56 lg:absolute lg:inset-0 lg:h-auto">
           <Suspense fallback={null}>
             <HalftoneArt />
           </Suspense>
         </div>
-        <div className="relative flex flex-col gap-6 px-5 pt-2 pb-6 md:max-w-[780px] md:px-14 md:py-16">
-          <h1 className="text-[40px] leading-[0.98] font-extrabold tracking-[-0.045em] md:text-[72px]">
+        <div className="relative flex flex-col gap-6 px-5 pt-2 pb-6 lg:max-w-[780px] lg:px-14 lg:py-16">
+          <h1 className="text-[40px] leading-[0.98] font-extrabold tracking-[-0.045em] lg:text-[72px]">
             Find anything,
             <br />
             from every store.
           </h1>
-          <p className="-mt-1 max-w-[460px] text-[17px] leading-snug text-[#3a3a3c] md:text-lg">
+          <p className="-mt-1 max-w-[460px] text-[17px] leading-snug text-[#3a3a3c] lg:text-lg">
             New, used and refurbished, side by side, with a straight answer on whether the price is good.
           </p>
           <div className="max-w-[600px]">
             <SearchBar autoFocus />
           </div>
-          <ChipRow className="md:mx-0 md:flex-wrap md:px-0">
+          <ChipRow className="lg:mx-0 lg:flex-wrap lg:px-0">
             {shortcuts.map((s) => (
               <Chip
                 key={s.label}
