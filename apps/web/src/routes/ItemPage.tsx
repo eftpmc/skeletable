@@ -17,11 +17,11 @@ export function ItemPage() {
     return (
       <EmptyState
         className="mx-auto mt-10 max-w-xl"
-        title="That isn't in your Owned list"
+        title="That isn't in your collection"
         body="It may have been removed."
         action={
-          <Link to="/owned" className={buttonClass()}>
-            Back to Owned
+          <Link to="/collection" className={buttonClass()}>
+            Back to Collection
           </Link>
         }
       />
@@ -57,7 +57,7 @@ function ItemDetail({ item }: { item: Item }) {
     onSuccess: async () => {
       queryClient.removeQueries({ queryKey: ["items", item.id] });
       await queryClient.invalidateQueries({ queryKey: ["items"] });
-      navigate("/owned", { replace: true });
+      navigate("/collection", { replace: true });
     },
   });
 
@@ -71,9 +71,9 @@ function ItemDetail({ item }: { item: Item }) {
         variant="quiet"
         className="mb-4 -ml-3"
         icon={<ChevronLeftIcon size={18} />}
-        onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/owned"))}
+        onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/collection"))}
       >
-        Owned
+        Collection
       </Button>
 
       <div className="grid gap-8 md:grid-cols-2">
@@ -170,7 +170,7 @@ function ItemDetail({ item }: { item: Item }) {
             <Button variant="secondary" onClick={() => setEditing(true)}>
               Edit
             </Button>
-            <Button variant="quiet" onClick={() => window.confirm(`Remove "${item.title}" from Owned?`) && remove.mutate()}>
+            <Button variant="quiet" onClick={() => window.confirm(`Remove "${item.title}" from your collection?`) && remove.mutate()}>
               Remove
             </Button>
           </div>

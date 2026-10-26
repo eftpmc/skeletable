@@ -18,7 +18,7 @@ export function ClosetPage() {
           </Chip>
         }
       >
-        Owned
+        Collection
       </ScreenTitle>
       <Items />
     </section>

@@ -38,7 +38,8 @@ Later: anyone who shops online, plus self-hosters who want a private price track
 | **Search** (home) | Search bar (text, pasted link, camera), category chips, new alert matches, price drops on your list |
 | **Camera** | Point at anything (or pick a screenshot) and search by image |
 | **Alerts** | **New:** feed of price drops and new matches · **Searches:** saved searches by channel (push, morning email) and watched prices |
-| **Saved** | **Saved:** products you're watching, grouped by day · **Owned:** what you already have, with what it's worth used |
+| **Saved** | Products you're tracking, grouped by day, with price drops |
+| **Collection** | What you already have, with sizes, receipts and what it's worth used |
 
 Account, sizes, sources (self-host), MCP and export sit behind the avatar on Search.
 
@@ -48,7 +49,8 @@ Account, sizes, sources (self-host), MCP and export sit behind the avatar on Sea
 - **Results:** search field with back and clear, then chips: **Filter**, **Save search** (turns into "Saved · alerts on"), condition, price and brand. Then "2,418 results from 312 stores" over a two-column masonry grid of photos with white price pills. Small labels like *Good price*, *Refurb* or *Used · like new* appear only where they help.
 - **Product:** a large photo with save and back. Brand and short model name. A **New / Refurb / Used** switch, each with its best price, drives a big price, the store, and a one-line verdict. Then "Compare all 14 stores", and at the bottom **Track price** plus **Buy at [store]**.
 - **Alerts:** Gem-style cards ("12 NEW" with three photos) and price-drop cards. The Searches tab holds iOS-style grouped lists with counts and red dots.
-- **Saved:** a photo grid with price pills grouped by date. The **Owned** toggle shows items you have, with estimated resale value ("38 items · worth about $1,900").
+- **Saved:** a photo grid with price pills grouped by date.
+- **Collection:** items you have, with estimated resale value ("38 items · worth about $1,900").
 
 ### 4.3 Core flows
 
@@ -73,7 +75,7 @@ Account, sizes, sources (self-host), MCP and export sit behind the avatar on Sea
 - Saving or tracking a product records prices across its offers over time. Drops below your target, or meaningful drops (more than 5% or $10 by default), create alerts.
 
 **Own it**
-- "I own this" (or a purchase found in a forwarded receipt) moves a product to **Owned**, with the price paid. Resale value comes from current used offers.
+- "I own this" (or a purchase found in a forwarded receipt) moves a product to **Collection**, with the price paid. Resale value comes from current used offers.
 
 **Share extension (native app)**
 - In Safari or any store app, tap Share → our app to search everything for that product, or save it.
@@ -111,7 +113,7 @@ Native where it counts:
 
 We'd reconsider pure SwiftUI only if the app became iPhone-only.
 
-**Feature parity:** core features (search, product, alerts, saved, owned) everywhere. The phone does camera search, the share extension and push best. The web does bulk management, source keys, export, admin and MCP setup best.
+**Feature parity:** core features (search, product, alerts, saved, collection) everywhere. The phone does camera search, the share extension and push best. The web does bulk management, source keys, export, admin and MCP setup best.
 
 ## 7. Architecture
 
@@ -190,10 +192,10 @@ Auth: OAuth on cloud, tokens for self-host, writes opt-in.
 | Phase | Scope | Status |
 |---|---|---|
 | 0 Foundation | Monorepo, auth, Docker, CI | ✅ done |
-| 1 Closet | Items, link import (JSON-LD/Shopify, SSRF-safe), images, sizes, export | ✅ done, becomes **Owned** and the link importer |
+| 1 Closet | Items, link import (JSON-LD/Shopify, SSRF-safe), images, sizes, export | ✅ done, becomes **Collection** and the link importer |
 | 2 Search core | Source adapters (eBay, Best Buy, Shopify index, link), search API with fan-out, results + product pages on web, offers and price history, verdict v0 | next |
 | 3 Alerts | Saved searches, watches, scheduler, alert events, email digest, ntfy | |
-| 4 Mobile | Expo app: search, results, product, alerts, saved/owned, push, share extension | |
+| 4 Mobile | Expo app: search, results, product, alerts, saved/collection, push, share extension | |
 | 5 Camera + matching | Image search, AI matching and tagging | |
 | 6 MCP | Read tools, then write tools | |
 | 7 Cloud launch | Affiliate links, billing, OAuth MCP, App Store | |
@@ -204,7 +206,7 @@ Auth: OAuth on cloud, tokens for self-host, writes opt-in.
 2. **First sources:** eBay plus Best Buy plus a Shopify index is free and broad. Is it worth a paid shopping-search API from day one?
 3. **Country:** US first (stores, currency, affiliate programs)?
 4. **Secondhand weight:** should used results be on by default everywhere, or per category?
-5. **Owned:** keep it in Saved (current) or drop it for v1?
+5. ~~**Owned:** keep it in Saved or drop it for v1?~~ Decided: it's **Collection**, its own section.
 6. **License:** AGPL vs MIT.
 
 ## 14. Risks

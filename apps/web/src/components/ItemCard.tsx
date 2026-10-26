@@ -5,7 +5,7 @@ import { Link } from "react-router";
 export function ItemCard({ item }: { item: Item }) {
   const cover = item.media[0];
   return (
-    <Link to={`/owned/${item.id}`} className={cn("group block rounded-lg", focusRing)}>
+    <Link to={`/collection/${item.id}`} className={cn("group block rounded-lg", focusRing)}>
       <div className="aspect-[4/5] overflow-hidden rounded-lg bg-tile">
         {cover ? (
           <img

@@ -56,18 +56,18 @@ export function AddItemProvider({ children }: { children: ReactNode }) {
   return (
     <AddItemContext.Provider value={openSheet}>
       {children}
-      <Sheet open={open} onOpenChange={setOpen} title={draft ? "Add to Owned" : "Add something you own"}>
+      <Sheet open={open} onOpenChange={setOpen} title={draft ? "Add to your collection" : "Add something you own"}>
         {draft ? (
           <ItemForm
             initialValues={draft.values}
             initialImages={draft.images}
-            submitLabel="Save to Owned"
+            submitLabel="Save to collection"
             onSubmit={async (result) => {
               const item = await api.createItem({ ...result, source: draft.source, sourceUrl: draft.sourceUrl });
               await queryClient.invalidateQueries({ queryKey: ["items"] });
               void queryClient.invalidateQueries({ queryKey: ["brands"] });
               setOpen(false);
-              navigate(`/owned/${item.id}`);
+              navigate(`/collection/${item.id}`);
             }}
           />
         ) : (

@@ -7,7 +7,7 @@ const tabs = [
   { to: "/", label: "Search", icon: SearchIcon, end: true },
   { to: "/alerts", label: "Alerts", icon: BellIcon, end: false },
   { to: "/saved", label: "Saved", icon: BookmarkIcon, end: false },
-  { to: "/owned", label: "Owned", icon: PackageIcon, end: false },
+  { to: "/collection", label: "Collection", icon: PackageIcon, end: false },
 ];
 
 type User = { name: string; email: string; image?: string | null };

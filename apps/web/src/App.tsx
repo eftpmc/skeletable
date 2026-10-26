@@ -36,10 +36,11 @@ export function App() {
           <Route path="/p/:id" element={<ProductPage />} />
           <Route path="/alerts" element={<AlertsPage />} />
           <Route path="/saved" element={<SavedPage />} />
-          <Route path="/owned" element={<ClosetPage />} />
-          <Route path="/owned/:id" element={<ItemPage />} />
+          <Route path="/collection" element={<ClosetPage />} />
+          <Route path="/collection/:id" element={<ItemPage />} />
           <Route path="/profile" element={<SettingsPage user={session.user} />} />
-          <Route path="/closet/*" element={<Navigate to="/owned" replace />} />
+          <Route path="/owned/*" element={<Navigate to="/collection" replace />} />
+          <Route path="/closet/*" element={<Navigate to="/collection" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
