@@ -14,7 +14,7 @@ the brand. Where the brand has its own site in Web Data Commons, the index links
 import collections, csv, json, sqlite3, sys
 
 sys.path.insert(0, __file__.rsplit("/", 1)[0])
-from common import display_name, slug  # noqa: E402
+from common import BLANKS, POD, display_name, slug  # noqa: E402
 
 MIN_SITES, MIN_ITEMS, PHOTOS = 2, 8, 20
 TLDS = ["com", "co", "co.uk", "com.au", "ca", "de", "fr", "it", "es", "nl", "se", "dk", "no", "jp", "store", "shop", "net", "us", "eu"]
@@ -57,6 +57,8 @@ def index(db_path, lookup_path, out_path):
         domains = {row[0] for row in csv.reader(f)}
     brands = []
     for (key,) in keys:
+        if POD.search(key) or BLANKS.search(key):  # print-on-demand services and blank-tee makers aren't brands
+            continue
         rows = db.execute("select name, host, title, image, price_usd, url from mention where key = ?", (key,)).fetchall()
         names = collections.Counter(r[0].strip() for r in rows)
         by_host = collections.defaultdict(list)
