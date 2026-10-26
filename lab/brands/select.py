@@ -5,6 +5,9 @@ The same website from two sources is kept once, preferring the Shopify catalog (
 """
 import collections, json, re, sys
 
+sys.path.insert(0, __file__.rsplit("/", 1)[0])
+from common import display_name  # noqa: E402
+
 # Storefronts inside marketplaces and wholesale sites: never one brand's own shop.
 MARKETPLACE = re.compile(r"alibaba|aliexpress|made-in-china|dhgate|etsy|ebay|amazon|temu|shein|depop|poshmark|vinted|catalogmode")
 
@@ -22,11 +25,6 @@ def keep(c):
 def host_key(c):
     h = c["host"].lower()
     return h[4:] if h.startswith("www.") else h
-
-
-def pretty(name, host):
-    name = name.strip() or host.split(".")[0]
-    return name.title() if name == name.lower() else name
 
 
 def main(out_path, paths):
@@ -49,7 +47,7 @@ def main(out_path, paths):
         prices = sorted(i["price"] for i in items)
         currencies = collections.Counter(i["currency"] for i in items if i["currency"])
         brands.append({
-            "id": c["id"], "name": pretty(c["name"], c["host"]), "site": c["site"], "host": c["host"],
+            "id": c["id"], "name": display_name(c["name"], c["host"]), "site": c["site"], "host": c["host"],
             "source": c["source"], "platform": c["platform"], "myshopify": c.get("myshopify"),
             "currency": currencies.most_common(1)[0][0] if currencies else "",
             "price_low": prices[len(prices) // 4], "price_mid": prices[len(prices) // 2], "price_high": prices[(len(prices) * 3) // 4],

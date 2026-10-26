@@ -39,6 +39,19 @@ def platform_of(urls):
     return votes.most_common(1)[0][0] if votes else "other"
 
 
+GENERIC_NAMES = re.compile(r"^(shop|store|home|mysite|my site|online store|official store|official site|boutique|apparel|clothing|"
+                           r"fashion|website|site|sale|new|true|false|null|none|n\/a|株式会社.*)$", re.I)
+
+
+def display_name(name, host):
+    """The name to show: the store's own, unless it's empty or generic, then the domain's first label."""
+    name = (name or "").strip()
+    if not name or GENERIC_NAMES.match(name):
+        label = host.lower().removeprefix("www.").removeprefix("shop.").removeprefix("store.").split(".")[0]
+        return label.replace("-", " ").title()
+    return name.title() if name == name.lower() else name
+
+
 def slug(host):
     return re.sub(r"[^a-z0-9]+", "-", host.lower()).strip("-")[:80]
 

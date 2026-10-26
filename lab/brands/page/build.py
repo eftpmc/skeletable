@@ -8,20 +8,20 @@ from PIL import Image
 
 
 def strip(b):
-    """Four of the brand's clothing photos side by side, 120px squares, as a data URI."""
+    """Four of the brand's clothing photos side by side, 100px squares, as a data URI."""
     tiles = []
     for k in b["photos"][:4]:
         try:
-            tiles.append(Image.open(f"img/{k}.jpg").convert("RGB").resize((120, 120)))
+            tiles.append(Image.open(f"img/{k}.jpg").convert("RGB").resize((100, 100)))
         except OSError:
             continue
     if not tiles:
         return None
-    canvas = Image.new("RGB", (120 * len(tiles), 120), "white")
+    canvas = Image.new("RGB", (100 * len(tiles), 100), "white")
     for i, t in enumerate(tiles):
-        canvas.paste(t, (120 * i, 0))
+        canvas.paste(t, (100 * i, 0))
     buf = io.BytesIO()
-    canvas.save(buf, "JPEG", quality=72, optimize=True)
+    canvas.save(buf, "JPEG", quality=70, optimize=True)
     return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
 
 

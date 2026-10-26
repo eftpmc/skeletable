@@ -3,10 +3,13 @@
 Usage: venv/bin/python -I rank.py <scored.json> <embedded.npy> <stats.json> <lab.json>
 score(a, b) = cosine(a, b) - 0.04 * |log(price_a / price_b)| + 0.10 * quality(b)
 """
-import json, math, sys
+import json, math, sys, urllib.parse
 import numpy as np
 
-QUALITY_MIN = 0.45
+sys.path.insert(0, __file__.rsplit("/", 1)[0])
+from common import display_name  # noqa: E402
+
+QUALITY_MIN = 0.4
 NEIGHBORS = 12
 
 
@@ -23,6 +26,7 @@ def main(scored_path, vectors_path, stats_path, out_path):
     score = S - 0.04 * gap + 0.10 * q[None, :]
     np.fill_diagonal(score, -math.inf)
     for i, b in enumerate(pool):
+        b["name"] = display_name(b["name"], urllib.parse.urlsplit(b["site"]).hostname or "")
         order = np.argsort(-score[i])[:NEIGHBORS]
         b["neighbors"] = [{"id": pool[j]["id"], "score": round(float(score[i, j]), 3)} for j in order]
     stats = json.load(open(stats_path)) | {"scored": len(brands), "brands": len(pool)}

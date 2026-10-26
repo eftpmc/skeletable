@@ -19,7 +19,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 PER_SHEET, PHOTOS, TILE = 10, 6, 112
-BAR = 0.45  # rank.py's quality bar
+BAR = 0.4  # rank.py's quality bar
 
 
 def font(size):
@@ -69,15 +69,18 @@ def train(embedded_path, labels_path, out_path):
     idx = {b["id"]: i for i, b in enumerate(brands)}
     graded = [(idx[k], g) for k, g in labels.items() if k in idx]
     X, y = V[[i for i, _ in graded]], np.array([g for _, g in graded])
-    model = LogisticRegression(C=2.0, max_iter=2000, class_weight="balanced")
-    # Held-out check: how often the model's best guess at "distinct label" agrees with a grade it didn't see.
+    model = LogisticRegression(C=8.0, max_iter=3000, class_weight="balanced")
+    # Held-out check: score each graded brand with a model that didn't see its grade, then ask,
+    # for each possible bar, how much is kept and how much of what's kept is noise (grade 0).
     p = cross_val_predict(model, X, y, cv=5, method="predict_proba")
-    exp = p @ model.fit(X, y).classes_
-    top = exp >= 1.4
-    print(json.dumps({"graded": len(y), "by_grade": {int(g): int((y == g).sum()) for g in sorted(set(y))},
-                      "held_out_precision_at_grade2": round(float((y[top] == 2).mean()), 2) if top.any() else None,
-                      "held_out_recall_grade2": round(float(top[y == 2].mean()), 2) if (y == 2).any() else None,
-                      "held_out_zero_kept": round(float((exp[y == 0] >= 0.8).mean()), 2) if (y == 0).any() else None}))
+    held = p @ model.fit(X, y).classes_ / 2
+    bars = {}
+    for bar in (0.35, 0.4, 0.45, 0.5, 0.55, 0.6):
+        kept = held >= bar
+        bars[bar] = {"kept": round(float(kept.mean()), 2),
+                     "noise_in_kept": round(float((y[kept] == 0).mean()), 2) if kept.any() else None,
+                     "distinct_kept": round(float(kept[y == 2].mean()), 2) if (y == 2).any() else None}
+    print(json.dumps({"graded": len(y), "by_grade": {int(g): int((y == g).sum()) for g in sorted(set(y))}, "held_out_by_bar": bars}))
     scores = model.predict_proba(V) @ model.classes_ / 2
     for b, s in zip(brands, scores):
         b["quality"] = round(float(s), 3)
