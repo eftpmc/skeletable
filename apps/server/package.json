@@ -8,7 +8,8 @@
     "build": "tsup",
     "start": "node dist/index.js",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "catalog:import": "tsx src/catalog/import-cli.ts"
   },
   "dependencies": {
     "@closet/db": "workspace:*",

@@ -29,6 +29,20 @@
       "when": 1792992765234,
       "tag": "0003_alerts",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793033872177,
+      "tag": "0004_catalog",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793041212196,
+      "tag": "0005_catalog_pack",
+      "breakpoints": true
     }
   ]
 }

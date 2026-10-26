@@ -1,0 +1,407 @@
+<title>Brand Neighbors</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column. Two views share it: a starting brand with its closest brands, and
+   "For you", ranked by the viewer's own likes. Results are a grid of photo-strip cards. */
+:root {
+  --bg: #fbfbfa;
+  --surface: #f0f0ed;
+  --ink: #141416;
+  --muted: #64646b;
+  --line: #e2e2de;
+  --accent: #e8329a;
+  --on-accent: #ffffff;
+  --good: #1d7a48;
+  --bad: #b3262f;
+  --display: "Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f0f11; --surface: #1b1b1f; --ink: #f1f1f2; --muted: #a2a2aa; --line: #2b2b30;
+    --accent: #ff5cb4; --on-accent: #120910; --good: #4fc184; --bad: #ff7077; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f0f11; --surface: #1b1b1f; --ink: #f1f1f2; --muted: #a2a2aa; --line: #2b2b30;
+  --accent: #ff5cb4; --on-accent: #120910; --good: #4fc184; --bad: #ff7077; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--ink); font: 15px/1.5 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+.wrap { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(30px, 5vw, 44px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.05; }
+.lede { margin: 8px 0 0; color: var(--muted); max-width: 64ch; }
+.stats { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 14px; font: 13px/1.4 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.stats b { color: var(--ink); font-weight: 500; }
+
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+input[type="search"] {
+  flex: 1 1 260px; min-width: 0; height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line);
+  background: var(--bg); color: var(--ink); font: 15px var(--body);
+}
+button, .btn {
+  height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface);
+  color: var(--ink); font: 500 14px var(--body); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;
+}
+button:hover, .btn:hover { border-color: var(--muted); }
+button:disabled { cursor: default; opacity: 0.6; }
+button:disabled:hover { border-color: var(--line); }
+button:focus-visible, .btn:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.count { font: 12px var(--mono); font-variant-numeric: tabular-nums; }
+
+.source { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; padding: 20px; border-radius: 18px; background: var(--surface); }
+.source .eyebrow { font: 12px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.source h2 { font-size: 26px; font-weight: 700; letter-spacing: -0.01em; }
+.source .btn { justify-self: start; }
+.source p { margin: 0; color: var(--muted); max-width: 70ch; }
+.source img { width: 100%; max-width: 480px; aspect-ratio: 4 / 1; object-fit: cover; border-radius: 10px; display: block; }
+.progress { height: 6px; max-width: 320px; border-radius: 6px; background: var(--line); overflow: hidden; }
+.progress span { display: block; height: 100%; background: var(--accent); }
+
+.summary { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; }
+.summary h3 { font-size: 20px; font-weight: 600; }
+.summary .score { font: 13px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 16px; }
+.card { display: flex; flex-direction: column; gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--bg); min-width: 0; }
+.card[data-verdict="like"] { border-color: var(--good); }
+.card[data-verdict="skip"], .card[data-verdict="flag"] { opacity: 0.55; }
+.card img { width: 100%; aspect-ratio: 4 / 1; object-fit: cover; border-radius: 8px; display: block; background: var(--surface); }
+.card .top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.card h4 { margin: 0; font: 600 17px/1.25 var(--display); overflow-wrap: anywhere; }
+.card h4 a { color: inherit; text-decoration: none; }
+.card h4 a:hover { text-decoration: underline; }
+.rank { font: 12px var(--mono); color: var(--muted); white-space: nowrap; }
+.meta, .why { font-size: 13px; color: var(--muted); }
+.why b { color: var(--ink); font-weight: 500; }
+.badge { align-self: flex-start; font: 11px/1 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; padding: 5px 8px; border-radius: 999px; border: 1px dashed var(--muted); color: var(--muted); }
+.price { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.bar { height: 4px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.bar span { display: block; height: 100%; background: var(--accent); }
+.sample { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; align-items: center; }
+.actions button { height: 36px; padding: 0 12px; font-size: 13px; }
+.like[aria-pressed="true"] { background: var(--good); border-color: var(--good); color: var(--bg); }
+.skip[aria-pressed="true"], .flag[aria-pressed="true"] { background: var(--bad); border-color: var(--bad); color: var(--bg); }
+.flag { border-style: dashed; }
+.more { margin-left: auto; }
+
+details { border-top: 1px solid var(--line); padding-top: 18px; }
+summary { cursor: pointer; font: 600 16px var(--display); }
+details ol { margin: 12px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; max-width: 72ch; color: var(--muted); }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+@media (prefers-reduced-motion: no-preference) { .card { transition: opacity .2s, border-color .2s; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Brand Neighbors</h1>
+    <p class="lede">Find clothing brands you've never heard of. Start from a brand and follow its closest brands, or like a few and let "For you" learn your taste. Every brand was found automatically from the open web, with no hand-picked list, and every like and flag teaches the quality score for everyone.</p>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <div class="tabs" role="group" aria-label="View">
+    <button type="button" class="chip" id="tab-like" aria-pressed="true">Brands like…</button>
+    <button type="button" class="chip" id="tab-you" aria-pressed="false">For you <span class="count" id="you-count"></span></button>
+  </div>
+
+  <div class="controls" role="search" id="controls">
+    <input type="search" id="brand-search" list="brand-list" placeholder="Start from any brand, like Uniqlo" aria-label="Start from any brand" autocomplete="off">
+    <datalist id="brand-list"></datalist>
+    <button type="button" id="surprise">Surprise me</button>
+  </div>
+
+  <section class="source" id="source" aria-live="polite"></section>
+
+  <section aria-labelledby="results-title" style="display:flex;flex-direction:column;gap:14px">
+    <div class="summary">
+      <h3 id="results-title">Closest brands</h3>
+      <span class="score" id="tally"></span>
+    </div>
+    <div class="grid" id="results"></div>
+    <p class="note" id="saving"></p>
+  </section>
+
+  <details>
+    <summary>How this test works</summary>
+    <ol id="method"></ol>
+  </details>
+</div>
+
+<script type="application/json" id="data">__DATA__</script>
+<script>
+(() => {
+  const data = JSON.parse(document.getElementById("data").textContent);
+  const brands = data.brands;
+  const byId = new Map(brands.map((b, i) => [b.id, Object.assign(b, { i })]));
+  // Brands we know by name from other stores' listings: starting points only, never results.
+  const starts = data.starts || [];
+  for (const st of starts) byId.set(st.id, Object.assign(st, { start: true }));
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, attrs = {}, ...kids) => {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (k === "text") n.textContent = v;
+      else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+      else n.setAttribute(k, v);
+    }
+    for (const kid of kids) if (kid !== null && kid !== undefined && kid !== false) n.append(kid);
+    return n;
+  };
+  const fill = (node, ...kids) => node.replaceChildren(...kids.filter((k) => k !== null && k !== undefined && k !== false));
+  const money = (n) => "$" + Math.round(n).toLocaleString("en-US");
+  const range = (b) => (b.low === b.high ? money(b.low) : `${money(b.low)}–${money(b.high)}`);
+  const num = (x) => x.toLocaleString("en-US");
+  const PLATFORM = { shopify: "Shopify", woocommerce: "WooCommerce", squarespace: "Squarespace", bigcartel: "Big Cartel", wix: "Wix",
+    bigcommerce: "BigCommerce", shopline: "Shopline", salesforce: "Salesforce", other: "Own site" };
+  const UNLOCK = 5;      // likes before "For you" opens
+  const EXPLORE = 2;     // of every ten "For you" slots, brands nobody has voted on yet
+
+  // Photo vectors (int8, one row per brand), normalized once.
+  const dim = data.dim;
+  const raw = Uint8Array.from(atob(data.vecs), (c) => c.charCodeAt(0));
+  const vecs = new Float32Array(raw.length);
+  for (let r = 0; r < brands.length; r++) {
+    let norm = 0;
+    for (let k = 0; k < dim; k++) { const x = (raw[r * dim + k] << 24) >> 24; vecs[r * dim + k] = x; norm += x * x; }
+    norm = Math.sqrt(norm) || 1;
+    for (let k = 0; k < dim; k++) vecs[r * dim + k] /= norm;
+  }
+  const dot = (t, i) => { let s = 0; for (let k = 0; k < dim; k++) s += t[k] * vecs[i * dim + k]; return s; };
+
+  // Stats and method, from the real run.
+  const s = data.stats;
+  $("stats").append(
+    el("span", {}, el("b", { text: num(s.shopify_catalogs + s.wdc_sites) }), " stores read"),
+    el("span", {}, el("b", { text: num(s.selected) }), " looked like clothing labels"),
+    el("span", {}, el("b", { text: num(s.embedded) }), " passed the photo check"),
+    el("span", {}, el("b", { text: num(s.brands) }), " passed the quality bar"),
+  );
+  [
+    `Shopify: listed every *.myshopify.com store in one Common Crawl index (${num(s.shopify_stores)}) and read each public catalog once. ${num(s.shopify_catalogs)} answered.`,
+    `Every other platform: Web Data Commons pulls the product markup stores publish for Google Shopping out of Common Crawl. We read ${s.wdc_parts} of its ${num(s.wdc_parts_total)} files at random: ${num(s.wdc_sites)} sites with 8+ products, from WooCommerce, Big Cartel, custom builds and Shopify stores on their own domains.`,
+    "Kept sites that mostly sell apparel under one name, dropping merch, printed blanks, print-on-demand, marketplaces and multi-brand shops, and sites that no longer answer.",
+    "An open-source image model (CLIP) looked at up to 16 product photos per site and dropped sites whose photos aren't mostly clothing.",
+    `Quality: ${num(s.graded)} brands were graded by eye to start (distinct label, generic, or not a discovery), and a small model learned those grades from the photos so every brand gets a score. From here, likes and "not a real brand" flags from everyone who uses this page are added to those grades and the model is retrained.`,
+    `Brands you already know: stores that stock or resell other brands list them by name, so we keep a name index from those listings. ${num(s.starts || 0)} brands seen at two or more stores, Uniqlo for example, can be starting points even though we don't read their own sites. They're never offered as finds.`,
+    `For you: your likes, minus what you mark "not for me", make a taste profile in the same photo space. Brands are ranked by how close they are to it, nudged by quality. ${EXPLORE} of every 10 slots go to brands nobody has voted on yet, so new brands keep getting a chance instead of the same ones winning.`,
+    "Your likes shape your own ranking only. What's shared is each vote, one per person per brand, which is how the quality score learns.",
+    "Prices are converted to US dollars at rough rates. Product data from other platforms is from late 2024, so a few prices and products are out of date; the stores were checked live.",
+  ].forEach((t) => $("method").append(el("li", { text: t })));
+
+  // Votes: one per person per brand, "like", "skip" (not for me) or "flag" (not a real brand).
+  // Shared when the page can reach the store and knows who's viewing; this browser otherwise.
+  const mine = new Map();               // brand id -> verdict
+  const everyone = new Map();           // brand id -> Map(user -> verdict)
+  let db = null, me = null;
+  const localKey = "brand-neighbors-votes";
+  try { Object.entries(JSON.parse(localStorage.getItem(localKey) || "{}")).forEach(([k, v]) => mine.set(k, v)); } catch {}
+  const saveLocal = () => { try { localStorage.setItem(localKey, JSON.stringify(Object.fromEntries(mine))); } catch {} };
+  const segment = (x) => String(x).replace(/[^A-Za-z0-9_.~:@+-]/g, "-").slice(0, 190);
+
+  async function vote(brand, verdict, from) {
+    const next = mine.get(brand.id) === verdict ? null : verdict;
+    if (next) mine.set(brand.id, next); else mine.delete(brand.id);
+    saveLocal();
+    render();
+    if (!db || !me) return;
+    const ref = db.collection("votes").doc(segment(`${brand.id}~${me}`));
+    try {
+      if (next) await ref.set({ brand: brand.id, user: me, verdict: next, from, at: new Date().toISOString() });
+      else await ref.delete();
+    } catch {
+      $("saving").textContent = "Couldn't save that vote to the shared store; it's kept in this browser.";
+    }
+  }
+
+  // Taste: the mean of liked brands, minus half the mean of brands marked not for me or not a brand.
+  function taste() {
+    const liked = [...mine].filter(([id, v]) => v === "like" && byId.has(id)).map(([id]) => byId.get(id).i);
+    if (liked.length < UNLOCK) return null;
+    const rest = [...mine].filter(([id, v]) => v !== "like" && byId.has(id)).map(([id]) => byId.get(id).i);
+    const t = new Float32Array(dim);
+    for (const i of liked) for (let k = 0; k < dim; k++) t[k] += vecs[i * dim + k] / liked.length;
+    for (const i of rest) for (let k = 0; k < dim; k++) t[k] -= (0.5 * vecs[i * dim + k]) / rest.length;
+    const n = Math.hypot(...t) || 1;
+    for (let k = 0; k < dim; k++) t[k] /= n;
+    return { t, liked };
+  }
+  const likeCount = () => [...mine.values()].filter((v) => v === "like").length;
+  const nearestLiked = (i, liked) => liked.reduce((best, j) => {
+    let s2 = 0; for (let k = 0; k < dim; k++) s2 += vecs[i * dim + k] * vecs[j * dim + k];
+    return s2 > best.s ? { s: s2, j } : best;
+  }, { s: -Infinity, j: liked[0] }).j;
+
+  // A small, stable shuffle so the exploration slots don't jump on every render.
+  const seeded = (seed) => () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+
+  function forYou(tt) {
+    const scored = brands.filter((b) => !mine.has(b.id)).map((b) => ({ b, sc: dot(tt.t, b.i) + 0.1 * b.q })).sort((a, c) => c.sc - a.sc);
+    const picks = scored.slice(0, 10 - EXPLORE);
+    const taken = new Set(picks.map((x) => x.b.id));
+    const fresh = scored.slice(0, 80).filter((x) => !taken.has(x.b.id) && !(everyone.get(x.b.id)?.size));
+    const rnd = seeded(mine.size + 7);
+    for (let k = 0; k < EXPLORE && fresh.length; k++) {
+      const x = fresh.splice(Math.floor(rnd() * fresh.length), 1)[0];
+      picks.splice(Math.min(picks.length, 2 + k * 4), 0, Object.assign({}, x, { explore: true }));
+    }
+    return picks;
+  }
+
+  let view = "like";
+  let current = data.start;
+
+  function card(entry, i, lo, hi, tt, from) {
+    const { b, sc, explore } = entry;
+    const verdict = mine.get(b.id) || "";
+    const pct = hi === lo ? 100 : Math.round(40 + (60 * (sc - lo)) / (hi - lo));
+    const first = b.sample[0];
+    const votes = everyone.get(b.id);
+    const likes = votes ? [...votes.values()].filter((v) => v === "like").length : 0;
+    const because = tt && view === "you" ? brands[nearestLiked(b.i, tt.liked)] : null;
+    return el("article", { class: "card", "data-verdict": verdict },
+      el("div", { class: "top" },
+        el("h4", {}, el("a", { href: b.site, target: "_blank", rel: "noopener noreferrer", text: b.name })),
+        el("span", { class: "rank", text: `#${i + 1}` })),
+      explore ? el("span", { class: "badge", text: "New to everyone" }) : null,
+      el("div", { class: "meta" }, b.where ? `${b.where} · ` : "", el("span", { class: "price", text: range(b) }), ` · ${PLATFORM[b.platform] || "Own site"}`),
+      el("img", { src: b.strip, alt: `Product photos from ${b.name}`, loading: "lazy" }),
+      el("div", { class: "bar", title: `Match ${sc.toFixed(3)}` }, el("span", { style: `width:${pct}%` })),
+      because ? el("div", { class: "why" }, "Close to ", el("b", { text: because.name }), ", which you liked") : null,
+      first ? el("div", { class: "sample", text: `${first.t} · ${money(first.p)}${likes ? ` · ${likes} ${likes === 1 ? "like" : "likes"}` : ""}` }) : null,
+      el("div", { class: "actions" },
+        el("button", { type: "button", class: "like", "aria-pressed": String(verdict === "like"), onclick: () => vote(b, "like", from), text: "♥ Like" }),
+        el("button", { type: "button", class: "skip", "aria-pressed": String(verdict === "skip"), onclick: () => vote(b, "skip", from), text: "Not for me" }),
+        el("button", { type: "button", class: "flag", "aria-pressed": String(verdict === "flag"), onclick: () => vote(b, "flag", from), text: "Not a real brand", title: "Resale, dropshipping, wholesale stock, uniforms or merch" }),
+        el("button", { type: "button", class: "more", onclick: () => go(b.id), text: "Brands like this →" })));
+  }
+
+  function render() {
+    const tt = taste();
+    const likes = likeCount();
+    $("tab-like").setAttribute("aria-pressed", String(view === "like"));
+    $("tab-you").setAttribute("aria-pressed", String(view === "you"));
+    $("you-count").textContent = likes < UNLOCK ? `${likes}/${UNLOCK}` : "";
+    $("controls").hidden = view === "you";
+
+    let entries, from;
+    const box = $("source");
+    if (view === "you") {
+      from = "for-you";
+      $("results-title").textContent = tt ? "Picked for your taste" : "Like a few brands first";
+      fill(box,
+        el("span", { class: "eyebrow", text: "For you" }),
+        el("h2", { text: tt ? `Learned from ${tt.liked.length} likes` : `${likes} of ${UNLOCK} likes` }),
+        el("p", { text: tt
+          ? "Ranked by how close each brand's photos are to the ones you liked, minus what you marked not for me. Like or skip more and it updates."
+          : `Like brands in "Brands like…" and this opens at ${UNLOCK}. Mark the misses "Not for me" too; it learns from both.` }),
+        tt ? null : el("div", { class: "progress", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": String(UNLOCK), "aria-valuenow": String(likes) },
+          el("span", { style: `width:${(100 * likes) / UNLOCK}%` })),
+      );
+      entries = tt ? forYou(tt) : [];
+    } else {
+      const b = byId.get(current);
+      from = `brand:${b.id}`;
+      $("results-title").textContent = tt ? "Closest brands, ordered with your taste" : "Closest brands";
+      if (b.start) {
+        fill(box,
+          el("span", { class: "eyebrow", text: "Starting from a brand we know by name" }),
+          el("h2", { text: b.name }),
+          el("p", { text: `Seen at ${num(b.seen)} stores that sell or resell it, including ${b.stores.join(", ")}. We don't read its own site, so its look comes from those listings, and it isn't offered as a find itself.` }),
+          el("img", { src: b.strip, alt: `${b.name} products listed at other stores` }),
+          b.site ? el("a", { class: "btn", href: b.site, target: "_blank", rel: "noopener noreferrer", text: "Visit their site ↗" }) : null,
+        );
+      } else {
+        fill(box,
+          el("span", { class: "eyebrow", text: "Starting from" }),
+          el("h2", { text: b.name }),
+          el("p", { text: [b.where, range(b), PLATFORM[b.platform] || "Own site", b.desc].filter(Boolean).join(" · ") }),
+          el("img", { src: b.strip, alt: `Product photos from ${b.name}` }),
+          el("a", { class: "btn", href: b.site, target: "_blank", rel: "noopener noreferrer", text: "Visit their store ↗" }),
+        );
+      }
+      entries = b.n.map(([id, sc]) => ({ b: byId.get(id), sc: tt ? sc + 0.15 * dot(tt.t, byId.get(id).i) : sc }));
+      if (tt) entries.sort((a, c) => c.sc - a.sc);
+    }
+    const scores = entries.map((x) => x.sc);
+    const hi = Math.max(...scores), lo = Math.min(...scores);
+    $("results").replaceChildren(...entries.map((x, i) => card(x, i, lo, hi, tt, from)));
+
+    const counts = { like: 0, skip: 0, flag: 0 };
+    for (const v of mine.values()) counts[v]++;
+    const people = new Set(); let total = 0;
+    for (const m of everyone.values()) for (const u of m.keys()) { people.add(u); total++; }
+    $("tally").textContent = `You: ${counts.like} liked · ${counts.skip} not for me · ${counts.flag} flagged` +
+      (people.size ? ` — ${num(total)} votes from ${people.size} ${people.size === 1 ? "person" : "people"}` : "");
+  }
+
+  function go(id) {
+    current = id;
+    view = "like";
+    render();
+    window.scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  }
+
+  // Search, surprise, tabs.
+  const names = new Map();
+  for (const b of brands) {
+    const label = b.where ? `${b.name} — ${b.where}` : b.name;
+    names.set(label.toLowerCase(), b.id);
+    $("brand-list").append(el("option", { value: label }));
+  }
+  for (const st of starts) {
+    const label = `${st.name} — seen at ${st.seen} stores`;
+    names.set(label.toLowerCase(), st.id);
+    $("brand-list").append(el("option", { value: label }));
+  }
+  $("brand-search").addEventListener("change", (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    const id = names.get(q) || [...brands, ...starts].find((b) => b.name.toLowerCase() === q)?.id ||
+      [...brands, ...starts].find((b) => b.name.toLowerCase().includes(q))?.id;
+    if (id) { go(id); e.target.value = ""; }
+  });
+  $("surprise").addEventListener("click", () => go(brands[Math.floor(Math.random() * brands.length)].id));
+  $("tab-like").addEventListener("click", () => { view = "like"; render(); });
+  $("tab-you").addEventListener("click", () => { view = "you"; render(); });
+
+  render();
+
+  // Light up the shared vote store once the viewer answers: who is viewing, then every vote.
+  Promise.all([window.claude?.use?.("db"), window.claude?.use?.("user")]).then(async ([handle, user]) => {
+    db = handle || null;
+    me = user ? await user.id() : null;
+    if (!db || !me) { $("saving").textContent = "Votes are kept in this browser."; return; }
+    $("saving").textContent = "Votes are saved: yours shape For you, and everyone's teach the quality score.";
+    // Votes made in this browser before the store answered are sent once.
+    for (const [id, verdict] of mine) {
+      if (byId.has(id)) db.collection("votes").doc(segment(`${id}~${me}`)).set({ brand: id, user: me, verdict, from: "browser", at: new Date().toISOString() }).catch(() => {});
+    }
+    db.collection("votes").onSnapshot((snap) => {
+      everyone.clear();
+      const fromStore = new Map();
+      for (const d of snap.docs) {
+        const v = d.data();
+        if (!v || !v.brand || !v.user || !v.verdict) continue;
+        if (!everyone.has(v.brand)) everyone.set(v.brand, new Map());
+        everyone.get(v.brand).set(v.user, v.verdict);
+        if (v.user === me) fromStore.set(v.brand, v.verdict);
+      }
+      for (const [id, verdict] of fromStore) mine.set(id, verdict);
+      saveLocal();
+      render();
+    }, () => { $("saving").textContent = "Votes are kept in this browser."; });
+  });
+})();
+</script>

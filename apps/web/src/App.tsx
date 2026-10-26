@@ -4,7 +4,9 @@ import { AppShell } from "./components/AppShell";
 import { useSession } from "./lib/auth-client";
 import { AlertsPage } from "./routes/AlertsPage";
 import { AuthPage } from "./routes/AuthPage";
+import { BrandPage } from "./routes/BrandPage";
 import { ClosetPage } from "./routes/ClosetPage";
+import { DiscoverPage } from "./routes/DiscoverPage";
 import { ItemPage } from "./routes/ItemPage";
 import { ProductPage } from "./routes/ProductPage";
 import { ResultsPage } from "./routes/ResultsPage";
@@ -34,6 +36,8 @@ export function App() {
           <Route index element={<SearchHome />} />
           <Route path="/search" element={<ResultsPage />} />
           <Route path="/p/:id" element={<ProductPage />} />
+          <Route path="/discover" element={<DiscoverPage />} />
+          <Route path="/brands/:id" element={<BrandPage />} />
           <Route path="/alerts" element={<AlertsPage />} />
           <Route path="/saved" element={<SavedPage />} />
           <Route path="/collection" element={<ClosetPage />} />

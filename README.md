@@ -40,7 +40,7 @@ Store logos are read from each store's own site. When a site has none the server
 
 ## Develop
 
-Requirements: Node 22+, pnpm 10 (`corepack enable`), and Postgres 16.
+Requirements: Node 22+, pnpm 10 (`corepack enable`), and Postgres 16 with the pgvector extension (`pgvector/pgvector:pg16` in Docker, or your distro's `postgresql-16-pgvector`).
 
 ```sh
 pnpm install

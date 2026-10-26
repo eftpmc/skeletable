@@ -20,13 +20,15 @@ ENV NODE_ENV=production \
     PORT=3000 \
     DATA_DIR=/data \
     WEB_DIST=/app/web \
-    MIGRATIONS_DIR=/app/migrations
+    MIGRATIONS_DIR=/app/migrations \
+    CATALOG_PACK=/app/catalog/pack.jsonl.gz
 WORKDIR /app
 COPY --from=build /out/node_modules ./node_modules
 COPY --from=build /out/package.json ./package.json
 COPY --from=build /repo/apps/server/dist ./dist
 COPY --from=build /repo/apps/web/dist ./web
 COPY --from=build /repo/packages/db/migrations ./migrations
+COPY --from=build /repo/apps/server/catalog ./catalog
 ARG APP_VERSION=0.0.0-dev
 ENV APP_VERSION=$APP_VERSION
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
