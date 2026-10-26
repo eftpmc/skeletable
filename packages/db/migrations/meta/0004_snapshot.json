@@ -1,5 +1,5 @@
 {
-  "id": "050b2416-faef-471a-9145-ab03be32fd3d",
+  "id": "803f97c5-449d-4689-be66-11114b078af4",
   "prevId": "8961e82d-fb67-4e33-b564-c644edb93f61",
   "version": "7",
   "dialect": "postgresql",
@@ -1934,38 +1934,6 @@
           ]
         }
       },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.catalog_pack": {
-      "name": "catalog_pack",
-      "schema": "",
-      "columns": {
-        "hash": {
-          "name": "hash",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "counts": {
-          "name": "counts",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "imported_at": {
-          "name": "imported_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
