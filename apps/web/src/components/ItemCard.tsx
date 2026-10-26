@@ -4,7 +4,7 @@ import { Link } from "react-router";
 export function ItemCard({ item }: { item: Item }) {
   const cover = item.media[0];
   return (
-    <Link to={`/closet/${item.id}`} className="group block">
+    <Link to={`/owned/${item.id}`} className="group block">
       <div className="aspect-[4/5] overflow-hidden rounded-2xl bg-tile">
         {cover ? (
           <img

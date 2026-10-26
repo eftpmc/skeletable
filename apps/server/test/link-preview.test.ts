@@ -31,7 +31,7 @@ describe("parseProductPage", () => {
       brand: "Carhartt WIP",
       priceCents: 19800,
       currency: "USD",
-      category: "outerwear",
+      category: "clothing",
       colors: ["brown"],
       siteName: "Carhartt WIP",
     });
@@ -66,7 +66,7 @@ describe("parseProductPage", () => {
       brand: "Uniqlo",
       priceCents: 3990,
       images: ["https://x.example/blue.jpg"],
-      category: "tops",
+      category: "clothing",
     });
   });
 
@@ -103,7 +103,7 @@ describe("fetchLinkPreview", () => {
       title: "Heavyweight Tee",
       brand: "Camber",
       priceCents: 4200,
-      category: "tops",
+      category: "clothing",
       images: ["http://cdn.shopify.com/files/tee.jpg"],
     });
   });

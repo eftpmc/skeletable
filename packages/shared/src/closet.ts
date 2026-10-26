@@ -1,26 +1,28 @@
 import { z } from "zod";
 
 export const categories = [
-  "tops",
-  "bottoms",
-  "outerwear",
-  "dresses",
+  "clothing",
   "shoes",
-  "bags",
   "accessories",
+  "tech",
+  "gaming",
+  "home",
+  "outdoors",
+  "beauty",
   "other",
 ] as const;
 export const categorySchema = z.enum(categories);
 export type Category = z.infer<typeof categorySchema>;
 
 export const categoryLabels: Record<Category, string> = {
-  tops: "Tops",
-  bottoms: "Bottoms",
-  outerwear: "Outerwear",
-  dresses: "Dresses",
+  clothing: "Clothing",
   shoes: "Shoes",
-  bags: "Bags",
-  accessories: "Accessories",
+  accessories: "Bags & accessories",
+  tech: "Tech",
+  gaming: "Gaming",
+  home: "Home",
+  outdoors: "Outdoors & sports",
+  beauty: "Beauty",
   other: "Other",
 };
 
@@ -136,6 +138,8 @@ export type LinkPreview = {
   category: Category | null;
   colors: ColorName[];
   siteName: string | null;
+  gtin: string | null;
+  mpn: string | null;
 };
 
 export const brandFitInputSchema = z.object({

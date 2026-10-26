@@ -7,6 +7,7 @@ import { afterAll, beforeAll, beforeEach } from "vitest";
 import { createApp } from "../../src/app.js";
 import { createAuth } from "../../src/auth.js";
 import { type Config, loadConfig } from "../../src/config.js";
+import type { Deps } from "../../src/env.js";
 import { DiskStorage } from "../../src/storage.js";
 
 export const DATABASE_URL =
@@ -24,7 +25,7 @@ export function useTestApp() {
   });
 
   beforeEach(async () => {
-    await db.execute(sql`truncate table "user", "brand" cascade`);
+    await db.execute(sql`truncate table "user", "brand", "store", "product" cascade`);
   });
 
   afterAll(async () => {
@@ -32,7 +33,7 @@ export function useTestApp() {
     rmSync(dataDir, { recursive: true, force: true });
   });
 
-  function setup(overrides: Partial<Record<string, string>> = {}) {
+  function setup(overrides: Partial<Record<string, string>> = {}, extra: Partial<Pick<Deps, "sources">> = {}) {
     const config: Config = loadConfig({
       DATABASE_URL,
       PUBLIC_URL,
@@ -40,7 +41,7 @@ export function useTestApp() {
       DATA_DIR: dataDir,
       ...overrides,
     });
-    return createApp({ config, db, auth: createAuth(config, db), storage });
+    return createApp({ config, db, auth: createAuth(config, db), storage, ...extra });
   }
 
   return { db, storage, dataDir, setup };

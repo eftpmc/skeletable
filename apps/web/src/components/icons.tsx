@@ -1,48 +1,93 @@
-import type { SVGProps } from "react";
+import type { ReactNode, SVGProps } from "react";
 
-const base = {
-  width: 22,
-  height: 22,
-  viewBox: "0 0 24 24",
-  fill: "none",
-  stroke: "currentColor",
-  strokeWidth: 1.75,
-  strokeLinecap: "round",
-  strokeLinejoin: "round",
-} as const;
+// Icons from Lucide (ISC license, https://lucide.dev).
 
-export function DiscoverIcon(props: SVGProps<SVGSVGElement>) {
+type IconProps = SVGProps<SVGSVGElement> & { size?: number };
+
+function Icon({ size = 22, children, ...props }: IconProps & { children: ReactNode }) {
   return (
-    <svg {...base} {...props}>
-      <rect x="3" y="3" width="7.5" height="10" rx="2" />
-      <rect x="13.5" y="3" width="7.5" height="6" rx="2" />
-      <rect x="3" y="16" width="7.5" height="5" rx="2" />
-      <rect x="13.5" y="12" width="7.5" height="9" rx="2" />
+    <svg
+      aria-hidden="true"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      {children}
     </svg>
   );
 }
 
-export function ClosetIcon(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg {...base} {...props}>
-      <path d="M12 4.5a2 2 0 1 1 2 2c-.8 0-2 .6-2 1.6V9" />
-      <path d="M12 9 3.6 15.2A1.5 1.5 0 0 0 4.5 18h15a1.5 1.5 0 0 0 .9-2.8Z" />
-    </svg>
-  );
-}
+export const SearchIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="m21 21-4.34-4.34" />
+    <circle cx="11" cy="11" r="8" />
+  </Icon>
+);
 
-export function SavedIcon(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg {...base} {...props}>
-      <path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4.5L5 21V4.5a1 1 0 0 1 1-1Z" />
-    </svg>
-  );
-}
+export const BellIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M10.268 21a2 2 0 0 0 3.464 0" />
+    <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" />
+  </Icon>
+);
 
-export function PlusIcon(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg {...base} {...props}>
-      <path d="M12 5v14M5 12h14" />
-    </svg>
-  );
-}
+export const BookmarkIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z" />
+  </Icon>
+);
+
+export const PackageIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z" />
+    <path d="M12 22V12" />
+    <polyline points="3.29 7 12 12 20.71 7" />
+    <path d="m7.5 4.27 9 5.15" />
+  </Icon>
+);
+
+export const ChevronLeftIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="m15 18-6-6 6-6" />
+  </Icon>
+);
+
+export const ChevronRightIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="m9 18 6-6-6-6" />
+  </Icon>
+);
+
+export const XIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M18 6 6 18" />
+    <path d="m6 6 12 12" />
+  </Icon>
+);
+
+export const ArrowUpRightIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M7 7h10v10" />
+    <path d="M7 17 17 7" />
+  </Icon>
+);
+
+export const PlusIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M5 12h14" />
+    <path d="M12 5v14" />
+  </Icon>
+);
+
+export const CameraIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z" />
+    <circle cx="12" cy="13" r="3" />
+  </Icon>
+);

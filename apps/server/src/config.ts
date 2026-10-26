@@ -21,6 +21,16 @@ const configSchema = z.object({
   TRUST_PROXY: booleanFromEnv.default(false),
   // Let link import reach private network addresses. Leave off unless you need it.
   ALLOW_PRIVATE_FETCH: booleanFromEnv.default(false),
+  // Search sources. Each is off until configured.
+  // Comma-separated Shopify store domains; add "|used" for secondhand shops, e.g. "shop.example.com|used".
+  SHOPIFY_STORES: z.string().optional(),
+  SHOPIFY_PROTOCOL: z.enum(["https", "http"]).default("https"),
+  EBAY_CLIENT_ID: z.string().optional(),
+  EBAY_CLIENT_SECRET: z.string().optional(),
+  EBAY_MARKETPLACE: z.string().default("EBAY_US"),
+  EBAY_API_BASE: z.string().url().optional(),
+  BESTBUY_API_KEY: z.string().optional(),
+  BESTBUY_API_BASE: z.string().url().optional(),
   // Override where migrations are read from (the Docker image sets this).
   MIGRATIONS_DIR: z.string().optional(),
 });

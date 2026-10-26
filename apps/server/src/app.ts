@@ -5,10 +5,15 @@ import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { clientIp, withClientIp } from "./client-ip.js";
 import { closetRoutes } from "./closet/routes.js";
+import { searchRoutes } from "./search/routes.js";
+import { SearchService } from "./search/service.js";
+import { sourcesFromConfig } from "./search/sources/index.js";
 import type { AppEnv, AuthedEnv, Deps } from "./env.js";
 
 export function createApp(deps: Deps) {
   const { config, db, auth } = deps;
+  const { sources, info: sourceInfo } = deps.sources ?? sourcesFromConfig(config);
+  const search = new SearchService(db, sources, { allowPrivate: config.ALLOW_PRIVATE_FETCH });
   const app = new Hono<AppEnv>();
 
   if (process.env.NODE_ENV !== "test") app.use(logger());
@@ -55,6 +60,7 @@ export function createApp(deps: Deps) {
     if (!c.get("user")) return c.json({ error: "unauthorized" }, 401);
     await next();
   });
+  authed.route("/", searchRoutes(search, sourceInfo));
   authed.route("/", closetRoutes(deps));
   app.route("/api", authed);
 

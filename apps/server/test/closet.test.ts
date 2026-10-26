@@ -52,7 +52,7 @@ describe("closet items", () => {
     const created = await user.post("/api/items", {
       title: "Oxford Shirt",
       brand: "Uniqlo",
-      category: "tops",
+      category: "clothing",
       size: "M",
       priceCents: 3990,
       currency: "usd",
@@ -79,7 +79,7 @@ describe("closet items", () => {
     const user = await signUp(app);
 
     const preview = (await (await user.post("/api/import/preview", { url: store.url("/products/detroit") })).json()) as LinkPreview;
-    expect(preview).toMatchObject({ title: "Detroit Jacket", brand: "Carhartt WIP", priceCents: 19800, category: "outerwear" });
+    expect(preview).toMatchObject({ title: "Detroit Jacket", brand: "Carhartt WIP", priceCents: 19800, category: "clothing" });
 
     const created = await user.post("/api/items", {
       title: preview.title,
@@ -105,15 +105,15 @@ describe("closet items", () => {
 
   it("filters by category, color and search text", async () => {
     const user = await signUp(setup());
-    await user.post("/api/items", { title: "Detroit Jacket", brand: "Carhartt WIP", category: "outerwear", colors: ["brown"] });
-    await user.post("/api/items", { title: "Pocket Tee", brand: "Camber", category: "tops", colors: ["white"] });
-    await user.post("/api/items", { title: "501 Jeans", brand: "Levi's", category: "bottoms", colors: ["blue"] });
+    await user.post("/api/items", { title: "Detroit Jacket", brand: "Carhartt WIP", category: "clothing", colors: ["brown"] });
+    await user.post("/api/items", { title: "AirPods Pro", brand: "Apple", category: "tech", colors: ["white"] });
+    await user.post("/api/items", { title: "501 Jeans", brand: "Levi's", category: "clothing", colors: ["blue"] });
 
     const titles = async (query: string) =>
       ((await (await user.get(`/api/items${query}`)).json()) as Item[]).map((item) => item.title);
 
     expect(await titles("")).toHaveLength(3);
-    expect(await titles("?category=tops")).toEqual(["Pocket Tee"]);
+    expect(await titles("?category=tech")).toEqual(["AirPods Pro"]);
     expect(await titles("?color=brown")).toEqual(["Detroit Jacket"]);
     expect(await titles("?q=carhartt")).toEqual(["Detroit Jacket"]);
     expect(await titles("?q=jean")).toEqual(["501 Jeans"]);
@@ -122,7 +122,7 @@ describe("closet items", () => {
 
   it("validates input", async () => {
     const user = await signUp(setup());
-    const response = await user.post("/api/items", { title: "", category: "tops" });
+    const response = await user.post("/api/items", { title: "", category: "clothing" });
     expect(response.status).toBe(400);
   });
 
@@ -131,7 +131,7 @@ describe("closet items", () => {
     const first = (await (await user.upload(await navyPhoto())).json()) as MediaRef;
     const second = (await (await user.upload(await navyPhoto())).json()) as MediaRef;
     const item = (await (
-      await user.post("/api/items", { title: "Tee", category: "tops", mediaIds: [first.id, second.id] })
+      await user.post("/api/items", { title: "Tee", category: "clothing", mediaIds: [first.id, second.id] })
     ).json()) as Item;
 
     const updated = (await (
@@ -153,7 +153,7 @@ describe("closet items", () => {
 
     const photo = (await (await alice.upload(await navyPhoto())).json()) as MediaRef;
     const item = (await (
-      await alice.post("/api/items", { title: "Secret Jacket", category: "outerwear", mediaIds: [photo.id] })
+      await alice.post("/api/items", { title: "Secret Jacket", category: "clothing", mediaIds: [photo.id] })
     ).json()) as Item;
 
     expect(await (await bob.get("/api/items")).json()).toEqual([]);
@@ -165,7 +165,7 @@ describe("closet items", () => {
 
     // Bob can't claim Alice's upload for his own item.
     const stolen = (await (
-      await bob.post("/api/items", { title: "Mine", category: "tops", mediaIds: [photo.id] })
+      await bob.post("/api/items", { title: "Mine", category: "clothing", mediaIds: [photo.id] })
     ).json()) as Item;
     expect(stolen.media).toEqual([]);
   });
@@ -200,7 +200,7 @@ describe("brand fits", () => {
       { brand: "Levi's", size: "31x30", note: null },
     ]);
 
-    await user.post("/api/items", { title: "Tee", brand: "Camber", category: "tops" });
+    await user.post("/api/items", { title: "Tee", brand: "Camber", category: "clothing" });
     expect(await (await user.get("/api/brands")).json()).toEqual(["Camber", "Carhartt WIP", "Levi's"]);
 
     const remaining = (await (await user.delete("/api/brand-fits/Levi's")).json()) as BrandFit[];
@@ -221,7 +221,7 @@ describe("export", () => {
     const user = await signUp(setup());
     const photo = (await (await user.upload(await navyPhoto())).json()) as MediaRef;
     const item = (await (
-      await user.post("/api/items", { title: "Oxford Shirt", category: "tops", mediaIds: [photo.id] })
+      await user.post("/api/items", { title: "Oxford Shirt", category: "clothing", mediaIds: [photo.id] })
     ).json()) as Item;
     await user.post(`/api/items/${item.id}/wears`, { date: "2026-10-01" });
     await user.put("/api/brand-fits", { brand: "Uniqlo", size: "M" });

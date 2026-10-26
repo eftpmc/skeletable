@@ -1,6 +1,7 @@
 import type { LinkPreview } from "@closet/shared";
 import { type HTMLElement, parse } from "node-html-parser";
 import { type SafeFetchOptions, safeFetch } from "../net/safe-fetch.js";
+import { normalizeGtin } from "../search/normalize.js";
 import { guessCategory, parseColorNames } from "./guess.js";
 
 type PageData = Omit<LinkPreview, "category" | "colors" | "url"> & { color: string | null; category: string | null };
@@ -47,6 +48,8 @@ export function parseProductPage(html: string, pageUrl: string): LinkPreview {
     category: guessCategory(fromJsonLd.category, title),
     colors: parseColorNames(colorText ?? title),
     siteName,
+    gtin: fromJsonLd.gtin,
+    mpn: fromJsonLd.mpn,
   };
 }
 
@@ -66,6 +69,8 @@ function readJsonLd(root: HTMLElement, pageUrl: string): PageData {
     result.brand ??= text(isRecord(product.brand) ? product.brand.name : product.brand);
     result.color ??= text(product.color);
     result.category ??= text(product.category);
+    result.gtin ??= normalizeGtin(product.gtin13 ?? product.gtin12 ?? product.gtin14 ?? product.gtin8 ?? product.gtin);
+    result.mpn ??= text(product.mpn);
     result.images.push(...imageUrls(product.image, pageUrl));
 
     const variants = Array.isArray(product.hasVariant) ? product.hasVariant.filter(isRecord) : [];
@@ -101,6 +106,8 @@ function readMeta(root: HTMLElement, pageUrl: string): PageData {
       .flatMap((src) => imageUrls(src, pageUrl)),
     color: first("product:color"),
     category: null,
+    gtin: null,
+    mpn: null,
   };
 }
 
@@ -215,5 +222,5 @@ function unique(values: string[]) {
 }
 
 function empty(): PageData {
-  return { title: null, brand: null, siteName: null, priceCents: null, currency: null, images: [], color: null, category: null };
+  return { title: null, brand: null, siteName: null, priceCents: null, currency: null, images: [], color: null, category: null, gtin: null, mpn: null };
 }

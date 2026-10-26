@@ -25,6 +25,9 @@ export type SafeFetchOptions = {
   timeoutMs?: number;
   maxRedirects?: number;
   accept?: string;
+  method?: "GET" | "POST";
+  headers?: Record<string, string>;
+  body?: string;
   /** Allow private and loopback addresses. Only for tests and explicit self-host opt-in. */
   allowPrivate?: boolean;
 };
@@ -41,11 +44,14 @@ export const USER_AGENT = "Mozilla/5.0 (compatible; ClosetBot/0.1; +https://gith
 export async function safeFetch(input: string, options: SafeFetchOptions = {}): Promise<SafeResponse> {
   const { maxRedirects = 5 } = options;
   let url = parseUrl(input);
+  let hopOptions = options;
 
   for (let hop = 0; hop <= maxRedirects; hop++) {
-    const response = await request(url, options);
+    const response = await request(url, hopOptions);
     if (response.status >= 300 && response.status < 400 && response.location) {
       url = parseUrl(new URL(response.location, url).toString());
+      // Like browsers, follow a redirect with a plain GET.
+      hopOptions = { ...options, method: "GET", body: undefined };
       continue;
     }
     if (response.status >= 400) {
@@ -99,7 +105,7 @@ function request(url: URL, options: SafeFetchOptions): Promise<RawResponse> {
     const req = transport.request(
       url,
       {
-        method: "GET",
+        method: options.method ?? "GET",
         lookup,
         timeout: timeoutMs,
         headers: {
@@ -107,6 +113,8 @@ function request(url: URL, options: SafeFetchOptions): Promise<RawResponse> {
           accept: options.accept ?? "*/*",
           "accept-encoding": "gzip, deflate, br",
           "accept-language": "en-US,en;q=0.9",
+          ...options.headers,
+          ...(options.body !== undefined ? { "content-length": String(Buffer.byteLength(options.body)) } : {}),
         },
       },
       (res) => {
@@ -152,7 +160,7 @@ function request(url: URL, options: SafeFetchOptions): Promise<RawResponse> {
     );
     req.on("timeout", () => req.destroy(new FetchError("The site took too long to respond", "timeout")));
     req.on("error", (error) => reject(error instanceof FetchError ? error : new FetchError(error.message, "network")));
-    req.end();
+    req.end(options.body);
   });
 }
 

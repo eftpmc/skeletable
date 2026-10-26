@@ -26,6 +26,16 @@ Open http://localhost:3000 and create an account. Data lives in `./data` (Postgr
 | `TRUST_PROXY` | `false` | Set to `true` if a reverse proxy (Caddy, nginx, Traefik) sits in front of the app, so sign-in rate limits apply per visitor. Leave `false` if the app is reached directly. |
 | `POSTGRES_PASSWORD` | `closet` | Database password (internal to the stack). |
 
+### Stores to search
+
+Pasting a product link always works. Searching by name needs at least one source:
+
+| Variable | What it adds | How to get it |
+|---|---|---|
+| `SHOPIFY_STORES` | Indie and secondhand shops on Shopify | Comma-separated domains. Add `\|used` for secondhand shops and `\|name=Shop Name` to label them, e.g. `shop.example.com\|used\|name=Second Spin` |
+| `EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET` | eBay: new, used and refurbished | Free developer account at developer.ebay.com → create a production app keyset |
+| `BESTBUY_API_KEY` | Best Buy | Free key at developer.bestbuy.com |
+
 ## Develop
 
 Requirements: Node 22+, pnpm 10 (`corepack enable`), and Postgres 16.

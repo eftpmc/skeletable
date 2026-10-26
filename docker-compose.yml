@@ -13,6 +13,11 @@ services:
       SIGNUPS_ENABLED: ${SIGNUPS_ENABLED:-true}
       SERVER_NAME: ${SERVER_NAME:-Closet}
       TRUST_PROXY: ${TRUST_PROXY:-false}
+      # Search sources (each is off until set). See README.
+      SHOPIFY_STORES: ${SHOPIFY_STORES:-}
+      EBAY_CLIENT_ID: ${EBAY_CLIENT_ID:-}
+      EBAY_CLIENT_SECRET: ${EBAY_CLIENT_SECRET:-}
+      BESTBUY_API_KEY: ${BESTBUY_API_KEY:-}
     volumes:
       - ./data/files:/data
     depends_on:

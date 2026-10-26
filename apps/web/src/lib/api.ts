@@ -8,6 +8,10 @@ import {
   type ItemPatch,
   type LinkPreview,
   type MediaRef,
+  type ProductDetail,
+  type SearchResponse,
+  type Condition,
+  type SourceInfo,
   type ServerInfo,
   serverInfoSchema,
 } from "@closet/shared";
@@ -44,7 +48,18 @@ export async function getServerInfo(): Promise<ServerInfo> {
 
 export type ItemFilters = { category?: Category; color?: ColorName; q?: string };
 
+export type SearchParams = { q: string; condition?: Condition; max?: number };
+
 export const api = {
+  search: ({ q, condition, max }: SearchParams) => {
+    const params = new URLSearchParams({ q });
+    if (condition) params.set("condition", condition);
+    if (max) params.set("max", String(max));
+    return request<SearchResponse>("GET", `/api/search?${params}`);
+  },
+  resolveLink: (url: string) => request<{ productId: string }>("POST", "/api/search/link", { url }),
+  product: (id: string) => request<ProductDetail>("GET", `/api/products/${id}`),
+  sources: () => request<SourceInfo[]>("GET", "/api/sources"),
   items: (filters: ItemFilters = {}) => {
     const params = new URLSearchParams();
     for (const [key, value] of Object.entries(filters)) if (value) params.set(key, value);

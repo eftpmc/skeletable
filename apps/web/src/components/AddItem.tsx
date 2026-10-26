@@ -13,7 +13,17 @@ type Draft = {
   sourceUrl: string | null;
 };
 
-const AddItemContext = createContext<() => void>(() => {});
+/** Details to start the form with, e.g. from a product page's "I already own this". */
+export type AddItemPrefill = {
+  title: string;
+  brand: string | null;
+  priceCents: number | null;
+  currency: string | null;
+  sourceUrl: string | null;
+  imageUrl: string | null;
+};
+
+const AddItemContext = createContext<(prefill?: AddItemPrefill) => void>(() => {});
 
 export const useAddItem = () => useContext(AddItemContext);
 
@@ -23,8 +33,23 @@ export function AddItemProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  const openSheet = useCallback(() => {
-    setDraft(null);
+  const openSheet = useCallback((prefill?: AddItemPrefill) => {
+    setDraft(
+      prefill
+        ? {
+            source: "link",
+            sourceUrl: prefill.sourceUrl,
+            values: {
+              ...emptyValues,
+              title: prefill.title,
+              brand: prefill.brand ?? "",
+              price: prefill.priceCents !== null ? (prefill.priceCents / 100).toFixed(2).replace(/\.00$/, "") : "",
+              currency: prefill.currency,
+            },
+            images: prefill.imageUrl ? [{ key: prefill.imageUrl, src: prefill.imageUrl, remoteUrl: prefill.imageUrl, selected: true }] : [],
+          }
+        : null,
+    );
     setOpen(true);
   }, []);
   const close = useCallback(() => setOpen(false), []);
@@ -32,18 +57,18 @@ export function AddItemProvider({ children }: { children: ReactNode }) {
   return (
     <AddItemContext.Provider value={openSheet}>
       {children}
-      <Sheet open={open} onClose={close} title={draft ? "Add to closet" : "Add something"}>
+      <Sheet open={open} onClose={close} title={draft ? "Add to Owned" : "Add something you own"}>
         {draft ? (
           <ItemForm
             initialValues={draft.values}
             initialImages={draft.images}
-            submitLabel="Save to closet"
+            submitLabel="Save to Owned"
             onSubmit={async (result) => {
               const item = await api.createItem({ ...result, source: draft.source, sourceUrl: draft.sourceUrl });
               await queryClient.invalidateQueries({ queryKey: ["items"] });
               void queryClient.invalidateQueries({ queryKey: ["brands"] });
               setOpen(false);
-              navigate(`/closet/${item.id}`);
+              navigate(`/owned/${item.id}`);
             }}
           />
         ) : (

@@ -3,22 +3,22 @@ import { guessCategory, parseColorNames } from "../src/closet/guess.js";
 
 describe("guessCategory", () => {
   it.each([
-    ["Detroit Jacket", "outerwear"],
-    ["Sherpa Lined Denim Jacket", "outerwear"],
-    ["Heavyweight Pocket T-Shirt", "tops"],
-    ["Relaxed Straight Jeans", "bottoms"],
+    ["Detroit Jacket", "clothing"],
+    ["Heavyweight Pocket T-Shirt", "clothing"],
     ["Air Force 1 '07 Sneakers", "shoes"],
     ["Sneaker Socks 3-Pack", "accessories"],
-    ["Shirt Jacket", "outerwear"],
-    ["Waxed Canvas Tote Bag", "bags"],
-    ["Linen Midi Dress", "dresses"],
+    ["Waxed Canvas Tote Bag", "accessories"],
+    ["Sony WH-1000XM5 Wireless Headphones", "tech"],
+    ["PS5 DualSense Controller", "gaming"],
+    ["Velvet Two-Seater Sofa", "home"],
+    ["2-Person Backpacking Tent", "outdoors"],
     ["Something Unrelated", null],
   ])("%s → %s", (title, expected) => {
     expect(guessCategory(title)).toBe(expected);
   });
 
   it("uses the store's category text too", () => {
-    expect(guessCategory("Apparel > Pants", "The Daily Standard")).toBe("bottoms");
+    expect(guessCategory("Apparel > Pants", "The Daily Standard")).toBe("clothing");
   });
 });
 

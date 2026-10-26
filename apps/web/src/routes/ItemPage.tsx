@@ -16,9 +16,9 @@ export function ItemPage() {
   if (isError || !item) {
     return (
       <div className="py-20 text-center">
-        <p className="font-medium">This piece isn't in your closet</p>
-        <Link to="/closet" className="mt-3 inline-block text-sm text-muted underline-offset-4 hover:underline">
-          Back to closet
+        <p className="font-medium">That item isn't in your Owned list</p>
+        <Link to="/owned" className="mt-3 inline-block text-sm text-muted underline-offset-4 hover:underline">
+          Back to Owned
         </Link>
       </div>
     );
@@ -53,7 +53,7 @@ function ItemDetail({ item }: { item: Item }) {
     onSuccess: async () => {
       queryClient.removeQueries({ queryKey: ["items", item.id] });
       await queryClient.invalidateQueries({ queryKey: ["items"] });
-      navigate("/closet", { replace: true });
+      navigate("/owned", { replace: true });
     },
   });
 
@@ -65,10 +65,10 @@ function ItemDetail({ item }: { item: Item }) {
     <article className="mx-auto max-w-5xl">
       <button
         type="button"
-        onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/closet"))}
+        onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/owned"))}
         className="mb-4 text-sm text-muted hover:text-ink"
       >
-        ← Closet
+        ← Owned
       </button>
 
       <div className="grid gap-8 md:grid-cols-2">
@@ -171,7 +171,7 @@ function ItemDetail({ item }: { item: Item }) {
             </button>
             <button
               type="button"
-              onClick={() => window.confirm(`Remove "${item.title}" from your closet?`) && remove.mutate()}
+              onClick={() => window.confirm(`Remove "${item.title}" from Owned?`) && remove.mutate()}
               className="h-10 rounded-full px-4 text-sm text-red-500 ring-1 ring-line hover:ring-red-500"
             >
               Remove

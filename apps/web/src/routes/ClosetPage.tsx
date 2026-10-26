@@ -1,34 +1,28 @@
 import { type Category, categories, categoryLabels } from "@closet/shared";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useDeferredValue, useState } from "react";
+import { PlusIcon } from "../components/icons";
 import { useAddItem } from "../components/AddItem";
 import { Chip, ChipRow } from "../components/Chips";
 import { ItemCard } from "../components/ItemCard";
 import { api } from "../lib/api";
 
 export function ClosetPage() {
-  const [view, setView] = useState<"items" | "outfits">("items");
-
+  const openAdd = useAddItem();
   return (
     <section>
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Closet</h1>
-        <div className="flex rounded-full bg-surface p-1 ring-1 ring-line">
-          {(["items", "outfits"] as const).map((option) => (
-            <button
-              key={option}
-              type="button"
-              onClick={() => setView(option)}
-              className={`rounded-full px-4 py-1.5 text-sm capitalize transition-colors ${
-                view === option ? "bg-ink text-canvas" : "text-muted hover:text-ink"
-              }`}
-            >
-              {option}
-            </button>
-          ))}
-        </div>
+      <div className="flex items-center justify-between gap-4 pt-4 md:pt-0">
+        <h1 className="text-[30px] font-extrabold tracking-tight">Owned</h1>
+        <button
+          type="button"
+          onClick={() => openAdd()}
+          className="flex h-9 items-center gap-1.5 rounded-full bg-surface px-4 text-[15px] font-medium"
+        >
+          <PlusIcon size={16} />
+          Add
+        </button>
       </div>
-      {view === "items" ? <Items /> : <OutfitsSoon />}
+      <Items />
     </section>
   );
 }
@@ -54,14 +48,14 @@ function Items() {
   if (everything.length === 0) {
     return (
       <div className="mt-10 flex flex-col items-center rounded-3xl border border-dashed border-line px-6 py-16 text-center">
-        <p className="text-lg font-medium">Your closet is empty</p>
-        <p className="mt-1 max-w-xs text-sm text-muted">Paste a link from a store or snap a photo to add your first piece.</p>
+        <p className="text-lg font-medium">Nothing here yet</p>
+        <p className="mt-1 max-w-xs text-sm text-muted">Add things you own to keep sizes, receipts and resale value in one place.</p>
         <button
           type="button"
-          onClick={openAdd}
+          onClick={() => openAdd()}
           className="mt-6 h-11 rounded-full bg-ink px-6 text-sm font-medium text-canvas"
         >
-          Add your first piece
+          Add something you own
         </button>
       </div>
     );
@@ -104,15 +98,6 @@ function Items() {
         </div>
       )}
     </>
-  );
-}
-
-function OutfitsSoon() {
-  return (
-    <div className="mt-10 rounded-3xl border border-dashed border-line px-6 py-16 text-center">
-      <p className="font-medium">Outfits are coming next</p>
-      <p className="mt-1 text-sm text-muted">Put pieces together, save looks and log what you wear.</p>
-    </div>
   );
 }
 

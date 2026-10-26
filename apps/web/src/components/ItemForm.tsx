@@ -43,13 +43,14 @@ export const emptyValues: ItemFormValues = {
 };
 
 const singular: Record<Category, string> = {
-  tops: "top",
-  bottoms: "bottoms",
-  outerwear: "jacket",
-  dresses: "dress",
+  clothing: "piece",
   shoes: "shoes",
-  bags: "bag",
   accessories: "accessory",
+  tech: "gadget",
+  gaming: "game gear",
+  home: "home item",
+  outdoors: "gear",
+  beauty: "beauty item",
   other: "item",
 };
 

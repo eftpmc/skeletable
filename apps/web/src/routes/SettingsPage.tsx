@@ -9,6 +9,7 @@ export function SettingsPage({ user }: { user: User }) {
   return (
     <section className="mx-auto max-w-xl space-y-10">
       <h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
+      <Sources />
       <SizesAndFit />
       <div>
         <h2 className="text-sm font-semibold">Your data</h2>
@@ -18,7 +19,7 @@ export function SettingsPage({ user }: { user: User }) {
           download
           className="mt-4 inline-flex h-10 items-center rounded-full px-4 text-sm ring-1 ring-line hover:ring-ink"
         >
-          Export closet
+          Export everything
         </a>
       </div>
       <div>
@@ -35,6 +36,30 @@ export function SettingsPage({ user }: { user: User }) {
         </button>
       </div>
     </section>
+  );
+}
+
+function Sources() {
+  const { data: sources = [] } = useQuery({ queryKey: ["sources"], queryFn: api.sources });
+  return (
+    <div>
+      <h2 className="text-sm font-semibold">Stores we search</h2>
+      <p className="mt-1 text-sm text-muted">Pasting a product link always works. These add search by name.</p>
+      <ul className="mt-4 divide-y divide-line rounded-2xl bg-surface">
+        {sources.map((source) => (
+          <li key={source.id} className="flex items-center justify-between gap-4 px-4 py-3 text-sm">
+            <span className="font-medium">{source.label}</span>
+            {source.enabled ? (
+              <span>Connected</span>
+            ) : (
+              <span className="text-right text-muted">
+                Set <code className="text-xs">{source.needs}</code>
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 

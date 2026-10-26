@@ -1,15 +1,16 @@
 import { type Category, type ColorName, colorNames } from "@closet/shared";
 
-// When a title names several garments, the last one wins:
-// "Shirt Jacket" is outerwear and "Sneaker Socks" are accessories.
+// When a title names several things, the last one wins:
+// "Shirt Jacket" is clothing, "Sneaker Socks" are accessories, "Laptop Backpack" is a bag.
 const categoryKeywords: [Category, string[]][] = [
-  ["accessories", ["sock", "socks", "belt", "hat", "cap", "beanie", "scarf", "glove", "gloves", "sunglasses", "watch", "ring", "necklace", "bracelet", "tie", "wallet", "keychain", "earring", "earrings"]],
-  ["bags", ["bag", "backpack", "tote", "duffel", "duffle", "crossbody", "purse", "handbag", "messenger", "satchel", "pouch"]],
-  ["shoes", ["shoe", "shoes", "sneaker", "sneakers", "trainer", "trainers", "boot", "boots", "loafer", "loafers", "sandal", "sandals", "slide", "slides", "clog", "clogs", "derby", "oxford", "mule", "mules", "runner"]],
-  ["outerwear", ["jacket", "coat", "parka", "puffer", "anorak", "windbreaker", "blazer", "overcoat", "trench", "gilet", "vest", "bomber", "shacket", "overshirt", "fleece", "peacoat", "raincoat"]],
-  ["dresses", ["dress", "gown", "jumpsuit", "romper", "overalls", "skirt"]],
-  ["bottoms", ["pant", "pants", "jean", "jeans", "trouser", "trousers", "chino", "chinos", "short", "shorts", "jogger", "joggers", "sweatpants", "cargo", "cargos", "legging", "leggings", "denim"]],
-  ["tops", ["shirt", "tee", "t-shirt", "tshirt", "top", "polo", "sweater", "sweatshirt", "hoodie", "crewneck", "cardigan", "henley", "tank", "jersey", "knit", "pullover", "turtleneck", "blouse", "flannel", "oxford shirt", "longsleeve"]],
+  ["accessories", ["sock", "socks", "belt", "hat", "cap", "beanie", "scarf", "glove", "gloves", "sunglasses", "watch", "ring", "necklace", "bracelet", "tie", "wallet", "keychain", "earring", "earrings", "bag", "backpack", "tote", "duffel", "duffle", "crossbody", "purse", "handbag", "messenger", "satchel", "pouch"]],
+  ["shoes", ["shoe", "shoes", "sneaker", "sneakers", "trainer", "trainers", "boot", "boots", "loafer", "loafers", "sandal", "sandals", "slide", "slides", "clog", "clogs", "derby", "oxford", "mule", "mules", "runner", "cleats"]],
+  ["clothing", ["jacket", "coat", "parka", "puffer", "anorak", "windbreaker", "blazer", "overcoat", "trench", "gilet", "vest", "bomber", "shacket", "overshirt", "fleece", "peacoat", "raincoat", "dress", "gown", "jumpsuit", "romper", "overalls", "skirt", "pant", "pants", "jean", "jeans", "trouser", "trousers", "chino", "chinos", "short", "shorts", "jogger", "joggers", "sweatpants", "cargo", "cargos", "legging", "leggings", "denim", "shirt", "tee", "t-shirt", "tshirt", "top", "polo", "sweater", "sweatshirt", "hoodie", "crewneck", "cardigan", "henley", "tank", "jersey", "knit", "pullover", "turtleneck", "blouse", "flannel", "longsleeve"]],
+  ["tech", ["headphones", "headphone", "earbuds", "airpods", "speaker", "laptop", "macbook", "tablet", "ipad", "phone", "iphone", "smartphone", "monitor", "keyboard", "mouse", "camera", "lens", "charger", "router", "smartwatch", "tv", "projector", "microphone", "drone"]],
+  ["gaming", ["console", "controller", "ps5", "ps4", "playstation", "xbox", "nintendo", "switch", "gamepad", "joystick"]],
+  ["home", ["sofa", "couch", "chair", "table", "desk", "lamp", "rug", "bed", "mattress", "pillow", "duvet", "shelf", "bookshelf", "dresser", "mug", "pan", "pot", "kettle", "vase", "plant", "planter", "mirror", "curtain", "blender", "vacuum"]],
+  ["outdoors", ["tent", "bike", "bicycle", "skateboard", "snowboard", "ski", "skis", "kayak", "dumbbell", "dumbbells", "kettlebell", "yoga", "sleeping", "hiking", "climbing", "surfboard", "helmet"]],
+  ["beauty", ["perfume", "cologne", "fragrance", "serum", "moisturizer", "lipstick", "mascara", "foundation", "shampoo", "conditioner", "razor", "trimmer"]],
 ];
 
 export function guessCategory(...texts: (string | null | undefined)[]): Category | null {
