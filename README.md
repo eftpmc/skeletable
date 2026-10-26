@@ -1,4 +1,4 @@
-# Working name TBD
+# skeleton
 
 One search for every store: new, used and refurbished, with price verdicts and alerts. Use the cloud or host it yourself.
 
@@ -14,15 +14,18 @@ echo "AUTH_SECRET=$(openssl rand -base64 32)" > .env
 docker compose up -d
 ```
 
-Open http://localhost:3000 and create an account. Data lives in `./data` (Postgres and uploaded files). Back up that folder.
+Open http://localhost:3000 and create the first account: it owns the server, and sign-ups close behind it. Data lives in `./data` (Postgres and uploaded files). Back up that folder.
+
+A self-hosted server is private: searching needs an account, and there's no landing page, just sign-in. The hosted version (`DEPLOYMENT=cloud`) opens search to everyone and shows what the app does under the search bar.
 
 | Variable | Default | Notes |
 |---|---|---|
 | `AUTH_SECRET` | required | Long random string. Keep it secret and don't change it. |
 | `PUBLIC_URL` | `http://localhost:3000` | The URL you open the app at. Must match, or sign-in fails. |
 | `PORT` | `3000` | Port on the host. |
-| `SIGNUPS_ENABLED` | `true` | Set to `false` after creating your accounts. |
-| `SERVER_NAME` | `Closet` | Shown on the sign-in screen. |
+| `SIGNUPS_ENABLED` | `false` | Set to `true` to let anyone create an account. The first account can always be created. |
+| `PUBLIC_SEARCH` | `false` | Set to `true` to let signed-out visitors search and open products, using your store keys. Each address gets 30 searches a minute. |
+| `SERVER_NAME` | `skeleton` | Shown on the sign-in screen. |
 | `TRUST_PROXY` | `false` | Set to `true` if a reverse proxy (Caddy, nginx, Traefik) sits in front of the app, so sign-in rate limits apply per visitor. Leave `false` if the app is reached directly. |
 | `POSTGRES_PASSWORD` | `closet` | Database password (internal to the stack). |
 

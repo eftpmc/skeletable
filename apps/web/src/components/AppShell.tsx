@@ -13,7 +13,7 @@ const tabs = [
 
 type User = { name: string; email: string; image?: string | null };
 
-function Wordmark({ className, onClick }: { className?: string; onClick?: () => void }) {
+export function Wordmark({ className, onClick }: { className?: string; onClick?: () => void }) {
   return (
     <Link to="/" onClick={onClick} className={cn("rounded-sm font-extrabold tracking-[-0.03em] text-ink", focusRing, className)}>
       skeleton

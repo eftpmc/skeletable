@@ -44,6 +44,8 @@ export function useTestApp() {
       PUBLIC_URL,
       AUTH_SECRET: "test-secret-that-is-at-least-32-characters-long",
       DATA_DIR: dataDir,
+      // Most tests sign up more than one person; the closed-by-default behavior has its own tests.
+      SIGNUPS_ENABLED: "true",
       ...overrides,
     });
     const deps: Deps = { config, db, auth: createAuth(config, db), storage, ...extra };

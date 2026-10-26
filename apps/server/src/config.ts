@@ -11,8 +11,12 @@ const configSchema = z.object({
   PUBLIC_URL: z.string().url(),
   PORT: z.coerce.number().int().positive().default(3000),
   DEPLOYMENT: deploymentSchema.default("selfhost"),
-  SIGNUPS_ENABLED: booleanFromEnv.default(true),
-  SERVER_NAME: z.string().default("Closet"),
+  // Anyone can create an account. The first account (the owner) can always be created.
+  // Defaults to on in the cloud, off when self-hosting.
+  SIGNUPS_ENABLED: booleanFromEnv.optional(),
+  // Signed-out visitors can search and open products. Defaults to on in the cloud, off when self-hosting.
+  PUBLIC_SEARCH: booleanFromEnv.optional(),
+  SERVER_NAME: z.string().default("skeleton"),
   APP_VERSION: z.string().default("0.0.0-dev"),
   DATA_DIR: z.string().default("./data"),
   // Directory with the built web app. When set, the server also serves the UI.
@@ -43,10 +47,17 @@ const configSchema = z.object({
   CATALOG_PACK: z.string().optional(),
 });
 
-export type Config = z.infer<typeof configSchema>;
+// Settings whose default depends on the deployment.
+const resolvedSchema = configSchema.transform((config) => ({
+  ...config,
+  SIGNUPS_ENABLED: config.SIGNUPS_ENABLED ?? config.DEPLOYMENT === "cloud",
+  PUBLIC_SEARCH: config.PUBLIC_SEARCH ?? config.DEPLOYMENT === "cloud",
+}));
+
+export type Config = z.infer<typeof resolvedSchema>;
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
-  const result = configSchema.safeParse(env);
+  const result = resolvedSchema.safeParse(env);
   if (!result.success) {
     const issues = result.error.issues.map((issue) => `  ${issue.path.join(".")}: ${issue.message}`);
     throw new Error(`Invalid configuration:\n${issues.join("\n")}`);

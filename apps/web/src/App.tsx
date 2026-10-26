@@ -1,7 +1,9 @@
-import { Navigate, Route, Routes } from "react-router";
+import { Navigate, Route, Routes, useLocation } from "react-router";
 import { AddItemProvider } from "./components/AddItem";
 import { AppShell } from "./components/AppShell";
+import { PublicShell } from "./components/PublicShell";
 import { useSession } from "./lib/auth-client";
+import { nextPath, useServerInfo } from "./lib/viewer";
 import { AlertsPage } from "./routes/AlertsPage";
 import { AuthPage } from "./routes/AuthPage";
 import { BrandPage } from "./routes/BrandPage";
@@ -14,17 +16,37 @@ import { SavedPage } from "./routes/SavedPage";
 import { SearchHome } from "./routes/SearchHome";
 import { SettingsPage } from "./routes/SettingsPage";
 
+/** Signed out on a page that needs an account: sign in, then come back to it. */
+function SignInFirst() {
+  const { pathname, search } = useLocation();
+  return <Navigate to={pathname === "/" ? "/sign-in" : `/sign-in?next=${encodeURIComponent(pathname + search)}`} replace />;
+}
+
+/** Just signed in or up: back to the page that sent you. */
+function Continue() {
+  return <Navigate to={nextPath(useLocation().search)} replace />;
+}
+
 export function App() {
   const { data: session, isPending } = useSession();
+  const info = useServerInfo();
 
-  if (isPending) return null;
+  if (isPending || (!session && info.isPending)) return null;
 
   if (!session) {
     return (
       <Routes>
         <Route path="/sign-in" element={<AuthPage mode="sign-in" />} />
         <Route path="/sign-up" element={<AuthPage mode="sign-up" />} />
-        <Route path="*" element={<Navigate to="/sign-in" replace />} />
+        {/* On servers with public search (the cloud), searching and products need no account. */}
+        {info.data?.publicSearch && (
+          <Route element={<PublicShell />}>
+            <Route index element={<SearchHome />} />
+            <Route path="/search" element={<ResultsPage />} />
+            <Route path="/p/:id" element={<ProductPage />} />
+          </Route>
+        )}
+        <Route path="*" element={<SignInFirst />} />
       </Routes>
     );
   }
@@ -32,6 +54,8 @@ export function App() {
   return (
     <AddItemProvider>
       <Routes>
+        <Route path="/sign-in" element={<Continue />} />
+        <Route path="/sign-up" element={<Continue />} />
         <Route element={<AppShell user={session.user} />}>
           <Route index element={<SearchHome />} />
           <Route path="/search" element={<ResultsPage />} />

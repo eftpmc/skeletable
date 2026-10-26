@@ -13,10 +13,12 @@ describe("public endpoints", () => {
   });
 
   it("describes the server", async () => {
-    const response = await setup({ DEPLOYMENT: "cloud", SIGNUPS_ENABLED: "false" }).request("/api/info");
-    const info = serverInfoSchema.parse(await response.json());
+    const app = setup({ DEPLOYMENT: "cloud", SIGNUPS_ENABLED: "false" });
+    await signUp(app);
+    const info = serverInfoSchema.parse(await (await app.request("/api/info")).json());
     expect(info.deployment).toBe("cloud");
     expect(info.signupsEnabled).toBe(false);
+    expect(info.publicSearch).toBe(true);
   });
 
   it("returns 401 for unknown api routes when signed out, 404 when signed in", async () => {
@@ -60,8 +62,10 @@ describe("accounts", () => {
     expect(wrong.status).toBe(401);
   });
 
-  it("blocks sign-up when signups are disabled", async () => {
-    const response = await setup({ SIGNUPS_ENABLED: "false" }).request(post("/api/auth/sign-up/email", credentials));
+  it("blocks sign-up when signups are disabled, after the first account", async () => {
+    const app = setup({ SIGNUPS_ENABLED: "false" });
+    await signUp(app, "owner@example.com");
+    const response = await app.request(post("/api/auth/sign-up/email", credentials));
     expect(response.ok).toBe(false);
   });
 });

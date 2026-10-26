@@ -136,6 +136,7 @@ We'd reconsider pure SwiftUI only if the app became iPhone-only.
 ```
 
 - **Deployments:** unchanged from v0.1. Cloud (our keys, OAuth, R2, push) or self-hosted (Docker, the user's keys, local disk, ntfy).
+- **Front door:** the cloud's landing page is the search itself. Signed-out visitors can search and open products (rate limited per address); saving, tracking, alerts and Collection ask them to sign up and bring them back. What the app does sits under the search bar. A self-hosted server is private: sign-in only, and the first account to sign up owns it and closes sign-ups behind it. `PUBLIC_SEARCH` and `SIGNUPS_ENABLED` switch either behavior on any server. Later, public search can grow into a search engine of its own (browser search provider, public product pages for search engines).
 - **Repo:** `apps/server`, `apps/web`, `apps/mobile` (Expo), `packages/shared`, `packages/db`.
 - **Stack:** Hono, Drizzle, Postgres + pgvector, pg-boss (jobs), Better Auth, sharp, React + Vite + Tailwind, Expo + Expo Router.
 
@@ -203,7 +204,7 @@ Auth: OAuth on cloud, tokens for self-host, writes opt-in.
 
 ## 13. Open questions
 
-1. **Name and brand.**
+1. **Name and brand.** Working name **skeleton**, possibly a play on it.
 2. **First sources:** eBay plus Best Buy plus a Shopify index is free and broad. Is it worth a paid shopping-search API from day one?
 3. **Country:** US first (stores, currency, affiliate programs)?
 4. **Secondhand weight:** should used results be on by default everywhere, or per category?

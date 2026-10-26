@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, type ReactNode, createContext, useCallback, useContext, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { api } from "../lib/api";
+import { useSignUpPrompt, useSignedIn } from "../lib/viewer";
 import { type FormImage, ItemForm, type ItemFormValues, emptyValues } from "./ItemForm";
 
 type Draft = {
@@ -25,7 +26,12 @@ export type AddItemPrefill = {
 
 const AddItemContext = createContext<(prefill?: AddItemPrefill) => void>(() => {});
 
-export const useAddItem = () => useContext(AddItemContext);
+/** Open the add-item sheet. Signed out, it asks you to create an account first. */
+export function useAddItem(): (prefill?: AddItemPrefill) => void {
+  const open = useContext(AddItemContext);
+  const signUp = useSignUpPrompt();
+  return useSignedIn() ? open : () => signUp();
+}
 
 export function AddItemProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);

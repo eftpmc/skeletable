@@ -1,4 +1,4 @@
-# Self-host Closet: copy this file and .env.example, set AUTH_SECRET, then `docker compose up -d`.
+# Self-host skeleton: copy this file and .env.example, set AUTH_SECRET, then `docker compose up -d`.
 services:
   app:
     image: ghcr.io/eftpmc/skeleton:latest
@@ -10,8 +10,11 @@ services:
       AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET (openssl rand -base64 32)}
       PUBLIC_URL: ${PUBLIC_URL:-http://localhost:3000}
       DEPLOYMENT: selfhost
-      SIGNUPS_ENABLED: ${SIGNUPS_ENABLED:-true}
-      SERVER_NAME: ${SERVER_NAME:-Closet}
+      # The first account (yours) can always be created; this opens sign-ups to anyone after that.
+      SIGNUPS_ENABLED: ${SIGNUPS_ENABLED:-false}
+      # Let signed-out visitors search, using your store keys.
+      PUBLIC_SEARCH: ${PUBLIC_SEARCH:-false}
+      SERVER_NAME: ${SERVER_NAME:-skeleton}
       TRUST_PROXY: ${TRUST_PROXY:-false}
       # Search sources (each is off until set). See README.
       SHOPIFY_STORES: ${SHOPIFY_STORES:-}

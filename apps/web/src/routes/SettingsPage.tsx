@@ -8,6 +8,10 @@ import { signOut } from "../lib/auth-client";
 type User = { name: string; email: string };
 
 export function SettingsPage({ user }: { user: User }) {
+  const queryClient = useQueryClient();
+  // Drop everything cached for this account, so signed-out pages (and the next account) start clean.
+  const leave = () => signOut().then(() => queryClient.clear());
+
   return (
     <section className="mx-auto max-w-xl space-y-10">
       <ScreenTitle className="pt-4 md:pt-0">Profile</ScreenTitle>
@@ -26,7 +30,7 @@ export function SettingsPage({ user }: { user: User }) {
         <p className="mt-1 text-callout font-normal text-muted">
           {user.name} · {user.email}
         </p>
-        <Button variant="secondary" className="mt-4" onClick={() => void signOut()}>
+        <Button variant="secondary" className="mt-4" onClick={() => void leave()}>
           Sign out
         </Button>
       </div>

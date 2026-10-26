@@ -1,6 +1,7 @@
 import type { Condition, SavedSearchSummary } from "@closet/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
+import { useSignUpPrompt, useSignedIn } from "./viewer";
 
 export const alertKeys = {
   watches: ["watches"] as const,
@@ -15,12 +16,14 @@ export function useUnreadAlerts() {
 }
 
 export function useWatches() {
-  return useQuery({ queryKey: alertKeys.watches, queryFn: api.watches });
+  return useQuery({ queryKey: alertKeys.watches, queryFn: api.watches, enabled: useSignedIn() });
 }
 
-/** Track or stop tracking a product. */
+/** Track or stop tracking a product. Signed out, it asks you to create an account first. */
 export function useToggleWatch(productId: string) {
   const queryClient = useQueryClient();
+  const signedIn = useSignedIn();
+  const signUp = useSignUpPrompt();
   const { data: watches = [] } = useWatches();
   const watching = watches.some((w) => w.productId === productId);
   const mutation = useMutation({
@@ -30,19 +33,25 @@ export function useToggleWatch(productId: string) {
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: alertKeys.watches }),
   });
-  return { watching, toggle: (condition?: Condition) => mutation.mutate(condition), pending: mutation.isPending };
+  const toggle = (condition?: Condition) => (signedIn ? mutation.mutate(condition) : signUp());
+  return { watching, toggle, pending: mutation.isPending };
 }
 
 export function useSavedSearches() {
-  return useQuery({ queryKey: alertKeys.searches, queryFn: api.savedSearches });
+  return useQuery({ queryKey: alertKeys.searches, queryFn: api.savedSearches, enabled: useSignedIn() });
 }
 
 const sameSearch = (s: SavedSearchSummary, q: string, condition?: Condition, max?: number) =>
   s.query.toLowerCase() === q.toLowerCase() && s.condition === (condition ?? null) && s.max === (max ?? null);
 
-/** Save or unsave the search on screen. Opening a saved search's results clears its "N new". */
+/**
+ * Save or unsave the search on screen. Opening a saved search's results clears its "N new".
+ * Signed out, saving asks you to create an account first.
+ */
 export function useSavedSearch(q: string, condition?: Condition, max?: number) {
   const queryClient = useQueryClient();
+  const signedIn = useSignedIn();
+  const signUp = useSignUpPrompt();
   const { data: searches = [] } = useSavedSearches();
   const saved = searches.find((s) => sameSearch(s, q, condition, max)) ?? null;
   const invalidate = () => Promise.all([queryClient.invalidateQueries({ queryKey: alertKeys.searches }), queryClient.invalidateQueries({ queryKey: alertKeys.feed })]);
@@ -51,7 +60,8 @@ export function useSavedSearch(q: string, condition?: Condition, max?: number) {
     onSettled: invalidate,
   });
   const viewed = useMutation({ mutationFn: (id: string) => api.searchViewed(id), onSettled: invalidate });
-  return { saved, toggle: () => mutation.mutate(), pending: mutation.isPending, markViewed: viewed.mutate };
+  const toggle = () => (signedIn ? mutation.mutate() : signUp());
+  return { saved, toggle, pending: mutation.isPending, markViewed: viewed.mutate };
 }
 
 /** Link to a saved search's results. */
