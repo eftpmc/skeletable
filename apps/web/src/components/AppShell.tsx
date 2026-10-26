@@ -1,10 +1,11 @@
-import { Avatar, BellIcon, BookmarkIcon, IconButton, MenuIcon, NavDrawer, PackageIcon, SearchIcon, SideNav, cn, focusRing } from "@closet/ui";
+import { Avatar, BellIcon, BookmarkIcon, CompassIcon, IconButton, MenuIcon, NavDrawer, PackageIcon, SearchIcon, SideNav, cn, focusRing } from "@closet/ui";
 import { useEffect, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router";
 import { useUnreadAlerts } from "../lib/alerts";
 
 const tabs = [
   { to: "/", label: "Search", icon: SearchIcon, end: true },
+  { to: "/discover", label: "Discover", icon: CompassIcon, end: false },
   { to: "/alerts", label: "Alerts", icon: BellIcon, end: false },
   { to: "/saved", label: "Saved", icon: BookmarkIcon, end: false },
   { to: "/collection", label: "Collection", icon: PackageIcon, end: false },
@@ -29,11 +30,13 @@ export function AppShell({ user }: { user: User }) {
   // Navigating closes the drawer.
   useEffect(() => setMenuOpen(false), [pathname]);
 
-  // Results and product pages belong to Search.
+  // Results and product pages belong to Search; brand pages to Discover.
   const items = tabs.map(({ to, end, ...tab }) => ({
     ...tab,
     to,
-    active: end ? pathname === "/" || pathname.startsWith("/search") || pathname.startsWith("/p/") : pathname.startsWith(to),
+    active: end
+      ? pathname === "/" || pathname.startsWith("/search") || pathname.startsWith("/p/")
+      : pathname.startsWith(to) || (to === "/discover" && pathname.startsWith("/brands/")),
     count: to === "/alerts" ? unread : undefined,
   }));
 

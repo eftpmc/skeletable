@@ -1,9 +1,12 @@
 import {
   type AlertsResponse,
+  type BrandCard,
+  type BrandDetail,
   type BrandFit,
   type BrandFitInput,
   type Category,
   type ColorName,
+  type ForYou,
   type Item,
   type ItemInput,
   type ItemPatch,
@@ -16,6 +19,7 @@ import {
   type Condition,
   type SourceInfo,
   type ServerInfo,
+  type VoteInput,
   type WatchInput,
   type WatchSummary,
   serverInfoSchema,
@@ -94,6 +98,11 @@ export const api = {
     form.append("file", file);
     return request<MediaRef & { colors: ColorName[] }>("POST", "/api/media", form);
   },
+  findBrands: (q: string) => request<BrandCard[]>("GET", `/api/catalog/brands?${new URLSearchParams({ q })}`),
+  brand: (id: string) => request<BrandDetail>("GET", `/api/catalog/brands/${id}`),
+  voteBrand: (id: string, vote: VoteInput) => request<void>("PUT", `/api/catalog/brands/${id}/vote`, vote),
+  forYou: () => request<ForYou>("GET", "/api/catalog/for-you"),
+  starters: () => request<BrandCard[]>("GET", "/api/catalog/starters"),
   brands: () => request<string[]>("GET", "/api/brands"),
   brandFits: () => request<BrandFit[]>("GET", "/api/brand-fits"),
   saveBrandFit: (fit: BrandFitInput) => request<BrandFit[]>("PUT", "/api/brand-fits", fit),
