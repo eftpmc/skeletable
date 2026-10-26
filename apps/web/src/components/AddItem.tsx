@@ -1,10 +1,10 @@
 import type { Item } from "@closet/shared";
+import { Button, Sheet } from "@closet/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, type ReactNode, createContext, useCallback, useContext, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { api } from "../lib/api";
 import { type FormImage, ItemForm, type ItemFormValues, emptyValues } from "./ItemForm";
-import { Sheet } from "./Sheet";
 
 type Draft = {
   values: ItemFormValues;
@@ -52,12 +52,11 @@ export function AddItemProvider({ children }: { children: ReactNode }) {
     );
     setOpen(true);
   }, []);
-  const close = useCallback(() => setOpen(false), []);
 
   return (
     <AddItemContext.Provider value={openSheet}>
       {children}
-      <Sheet open={open} onClose={close} title={draft ? "Add to Owned" : "Add something you own"}>
+      <Sheet open={open} onOpenChange={setOpen} title={draft ? "Add to Owned" : "Add something you own"}>
         {draft ? (
           <ItemForm
             initialValues={draft.values}
@@ -133,7 +132,7 @@ function ChooseSource({ onDraft }: { onDraft: (draft: Draft) => void }) {
   return (
     <div className="space-y-5">
       <form onSubmit={importLink} className="space-y-3">
-        <p className="text-sm text-muted">Paste a link from any store and we'll fill in the details.</p>
+        <p className="text-callout font-normal text-muted">Paste a link from any store and we'll fill in the details.</p>
         <input
           type="url"
           inputMode="url"
@@ -142,31 +141,22 @@ function ChooseSource({ onDraft }: { onDraft: (draft: Draft) => void }) {
           onChange={(event) => setUrl(event.target.value)}
           placeholder="https://store.com/products/…"
           aria-label="Store link"
-          className="h-12 w-full rounded-2xl border border-line bg-canvas px-4 text-sm outline-none placeholder:text-muted/70 focus:border-ink"
+          className="h-12 w-full rounded-xl bg-surface px-4 text-body outline-none placeholder:text-muted focus-visible:ring-2 focus-visible:ring-focus"
         />
-        <button
-          type="submit"
-          disabled={!url.trim() || busy !== null}
-          className="h-12 w-full rounded-full bg-ink text-sm font-medium text-canvas transition-opacity disabled:opacity-40"
-        >
+        <Button type="submit" block disabled={!url.trim() || busy !== null}>
           {busy === "link" ? "Reading page…" : "Continue"}
-        </button>
+        </Button>
       </form>
 
-      <div className="flex items-center gap-3 text-xs text-muted">
+      <div className="flex items-center gap-3 text-footnote text-muted">
         <span className="h-px flex-1 bg-line" />
         or
         <span className="h-px flex-1 bg-line" />
       </div>
 
-      <button
-        type="button"
-        disabled={busy !== null}
-        onClick={() => fileInput.current?.click()}
-        className="h-12 w-full rounded-full text-sm font-medium ring-1 ring-line transition-colors hover:ring-ink disabled:opacity-40"
-      >
+      <Button variant="secondary" block disabled={busy !== null} onClick={() => fileInput.current?.click()}>
         {busy === "photo" ? "Uploading…" : "Upload photos"}
-      </button>
+      </Button>
       <input
         ref={fileInput}
         type="file"
@@ -180,7 +170,7 @@ function ChooseSource({ onDraft }: { onDraft: (draft: Draft) => void }) {
       />
 
       {error && (
-        <div className="rounded-2xl bg-canvas p-4 text-sm">
+        <div className="rounded-xl bg-surface p-4 text-callout font-normal">
           <p>{error}</p>
           <button
             type="button"

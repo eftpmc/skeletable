@@ -1,10 +1,10 @@
 import { type Item, categoryLabels } from "@closet/shared";
+import { ArrowUpRightIcon, Button, CheckIcon, ChevronLeftIcon, EmptyState, Sheet, buttonClass } from "@closet/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { Swatch } from "../components/ColorSwatches";
 import { ItemForm, emptyValues } from "../components/ItemForm";
-import { Sheet } from "../components/Sheet";
 import { api } from "../lib/api";
 import { formatMoney, formatRelativeDay, localToday } from "../lib/format";
 
@@ -15,12 +15,16 @@ export function ItemPage() {
   if (isPending) return null;
   if (isError || !item) {
     return (
-      <div className="py-20 text-center">
-        <p className="font-medium">That item isn't in your Owned list</p>
-        <Link to="/owned" className="mt-3 inline-block text-sm text-muted underline-offset-4 hover:underline">
-          Back to Owned
-        </Link>
-      </div>
+      <EmptyState
+        className="mx-auto mt-10 max-w-xl"
+        title="That isn't in your Owned list"
+        body="It may have been removed."
+        action={
+          <Link to="/owned" className={buttonClass()}>
+            Back to Owned
+          </Link>
+        }
+      />
     );
   }
   return <ItemDetail item={item} />;
@@ -63,13 +67,14 @@ function ItemDetail({ item }: { item: Item }) {
 
   return (
     <article className="mx-auto max-w-5xl">
-      <button
-        type="button"
+      <Button
+        variant="quiet"
+        className="mb-4 -ml-3"
+        icon={<ChevronLeftIcon size={18} />}
         onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/owned"))}
-        className="mb-4 text-sm text-muted hover:text-ink"
       >
-        ← Owned
-      </button>
+        Owned
+      </Button>
 
       <div className="grid gap-8 md:grid-cols-2">
         <div>
@@ -79,10 +84,10 @@ function ItemDetail({ item }: { item: Item }) {
               alt={item.title}
               width={image.width}
               height={image.height}
-              className="max-h-[75vh] w-full rounded-3xl bg-tile object-contain"
+              className="max-h-[75vh] w-full rounded-xl bg-tile object-contain"
             />
           ) : (
-            <div className="flex aspect-[4/5] items-center justify-center rounded-3xl bg-tile text-sm text-neutral-500">
+            <div className="flex aspect-[4/5] items-center justify-center rounded-xl bg-tile text-footnote text-muted">
               No photo
             </div>
           )}
@@ -93,7 +98,7 @@ function ItemDetail({ item }: { item: Item }) {
                   key={entry.id}
                   type="button"
                   onClick={() => setActiveImage(index)}
-                  className={`aspect-square w-16 shrink-0 overflow-hidden rounded-xl bg-tile ring-2 ${
+                  className={`aspect-square w-16 shrink-0 overflow-hidden rounded-sm bg-tile ring-2 ${
                     index === activeImage ? "ring-ink" : "ring-transparent"
                   }`}
                 >
@@ -105,20 +110,20 @@ function ItemDetail({ item }: { item: Item }) {
         </div>
 
         <div className="md:pt-4">
-          {item.brand && <div className="text-xs font-medium tracking-wide text-muted uppercase">{item.brand}</div>}
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">{item.title}</h1>
-          {price && <div className="mt-1 text-muted">{price}</div>}
+          {item.brand && <div className="text-callout font-normal text-muted">{item.brand}</div>}
+          <h1 className="mt-0.5 text-title-2 text-ink">{item.title}</h1>
+          {price && <div className="mt-1 text-price text-muted">{price}</div>}
 
-          <button
-            type="button"
+          <Button
+            className="mt-6"
+            block
+            variant={woreToday ? "secondary" : "primary"}
+            icon={woreToday ? <CheckIcon size={18} /> : undefined}
             onClick={() => wear.mutate()}
             disabled={wear.isPending}
-            className={`mt-6 h-12 w-full rounded-full text-sm font-medium transition-colors ${
-              woreToday ? "bg-surface text-ink ring-1 ring-line" : "bg-ink text-canvas"
-            }`}
           >
-            {woreToday ? "✓ Worn today" : "Wore it today"}
-          </button>
+            {woreToday ? "Worn today" : "Wore it today"}
+          </Button>
 
           <dl className="mt-6 grid grid-cols-3 gap-3 text-center">
             <Stat label="Worn" value={`${item.wear.count}×`} />
@@ -126,7 +131,7 @@ function ItemDetail({ item }: { item: Item }) {
             <Stat label="Per wear" value={costPerWear ?? "—"} />
           </dl>
 
-          <dl className="mt-6 divide-y divide-line border-y border-line text-sm">
+          <dl className="mt-6 divide-y divide-line overflow-hidden rounded-xl bg-surface px-4 text-body">
             <Row label="Category" value={categoryLabels[item.category]} />
             {item.size && <Row label="Size" value={item.size} />}
             {item.colors.length > 0 && (
@@ -153,34 +158,26 @@ function ItemDetail({ item }: { item: Item }) {
             )}
           </dl>
 
-          {item.notes && <p className="mt-6 text-sm whitespace-pre-line text-muted">{item.notes}</p>}
+          {item.notes && <p className="mt-6 text-callout font-normal whitespace-pre-line text-muted">{item.notes}</p>}
 
           <div className="mt-8 flex flex-wrap gap-2">
             {item.sourceUrl && (
-              <a
-                href={item.sourceUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="h-10 rounded-full px-4 text-sm leading-10 ring-1 ring-line hover:ring-ink"
-              >
-                View in store ↗
+              <a href={item.sourceUrl} target="_blank" rel="noreferrer" className={buttonClass({ variant: "secondary" })}>
+                View in store
+                <ArrowUpRightIcon size={16} />
               </a>
             )}
-            <button type="button" onClick={() => setEditing(true)} className="h-10 rounded-full px-4 text-sm ring-1 ring-line hover:ring-ink">
+            <Button variant="secondary" onClick={() => setEditing(true)}>
               Edit
-            </button>
-            <button
-              type="button"
-              onClick={() => window.confirm(`Remove "${item.title}" from Owned?`) && remove.mutate()}
-              className="h-10 rounded-full px-4 text-sm text-red-500 ring-1 ring-line hover:ring-red-500"
-            >
+            </Button>
+            <Button variant="quiet" onClick={() => window.confirm(`Remove "${item.title}" from Owned?`) && remove.mutate()}>
               Remove
-            </button>
+            </Button>
           </div>
         </div>
       </div>
 
-      <Sheet open={editing} onClose={() => setEditing(false)} title="Edit">
+      <Sheet open={editing} onOpenChange={setEditing} title="Edit">
         <ItemForm
           submitLabel="Save changes"
           initialValues={{
@@ -211,9 +208,9 @@ function ItemDetail({ item }: { item: Item }) {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl bg-surface px-2 py-3 ring-1 ring-line">
-      <dd className="text-base font-semibold">{value}</dd>
-      <dt className="mt-0.5 text-[11px] text-muted">{label}</dt>
+    <div className="rounded-xl bg-surface px-2 py-3">
+      <dd className="text-price text-ink">{value}</dd>
+      <dt className="mt-0.5 text-footnote text-muted">{label}</dt>
     </div>
   );
 }

@@ -2,7 +2,7 @@ import type { ReactNode, SVGProps } from "react";
 
 // Icons from Lucide (ISC license, https://lucide.dev).
 
-type IconProps = SVGProps<SVGSVGElement> & { size?: number };
+export type IconProps = SVGProps<SVGSVGElement> & { size?: number };
 
 function Icon({ size = 22, children, ...props }: IconProps & { children: ReactNode }) {
   return (
@@ -89,5 +89,25 @@ export const CameraIcon = (props: IconProps) => (
   <Icon {...props}>
     <path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z" />
     <circle cx="12" cy="13" r="3" />
+  </Icon>
+);
+
+export const CheckIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M20 6 9 17l-5-5" />
+  </Icon>
+);
+
+export const SlidersIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M10 5H3" />
+    <path d="M12 19H3" />
+    <path d="M14 3v4" />
+    <path d="M16 17v4" />
+    <path d="M21 12h-9" />
+    <path d="M21 19h-5" />
+    <path d="M21 5h-7" />
+    <path d="M8 10v4" />
+    <path d="M8 12H3" />
   </Icon>
 );

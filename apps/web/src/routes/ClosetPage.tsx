@@ -1,9 +1,8 @@
 import { type Category, categories, categoryLabels } from "@closet/shared";
+import { Button, Chip, ChipRow, EmptyState, PlusIcon, ScreenTitle, Skeleton, TextField } from "@closet/ui";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useDeferredValue, useState } from "react";
-import { PlusIcon } from "../components/icons";
 import { useAddItem } from "../components/AddItem";
-import { Chip, ChipRow } from "../components/Chips";
 import { ItemCard } from "../components/ItemCard";
 import { api } from "../lib/api";
 
@@ -11,17 +10,16 @@ export function ClosetPage() {
   const openAdd = useAddItem();
   return (
     <section>
-      <div className="flex items-center justify-between gap-4 pt-4 md:pt-0">
-        <h1 className="text-[30px] font-extrabold tracking-tight">Owned</h1>
-        <button
-          type="button"
-          onClick={() => openAdd()}
-          className="flex h-9 items-center gap-1.5 rounded-full bg-surface px-4 text-[15px] font-medium"
-        >
-          <PlusIcon size={16} />
-          Add
-        </button>
-      </div>
+      <ScreenTitle
+        className="pt-4 md:pt-0"
+        trailing={
+          <Chip icon={<PlusIcon size={16} />} onClick={() => openAdd()}>
+            Add
+          </Chip>
+        }
+      >
+        Owned
+      </ScreenTitle>
       <Items />
     </section>
   );
@@ -47,17 +45,12 @@ function Items() {
 
   if (everything.length === 0) {
     return (
-      <div className="mt-10 flex flex-col items-center rounded-3xl border border-dashed border-line px-6 py-16 text-center">
-        <p className="text-lg font-medium">Nothing here yet</p>
-        <p className="mt-1 max-w-xs text-sm text-muted">Add things you own to keep sizes, receipts and resale value in one place.</p>
-        <button
-          type="button"
-          onClick={() => openAdd()}
-          className="mt-6 h-11 rounded-full bg-ink px-6 text-sm font-medium text-canvas"
-        >
-          Add something you own
-        </button>
-      </div>
+      <EmptyState
+        className="mt-10"
+        title="Nothing here yet"
+        body="Add things you own to keep sizes, receipts and resale value in one place."
+        action={<Button onClick={() => openAdd()}>Add something you own</Button>}
+      />
     );
   }
 
@@ -66,21 +59,21 @@ function Items() {
   return (
     <>
       <div className="mt-5 space-y-3">
-        <input
+        <TextField
           type="search"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder={`Search ${everything.length} ${everything.length === 1 ? "piece" : "pieces"}`}
-          aria-label="Search closet"
-          className="h-11 w-full rounded-full border border-line bg-surface px-5 text-sm outline-none placeholder:text-muted focus:border-ink"
+          placeholder={`Search ${everything.length} ${everything.length === 1 ? "thing" : "things"}`}
+          aria-label="Search what you own"
+          className="h-11 rounded-full px-5"
         />
         {present.length > 1 && (
           <ChipRow>
-            <Chip active={category === null} onClick={() => setCategory(null)}>
+            <Chip selected={category === null} onClick={() => setCategory(null)}>
               All
             </Chip>
             {present.map((entry) => (
-              <Chip key={entry} active={category === entry} onClick={() => setCategory(category === entry ? null : entry)}>
+              <Chip key={entry} selected={category === entry} onClick={() => setCategory(category === entry ? null : entry)}>
                 {categoryLabels[entry]}
               </Chip>
             ))}
@@ -89,7 +82,7 @@ function Items() {
       </div>
 
       {items.length === 0 ? (
-        <p className="mt-16 text-center text-sm text-muted">Nothing matches.</p>
+        <p className="mt-16 text-center text-callout font-normal text-muted">Nothing matches.</p>
       ) : (
         <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {items.map((item) => (
@@ -105,7 +98,7 @@ function GridSkeleton() {
   return (
     <div className="mt-20 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
       {Array.from({ length: 8 }, (_, index) => (
-        <div key={index} className="aspect-[4/5] animate-pulse rounded-2xl bg-surface" />
+        <Skeleton key={index} className="aspect-[4/5]" />
       ))}
     </div>
   );

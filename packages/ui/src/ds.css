@@ -1,0 +1,12 @@
+/* Stylesheet for the design system page's previews: Tailwind's base + the utilities the kit uses.
+   Token values come from the page's own tokens.css. */
+@import "tailwindcss";
+@import "./theme.css";
+@source "./";
+
+body {
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}

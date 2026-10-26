@@ -1,27 +1,7 @@
 @import "tailwindcss";
-
-@theme {
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --color-canvas: #ffffff;
-  --color-surface: #f2f2f2;
-  --color-ink: #000000;
-  --color-muted: #6e6e73;
-  --color-line: #e5e5ea;
-  --color-alert: #ff3b30;
-  /* Product photo tiles stay light in both themes, like a store. */
-  --color-tile: #f1f1ee;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-canvas: #000000;
-    --color-surface: #1c1c1e;
-    --color-ink: #ffffff;
-    --color-muted: #98989f;
-    --color-line: #2c2c2e;
-    --color-tile: #e4e3df;
-  }
-}
+@import "@closet/ui/tokens.css";
+@import "@closet/ui/theme.css";
+@source "../../../packages/ui/src";
 
 html,
 body,
@@ -30,7 +10,8 @@ body,
 }
 
 body {
-  background: var(--color-canvas);
-  color: var(--color-ink);
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }

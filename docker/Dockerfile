@@ -8,6 +8,7 @@ COPY apps/server/package.json apps/server/
 COPY apps/web/package.json apps/web/
 COPY packages/db/package.json packages/db/
 COPY packages/shared/package.json packages/shared/
+COPY packages/ui/package.json packages/ui/
 RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm --filter @closet/web build && pnpm --filter @closet/server build

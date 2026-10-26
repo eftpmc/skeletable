@@ -1,9 +1,10 @@
-import { type Condition, conditionLabels, conditions } from "@closet/shared";
+import { type Condition, type ResultCard, conditionLabels, conditions } from "@closet/shared";
+import { Chip, ChipDivider, ChipRow, EmptyState, ProductTile, Skeleton, TileGrid } from "@closet/ui";
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { SearchBar } from "../components/SearchBar";
-import { Tile } from "../components/Tile";
 import { api } from "../lib/api";
+import { formatMoney } from "../lib/format";
 
 const prices = [50, 100, 250, 500];
 
@@ -35,75 +36,73 @@ export function ResultsPage() {
         <SearchBar key={q} initial={q} back />
       </div>
 
-      <div className="-mx-4 mt-3 flex items-center gap-2 overflow-x-auto px-4 [scrollbar-width:none] md:justify-center">
+      <ChipRow className="mt-3 md:justify-center">
         {conditions.map((c) => (
-          <Chip key={c} active={condition === c} onClick={() => set("condition", condition === c ? undefined : c)}>
+          <Chip key={c} selected={condition === c} onClick={() => set("condition", condition === c ? undefined : c)}>
             {conditionLabels[c]}
           </Chip>
         ))}
-        <span aria-hidden="true" className="h-5 w-px shrink-0 bg-line" />
+        <ChipDivider />
         {prices.map((p) => (
-          <Chip key={p} active={max === p} onClick={() => set("max", max === p ? undefined : String(p))}>
+          <Chip key={p} selected={max === p} onClick={() => set("max", max === p ? undefined : String(p))}>
             Under ${p}
           </Chip>
         ))}
-      </div>
+      </ChipRow>
 
       {isPending ? (
-        <Skeleton />
+        <TileGrid className="mt-14">
+          {[220, 170, 200, 160, 240, 180].map((h, i) => (
+            <Skeleton key={i} className="mb-2" style={{ height: h }} />
+          ))}
+        </TileGrid>
       ) : isError ? (
-        <p className="mt-16 text-center text-muted">Search isn't working right now. Try again in a moment.</p>
+        <EmptyState className="mt-10" title="Search isn't working right now" body="Try again in a moment." />
       ) : data.results.length === 0 ? (
-        <div className="mt-16 text-center">
-          <p className="font-semibold">Nothing found</p>
-          <p className="mt-1 text-sm text-muted">Try fewer words, or paste a product link.</p>
-        </div>
+        <EmptyState className="mt-10" title="Nothing found" body="Try fewer words, or paste a product link." />
       ) : (
         <>
           <div className="mt-5 flex items-baseline gap-2 px-1">
-            <span className="text-[22px] font-bold tracking-tight">
+            <span className="text-title-2 text-ink">
               {data.results.length.toLocaleString()} {data.results.length === 1 ? "result" : "results"}
             </span>
-            <span className="text-sm text-muted">
+            <span className="text-footnote text-muted">
               {data.total.toLocaleString()} {data.total === 1 ? "offer" : "offers"} from {data.storeCount}{" "}
               {data.storeCount === 1 ? "store" : "stores"}
             </span>
           </div>
           {failed.length > 0 && (
-            <p className="mt-1 px-1 text-xs text-muted">{failed.map((s) => s.label).join(", ")} didn't answer this time.</p>
+            <p className="mt-1 px-1 text-footnote text-muted">{failed.map((s) => s.label).join(", ")} didn't answer this time.</p>
           )}
-          <div className="mt-3 columns-2 gap-2 sm:columns-3 lg:columns-4">
+          <TileGrid className="mt-3">
             {data.results.map((card) => (
               <Tile key={card.productId} card={card} />
             ))}
-          </div>
+          </TileGrid>
         </>
       )}
     </section>
   );
 }
 
-function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`h-9 shrink-0 rounded-full px-4 text-[15px] transition-colors ${
-        active ? "bg-ink font-medium text-canvas" : "bg-surface text-ink"
-      }`}
-    >
-      {children}
-    </button>
-  );
+/** "Good price" beats condition; at most one badge per photo. */
+function badgeFor(card: ResultCard) {
+  if (card.verdict.label === "good") return { text: "Good price", tone: "dark" as const };
+  if (card.best.condition === "refurb") return { text: "Refurb", tone: "light" as const };
+  if (card.best.condition === "used") return { text: "Used", tone: "light" as const };
+  return null;
 }
 
-function Skeleton() {
+function Tile({ card }: { card: ResultCard }) {
   return (
-    <div className="mt-14 columns-2 gap-2 sm:columns-3 lg:columns-4">
-      {[220, 170, 200, 160, 240, 180].map((h, i) => (
-        <div key={i} className="mb-2 animate-pulse rounded-xl bg-surface" style={{ height: h }} />
-      ))}
-    </div>
+    <ProductTile
+      as={Link}
+      to={`/p/${card.productId}`}
+      image={card.imageUrl}
+      alt={card.title}
+      price={formatMoney(card.best.priceCents, card.best.currency) ?? ""}
+      badge={badgeFor(card)}
+      caption={`${card.storeCount > 1 ? `${card.storeCount} stores` : card.best.store.name} · ${card.title}`}
+    />
   );
 }

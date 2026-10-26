@@ -1,3 +1,4 @@
+import { Button, TextField } from "@closet/ui";
 import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 import { Link } from "react-router";
@@ -27,8 +28,8 @@ export function AuthPage({ mode }: { mode: "sign-in" | "sign-up" }) {
   return (
     <div className="flex min-h-full items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
-        <h1 className="text-center text-3xl font-semibold tracking-tight">closet</h1>
-        <p className="mt-2 text-center text-sm text-muted">
+        <h1 className="text-center text-title-1 text-ink">search</h1>
+        <p className="mt-2 text-center text-callout font-normal text-muted">
           {isSignUp ? "Create your account" : "Welcome back"}
           {info && info.name !== "Closet" ? ` · ${info.name}` : ""}
         </p>
@@ -43,18 +44,14 @@ export function AuthPage({ mode }: { mode: "sign-in" | "sign-up" }) {
             autoComplete={isSignUp ? "new-password" : "current-password"}
             minLength={8}
           />
-          {error && <p className="text-sm text-red-500">{error}</p>}
-          <button
-            type="submit"
-            disabled={submitting}
-            className="h-12 w-full rounded-full bg-ink text-sm font-medium text-canvas transition-opacity disabled:opacity-50"
-          >
+          {error && <p className="text-callout font-normal text-ink">{error}</p>}
+          <Button type="submit" block disabled={submitting}>
             {isSignUp ? "Create account" : "Sign in"}
-          </button>
+          </Button>
         </form>
 
         {isSignUp ? (
-          <p className="mt-6 text-center text-sm text-muted">
+          <p className="mt-6 text-center text-callout font-normal text-muted">
             Already have an account?{" "}
             <Link to="/sign-in" className="text-ink underline-offset-4 hover:underline">
               Sign in
@@ -62,7 +59,7 @@ export function AuthPage({ mode }: { mode: "sign-in" | "sign-up" }) {
           </p>
         ) : (
           info?.signupsEnabled && (
-            <p className="mt-6 text-center text-sm text-muted">
+            <p className="mt-6 text-center text-callout font-normal text-muted">
               New here?{" "}
               <Link to="/sign-up" className="text-ink underline-offset-4 hover:underline">
                 Create an account
@@ -77,10 +74,6 @@ export function AuthPage({ mode }: { mode: "sign-in" | "sign-up" }) {
 
 function Field(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
-    <input
-      required
-      {...props}
-      className="h-12 w-full rounded-2xl border border-line bg-surface px-4 text-sm outline-none placeholder:text-muted focus:border-ink"
-    />
+    <TextField required aria-label={props.placeholder} {...props} />
   );
 }

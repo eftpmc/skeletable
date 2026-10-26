@@ -35,11 +35,11 @@ export function App() {
           <Route path="/p/:id" element={<ProductPage />} />
           <Route
             path="/alerts"
-            element={<Placeholder title="Alerts" body="Save a search and we'll tell you when new ones show up or prices drop." />}
+            element={<Placeholder title="Alerts" heading="No alerts yet" body="Save a search and we'll tell you when new ones show up or prices drop." />}
           />
           <Route
             path="/saved"
-            element={<Placeholder title="Saved" body="Products you track show up here, with their best price." />}
+            element={<Placeholder title="Saved" heading="Nothing saved yet" body="Products you track show up here, with their best price." />}
           />
           <Route path="/owned" element={<ClosetPage />} />
           <Route path="/owned/:id" element={<ItemPage />} />

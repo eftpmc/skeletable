@@ -1,9 +1,9 @@
 import { type Category, type ColorName, type ItemInput, categories, categoryLabels } from "@closet/shared";
+import { Button, CheckIcon, Chip, Field, TextArea, TextField } from "@closet/ui";
 import { useQuery } from "@tanstack/react-query";
-import { type FormEvent, type ReactNode, useRef, useState } from "react";
+import { type FormEvent, type InputHTMLAttributes, useRef, useState } from "react";
 import { api } from "../lib/api";
 import { parseMoneyToCents } from "../lib/format";
-import { Chip } from "./Chips";
 import { ColorPicker } from "./ColorSwatches";
 
 export type FormImage = {
@@ -143,16 +143,14 @@ export function ItemForm({
               )
             }
             aria-pressed={image.selected}
-            className={`relative aspect-[4/5] w-28 shrink-0 overflow-hidden rounded-2xl bg-tile ring-2 transition ${
+            className={`relative aspect-[4/5] w-28 shrink-0 overflow-hidden rounded-lg bg-tile ring-2 transition ${
               image.selected ? "ring-ink" : "opacity-40 ring-transparent"
             }`}
           >
             <img src={image.src} alt="" className="size-full object-cover" />
             {image.selected && (
-              <span className="absolute top-2 right-2 flex size-5 items-center justify-center rounded-full bg-ink text-canvas">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                  <path d="m5 12 5 5 9-10" />
-                </svg>
+              <span className="absolute top-2 right-2 flex size-5 items-center justify-center rounded-full bg-ink text-on-ink">
+                <CheckIcon size={12} strokeWidth={3} />
               </span>
             )}
           </button>
@@ -160,7 +158,7 @@ export function ItemForm({
         <button
           type="button"
           onClick={() => fileInput.current?.click()}
-          className="flex aspect-[4/5] w-28 shrink-0 flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-line text-xs text-muted hover:border-ink hover:text-ink"
+          className="flex aspect-[4/5] w-28 shrink-0 flex-col items-center justify-center gap-1 rounded-lg bg-surface text-footnote text-muted hover:text-ink"
         >
           {uploading > 0 ? "Uploading…" : "Add photo"}
         </button>
@@ -180,7 +178,7 @@ export function ItemForm({
       <Field label="Category">
         <div className="flex flex-wrap gap-2">
           {categories.map((category) => (
-            <Chip key={category} active={values.category === category} onClick={() => set("category", category)}>
+            <Chip key={category} selected={values.category === category} onClick={() => set("category", category)}>
               {categoryLabels[category]}
             </Chip>
           ))}
@@ -208,7 +206,7 @@ export function ItemForm({
         <button
           type="button"
           onClick={() => set("size", fit.size ?? "")}
-          className="-mt-3 text-left text-xs text-muted hover:text-ink"
+          className="-mt-3 text-left text-footnote text-muted hover:text-ink"
         >
           You usually wear <span className="font-medium text-ink">{fit.size}</span> in {fit.brand}
           {fit.note ? ` · ${fit.note}` : ""}. Use it
@@ -232,42 +230,21 @@ export function ItemForm({
             <Input aria-label="Bought on" type="date" value={values.purchasedOn} onChange={(value) => set("purchasedOn", value)} />
           </Field>
           <Field label="Notes">
-            <textarea
-              aria-label="Notes"
-              value={values.notes}
-              onChange={(event) => set("notes", event.target.value)}
-              rows={3}
-              className="w-full rounded-2xl border border-line bg-canvas px-4 py-3 text-sm outline-none focus:border-ink"
-            />
+            <TextArea aria-label="Notes" value={values.notes} onChange={(event) => set("notes", event.target.value)} />
           </Field>
         </>
       ) : (
-        <button type="button" onClick={() => setShowMore(true)} className="text-sm text-muted hover:text-ink">
-          + Material, date, notes
-        </button>
+        <Button variant="quiet" className="-ml-3" onClick={() => setShowMore(true)}>
+          Add material, date, notes
+        </Button>
       )}
 
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {error && <p className="text-callout font-normal text-ink">{error}</p>}
 
-      <button
-        type="submit"
-        disabled={saving || uploading > 0}
-        className="h-12 w-full rounded-full bg-ink text-sm font-medium text-canvas transition-opacity disabled:opacity-50"
-      >
+      <Button type="submit" block disabled={saving || uploading > 0}>
         {saving ? "Saving…" : submitLabel}
-      </button>
+      </Button>
     </form>
-  );
-}
-
-// A div rather than a <label>: wrapping chip buttons in a label makes clicks on the
-// label text press the first chip.
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div role="group" aria-label={label}>
-      <span className="mb-2 block text-xs font-medium text-muted">{label}</span>
-      {children}
-    </div>
   );
 }
 
@@ -275,13 +252,6 @@ function Input({
   value,
   onChange,
   ...props
-}: { value: string; onChange: (value: string) => void } & Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange">) {
-  return (
-    <input
-      {...props}
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      className="h-11 w-full rounded-2xl border border-line bg-canvas px-4 text-sm outline-none placeholder:text-muted/70 focus:border-ink"
-    />
-  );
+}: { value: string; onChange: (value: string) => void } & Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange">) {
+  return <TextField {...props} value={value} onChange={(event) => onChange(event.target.value)} />;
 }
