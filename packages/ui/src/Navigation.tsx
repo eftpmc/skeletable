@@ -1,6 +1,7 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import type { ElementType, ReactNode } from "react";
 import { cn, focusRing } from "./cn";
+import { XIcon } from "./icons";
 
 export type NavItem = {
   label: string;
@@ -111,18 +112,23 @@ export function NavPills({ items, as: Component = "a", className }: { items: Nav
   );
 }
 
-/** The sidebar on narrow screens: slides in from the left over a scrim. Escape and the scrim close it. */
+/** The sidebar on narrow screens, fullscreen. The close button and Escape close it. */
 export function NavDrawer({ open, onOpenChange, children }: { open: boolean; onOpenChange: (open: boolean) => void; children: ReactNode }) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-scrim" />
         <Dialog.Content
           aria-describedby={undefined}
-          className="fixed inset-y-0 left-0 z-50 flex w-[280px] max-w-[85vw] bg-canvas pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] text-ink shadow-float outline-none"
+          className="fixed inset-0 z-50 flex bg-canvas pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] text-ink outline-none"
         >
           <Dialog.Title className="sr-only">Menu</Dialog.Title>
           {children}
+          <Dialog.Close
+            aria-label="Close menu"
+            className={cn("absolute top-[calc(env(safe-area-inset-top)+22px)] right-2 flex size-10 items-center justify-center rounded-full text-ink", focusRing)}
+          >
+            <XIcon size={22} />
+          </Dialog.Close>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

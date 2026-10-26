@@ -71,7 +71,7 @@ export function AppShell({ user }: { user: User }) {
         <Wordmark className="px-1 py-1 text-title-3 font-extrabold" />
       </header>
       <NavDrawer open={menuOpen} onOpenChange={setMenuOpen}>
-        {sidebar("h-full w-full border-r-0", true)}
+        {sidebar("h-full w-full border-r-0 px-3 py-2", true)}
       </NavDrawer>
 
       <main className="min-w-0 flex-1 px-4 pt-4 pb-10 lg:px-10 lg:pt-6 lg:pb-16">
