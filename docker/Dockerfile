@@ -31,7 +31,6 @@ ARG APP_VERSION=0.0.0-dev
 ENV APP_VERSION=$APP_VERSION
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN mkdir -p /data && chown node:node /data
-VOLUME /data
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
   CMD wget -qO- http://127.0.0.1:3000/api/health || exit 1
