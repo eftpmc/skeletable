@@ -34,6 +34,8 @@ const configSchema = z.object({
   // Store logos come from each store's own site. When a site has none we can read, ask Google's
   // favicon service (it only sees the store's domain). "none" keeps every request on the store itself.
   STORE_ICON_FALLBACK: z.enum(["google", "none"]).default("google"),
+  // How often saved searches re-run and watched prices are checked. 0 turns it off.
+  ALERTS_INTERVAL_MINUTES: z.coerce.number().int().min(0).default(360),
   // Override where migrations are read from (the Docker image sets this).
   MIGRATIONS_DIR: z.string().optional(),
 });

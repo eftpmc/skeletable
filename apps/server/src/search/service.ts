@@ -21,7 +21,12 @@ const { brand, offer, pricePoint, product, store } = schema;
 
 export class NotFoundError extends Error {}
 
-export type SearchOptions = { condition?: Condition; maxPriceCents?: number };
+export type SearchOptions = {
+  condition?: Condition;
+  maxPriceCents?: number;
+  /** Skip the cache and ask every source again (scheduled re-runs). */
+  fresh?: boolean;
+};
 
 type StoredOffer = RawOffer & { id: string; productId: string };
 
@@ -42,7 +47,7 @@ export class SearchService {
   async search(text: string, options: SearchOptions = {}): Promise<SearchResponse> {
     const key = JSON.stringify([text.toLowerCase(), options.condition ?? null, options.maxPriceCents ?? null]);
     const cached = this.cache.get(key);
-    if (cached && Date.now() - cached.at < CACHE_TTL_MS) return cached.value;
+    if (!options.fresh && cached && Date.now() - cached.at < CACHE_TTL_MS) return cached.value;
 
     // Ask sources for every condition and price, then filter after grouping: relevance is judged
     // per product, so a terse used listing ("XM5, good condition") still shows up when it's the

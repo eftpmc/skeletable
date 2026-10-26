@@ -4,7 +4,7 @@ import path from "node:path";
 import { createDb, runMigrations } from "@closet/db";
 import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach } from "vitest";
-import { createApp } from "../../src/app.js";
+import { createApp, createServices } from "../../src/app.js";
 import { createAuth } from "../../src/auth.js";
 import { type Config, loadConfig } from "../../src/config.js";
 import type { Deps } from "../../src/env.js";
@@ -34,6 +34,11 @@ export function useTestApp() {
   });
 
   function setup(overrides: Partial<Record<string, string>> = {}, extra: Partial<Pick<Deps, "sources">> = {}) {
+    return setupWithServices(overrides, extra).app;
+  }
+
+  /** Same as setup, plus the services behind it (to run scheduled jobs in tests). */
+  function setupWithServices(overrides: Partial<Record<string, string>> = {}, extra: Partial<Pick<Deps, "sources">> = {}) {
     const config: Config = loadConfig({
       DATABASE_URL,
       PUBLIC_URL,
@@ -41,10 +46,12 @@ export function useTestApp() {
       DATA_DIR: dataDir,
       ...overrides,
     });
-    return createApp({ config, db, auth: createAuth(config, db), storage, ...extra });
+    const deps: Deps = { config, db, auth: createAuth(config, db), storage, ...extra };
+    const services = createServices(deps);
+    return { app: createApp(deps, services), services };
   }
 
-  return { db, storage, dataDir, setup };
+  return { db, storage, dataDir, setup, setupWithServices };
 }
 
 export type TestApp = ReturnType<ReturnType<typeof useTestApp>["setup"]>;
