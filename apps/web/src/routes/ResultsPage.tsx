@@ -86,6 +86,17 @@ export function ResultsPage() {
     set("p", results[(Math.max(peekIndex, 0) + by + results.length) % results.length]!.productId);
   };
 
+  // Focus follows the open product, so only one tile looks picked and the grid scrolls along with the panel.
+  useEffect(() => {
+    if (!peek || !isWide) return;
+    const tile = document.querySelector<HTMLElement>('[aria-current="true"]');
+    // Only when focus is already on a tile (you clicked one); never pull it out of the panel.
+    if (tile && document.activeElement !== tile && tile.parentElement?.contains(document.activeElement)) {
+      tile.focus({ preventScroll: true });
+      tile.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  }, [peek, isWide]);
+
   // With a product open beside the results: arrows step through them, Escape closes it.
   useEffect(() => {
     if (!peek || !isWide) return;
