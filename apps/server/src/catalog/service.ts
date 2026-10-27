@@ -20,6 +20,7 @@ import {
 } from "@closet/shared";
 import { and, asc, cosineDistance, desc, eq, gte, ilike, inArray, lt, ne, notInArray, sql } from "drizzle-orm";
 import { readPreferences } from "../preferences/service.js";
+import { type CatalogIndex, toIndexed } from "./search-index.js";
 
 const { brand, brandProfile, brandView, brandVote, catalogItem, itemView, offer, watch } = schema;
 
@@ -104,7 +105,10 @@ export function sized(url: string, px: number) {
 }
 
 export class CatalogService {
-  constructor(private db: Db) {}
+  constructor(
+    private db: Db,
+    private index: CatalogIndex,
+  ) {}
 
   /** Brands whose name contains the query: stores first, then by quality. */
   async search(userId: string, q: string, limit = 12): Promise<BrandCard[]> {
@@ -439,26 +443,51 @@ export class CatalogService {
   }
 
   /**
-   * Products on someone's side of the catalog whose brand and title hold every word of the query
-   * (each at the start of a word, so "tee" doesn't find "steel"). Read from the cached catalog, so
-   * it answers before the live stores do. The brand itself first, then titles that say it, then the
-   * brand's own order.
+   * Products on someone's side of the catalog matching every word of the query (brand, title or
+   * category, typos forgiven in longer words), from the search index, so it answers before the live
+   * stores do.
    */
   async searchItems(userId: string, q: string, limit = 24): Promise<CatalogItem[]> {
-    const words = q.toLowerCase().split(/\s+/).filter(Boolean);
-    if (!words.length) return [];
-    const patterns = words.map((w) => new RegExp(`(^|[^\\p{L}\\p{N}])${w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "u"));
-    const [{ items }, prefs] = await Promise.all([this.feedItems(), readPreferences(this.db, userId)]);
-    const query = words.join(" ");
-    const scored = this.visible(items, prefs).flatMap((i) => {
-      const brandName = i.brandName.toLowerCase();
-      const title = (i.title ?? "").toLowerCase();
-      if (!patterns.every((p) => p.test(brandName) || p.test(title))) return [];
-      const inTitle = patterns.filter((p) => p.test(title)).length;
-      return [{ i, score: (brandName === query ? 2 : 0) + inTitle / patterns.length + 0.2 * i.quality - 0.01 * i.position }];
-    });
-    scored.sort((a, z) => z.score - a.score);
-    return scored.slice(0, limit).map((x) => this.toItem(x.i));
+    const prefs = await readPreferences(this.db, userId);
+    const hits = await this.index.search(q, { departments: departmentsFor(prefs.shopFor), hidden: prefs.hiddenCategories, limit });
+    return hits.map((i) => this.toItem(i));
+  }
+
+  /** What the search index should hold: every product of every store brand above the quality bar, as Discover sees them. */
+  private async indexable() {
+    const rows = await this.db
+      .select({
+        id: catalogItem.id,
+        brandId: catalogItem.brandId,
+        brandName: brand.name,
+        title: catalogItem.title,
+        priceUsd: catalogItem.priceUsd,
+        category: catalogItem.category,
+        department: catalogItem.department,
+        imageUrl: catalogItem.imageUrl,
+        productUrl: catalogItem.productUrl,
+        quality: brandProfile.quality,
+        position: catalogItem.position,
+      })
+      .from(catalogItem)
+      .innerJoin(brandProfile, eq(brandProfile.brandId, catalogItem.brandId))
+      .innerJoin(brand, eq(brand.id, catalogItem.brandId))
+      .where(and(eq(brandProfile.kind, "store"), gte(brandProfile.quality, QUALITY_BAR)));
+    return rows.map((r) => toIndexed({ ...r, category: r.category as CategoryId, department: r.department as Department }));
+  }
+
+  /** Rebuild the search index from the database (after an import). Also drops the feed's cache, which is just as stale. */
+  async reindex(items?: Awaited<ReturnType<CatalogService["indexable"]>>) {
+    this.feedCache = null;
+    const all = items ?? (await this.indexable());
+    await this.index.replace(all);
+    return all.length;
+  }
+
+  /** Rebuild the search index only when it's missing or holds a different number of products than the database. */
+  async ensureIndexed() {
+    const [have, items] = await Promise.all([this.index.count(), this.indexable()]);
+    return have === items.length ? null : this.reindex(items);
   }
 
   /** The categories someone can browse, in the taxonomy's order, with how many products each has for them. */

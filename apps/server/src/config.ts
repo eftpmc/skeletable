@@ -56,6 +56,10 @@ const configSchema = z.object({
   // A catalog pack (gzipped JSON lines from lab/brands/export.py) to import on start when it's new.
   // The Docker image sets this to the pack it ships.
   CATALOG_PACK: z.string().optional(),
+  // The Meilisearch server holding the catalog's text search (rebuilt from the database as needed).
+  MEILI_URL: z.string().url().default("http://localhost:7700"),
+  MEILI_MASTER_KEY: z.string().optional(),
+  MEILI_INDEX: z.string().regex(/^[A-Za-z0-9_-]+$/).default("catalog_items"),
 });
 
 // Settings whose default depends on the deployment.

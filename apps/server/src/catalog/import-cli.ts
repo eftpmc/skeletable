@@ -2,6 +2,8 @@
 import { readFileSync } from "node:fs";
 import { createDb, runMigrations } from "@closet/db";
 import { catalogRecordSchema, importCatalog } from "./import.js";
+import { CatalogIndex } from "./search-index.js";
+import { CatalogService } from "./service.js";
 
 const [file] = process.argv.slice(2);
 const url = process.env.DATABASE_URL;
@@ -19,6 +21,9 @@ await runMigrations(url);
 const { db, close } = createDb(url);
 try {
   console.log(await importCatalog(db, records));
+  // The search index reads from the database, so rebuild it now (MEILI_URL and MEILI_MASTER_KEY, as the server's).
+  const index = new CatalogIndex(process.env.MEILI_URL ?? "http://localhost:7700", process.env.MEILI_MASTER_KEY, process.env.MEILI_INDEX ?? "catalog_items");
+  console.log("search index rebuilt:", await new CatalogService(db, index).reindex(), "products");
 } finally {
   await close();
 }

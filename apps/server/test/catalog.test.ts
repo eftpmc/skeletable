@@ -11,7 +11,7 @@ import { importPackIfNew } from "../src/catalog/pack.js";
 import { html, startFixtureServer } from "./helpers/fixture-server.js";
 import { signUp, useTestApp } from "./helpers/setup.js";
 
-const { db, setup } = useTestApp();
+const { db, setup, setupWithServices } = useTestApp();
 
 /** A unit vector pointing mostly along one axis, so brands near the same axis look alike. */
 function look(axis: number, lean = 0, toward = (axis + 1) % 512) {
@@ -232,7 +232,7 @@ describe("catalog", () => {
     expect(top.filter((n) => /Loud|Neon|Acid/.test(n)).length).toBeGreaterThanOrEqual(5);
   });
 
-  it("searches products by brand and title, on the viewer's side of the catalog", async () => {
+  it("searches products by brand, title and category, on the viewer's side of the catalog", async () => {
     const suus = store("Suus", 0, 0, { department: "women" }, [
       { title: "Linen Shirt Dress", category: "dresses", department: "women" },
       { title: "Wool Overshirt", category: "shirts", department: "women" },
@@ -242,7 +242,11 @@ describe("catalog", () => {
       { title: "Heavy Tee", category: "tops", department: "unisex" },
     ]);
     await importCatalog(db, [suus, winfield, lowQuality]);
-    const user = await signUp(setup());
+    const { app, services } = setupWithServices();
+    // The index is rebuilt after an import, and left alone while it matches the database.
+    expect(await services.catalog.reindex()).toBe(4);
+    expect(await services.catalog.ensureIndexed()).toBeNull();
+    const user = await signUp(app);
     const search = async (q: string) =>
       ((await (await user.get(`/api/catalog/search?q=${encodeURIComponent(q)}`)).json()) as ItemFeed["items"]).map((i) => i.title);
 
@@ -250,6 +254,9 @@ describe("catalog", () => {
     expect((await search("linen shirt")).sort()).toEqual(["Linen Shirt Dress", "Steel Grey Linen Shirt"]);
     expect(await search("tee")).toEqual(["Heavy Tee"]);
     expect(await search("overshirt")).toEqual(["Wool Overshirt"]);
+    // Typos in longer words are forgiven, and a category's name finds what's filed under it.
+    expect((await search("winfeld")).sort()).toEqual(["Heavy Tee", "Steel Grey Linen Shirt"]);
+    expect(await search("jumpsuits")).toEqual(["Linen Shirt Dress"]);
     // A brand's name finds its products; brands under the quality bar never show.
     expect((await search("winfield")).sort()).toEqual(["Heavy Tee", "Steel Grey Linen Shirt"]);
     expect(await search("wholesale")).toEqual([]);
@@ -257,6 +264,8 @@ describe("catalog", () => {
 
     await user.patch("/api/preferences", { shopFor: "men" });
     expect(await search("linen shirt")).toEqual(["Steel Grey Linen Shirt"]);
+    await user.patch("/api/preferences", { shopFor: "all", hiddenCategories: ["shirts"] });
+    expect(await search("linen shirt")).toEqual(["Linen Shirt Dress"]);
   });
 
   it("opens an item with more from its brand and more like it", async () => {

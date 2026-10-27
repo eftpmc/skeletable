@@ -12,6 +12,7 @@ import { NotifyService } from "./alerts/notify.js";
 import { alertsRoutes } from "./alerts/routes.js";
 import { AlertsService } from "./alerts/service.js";
 import { catalogRoutes } from "./catalog/routes.js";
+import { CatalogIndex } from "./catalog/search-index.js";
 import { CatalogService } from "./catalog/service.js";
 import { closetRoutes } from "./closet/routes.js";
 import { preferencesRoutes } from "./preferences/routes.js";
@@ -43,7 +44,8 @@ export function createServices(deps: Deps) {
     digestHour: config.DIGEST_HOUR,
     allowPrivate: config.ALLOW_PRIVATE_FETCH,
   });
-  return { search, stores, email: mailer !== null, icons, alerts: new AlertsService(db, search), notify, catalog: new CatalogService(db) };
+  const catalog = new CatalogService(db, new CatalogIndex(config.MEILI_URL, config.MEILI_MASTER_KEY, config.MEILI_INDEX));
+  return { search, stores, email: mailer !== null, icons, alerts: new AlertsService(db, search), notify, catalog };
 }
 
 export type Services = ReturnType<typeof createServices>;
