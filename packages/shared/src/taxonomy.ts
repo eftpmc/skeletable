@@ -43,6 +43,11 @@ export type CategoryId = (typeof catalogCategories)[number]["id"];
 export const categoryIds = catalogCategories.map((c) => c.id) as [CategoryId, ...CategoryId[]];
 export const catalogCategorySchema = z.enum(categoryIds);
 
+export type CategoryGroupId = (typeof categoryGroups)[number]["id"];
+export const categoryGroupSchema = z.enum(categoryGroups.map((g) => g.id) as [CategoryGroupId, ...CategoryGroupId[]]);
+/** The categories in one group, in display order. */
+export const categoriesIn = (group: CategoryGroupId): CategoryId[] => catalogCategories.filter((c) => c.group === group).map((c) => c.id);
+
 const labels = new Map<string, string>(catalogCategories.map((c) => [c.id, c.label]));
 export const categoryLabel = (id: string) => labels.get(id) ?? id;
 

@@ -12,7 +12,7 @@ export type NavItem = {
 };
 
 /** A count in a black pill: the only status mark in navigation. No dots. */
-function CountPill({ count, className }: { count: number; className?: string }) {
+export function CountPill({ count, className }: { count: number; className?: string }) {
   return (
     <span className={cn("inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-ink px-1.5 text-label text-on-ink tabular-nums", className)}>
       {count > 99 ? "99+" : count}

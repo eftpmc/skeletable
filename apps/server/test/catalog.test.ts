@@ -409,6 +409,10 @@ describe("catalog", () => {
     expect((await feed("&category=dresses")).map((i) => i.category)).toEqual(["dresses", "dresses"]);
     expect((await feed("&category=swimwear")).map((i) => i.category)).toEqual(["swimwear"]);
     expect(await feed("&category=gadgets")).toHaveLength(4);
+    // A group shows its categories, still without the hidden ones; an unknown group is ignored.
+    expect((await feed("&group=clothing")).map((i) => i.category).sort()).toEqual(["dresses", "dresses", "tops", "tops"]);
+    expect(await feed("&group=accessories")).toEqual([]);
+    expect(await feed("&group=gadgets")).toHaveLength(4);
 
     // Brands that only make the other side don't come up as neighbors either.
     const detail = (await (await user.get(`/api/catalog/brands/${await idOf(user, "Suus")}`)).json()) as BrandDetail;

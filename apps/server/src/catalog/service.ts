@@ -5,6 +5,7 @@ import {
   type BrandMatch,
   type CatalogItem,
   type CategoryCount,
+  type CategoryGroupId,
   type CategoryId,
   type Department,
   type ForYou,
@@ -14,6 +15,7 @@ import {
   TASTE_UNLOCK,
   type BrandVerdict,
   catalogCategories,
+  categoriesIn,
   departmentsFor,
 } from "@closet/shared";
 import { and, asc, cosineDistance, desc, eq, gte, ilike, inArray, lt, ne, notInArray, sql } from "drizzle-orm";
@@ -369,11 +371,19 @@ export class CatalogService {
     return this.feedCache;
   }
 
-  /** Products someone wants to see: their side of the catalog, without the categories they hid (unless they asked for one). */
-  private visible(items: FeedItem[], prefs: Preferences, category?: CategoryId) {
+  /**
+   * Products someone wants to see: their side of the catalog, without the categories they hid (unless
+   * they asked for one). A group (all clothing) still leaves out the hidden categories in it.
+   */
+  private visible(items: FeedItem[], prefs: Preferences, category?: CategoryId, group?: CategoryGroupId) {
     const departments = new Set<string>(departmentsFor(prefs.shopFor));
     const hidden = new Set<string>(prefs.hiddenCategories);
-    return items.filter((i) => departments.has(i.department) && (category ? i.category === category : !hidden.has(i.category)));
+    const inGroup = group ? new Set<string>(categoriesIn(group)) : null;
+    return items.filter(
+      (i) =>
+        departments.has(i.department) &&
+        (category ? i.category === category : !hidden.has(i.category) && (!inGroup || inGroup.has(i.category))),
+    );
   }
 
   private toItem(i: Pick<FeedItem, "id" | "brandId" | "brandName" | "imageUrl" | "title" | "priceUsd" | "productUrl" | "category" | "department">): CatalogItem {
@@ -397,10 +407,10 @@ export class CatalogService {
    * each brand's newest products, and never the same brand twice in a row. Personal from the first
    * product they open.
    */
-  async feed(userId: string, page: number, seed: string, category?: CategoryId): Promise<ItemFeed> {
+  async feed(userId: string, page: number, seed: string, category?: CategoryId, group?: CategoryGroupId): Promise<ItemFeed> {
     const [{ items }, taste, prefs] = await Promise.all([this.feedItems(), this.taste(userId, 1), readPreferences(this.db, userId)]);
     const t = taste.vector ? Float32Array.from(taste.vector) : null;
-    const scored = this.visible(items, prefs, category).map((i) => ({
+    const scored = this.visible(items, prefs, category, group).map((i) => ({
       i,
       score:
         (t ? 1.5 * dot(t, i.look) : 0) +

@@ -10,6 +10,7 @@ import {
   type BrandFitInput,
   type Category,
   type CategoryCount,
+  type CategoryGroupId,
   type CategoryId,
   type ColorName,
   type ForYou,
@@ -138,8 +139,11 @@ export const api = {
   voteBrand: (id: string, vote: VoteInput) => request<void>("PUT", `/api/catalog/brands/${id}/vote`, vote),
   forYou: () => request<ForYou>("GET", "/api/catalog/for-you"),
   starters: () => request<BrandCard[]>("GET", "/api/catalog/starters"),
-  feed: (page: number, seed: string, category?: CategoryId) =>
-    request<ItemFeed>("GET", `/api/catalog/feed?${new URLSearchParams({ page: String(page), seed, ...(category ? { category } : {}) })}`),
+  feed: (page: number, seed: string, category?: CategoryId, group?: CategoryGroupId) =>
+    request<ItemFeed>(
+      "GET",
+      `/api/catalog/feed?${new URLSearchParams({ page: String(page), seed, ...(category ? { category } : group ? { group } : {}) })}`,
+    ),
   catalogCategories: () => request<CategoryCount[]>("GET", "/api/catalog/categories"),
   preferences: () => request<Preferences>("GET", "/api/preferences"),
   setPreferences: (input: PreferencesInput) => request<Preferences>("PATCH", "/api/preferences", input),

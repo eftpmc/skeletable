@@ -154,7 +154,7 @@ export function ResultsPage() {
     if (!peek || !isWide) return;
     const tile = document.querySelector<HTMLElement>('[aria-current="true"]');
     // Only when focus is already on a tile (you clicked one); never pull it out of the panel.
-    if (tile && document.activeElement !== tile && tile.parentElement?.contains(document.activeElement)) {
+    if (tile && document.activeElement !== tile && tile.closest("[data-tile-grid]")?.contains(document.activeElement)) {
       tile.focus({ preventScroll: true });
       tile.scrollIntoView({ block: "nearest", behavior: "smooth" });
     }

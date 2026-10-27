@@ -8,8 +8,12 @@ const REPO = "https://github.com/eftpmc/skeleton";
 
 type User = { name: string; email: string; image?: string | null };
 
-/** The account button at the foot of the sidebar: who you are, settings (server sections included for owners and admins), signing out. */
-export function AccountMenu({ user, onNavigate }: { user: User; onNavigate?: () => void }) {
+/**
+ * The account button: who you are, settings (server sections included for owners and admins), signing
+ * out. Full width with your name at the foot of the phone menu; `compact`, just your picture, at the
+ * top right of the wide-screen header.
+ */
+export function AccountMenu({ user, onNavigate, compact = false }: { user: User; onNavigate?: () => void; compact?: boolean }) {
   const { pathname } = useLocation();
   const queryClient = useQueryClient();
   const role = useMe().data?.role;
@@ -19,21 +23,35 @@ export function AccountMenu({ user, onNavigate }: { user: User; onNavigate?: () 
 
   return (
     <Menu
+      side={compact ? "bottom" : "top"}
+      align={compact ? "end" : "start"}
       trigger={
-        <button
-          type="button"
-          aria-current={pathname.startsWith("/settings") ? "page" : undefined}
-          className={cn(
-            "flex h-[52px] w-full items-center gap-3 rounded-lg px-3 text-left hover:bg-surface aria-[current=page]:bg-surface data-[state=open]:bg-surface",
-            focusRing,
-          )}
-        >
-          <Avatar name={label} image={user.image} size={32} />
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-callout font-semibold text-ink">{label}</span>
-            <span className="block truncate text-footnote text-muted">{user.email}</span>
-          </span>
-        </button>
+        compact ? (
+          <button
+            type="button"
+            aria-label={`Account: ${label}`}
+            title={label}
+            aria-current={pathname.startsWith("/settings") ? "page" : undefined}
+            className={cn("inline-flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-surface data-[state=open]:bg-surface", focusRing)}
+          >
+            <Avatar name={label} image={user.image} size={32} />
+          </button>
+        ) : (
+          <button
+            type="button"
+            aria-current={pathname.startsWith("/settings") ? "page" : undefined}
+            className={cn(
+              "flex h-[52px] w-full items-center gap-3 rounded-lg px-3 text-left hover:bg-surface aria-[current=page]:bg-surface data-[state=open]:bg-surface",
+              focusRing,
+            )}
+          >
+            <Avatar name={label} image={user.image} size={32} />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-callout font-semibold text-ink">{label}</span>
+              <span className="block truncate text-footnote text-muted">{user.email}</span>
+            </span>
+          </button>
+        )
       }
     >
       <MenuHeader>
