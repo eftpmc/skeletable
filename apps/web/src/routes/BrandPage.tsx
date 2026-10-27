@@ -71,7 +71,7 @@ export function BrandPage() {
 
         {/* On phones the name and votes come first; on wide screens the photos sit on the left. */}
         <div className="order-first lg:sticky lg:top-6 lg:order-none lg:self-start">
-          {brand.kind === "name" && <p className="text-section-label text-muted uppercase">A brand we know by name</p>}
+          {brand.kind === "name" && <p className="text-section-label text-muted">A brand we know by name</p>}
           <h1 className="mt-1 text-title-1 break-words text-ink lg:text-[40px] lg:leading-[44px]">{brand.name}</h1>
           <p className="mt-2 text-callout text-muted">{brandMeta(brand)}</p>
           {brand.description && <p className="mt-4 max-w-prose text-body text-ink">{brand.description}</p>}

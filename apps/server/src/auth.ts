@@ -27,13 +27,20 @@ export function createAuth(config: Config, db: Db) {
       enabled: true,
       minPasswordLength: 8,
     },
+    user: {
+      // Set by the server only: the first account becomes the owner; the owner makes admins.
+      additionalFields: { role: { type: "string", defaultValue: "member", input: false } },
+    },
     databaseHooks: {
       user: {
         create: {
-          before: async () => {
-            if (!config.SIGNUPS_ENABLED && (await hasAccounts(db))) {
+          before: async (user) => {
+            const first = !(await hasAccounts(db));
+            if (!config.SIGNUPS_ENABLED && !first) {
               throw new APIError("FORBIDDEN", { message: "Sign-ups are closed on this server." });
             }
+            // The first account runs the server.
+            return { data: { ...user, role: first ? "owner" : "member" } };
           },
         },
       },

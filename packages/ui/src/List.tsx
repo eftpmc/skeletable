@@ -5,11 +5,11 @@ import { ChevronRightIcon } from "./icons";
 
 export type ListGroupProps = { label?: string; children: ReactNode; className?: string };
 
-/** iOS-style grouped list: an uppercase muted label above a rounded `surface` block of rows. */
+/** iOS-style grouped list: a muted sentence-case label above a rounded `surface` block of rows. */
 export function ListGroup({ label, children, className }: ListGroupProps) {
   return (
     <section className={className}>
-      {label && <h2 className="mb-2 px-4 text-section-label text-muted uppercase">{label}</h2>}
+      {label && <h2 className="mb-2 px-4 text-section-label text-muted">{label}</h2>}
       <ul className="divide-y divide-line overflow-hidden rounded-xl bg-surface">{children}</ul>
     </section>
   );

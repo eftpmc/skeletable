@@ -262,7 +262,7 @@ function Palette({ initial, close }: { initial: string; close: () => void }) {
       <div ref={listRef} id={listId} role="listbox" aria-label="Suggestions" className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
         {sections.map((section, s) => (
           <div key={section.title ?? s} role="group" aria-label={section.title} className={cn(s > 0 && "mt-2")}>
-            {section.title && <div className="px-3 pt-2 pb-1 text-section-label text-muted uppercase">{section.title}</div>}
+            {section.title && <div className="px-3 pt-2 pb-1 text-section-label text-muted">{section.title}</div>}
             {section.rows.map((row) => {
               const i = index++;
               return (

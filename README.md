@@ -31,7 +31,7 @@ A self-hosted server is private: searching needs an account, and there's no land
 
 ### Stores to search
 
-Pasting a product link always works. Searching by name needs at least one source:
+Pasting a product link always works. Searching by name needs at least one source. The easiest way is in the app: the first account is the server's owner, and **Settings → Stores** adds Shopify shops by address and takes eBay and Best Buy keys (stored encrypted with `AUTH_SECRET`; changes apply without a restart). [docs/STORE-KEYS.md](docs/STORE-KEYS.md) walks through getting the keys. The variables below do the same from the environment; anything set there shows as read-only in the app.
 
 | Variable | What it adds | How to get it |
 |---|---|---|
@@ -43,7 +43,7 @@ Store logos are read from each store's own site. When a site has none the server
 
 ### Alerts
 
-Saved searches re-run and tracked prices are checked every `ALERTS_INTERVAL_MINUTES` (default 360; `0` turns it off). Each person picks where alerts go under **Profile → Get alerts**:
+Saved searches re-run and tracked prices are checked every `ALERTS_INTERVAL_MINUTES` (default 360; `0` turns it off). Each person picks where alerts go under **Settings → Notifications**:
 
 - **Phone, with [ntfy](https://ntfy.sh):** paste a topic link (`https://ntfy.sh/<topic>` or your own ntfy server). Alerts arrive as they're found. To reach an ntfy server on your own network, set `ALLOW_PRIVATE_FETCH=true`.
 - **Morning email:** one digest a day at `DIGEST_HOUR` (default 8) in each person's time zone, only when there's something new. Needs the server to send email:

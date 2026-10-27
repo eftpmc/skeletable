@@ -1,5 +1,6 @@
 import type { ElementType, ReactNode } from "react";
 import { cn, focusRing } from "./cn";
+import { Halftone } from "./Halftone";
 
 export type SectionHeaderProps = {
   title: ReactNode;
@@ -36,10 +37,11 @@ export function ScreenTitle({ children, trailing, className }: { children: React
 /** What a screen shows when there's nothing yet: say what will appear and how to get it. */
 export function EmptyState({ title, body, action, className }: { title: string; body: ReactNode; action?: ReactNode; className?: string }) {
   return (
-    <div className={cn("flex flex-col items-center rounded-xl bg-surface px-6 py-14 text-center", className)}>
-      <p className="text-title-3 text-ink">{title}</p>
-      <p className="mt-1 max-w-xs text-callout font-normal text-muted">{body}</p>
-      {action && <div className="mt-5">{action}</div>}
+    <div className={cn("relative flex flex-col items-center overflow-hidden rounded-xl bg-surface px-6 py-14 text-center", className)}>
+      <Halftone corner="top-right" reach={38} ink={false} className="opacity-50" />
+      <p className="relative text-title-3 text-ink">{title}</p>
+      <p className="relative mt-1 max-w-xs text-callout font-normal text-muted">{body}</p>
+      {action && <div className="relative mt-5">{action}</div>}
     </div>
   );
 }

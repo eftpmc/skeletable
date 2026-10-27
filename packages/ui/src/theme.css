@@ -57,8 +57,8 @@
   --text-price: 15px;
   --text-price--line-height: 20px;
   --text-price--font-weight: 700;
-  --text-section-label: 13px;
-  --text-section-label--line-height: 18px;
+  --text-section-label: 14px;
+  --text-section-label--line-height: 20px;
   --text-section-label--font-weight: 600;
-  --text-section-label--letter-spacing: 0.04em;
+  --text-section-label--letter-spacing: 0;
 }

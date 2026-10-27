@@ -1,8 +1,10 @@
-import type { ServerInfo } from "@closet/shared";
+import type { Me, ServerInfo } from "@closet/shared";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { logger } from "hono/logger";
+import { adminRoutes, roleOf } from "./admin/routes.js";
+import { StoreSettings } from "./admin/stores.js";
 import { hasAccounts } from "./auth.js";
 import { clientIp, withClientIp } from "./client-ip.js";
 import { mailerFromConfig } from "./alerts/mailer.js";
@@ -15,35 +17,39 @@ import { closetRoutes } from "./closet/routes.js";
 import { RateLimiter } from "./rate-limit.js";
 import { searchRoutes } from "./search/routes.js";
 import { SearchService } from "./search/service.js";
-import { sourcesFromConfig } from "./search/sources/index.js";
 import { StoreIcons } from "./search/store-icons.js";
 import type { AppEnv, AuthedEnv, Deps } from "./env.js";
 
 /** The services behind the routes, shared with background jobs (the alerts scheduler). */
 export function createServices(deps: Deps) {
   const { config, db } = deps;
-  const { sources, info: sourceInfo } = deps.sources ?? sourcesFromConfig(config);
-  const search = new SearchService(db, sources, { allowPrivate: config.ALLOW_PRIVATE_FETCH });
+  const fetchOptions = { allowPrivate: config.ALLOW_PRIVATE_FETCH };
+  const search = new SearchService(db, deps.sources?.sources ?? [], fetchOptions);
+  // The stores to search: the environment's plus the admin page's. load() reads the saved ones.
+  const stores = new StoreSettings(db, config, search, fetchOptions, deps.sources);
+  if (!deps.sources) search.setSources(stores.currentSources());
   const icons = new StoreIcons(db, deps.storage, {
     protocol: config.SHOPIFY_PROTOCOL,
     allowPrivate: config.ALLOW_PRIVATE_FETCH,
     fallback: config.STORE_ICON_FALLBACK,
   });
+  const mailer = deps.mailer !== undefined ? deps.mailer : mailerFromConfig(config);
   const notify = new NotifyService(db, {
     publicUrl: config.PUBLIC_URL.replace(/\/$/, ""),
     serverName: config.SERVER_NAME,
-    mailer: deps.mailer !== undefined ? deps.mailer : mailerFromConfig(config),
+    mailer,
     digestHour: config.DIGEST_HOUR,
     allowPrivate: config.ALLOW_PRIVATE_FETCH,
   });
-  return { search, sourceInfo, icons, alerts: new AlertsService(db, search), notify, catalog: new CatalogService(db) };
+  return { search, stores, email: mailer !== null, icons, alerts: new AlertsService(db, search), notify, catalog: new CatalogService(db) };
 }
 
 export type Services = ReturnType<typeof createServices>;
 
 export function createApp(deps: Deps, services: Services = createServices(deps)) {
   const { config, db, auth } = deps;
-  const { search, sourceInfo, icons, alerts, notify, catalog } = services;
+  const { search, stores, email, icons, alerts, notify, catalog } = services;
+  const sourceInfo = () => stores.info();
   const app = new Hono<AppEnv>();
 
   if (process.env.NODE_ENV !== "test") app.use(logger());
@@ -85,7 +91,8 @@ export function createApp(deps: Deps, services: Services = createServices(deps))
   app.get("/api/me", (c) => {
     const user = c.get("user");
     if (!user) return c.json({ error: "unauthorized" }, 401);
-    return c.json({ id: user.id, name: user.name, email: user.email, image: user.image ?? null });
+    const me: Me = { id: user.id, name: user.name, email: user.email, image: user.image ?? null, role: roleOf(user) };
+    return c.json(me);
   });
 
   // Searching and reading products, open to signed-out visitors when PUBLIC_SEARCH is on. Their
@@ -114,6 +121,7 @@ export function createApp(deps: Deps, services: Services = createServices(deps))
   authed.route("/", closetRoutes(deps));
   authed.route("/", alertsRoutes(alerts, notify));
   authed.route("/", catalogRoutes(catalog));
+  authed.route("/admin", adminRoutes({ config, db, stores, email }));
   app.route("/api", authed);
 
   app.all("/api/*", (c) => c.json({ error: "not_found" }, 404));

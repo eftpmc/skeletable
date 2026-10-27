@@ -50,6 +50,13 @@
       "when": 1793048751204,
       "tag": "0006_alert_delivery",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793064879082,
+      "tag": "0007_roles_and_server_settings",
+      "breakpoints": true
     }
   ]
 }

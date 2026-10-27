@@ -30,8 +30,8 @@ export function AlertsPage() {
       <ScreenTitle className="lg:text-[40px] lg:leading-[44px]">Alerts</ScreenTitle>
       <p className="mt-1 text-callout font-normal text-muted">
         Get them on your phone or by email in{" "}
-        <Link to="/profile" className="underline">
-          Profile
+        <Link to="/settings/notifications" className="underline">
+          Settings
         </Link>
         .
       </p>
@@ -95,7 +95,7 @@ export function AlertsPage() {
 function Feed({ label, events }: { label: string; events: AlertEvent[] }) {
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="text-section-label text-muted uppercase">{label}</h2>
+      <h2 className="text-section-label text-muted">{label}</h2>
       {events.map((e) =>
         e.kind === "price_drop" ? (
           <DropCard

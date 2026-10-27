@@ -39,7 +39,7 @@ export class SearchService {
 
   constructor(
     private readonly db: Db,
-    private readonly sources: Source[],
+    private sources: Source[],
     private readonly fetchOptions: SafeFetchOptions,
   ) {}
 
@@ -335,6 +335,12 @@ export class SearchService {
   /** Forget cached results (tests, and after sources change). */
   clearCache() {
     this.cache.clear();
+  }
+
+  /** Search a different set of stores from now on (the admin changed them). */
+  setSources(sources: Source[]) {
+    this.sources = sources;
+    this.clearCache();
   }
 }
 

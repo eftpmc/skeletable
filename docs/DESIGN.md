@@ -42,13 +42,23 @@ Later: anyone who shops online, plus self-hosters who want a private price track
 | **Saved** | Products you're tracking, grouped by day, with price drops |
 | **Collection** | What you already have, with sizes, receipts and what it's worth used |
 
-Search isn't a tab. The search box sits in the header on every page (along the bottom on phones, where thumbs are; it tucks away while you scroll down). It opens a palette, also on `/` or ⌘K: recent and saved searches before you type; while typing, search every store first, then what you already have that matches (tracked products with today's price, saved searches, recent searches, brands). A pasted link becomes "Find this product everywhere". Results and products belong to no tab. Account, sizes, sources (self-host), MCP and export sit behind the avatar.
+Search isn't a tab. The search box sits in the header on every page (along the bottom on phones, where thumbs are; it tucks away while you scroll down). It opens a palette, also on `/` or ⌘K: recent and saved searches before you type; while typing, search every store first, then what you already have that matches (tracked products with today's price, saved searches, recent searches, brands). A pasted link becomes "Find this product everywhere". Results and products belong to no tab.
+
+The account button at the foot of the sidebar opens a menu: who you are (and your role), Settings, **Run this server** for owners and admins, help, and sign out. **Settings** is one page of sections, each at `/settings/<section>`: a list beside the section on wide screens, a list then a page on phones. *You*: Account (name, password, sign out), Notifications, Appearance, Sizes & fit, Your data. *Server* (owners and admins only): Overview (counts and what's switched on), Stores (Shopify shops by address, eBay and Best Buy keys, stored encrypted and applied without a restart), Members (the owner makes admins). A new section is one entry in the list in `routes/settings/SettingsPage.tsx`.
+
+**Status** is a mark plus words: a filled ink circle with a check for on or connected, an outlined circle with an X for off. Never color or a dot alone.
+
+**Headers** are sentence case. No all-caps labels anywhere.
+
+**Brand.** The signed-out front page's halftone (the theme color with black printed off-register, on paper) shows up in small doses when signed in: the Home masthead, a faint corner on empty states, and the dot mark beside the wordmark. One per view, never behind body text it would muddy.
+
+**Roles.** The first account on a server is its **owner**. The owner can make others **admins**, who set up stores too; everyone else is a **member**. Anything set in the server's environment shows in the admin sections as read-only.
 
 ### 4.2 Key screens (canvas round 4)
 
 - **Front page (signed out):** "Find anything, from every store." A big search bar (also takes links), black category chips (Sneakers, Tech, Clothing, Home, Used & refurb), then what the product is and a way to sign up.
 - **Home (signed in):** recent searches as chips (category chips when there are none), "New for your alerts" (cards with "12 new" badges), "Dropped on your list" (grid with "−$70" badges), "Picks for you" (three brands from Discover).
-- **Results:** a product opens beside the grid on wide screens (step through with the arrows or j/k) and in a sheet you pull down to close on phones; both keep your place and link to the full page. Chips: **Filter**, **Save search** (turns into "Saved · alerts on"), condition, price and brand. Then "2,418 results from 312 stores" over a two-column masonry grid of photos with white price pills. Small labels like *Good price*, *Refurb* or *Used · like new* appear only where they help.
+- **Results:** the query as the title, the count under it, then one filter bar on every screen (it stays in view while you scroll): **Condition**, **Price** and **Sort** as pills that open their choices, filled with ink and naming the choice once set ("Under $250"), **Clear** when any filter is on, and **Save search** at the end. The grid takes the full width. A product opens beside the grid on wide screens (step through with the arrows or j/k) and in a sheet you pull down to close on phones; both keep your place and link to the full page. Small labels like *Good price*, *Refurb* or *Used · like new* appear on photos only where they help.
 - **Product:** a large photo with save and back. Brand and short model name. A **New / Refurb / Used** switch, each with its best price, drives a big price, the store, and a one-line verdict. Then "Compare all 14 stores", and at the bottom **Track price** plus **Buy at [store]**.
 - **Alerts:** Gem-style cards ("12 NEW" with three photos) and price-drop cards. The Searches tab holds iOS-style grouped lists with counts and red dots.
 - **Saved:** a photo grid with price pills grouped by date.

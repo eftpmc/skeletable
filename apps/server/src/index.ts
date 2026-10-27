@@ -16,6 +16,8 @@ const auth = createAuth(config, db);
 const storage = new DiskStorage(config.DATA_DIR);
 const deps = { config, db, auth, storage };
 const services = createServices(deps);
+// Search the stores the owner added on the admin page from the first request on.
+await services.stores.load();
 const app = createApp(deps, services);
 const stopAlerts = config.ALERTS_INTERVAL_MINUTES > 0 ? startAlertsScheduler(services.alerts, services.notify, config.ALERTS_INTERVAL_MINUTES) : () => {};
 

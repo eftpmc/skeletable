@@ -16,7 +16,7 @@ import { ProductPage } from "./routes/ProductPage";
 import { PublicHome } from "./routes/PublicHome";
 import { ResultsPage } from "./routes/ResultsPage";
 import { SavedPage } from "./routes/SavedPage";
-import { SettingsPage } from "./routes/SettingsPage";
+import { SettingsPage } from "./routes/settings/SettingsPage";
 
 /** Signed out on a page that needs an account: sign in, then come back to it. */
 function SignInFirst() {
@@ -71,7 +71,9 @@ export function App() {
             <Route path="/saved" element={<SavedPage />} />
             <Route path="/collection" element={<ClosetPage />} />
             <Route path="/collection/:id" element={<ItemPage />} />
-            <Route path="/profile" element={<SettingsPage user={session.user} />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/settings/:section" element={<SettingsPage />} />
+            <Route path="/profile" element={<Navigate to="/settings" replace />} />
             <Route path="/owned/*" element={<Navigate to="/collection" replace />} />
             <Route path="/closet/*" element={<Navigate to="/collection" replace />} />
             <Route path="*" element={<Navigate to="/" replace />} />

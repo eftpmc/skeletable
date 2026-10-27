@@ -46,7 +46,7 @@ export function DropCard({ image, title, price, was, as: Component = "a", classN
     <Component className={cn("flex items-center gap-3 rounded-xl bg-canvas p-3 shadow-field", focusRing, className)} {...props}>
       <img src={image} alt="" referrerPolicy="no-referrer" className="size-14 shrink-0 rounded-md bg-tile object-cover" />
       <div className="min-w-0 flex-1">
-        <div className="text-section-label text-muted uppercase">Price drop</div>
+        <div className="text-section-label text-muted">Price drop</div>
         <div className="truncate text-body font-semibold text-ink">{title}</div>
       </div>
       <div className="shrink-0 text-right tabular-nums">
