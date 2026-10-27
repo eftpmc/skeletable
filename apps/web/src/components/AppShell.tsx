@@ -1,10 +1,11 @@
-import { Avatar, BellIcon, BookmarkIcon, CompassIcon, IconButton, MenuIcon, NavDrawer, PackageIcon, SearchIcon, SideNav, XIcon, cn, focusRing } from "@closet/ui";
+import { Avatar, BellIcon, BookmarkIcon, CompassIcon, HomeIcon, IconButton, MenuIcon, NavDrawer, PackageIcon, SideNav, XIcon, cn, focusRing } from "@closet/ui";
 import { type ReactNode, useEffect, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router";
 import { useUnreadAlerts } from "../lib/alerts";
+import { HeaderSearch } from "./SearchBar";
 
 const tabs = [
-  { to: "/", label: "Search", icon: SearchIcon, end: true },
+  { to: "/", label: "Home", icon: HomeIcon, end: true },
   { to: "/discover", label: "Discover", icon: CompassIcon, end: false },
   { to: "/alerts", label: "Alerts", icon: BellIcon, end: false },
   { to: "/saved", label: "Saved", icon: BookmarkIcon, end: false },
@@ -22,14 +23,14 @@ export function Wordmark({ className, onClick }: { className?: string; onClick?:
 }
 
 /**
- * The narrow-screen top bar. The page header and the open drawer both use it, so opening the menu
- * only turns the menu button into a close button; nothing else moves.
+ * The narrow-screen top bar. The page header and the open drawer both use it at the same height, so
+ * opening the menu turns the menu button into a close button and covers the search with the wordmark.
  */
-function TopBar({ button, onNavigate }: { button: ReactNode; onNavigate?: () => void }) {
+function TopBar({ button, children }: { button: ReactNode; children: ReactNode }) {
   return (
-    <div className="box-content flex h-14 items-center border-b border-line px-2 pt-[env(safe-area-inset-top)]">
+    <div className="box-content flex h-14 items-center gap-1 border-b border-line px-2 pt-[env(safe-area-inset-top)]">
       {button}
-      <Wordmark onClick={onNavigate} className="px-0.5 py-1 text-title-3" />
+      {children}
     </div>
   );
 }
@@ -43,13 +44,11 @@ export function AppShell({ user }: { user: User }) {
   // Navigating closes the drawer.
   useEffect(() => setMenuOpen(false), [pathname]);
 
-  // Results and product pages belong to Search; brand pages to Discover.
+  // Search lives in the header, so results and product pages belong to no tab; brand pages belong to Discover.
   const items = tabs.map(({ to, end, ...tab }) => ({
     ...tab,
     to,
-    active: end
-      ? pathname === "/" || pathname.startsWith("/search") || pathname.startsWith("/p/")
-      : pathname.startsWith(to) || (to === "/discover" && pathname.startsWith("/brands/")),
+    active: end ? pathname === to : pathname.startsWith(to) || (to === "/discover" && pathname.startsWith("/brands/")),
     count: to === "/alerts" ? unread : undefined,
   }));
 
@@ -91,25 +90,36 @@ export function AppShell({ user }: { user: User }) {
               <MenuIcon size={22} />
             </IconButton>
           }
-        />
+        >
+          <HeaderSearch className="min-w-0 flex-1 pr-1" />
+        </TopBar>
       </header>
       <NavDrawer open={menuOpen} onOpenChange={setMenuOpen}>
         <TopBar
-          onNavigate={() => setMenuOpen(false)}
           button={
             <IconButton label="Close menu" onClick={() => setMenuOpen(false)}>
               <XIcon size={22} />
             </IconButton>
           }
-        />
+        >
+          <Wordmark onClick={() => setMenuOpen(false)} className="px-0.5 py-1 text-title-3" />
+        </TopBar>
         {sidebar(undefined, true)}
       </NavDrawer>
 
-      <main className="min-w-0 flex-1 px-4 pt-4 pb-10 lg:px-10 lg:pt-6 lg:pb-16">
-        <div className="mx-auto w-full max-w-6xl">
-          <Outlet context={{ user }} />
+      <div className="min-w-0 flex-1">
+        {/* Wide screens: search on every page, in a bar above it. */}
+        <div className="sticky top-0 z-20 hidden border-b border-line bg-canvas/90 px-10 backdrop-blur lg:block">
+          <div className="mx-auto flex h-[72px] max-w-6xl items-center">
+            <HeaderSearch className="w-full max-w-[640px]" />
+          </div>
         </div>
-      </main>
+        <main className="px-4 pt-4 pb-10 lg:px-10 lg:pt-8 lg:pb-16">
+          <div className="mx-auto w-full max-w-6xl">
+            <Outlet context={{ user }} />
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

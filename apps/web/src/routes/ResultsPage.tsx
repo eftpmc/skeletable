@@ -3,7 +3,6 @@ import { BellIcon, CheckIcon, Chip, ChipDivider, ChipRow, EmptyState, ProductTil
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { Link, useSearchParams } from "react-router";
-import { SearchBar } from "../components/SearchBar";
 import { useSavedSearch } from "../lib/alerts";
 import { api } from "../lib/api";
 import { formatMoney } from "../lib/format";
@@ -65,12 +64,8 @@ export function ResultsPage() {
 
   return (
     <section>
-      <div className="mx-auto max-w-2xl lg:mx-0 lg:max-w-[640px]">
-        <SearchBar key={q} initial={q} back />
-      </div>
-
-      {/* Phones: filters as chips. Wide screens get the sidebar instead. */}
-      <ChipRow className="mt-3 lg:hidden">
+      {/* The search box is in the header. Phones: filters as chips. Wide screens get the sidebar instead. */}
+      <ChipRow className="lg:hidden">
         {saveButton()}
         <ChipDivider />
         {conditions.map((c) => (
@@ -86,7 +81,7 @@ export function ResultsPage() {
         ))}
       </ChipRow>
 
-      <div className="mt-5 lg:mt-8 lg:flex lg:items-start lg:gap-12">
+      <div className="mt-5 lg:mt-0 lg:flex lg:items-start lg:gap-12">
         <aside aria-label="Filters" className="hidden w-52 shrink-0 flex-col gap-7 lg:flex">
           <FilterGroup
             legend="Condition"

@@ -9,11 +9,12 @@ import { AuthPage } from "./routes/AuthPage";
 import { BrandPage } from "./routes/BrandPage";
 import { ClosetPage } from "./routes/ClosetPage";
 import { DiscoverPage } from "./routes/DiscoverPage";
+import { Home } from "./routes/Home";
 import { ItemPage } from "./routes/ItemPage";
 import { ProductPage } from "./routes/ProductPage";
+import { PublicHome } from "./routes/PublicHome";
 import { ResultsPage } from "./routes/ResultsPage";
 import { SavedPage } from "./routes/SavedPage";
-import { SearchHome } from "./routes/SearchHome";
 import { SettingsPage } from "./routes/SettingsPage";
 
 /** Signed out on a page that needs an account: sign in, then come back to it. */
@@ -41,7 +42,7 @@ export function App() {
         {/* On servers with public search (the cloud), searching and products need no account. */}
         {info.data?.publicSearch && (
           <Route element={<PublicShell />}>
-            <Route index element={<SearchHome />} />
+            <Route index element={<PublicHome />} />
             <Route path="/search" element={<ResultsPage />} />
             <Route path="/p/:id" element={<ProductPage />} />
           </Route>
@@ -57,7 +58,7 @@ export function App() {
         <Route path="/sign-in" element={<Continue />} />
         <Route path="/sign-up" element={<Continue />} />
         <Route element={<AppShell user={session.user} />}>
-          <Route index element={<SearchHome />} />
+          <Route index element={<Home />} />
           <Route path="/search" element={<ResultsPage />} />
           <Route path="/p/:id" element={<ProductPage />} />
           <Route path="/discover" element={<DiscoverPage />} />

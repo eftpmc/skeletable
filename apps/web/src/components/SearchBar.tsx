@@ -1,7 +1,8 @@
 import { SearchField } from "@closet/ui";
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { api } from "../lib/api";
+import { rememberSearch } from "../lib/recent";
 
 /** "store.com/p/123" or "https://store.com/p/123" are links; "sony xm5" is a search. */
 function looksLikeUrl(value: string) {
@@ -15,7 +16,17 @@ function looksLikeUrl(value: string) {
 }
 
 /** The one search box: text searches every store; a pasted link finds that product everywhere. */
-export function SearchBar({ initial = "", back = false, autoFocus = false }: { initial?: string; back?: boolean; autoFocus?: boolean }) {
+export function SearchBar({
+  initial = "",
+  autoFocus = false,
+  size,
+  className,
+}: {
+  initial?: string;
+  autoFocus?: boolean;
+  size?: "lg" | "md";
+  className?: string;
+}) {
   const [value, setValue] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,20 +46,21 @@ export function SearchBar({ initial = "", back = false, autoFocus = false }: { i
       }
       return;
     }
+    rememberSearch(text);
     navigate(`/search?q=${encodeURIComponent(text)}`);
   }
 
   return (
-    <div>
-      <SearchField
-        value={value}
-        onChange={setValue}
-        onSubmit={submit}
-        onBack={back ? () => (window.history.length > 1 ? navigate(-1) : navigate("/")) : undefined}
-        status={busy ? "Reading…" : undefined}
-        autoFocus={autoFocus}
-      />
+    <div className={className}>
+      <SearchField value={value} onChange={setValue} onSubmit={submit} status={busy ? "Reading…" : undefined} autoFocus={autoFocus} size={size} />
       {error && <p className="mt-2 px-2 text-footnote text-ink">{error}</p>}
     </div>
   );
+}
+
+/** The search box in a shell's header: shows the current query on results, and starts empty everywhere else. */
+export function HeaderSearch({ className }: { className?: string }) {
+  const { pathname, search } = useLocation();
+  const q = pathname === "/search" ? (new URLSearchParams(search).get("q") ?? "") : "";
+  return <SearchBar key={`${pathname}?${q}`} initial={q} size="md" className={className} />;
 }
