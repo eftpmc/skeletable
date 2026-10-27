@@ -84,6 +84,11 @@ export function DiscoverPage() {
     setParams(next, push ? { state: { item: true } } : { replace: true, state: location.state });
   };
   const openItem = (id: string) => show(id, !open);
+  // The chosen category's chip stays in view on phones, where the row scrolls sideways.
+  const chips = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    chips.current?.querySelector("[aria-pressed=true]")?.scrollIntoView({ inline: "center", block: "nearest" });
+  }, [category, categories.length]);
   const browse = (next: CategoryId | undefined) => {
     const p = new URLSearchParams(params);
     p.delete("item");
@@ -125,16 +130,18 @@ export function DiscoverPage() {
       {prefs && prefs.shopFor === null && <ShopForPrompt />}
 
       {categories.length > 1 && (
-        <ChipRow className="mt-5 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0">
-          <Chip selected={!category} onClick={() => browse(undefined)}>
-            All
-          </Chip>
-          {categories.map((c) => (
-            <Chip key={c.id} selected={category === c.id} onClick={() => browse(category === c.id ? undefined : c.id)}>
-              {categoryLabel(c.id)}
+        <div ref={chips}>
+          <ChipRow className="mt-5 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0">
+            <Chip selected={!category} onClick={() => browse(undefined)}>
+              All
             </Chip>
-          ))}
-        </ChipRow>
+            {categories.map((c) => (
+              <Chip key={c.id} selected={category === c.id} onClick={() => browse(category === c.id ? undefined : c.id)}>
+                {categoryLabel(c.id)}
+              </Chip>
+            ))}
+          </ChipRow>
+        </div>
       )}
 
       <div className="mt-6 lg:flex lg:items-start lg:gap-8">

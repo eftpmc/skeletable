@@ -114,13 +114,14 @@ current pieces (newest and in stock first, one colour per style), each filed und
 - **Category.** The words stores use first: the product type when it names a garment, then the
   title's garment noun (the category word that ends last, so "Shirt Dress" is a dress and "Swim
   Shorts" swimwear), then tags that name exactly one. What's left is filed by a logistic regression
-  on the photo vectors, trained on the products the words did file, and only when it's at least 50%
-  sure. Kids' clothes and things that aren't clothing (gift cards, candles, shipping protection) are
+  on the photo vectors, trained on the products the words did file, and only when it's at least 70%
+  sure (87% right at that cut, held out); the rest are left out rather than misfiled. Kids' clothes and things that aren't clothing (gift cards, candles, shipping protection) are
   left out.
 - **Department.** The words first ("women's", "mens", "unisex" in the title, type or tags), then the
   garment (dresses and skirts are women's), then the brand's lean (a brand whose labeled products are
   85% one side lends it to the rest), then the photo: a logistic regression trained on the
-  products the words labeled, trusted at 75% or more either way and unisex in between.
+  products the words labeled, trusted at 75% or more either way (96% right, held out) and unisex
+  in between.
 - **Measured.** Both models report their accuracy on a fifth of the labeled products held out, in
   `items_report.json` with how many products each step filed.
 

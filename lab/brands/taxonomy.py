@@ -13,7 +13,7 @@ import re
 CATEGORY_WORDS = {
     "dresses": r"dress(es)?|gowns?|jumpsuits?|playsuits?|rompers?|kaftans?|caftans?|sundress(es)?|boiler ?suits?|overalls?|dungarees",
     "skirts": r"skirts?|skorts?|sarongs?|mini skirts?|midi skirts?",
-    "tops": r"t-?shirts?|kurtas?|tees?|tanks?|tank tops?|tops?|camis?|camisoles?|blouses?|bodysuits?|polos?|polo shirts?|henleys?|"
+    "tops": r"t-?shirts?|tee-?shirts?|kurtas?|tees?|tanks?|tank tops?|tops?|camis?|camisoles?|blouses?|bodysuits?|polos?|polo shirts?|henleys?|"
             r"long ?sleeves?|l/s tee|s/s tee|bustiers?|corsets?|halters?|tube tops?|crop tops?|singlets?|muscle tees?|tunics?|shells? top",
     "shirts": r"shirts?|button[- ](down|up)s?|overshirts?|flannels?|oxford shirts?|shirting|camp collar|work shirts?",
     "knitwear": r"sweaters?|jumpers?|cardigans?|cardis?|knits?|knitwear|pullovers?|turtlenecks?|roll ?necks?|mock ?necks?|"
@@ -25,7 +25,7 @@ CATEGORY_WORDS = {
                  r"varsity jackets?|denim jackets?|leather jackets?|trucker jackets?|cagoules?|smocks?",
     "tailoring": r"blazers?|suits?|waistcoats?|tuxedos?|sport ?coats?|suit jackets?|suit trousers|tailored jackets?|dinner jackets?",
     "trousers": r"pants?|trousers?|capris?|chinos?|slacks|culottes|cargos?|cargo pants|flares|wide[- ]legs?|straight[- ]legs?|carpenter pants|"
-                r"work pants|fatigues|pantalons?|bottoms",
+                r"work pants|fatigues|pantalons?",
     "jeans": r"jeans?|denims?|selvedge|5[- ]pockets?",
     "shorts": r"shorts?|bermudas?|short pants|cargo shorts|denim shorts|jorts",
     "activewear": r"leggings?|sports? bras?|bike shorts|biker shorts|cycling shorts|running shorts|running tights|yoga pants|"

@@ -13,6 +13,8 @@ UA = "skeleton-lab/0.1 (research crawl)"
 CANDIDATES = ITEMS + 12
 # A brand needs this many products to stay in the catalog.
 MIN_ITEMS = 4
+# The photo's call on a category counts only when it's this sure; otherwise the product is left out.
+CATEGORY_SURE = 0.7
 # The model's call on a department counts only when it's this sure; between the two it's unisex.
 SURE = 0.75
 # A brand whose labeled products are this one-sided lends its department to the rest.
@@ -140,8 +142,9 @@ def embed(urls):
     return cache
 
 
-def fit(X, y, name):
-    """A logistic regression on photo vectors, with its accuracy on a fifth held out."""
+def fit(X, y, name, sure):
+    """A logistic regression on photo vectors. Reports its accuracy on a fifth held out, overall and
+    on the calls it's at least `sure` of (the only ones the build uses), with how many those are."""
     from sklearn.linear_model import LogisticRegression
 
     idx = list(range(len(y)))
@@ -150,10 +153,19 @@ def fit(X, y, name):
     test, train = idx[:cut], idx[cut:]
     m = LogisticRegression(max_iter=3000, C=4.0, class_weight="balanced")
     m.fit(X[train], [y[i] for i in train])
-    acc = float(np.mean(m.predict(X[test]) == np.array([y[i] for i in test])))
-    print(f"{name}: {len(train)} train, {len(test)} held out, accuracy {acc:.3f}", flush=True)
+    truth = np.array([y[i] for i in test])
+    probs = m.predict_proba(X[test])
+    pred = m.classes_[probs.argmax(1)]
+    confident = probs.max(1) >= sure
+    report = {
+        "accuracy": round(float(np.mean(pred == truth)), 3),
+        "sure_accuracy": round(float(np.mean(pred[confident] == truth[confident])), 3) if confident.any() else None,
+        "sure_share": round(float(confident.mean()), 3),
+        "held_out": len(test),
+    }
+    print(name, report, flush=True)
     m.fit(X, y)
-    return m, acc
+    return m, report
 
 
 def pack_vector(v):
@@ -172,17 +184,17 @@ def build(pack_path, out_path):
 
     # Category: the words when they name one; otherwise a model trained on the products whose words did.
     known = [i for i, (_, p) in enumerate(rows) if p["category"]]
-    cat_model, cat_acc = fit(X[known], [rows[i][1]["category"] for i in known], "category")
+    cat_model, cat_report = fit(X[known], [rows[i][1]["category"] for i in known], "category", CATEGORY_SURE)
     for i, (_, p) in enumerate(rows):
         if not p["category"]:
             probs = cat_model.predict_proba(X[i:i + 1])[0]
             best = int(np.argmax(probs))
-            p["category"], p["how"] = (cat_model.classes_[best], "photo") if probs[best] >= 0.5 else (None, None)
+            p["category"], p["how"] = (cat_model.classes_[best], "photo") if probs[best] >= CATEGORY_SURE else (None, None)
         stats[f"category by {p['how']}"] += 1
 
     # Department: the words first, then what the garment says, then the brand's lean, then the photo.
     labeled = [i for i, (_, p) in enumerate(rows) if p["words"] in ("women", "men")]
-    dep_model, dep_acc = fit(X[labeled], [rows[i][1]["words"] for i in labeled], "department")
+    dep_model, dep_report = fit(X[labeled], [rows[i][1]["words"] for i in labeled], "department", SURE)
     women_col = list(dep_model.classes_).index("women")
     p_women = dep_model.predict_proba(X)[:, women_col]
     lean = {}
@@ -232,7 +244,7 @@ def build(pack_path, out_path):
             n_items += len(items)
             deps[department] += 1
             cats.update(p["category"] for p, _ in items)
-    report = {"brands": n_brands, "items": n_items, "category_accuracy": round(cat_acc, 3), "department_accuracy": round(dep_acc, 3),
+    report = {"brands": n_brands, "items": n_items, "category_model": cat_report, "department_model": dep_report,
               "brand_departments": dict(deps), "categories": dict(cats.most_common()), **dict(stats)}
     json.dump(report, open("items_report.json", "w"), indent=1)
     print(json.dumps(report, indent=1))
