@@ -26,15 +26,6 @@ export function useBrand(id: string) {
   return useQuery({ queryKey: catalogKeys.brand(id), queryFn: () => api.brand(id) });
 }
 
-export function useForYou() {
-  return useQuery({ queryKey: catalogKeys.forYou, queryFn: api.forYou });
-}
-
-/** Starting suggestions; kept for the visit so they don't reshuffle after every vote. */
-export function useStarters() {
-  return useQuery({ queryKey: catalogKeys.starters, queryFn: api.starters, staleTime: Infinity });
-}
-
 /** Set one brand's vote wherever it appears in cached catalog data (lists, a page, its neighbors). */
 function withVote<T>(data: T, id: string, verdict: BrandVerdict | null): T {
   if (Array.isArray(data)) return data.map((x) => withVote(x, id, verdict)) as T;
@@ -68,13 +59,14 @@ export function useVote() {
 }
 
 /**
- * Report how long a brand's page was on screen when you leave it (or close the tab): Discover's
- * quiet taste signal. Only visible time counts, and glances under a second aren't sent at all.
+ * Report how long a page (a brand, an item) was on screen when you leave it or close the tab:
+ * Discover's quiet taste signal. `seen` is the endpoint to tell. Only visible time counts, and
+ * glances under a second aren't sent at all.
  */
-export function useDwell(brandId: string | undefined) {
+export function useDwell(seen: string | undefined) {
   const queryClient = useQueryClient();
   useEffect(() => {
-    if (!brandId) return;
+    if (!seen) return;
     let since: number | null = document.visibilityState === "visible" ? performance.now() : null;
     let total = 0;
     let sent = false;
@@ -88,7 +80,7 @@ export function useDwell(brandId: string | undefined) {
       pause();
       sent = true;
       if (total < 1000) return;
-      void fetch(`/api/catalog/brands/${brandId}/seen`, {
+      void fetch(seen, {
         method: "POST",
         credentials: "same-origin",
         keepalive: true,
@@ -103,5 +95,5 @@ export function useDwell(brandId: string | undefined) {
       window.removeEventListener("pagehide", flush);
       flush();
     };
-  }, [brandId, queryClient]);
+  }, [seen, queryClient]);
 }

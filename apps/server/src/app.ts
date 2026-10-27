@@ -120,7 +120,13 @@ export function createApp(deps: Deps, services: Services = createServices(deps))
   if (!config.PUBLIC_SEARCH) authed.route("/", searchRoutes(search, sourceInfo, icons));
   authed.route("/", closetRoutes(deps));
   authed.route("/", alertsRoutes(alerts, notify));
-  authed.route("/", catalogRoutes(catalog));
+  authed.route(
+    "/",
+    catalogRoutes(catalog, {
+      readLink: (url) => search.resolveLink(url),
+      track: (userId, productId) => alerts.watch(userId, { productId }),
+    }),
+  );
   authed.route("/admin", adminRoutes({ config, db, stores, email }));
   app.route("/api", authed);
 

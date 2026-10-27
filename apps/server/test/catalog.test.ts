@@ -3,11 +3,12 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { gzipSync } from "node:zlib";
 import { schema } from "@closet/db";
-import type { BrandCard, BrandDetail, ForYou } from "@closet/shared";
+import type { BrandCard, BrandDetail, ForYou, ItemDetail, ItemFeed } from "@closet/shared";
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { type CatalogRecord, importCatalog } from "../src/catalog/import.js";
 import { importPackIfNew } from "../src/catalog/pack.js";
+import { html, startFixtureServer } from "./helpers/fixture-server.js";
 import { signUp, useTestApp } from "./helpers/setup.js";
 
 const { db, setup } = useTestApp();
@@ -199,6 +200,76 @@ describe("catalog", () => {
 
     expect((await user.post("/api/catalog/brands/00000000-0000-4000-8000-000000000000/seen", { dwellMs: 1000 })).status).toBe(404);
     expect((await user.post(`/api/catalog/brands/${await idOf(user, "Suus")}/seen`, { dwellMs: -5 })).status).toBe(400);
+  });
+
+  it("feeds catalog products, leaning toward what someone looks at, never one brand twice in a row", async () => {
+    const more = [4, 5, 6, 7, 8, 9].map((k) => store(`Loud ${k}`, 10, k / 20));
+    await importCatalog(db, [...quiet, ...loud, ...more, far, lowQuality, uniqlo]);
+    const user = await signUp(setup());
+    const feed = async (page = 0) => (await (await user.get(`/api/catalog/feed?page=${page}&seed=abc`)).json()) as ItemFeed;
+
+    const first = await feed();
+    expect(first.items).toHaveLength(30);
+    const all = [...first.items, ...(await feed(1)).items, ...(await feed(2)).items];
+    // 12 store brands above the bar, five products each; name-only and low-quality brands never show.
+    expect(new Set(all.map((i) => i.id)).size).toBe(60);
+    expect(all.some((i) => i.brandName === "Wholesale Boutique" || i.brandName === "Uniqlo")).toBe(false);
+    for (let k = 1; k < first.items.length; k++) expect(first.items[k]!.brandId).not.toBe(first.items[k - 1]!.brandId);
+    // The same seed gives the same order.
+    expect((await feed()).items.map((i) => i.id)).toEqual(first.items.map((i) => i.id));
+
+    // One proper look at a loud brand's item pulls loud brands to the top.
+    const loudItem = all.find((i) => i.brandName === "Neon Riot")!;
+    expect((await user.post(`/api/catalog/items/${loudItem.id}/seen`, { dwellMs: 30_000 })).status).toBe(204);
+    const top = (await feed()).items.slice(0, 6).map((i) => i.brandName);
+    expect(top.filter((n) => /Loud|Neon|Acid/.test(n)).length).toBeGreaterThanOrEqual(5);
+  });
+
+  it("opens an item with more from its brand and more like it", async () => {
+    await importCatalog(db, [...quiet, ...loud, far]);
+    const user = await signUp(setup());
+    const { items } = (await (await user.get("/api/catalog/feed?seed=x")).json()) as ItemFeed;
+    const oslo = items.find((i) => i.brandName === "Line of Oslo")!;
+    const detail = (await (await user.get(`/api/catalog/items/${oslo.id}`)).json()) as ItemDetail;
+    expect(detail.item.id).toBe(oslo.id);
+    expect(detail.brand.name).toBe("Line of Oslo");
+    expect(detail.moreFromBrand).toHaveLength(4);
+    expect(detail.moreFromBrand.every((i) => i.brandName === "Line of Oslo" && i.id !== oslo.id)).toBe(true);
+    // The closest looks first: the other quiet labels before the loud ones.
+    expect(detail.moreLikeThis.slice(0, 2).map((i) => i.brandName).sort()).toEqual(["Suus", "Winfield"]);
+    expect(detail.savedProductId).toBeNull();
+    expect((await user.get("/api/catalog/items/not-an-item")).status).toBe(404);
+    expect((await user.get(`/api/catalog/items/${oslo.brandId}.99`)).status).toBe(404);
+  });
+
+  it("saves an item by reading its page and tracking its price", async () => {
+    const shop = await startFixtureServer({
+      "/products/oslo-coat": html(`<html><head><title>Oslo Coat</title>
+        <script type="application/ld+json">{"@context":"https://schema.org","@type":"Product","name":"Oslo Coat","brand":{"@type":"Brand","name":"Line of Oslo"},
+        "image":"https://cdn.example/coat.jpg","offers":{"@type":"Offer","price":"240.00","priceCurrency":"USD"}}</script></head><body></body></html>`),
+    });
+    try {
+      const oslo = store("Line of Oslo", 0, 0);
+      oslo.photos[0]!.productUrl = shop.url("/products/oslo-coat");
+      await importCatalog(db, [oslo, ...loud]);
+      const user = await signUp(setup({ ALLOW_PRIVATE_FETCH: "true" }));
+      const { items } = (await (await user.get("/api/catalog/feed?seed=x")).json()) as ItemFeed;
+      const coat = items.find((i) => i.productUrl === shop.url("/products/oslo-coat"))!;
+
+      const saved = await user.post(`/api/catalog/items/${coat.id}/save`);
+      expect(saved.status).toBe(200);
+      const { productId } = (await saved.json()) as { productId: string };
+      const watches = (await (await user.get("/api/watches")).json()) as { productId: string; title: string }[];
+      expect(watches).toEqual([expect.objectContaining({ productId, title: "Oslo Coat" })]);
+      const detail = (await (await user.get(`/api/catalog/items/${coat.id}`)).json()) as ItemDetail;
+      expect(detail.savedProductId).toBe(productId);
+
+      // A page that can't be read says so and saves nothing.
+      const other = items.find((i) => i.brandName === "Neon Riot")!;
+      expect((await user.post(`/api/catalog/items/${other.id}/save`)).status).toBe(422);
+    } finally {
+      await shop.close();
+    }
   });
 
   it("imports a catalog pack once, and again only when it changes", async () => {

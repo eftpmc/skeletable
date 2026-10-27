@@ -1,137 +1,136 @@
-import type { BrandCard as Brand } from "@closet/shared";
-import { Button, EmptyState, ScreenTitle, SearchField, Skeleton, cn } from "@closet/ui";
-import { useDeferredValue, useState } from "react";
-import { BrandCard, BrandGrid } from "../components/BrandCard";
+import { EmptyState, ProductTile, ScreenTitle, Skeleton, TileGrid, cn } from "@closet/ui";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
+import { ItemPeek, ItemSheet, usd } from "../components/ItemPeek";
 import { api } from "../lib/api";
-import { useBrandSearch, useForYou, useStarters } from "../lib/catalog";
+import { useWide } from "../lib/media";
 
-function Loading({ count = 8 }: { count?: number }) {
-  return (
-    <BrandGrid className="mt-5">
-      {Array.from({ length: count }, (_, i) => (
-        <div key={i}>
-          <Skeleton className="aspect-[4/3] rounded-xl" />
-          <Skeleton className="mt-3 h-4 w-2/3" />
-        </div>
-      ))}
-    </BrandGrid>
-  );
-}
-
-/** How far along your picks are, as dots: one per brand you've shown interest in, out of what's needed. */
-function Progress({ interested, needed }: { interested: number; needed: number }) {
-  return (
-    <p className="mt-4 flex items-center gap-3 text-callout font-normal text-muted">
-      <span aria-hidden="true" className="flex gap-1">
-        {Array.from({ length: needed }, (_, i) => (
-          <span key={i} className={cn("size-2 rounded-full", i < interested ? "bg-accent" : "bg-line")} />
-        ))}
-      </span>
-      {interested === 0
-        ? `Picks of your own start after ${needed} brands.`
-        : `${interested} of ${needed} brands so far. Picks of your own start after ${needed}.`}
-    </p>
-  );
-}
+// One shuffle per visit: the feed keeps its order while you browse, and changes next time you come.
+const SEED = Math.random().toString(36).slice(2, 10);
 
 /**
- * Find brands people haven't heard of. Browse, and open the ones you like the look of: the time you
- * spend on a brand teaches Discover your taste. A heart says it outright, but it's optional.
+ * Discover: products from small brands across the open web, as a feed to browse. Open the ones you
+ * like the look of; what you spend time on (and save) shapes what comes next. Items open beside the
+ * feed on wide screens and in a sheet on phones, so you never lose your place.
  */
 export function DiscoverPage() {
-  const [q, setQ] = useState("");
-  const typed = useDeferredValue(q);
-  const found = useBrandSearch(typed);
-  const forYou = useForYou();
-  const starters = useStarters();
-  const [more, setMore] = useState<Brand[]>([]);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const searching = typed.trim().length > 0;
-  const interested = forYou.data?.interested ?? 0;
-  const needed = forYou.data?.needed ?? 5;
-  const picks = forYou.data?.brands ?? [];
+  const [params, setParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const wide = useWide();
+  const open = params.get("item");
+  // Opening an item adds a history entry, so Back (or the phone's back swipe) closes it.
+  const openedHere = (location.state as { item?: boolean } | null)?.item === true;
 
-  // Another handful of starting points, without repeats.
-  const browse = [...(starters.data ?? []), ...more].filter((b, i, all) => all.findIndex((x) => x.id === b.id) === i);
-  async function loadMore() {
-    setLoadingMore(true);
-    try {
-      const next = await api.starters();
-      setMore((list) => [...list, ...next]);
-    } finally {
-      setLoadingMore(false);
+  const feed = useInfiniteQuery({
+    queryKey: ["catalog", "feed", SEED],
+    queryFn: ({ pageParam }) => api.feed(pageParam, SEED),
+    initialPageParam: 0,
+    getNextPageParam: (last) => last.next ?? undefined,
+    staleTime: Infinity,
+  });
+  const items = (feed.data?.pages.flatMap((p) => p.items) ?? []).filter((item, i, all) => all.findIndex((x) => x.id === item.id) === i);
+
+  // Load the next page as the end of the feed comes into view.
+  const end = useRef<HTMLDivElement>(null);
+  const { hasNextPage, isFetchingNextPage, fetchNextPage } = feed;
+  useEffect(() => {
+    const node = end.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) void fetchNextPage();
+    }, { rootMargin: "800px" });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const show = (id: string | undefined, push: boolean) => {
+    const next = new URLSearchParams(params);
+    if (id) next.set("item", id);
+    else next.delete("item");
+    setParams(next, push ? { state: { item: true } } : { replace: true, state: location.state });
+  };
+  const openItem = (id: string) => show(id, !open);
+  const close = () => (openedHere ? navigate(-1) : show(undefined, false));
+  const index = open ? items.findIndex((i) => i.id === open) : -1;
+  const step = (by: 1 | -1) => {
+    if (!items.length) return;
+    show(items[(Math.max(index, 0) + by + items.length) % items.length]!.id, false);
+  };
+
+  // With an item open beside the feed: arrows step through it, Escape closes it.
+  useEffect(() => {
+    if (!open || !wide) return;
+    function onKey(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null;
+      if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return;
+      if (document.querySelector("[role=dialog], [role=menu]")) return;
+      if (event.key === "ArrowRight" || event.key === "ArrowDown" || event.key === "j") step(1);
+      else if (event.key === "ArrowLeft" || event.key === "ArrowUp" || event.key === "k") step(-1);
+      else if (event.key === "Escape") close();
+      else return;
+      event.preventDefault();
     }
-  }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
 
   return (
     <section className="pt-4 lg:pt-0">
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-        <div className="max-w-2xl">
-          <ScreenTitle className="lg:text-[40px] lg:leading-[44px]">Discover</ScreenTitle>
-          <p className="mt-1 text-callout font-normal text-muted">
-            Small brands found across the open web. Open the ones you like the look of; Discover learns from what you spend time on.
-          </p>
-        </div>
-        <SearchField className="w-full lg:max-w-sm" value={q} onChange={setQ} onSubmit={setQ} placeholder="Find a brand by name" />
-      </div>
-      {!searching && forYou.data && !picks.length && <Progress interested={interested} needed={needed} />}
+      <ScreenTitle className="lg:text-[40px] lg:leading-[44px]">Discover</ScreenTitle>
+      <p className="mt-1 max-w-2xl text-callout font-normal text-muted">
+        Pieces from small brands across the open web. Open what you like the look of; the feed learns from what you spend time on.
+      </p>
 
-      {searching ? (
-        <section aria-label="Brands found" className="mt-8">
-          {found.isPending ? (
-            <Loading count={4} />
-          ) : found.data?.length ? (
-            <BrandGrid>
-              {found.data.map((b) => (
-                <BrandCard key={b.id} brand={b} context="search" />
+      <div className="mt-6 lg:flex lg:items-start lg:gap-8">
+        <div className="min-w-0 flex-1">
+          {feed.isPending ? (
+            <TileGrid>
+              {[260, 200, 300, 220, 280, 240, 200, 260].map((h, i) => (
+                <Skeleton key={i} className="mb-2 md:mb-5" style={{ height: h }} />
               ))}
-            </BrandGrid>
+            </TileGrid>
+          ) : feed.isError ? (
+            <EmptyState title="Discover isn't loading right now" body="Try again in a moment." />
+          ) : items.length === 0 ? (
+            <EmptyState title="The catalog is empty" body="Pieces appear here once the catalog has been imported." />
           ) : (
-            <EmptyState title={`We don't know “${typed.trim()}” yet`} body="The catalog grows as it reads more of the web. Try another brand, or browse below." />
-          )}
-        </section>
-      ) : (
-        <>
-          {picks.length > 0 && (
-            <section aria-labelledby="for-you" className="mt-10">
-              <h2 id="for-you" className="text-title-2 text-ink">
-                For you
-              </h2>
-              <BrandGrid className="mt-5">
-                {picks.map((b) => (
-                  <BrandCard key={b.id} brand={b} context="for-you" />
+            <>
+              <TileGrid>
+                {items.map((item) => (
+                  <ProductTile
+                    key={item.id}
+                    as={Link}
+                    to={`/discover?item=${encodeURIComponent(item.id)}`}
+                    onClick={(event: React.MouseEvent) => {
+                      event.preventDefault();
+                      openItem(item.id);
+                    }}
+                    aria-current={item.id === open ? "true" : undefined}
+                    className={cn(item.id === open && "ring-2 ring-ink ring-offset-4 ring-offset-canvas")}
+                    image={item.imageUrl}
+                    alt={item.title ?? item.brandName}
+                    price={usd(item.priceUsd) ?? ""}
+                    title={item.title ?? undefined}
+                    caption={item.brandName}
+                  />
                 ))}
-              </BrandGrid>
-            </section>
+              </TileGrid>
+              <div ref={end} className="flex h-24 items-center justify-center text-footnote text-muted">
+                {isFetchingNextPage ? "Finding more…" : hasNextPage ? "" : "That's everything for now."}
+              </div>
+            </>
           )}
+        </div>
 
-          <section aria-labelledby="browse" className={picks.length ? "mt-14" : "mt-8"}>
-            {picks.length > 0 && (
-              <h2 id="browse" className="text-title-2 text-ink">
-                More to explore
-              </h2>
-            )}
-            {starters.isPending ? (
-              <Loading />
-            ) : browse.length ? (
-              <>
-                <BrandGrid className={picks.length ? "mt-5" : undefined}>
-                  {browse.map((b) => (
-                    <BrandCard key={b.id} brand={b} context="starters" />
-                  ))}
-                </BrandGrid>
-                <div className="mt-10 flex justify-center">
-                  <Button variant="secondary" disabled={loadingMore} onClick={() => void loadMore()}>
-                    {loadingMore ? "Finding more…" : "Show more brands"}
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <EmptyState title="The catalog is empty" body="Brands appear here once the catalog has been imported." />
-            )}
-          </section>
-        </>
-      )}
+        {open && wide && (
+          <div className="sticky top-[96px] hidden h-[calc(100dvh-120px)] w-[420px] shrink-0 lg:block xl:w-[460px]">
+            <ItemPeek key={open} id={open} onClose={close} onStep={step} onOpen={(id) => show(id, false)} />
+          </div>
+        )}
+        <ItemSheet open={Boolean(open) && !wide} id={open ?? ""} onClose={close} onStep={step} onOpen={(id) => show(id, false)} />
+      </div>
     </section>
   );
 }

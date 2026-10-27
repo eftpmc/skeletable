@@ -3,13 +3,16 @@ import {
   type BrandCard,
   type BrandDetail,
   type BrandMatch,
+  type CatalogItem,
   type ForYou,
+  type ItemDetail,
+  type ItemFeed,
   TASTE_UNLOCK,
   type BrandVerdict,
 } from "@closet/shared";
 import { and, asc, cosineDistance, desc, eq, gte, ilike, inArray, ne, notInArray, sql } from "drizzle-orm";
 
-const { brand, brandPhoto, brandProfile, brandView, brandVote } = schema;
+const { brand, brandPhoto, brandProfile, brandView, brandVote, offer, watch } = schema;
 
 export class NotFoundError extends Error {}
 
@@ -37,6 +40,35 @@ export function viewWeight(views: number, dwellMs: number) {
 
 type Profile = typeof brandProfile.$inferSelect;
 type Vector = number[];
+
+/** A store brand in Discover's feed, with its look and its products in order. */
+type FeedBrand = {
+  id: string;
+  name: string;
+  quality: number;
+  look: Vector;
+  items: { position: number; imageUrl: string; title: string | null; priceUsd: number | null; productUrl: string | null }[];
+};
+
+const FEED_PAGE = 30;
+// The catalog only changes when a pack is imported (on start), so the feed reads it once in a while.
+const FEED_CACHE_MS = 10 * 60 * 1000;
+const MORE_FROM_BRAND = 8;
+const MORE_LIKE_THIS = 8;
+
+/** A stable 0..1 number per (seed, key): the same shuffle for a whole browsing session. */
+function jitter(seed: string, key: string) {
+  let h = 2166136261;
+  for (const ch of seed + key) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
+  return (h >>> 0) / 4294967296;
+}
+
+export const itemId = (brandId: string, position: number) => `${brandId}.${position}`;
+
+export function parseItemId(id: string) {
+  const m = /^([0-9a-f-]{36})\.(\d{1,3})$/.exec(id);
+  return m ? { brandId: m[1]!, position: Number(m[2]) } : null;
+}
 
 const norm = (v: Vector) => Math.hypot(...v) || 1;
 const dot = (a: Vector, b: Vector) => a.reduce((s, x, i) => s + x * b[i]!, 0);
@@ -149,7 +181,7 @@ export class CatalogService {
    * look at a brand's page counts less; see viewWeight), minus half the mean of what they marked not
    * for them or not a brand, normalized. Null until they're interested in TASTE_UNLOCK brands.
    */
-  async taste(userId: string): Promise<{ interested: number; vector: Vector | null; liked: { id: string; name: string; look: Vector }[] }> {
+  async taste(userId: string, unlock = TASTE_UNLOCK): Promise<{ interested: number; vector: Vector | null; liked: { id: string; name: string; look: Vector }[] }> {
     const [votes, views] = await Promise.all([
       this.db
         .select({ id: brand.id, name: brand.name, verdict: brandVote.verdict, look: brandProfile.look })
@@ -174,7 +206,7 @@ export class CatalogService {
     for (const v of votes) if (v.verdict === "like") interest.set(v.id, { id: v.id, name: v.name, look: v.look, weight: 1 });
 
     const liked = [...interest.values()];
-    if (liked.length < TASTE_UNLOCK) return { interested: liked.length, vector: null, liked };
+    if (!liked.length || liked.length < unlock) return { interested: liked.length, vector: null, liked };
     const total = liked.reduce((s, v) => s + v.weight, 0);
     const t = liked[0]!.look.map((_, k) => {
       const plus = liked.reduce((s, v) => s + v.weight * v.look[k]!, 0) / total;
@@ -243,6 +275,131 @@ export class CatalogService {
       return { ...c, explore: explore.has(c.id) || undefined, because: { id: near.id, name: near.name } };
     });
     return { interested: taste.interested, needed: TASTE_UNLOCK, brands };
+  }
+
+  private feedCache: { at: number; brands: FeedBrand[] } | null = null;
+
+  /** Every store brand above the quality bar, with its products: what Discover's feed is made of. */
+  private async feedBrands(): Promise<FeedBrand[]> {
+    if (this.feedCache && Date.now() - this.feedCache.at < FEED_CACHE_MS) return this.feedCache.brands;
+    const [rows, photos] = await Promise.all([
+      this.db
+        .select({ id: brand.id, name: brand.name, quality: brandProfile.quality, look: brandProfile.look })
+        .from(brandProfile)
+        .innerJoin(brand, eq(brand.id, brandProfile.brandId))
+        .where(and(eq(brandProfile.kind, "store"), gte(brandProfile.quality, QUALITY_BAR))),
+      this.db.select().from(brandPhoto).orderBy(asc(brandPhoto.brandId), asc(brandPhoto.position)),
+    ]);
+    const byBrand = new Map<string, FeedBrand["items"]>();
+    for (const p of photos) byBrand.set(p.brandId, [...(byBrand.get(p.brandId) ?? []), p]);
+    const brands = rows.map((r) => ({ ...r, items: byBrand.get(r.id) ?? [] })).filter((b) => b.items.length > 0);
+    this.feedCache = { at: Date.now(), brands };
+    return brands;
+  }
+
+  private toItem(b: Pick<FeedBrand, "id" | "name">, p: FeedBrand["items"][number]): CatalogItem {
+    return {
+      id: itemId(b.id, p.position),
+      brandId: b.id,
+      brandName: b.name,
+      imageUrl: sized(p.imageUrl, 640),
+      title: p.title,
+      priceUsd: p.priceUsd,
+      productUrl: p.productUrl,
+    };
+  }
+
+  /**
+   * Discover's feed: every catalog product, ranked by how close its brand's look is to your taste
+   * (from what you've opened and saved; quality before that), shuffled a little per session so it
+   * isn't the same every time, leaning to each brand's first products, and never the same brand
+   * twice in a row. Personal from the first item you open.
+   */
+  async feed(userId: string, page: number, seed: string): Promise<ItemFeed> {
+    const [brands, taste] = await Promise.all([this.feedBrands(), this.taste(userId, 1)]);
+    const scored = brands.flatMap((b) => {
+      const fit = taste.vector ? dot(taste.vector, b.look) : 0;
+      const base = (taste.vector ? 1.5 * fit : 0) + 0.15 * b.quality + 0.3 * jitter(seed, b.id);
+      return b.items.map((p) => ({ b, p, score: base - 0.08 * p.position + 0.05 * jitter(seed, `${b.id}${p.position}`) }));
+    });
+    scored.sort((a, z) => z.score - a.score);
+
+    // Spread brands out: hold an item back while its brand appeared in the last three.
+    const ordered: typeof scored = [];
+    const waiting: typeof scored = [];
+    const recent = () => ordered.slice(-3).map((x) => x.b.id);
+    for (const x of scored) {
+      const ready = waiting.findIndex((w) => !recent().includes(w.b.id));
+      if (ready >= 0) ordered.push(...waiting.splice(ready, 1));
+      if (recent().includes(x.b.id)) waiting.push(x);
+      else ordered.push(x);
+    }
+    ordered.push(...waiting);
+
+    const start = page * FEED_PAGE;
+    const items = ordered.slice(start, start + FEED_PAGE).map((x) => this.toItem(x.b, x.p));
+    return { items, next: start + FEED_PAGE < ordered.length ? page + 1 : null };
+  }
+
+  /** One item: its brand, more from the brand, the nearest brands' products, and whether you saved it. */
+  async item(userId: string, id: string): Promise<ItemDetail> {
+    const key = parseItemId(id);
+    if (!key) throw new NotFoundError();
+    const [row] = await this.db
+      .select({ brand, profile: brandProfile })
+      .from(brandProfile)
+      .innerJoin(brand, eq(brand.id, brandProfile.brandId))
+      .where(eq(brandProfile.brandId, key.brandId));
+    const photos = row ? await this.db.select().from(brandPhoto).where(eq(brandPhoto.brandId, key.brandId)).orderBy(asc(brandPhoto.position)) : [];
+    const photo = photos.find((p) => p.position === key.position);
+    if (!row || !photo) throw new NotFoundError();
+
+    const self = { id: row.brand.id, name: row.brand.name };
+    const [card] = await this.cards(userId, [row]);
+    const brands = await this.feedBrands();
+    const nearest = brands
+      .filter((b) => b.id !== self.id)
+      .map((b) => ({ b, s: dot(b.look, row.profile.look) }))
+      .sort((a, z) => z.s - a.s)
+      .slice(0, MORE_LIKE_THIS);
+
+    return {
+      item: this.toItem(self, photo),
+      brand: card!,
+      moreFromBrand: photos.filter((p) => p.position !== key.position).slice(0, MORE_FROM_BRAND).map((p) => this.toItem(self, p)),
+      // One product from each of the closest brands, the same place in their list as this one when they have it.
+      moreLikeThis: nearest.map(({ b }) => this.toItem(b, b.items[Math.min(key.position, b.items.length - 1)]!)),
+      savedProductId: photo.productUrl ? await this.savedProduct(userId, photo.productUrl) : null,
+    };
+  }
+
+  /**
+   * The tracked product a catalog item became when it was saved. Saving reads the store's page, which
+   * can land on another address for the same product (a shop's own domain instead of myshopify.com),
+   * so match on the product's handle.
+   */
+  private async savedProduct(userId: string, productUrl: string): Promise<string | null> {
+    const handle = /\/products\/([^/?#]+)/.exec(new URL(productUrl).pathname)?.[1];
+    if (!handle) return null;
+    const [found] = await this.db
+      .select({ id: watch.productId })
+      .from(watch)
+      .innerJoin(offer, eq(offer.productId, watch.productId))
+      .where(and(eq(watch.userId, userId), sql`${offer.url} like ${`%/products/${handle}%`}`))
+      .limit(1);
+    return found?.id ?? null;
+  }
+
+  /** The item a feed id points at, for saving it (its product page) and counting looks (its brand). */
+  async itemRef(id: string) {
+    const key = parseItemId(id);
+    if (!key) throw new NotFoundError();
+    const [photo] = await this.db
+      .select()
+      .from(brandPhoto)
+      .where(and(eq(brandPhoto.brandId, key.brandId), eq(brandPhoto.position, key.position)));
+    if (!photo) throw new NotFoundError();
+    return photo;
   }
 
   /** Cards for brand rows: first four photos, like counts and the viewer's own vote. */

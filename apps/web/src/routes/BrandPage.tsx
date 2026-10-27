@@ -26,7 +26,7 @@ export function BrandPage() {
   const { data: brand, isPending, isError } = useBrand(id);
   const { vote } = useVote();
   // How long this page is on screen is Discover's quiet signal of taste.
-  useDwell(brand?.id);
+  useDwell(brand ? `/api/catalog/brands/${brand.id}/seen` : undefined);
 
   if (isPending) {
     return (
