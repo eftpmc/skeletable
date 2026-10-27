@@ -57,6 +57,13 @@
       "when": 1793064879082,
       "tag": "0007_roles_and_server_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793069711843,
+      "tag": "0008_brand_views",
+      "breakpoints": true
     }
   ]
 }

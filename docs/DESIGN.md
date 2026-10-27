@@ -36,7 +36,7 @@ Later: anyone who shops online, plus self-hosters who want a private price track
 
 | Tab | Purpose |
 |---|---|
-| **Home** | What changed since your last visit: recent searches, new alert matches, price drops on your list, brand picks. A short "Get started" checklist until you've saved a search, tracked a price and liked enough brands |
+| **Discover** | Where signed-in people land. A feed of products from small brands; open what you like the look of and the feed learns your taste from the time you spend. Save tracks an item's price |
 | **Camera** | Point at anything (or pick a screenshot) and search by image |
 | **Alerts** | **New:** feed of price drops and new matches · **Searches:** saved searches by channel (push, morning email) and watched prices |
 | **Saved** | Products you're tracking, grouped by day, with price drops |
@@ -46,18 +46,21 @@ Search isn't a tab. The search box sits in the header on every page (along the b
 
 The account button at the foot of the sidebar opens a menu: who you are (and your role), Settings, help, and sign out. Owners and admins find the server sections inside Settings. **Settings** is one page of sections, each at `/settings/<section>`: a list beside the section on wide screens, a list then a page on phones. *You*: Account (name, password, sign out), Notifications, Appearance, Sizes & fit, Your data. *Server* (owners and admins only): Overview (counts and what's switched on), Stores (Shopify shops by address, eBay and Best Buy keys, stored encrypted and applied without a restart), Members (the owner makes admins). A new section is one entry in the list in `routes/settings/SettingsPage.tsx`.
 
+**Frame (wide screens).** The sidebar sits on a `surface` backdrop and the page is a rounded `canvas` panel inset 8px from the window, with a hairline border; the panel scrolls, the frame stays still. Phones keep the full-bleed layout.
+
 **Status** is a mark plus words: a filled ink circle with a check for on or connected, an outlined circle with an X for off. Never color or a dot alone.
 
 **Headers** are sentence case. No all-caps labels anywhere.
 
-**Brand.** The signed-out front page's halftone (the theme color with black printed off-register, on paper) shows up in small doses when signed in: the Home masthead, and a faint corner on empty states. The wordmark stays plain text. One per view, never behind body text it would muddy.
+**Brand.** The signed-out front page's halftone (the theme color with black printed off-register, on paper) shows up in small doses when signed in: a faint corner on empty states. The wordmark stays plain text. One per view, never behind body text it would muddy.
 
 **Roles.** The first account on a server is its **owner**. The owner can make others **admins**, who set up stores too; everyone else is a **member**. Anything set in the server's environment shows in the admin sections as read-only.
 
 ### 4.2 Key screens (canvas round 4)
 
 - **Front page (signed out):** "Find anything, from every store." A big search bar (also takes links), black category chips (Sneakers, Tech, Clothing, Home, Used & refurb), then what the product is and a way to sign up.
-- **Home (signed in):** recent searches as chips (category chips when there are none), "New for your alerts" (cards with "12 new" badges), "Dropped on your list" (grid with "−$70" badges), "Picks for you" (three brands from Discover).
+- **Signed in, there's no Home:** `/` opens Discover. Search is in the header everywhere, and new matches and drops have Alerts and Saved.
+- **Discover:** a masonry feed of products from small brands (photos at their natural shape, a price pill, the title and the brand), loading more as you scroll. It's ranked by how close each brand's look is to your taste, shuffled a little per visit, and never shows one brand twice in a row. An item opens beside the feed on wide screens (arrows step through) and in a pull-down sheet on phones: big photo, brand (to its page), title, price, **Buy at [brand]**, **Save** (reads the product page and tracks its price, so it lands in Saved and Alerts), then *More from [brand]* and *More like this*. Taste is passive: time with an item (or a brand page) open counts toward its brand, a look of 8s+ or a second visit about half a heart; quick bounces count nothing, and a save counts as a long look. The feed is personal from the first item you open. Brand pages keep "Not for me" and "Not a real brand" in a "…" menu.
 - **Results:** the query as the title, the count under it, then one filter bar on every screen (it stays in view while you scroll): **Condition**, **Price** and **Sort** as pills that open their choices, filled with ink and naming the choice once set ("Under $250"), **Clear** when any filter is on, and **Save search** at the end. The grid takes the full width. A product opens beside the grid on wide screens (step through with the arrows or j/k) and in a sheet you pull down to close on phones; both keep your place and link to the full page. Small labels like *Good price*, *Refurb* or *Used · like new* appear on photos only where they help.
 - **Product:** a large photo with save and back. Brand and short model name. A **New / Refurb / Used** switch, each with its best price, drives a big price, the store, and a one-line verdict. Then "Compare all 14 stores", and at the bottom **Track price** plus **Buy at [store]**.
 - **Alerts:** Gem-style cards ("12 NEW" with three photos) and price-drop cards. The Searches tab holds iOS-style grouped lists with counts and red dots.

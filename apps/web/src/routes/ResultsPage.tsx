@@ -198,7 +198,7 @@ export function ResultsPage() {
         </div>
 
         {peek && isWide && (
-          <div className="sticky top-[136px] hidden h-[calc(100dvh-152px)] w-[420px] shrink-0 lg:block xl:w-[460px]">
+          <div className="sticky top-[136px] hidden h-[calc(100dvh-168px)] w-[420px] shrink-0 lg:block xl:w-[460px]">
             <ProductPeek
               key={peek}
               id={peek}

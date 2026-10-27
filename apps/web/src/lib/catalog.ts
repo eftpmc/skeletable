@@ -1,5 +1,6 @@
 import type { BrandVerdict } from "@closet/shared";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { api } from "./api";
 
 export const catalogKeys = {
@@ -23,15 +24,6 @@ export function useBrandSearch(q: string) {
 
 export function useBrand(id: string) {
   return useQuery({ queryKey: catalogKeys.brand(id), queryFn: () => api.brand(id) });
-}
-
-export function useForYou() {
-  return useQuery({ queryKey: catalogKeys.forYou, queryFn: api.forYou });
-}
-
-/** Starting suggestions; kept for the visit so they don't reshuffle after every vote. */
-export function useStarters() {
-  return useQuery({ queryKey: catalogKeys.starters, queryFn: api.starters, staleTime: Infinity });
 }
 
 /** Set one brand's vote wherever it appears in cached catalog data (lists, a page, its neighbors). */
@@ -64,4 +56,44 @@ export function useVote() {
     vote: (id: string, current: BrandVerdict | null, verdict: BrandVerdict, context?: string) =>
       mutation.mutate({ id, verdict: current === verdict ? null : verdict, context }),
   };
+}
+
+/**
+ * Report how long a page (a brand, an item) was on screen when you leave it or close the tab:
+ * Discover's quiet taste signal. `seen` is the endpoint to tell. Only visible time counts, and
+ * glances under a second aren't sent at all.
+ */
+export function useDwell(seen: string | undefined) {
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    if (!seen) return;
+    let since: number | null = document.visibilityState === "visible" ? performance.now() : null;
+    let total = 0;
+    let sent = false;
+    const pause = () => {
+      if (since !== null) total += performance.now() - since;
+      since = null;
+    };
+    const onVisibility = () => (document.visibilityState === "hidden" ? pause() : (since = performance.now()));
+    const flush = () => {
+      if (sent) return;
+      pause();
+      sent = true;
+      if (total < 1000) return;
+      void fetch(seen, {
+        method: "POST",
+        credentials: "same-origin",
+        keepalive: true,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ dwellMs: Math.round(total) }),
+      }).then(() => queryClient.invalidateQueries({ queryKey: catalogKeys.forYou }), () => {});
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pagehide", flush);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pagehide", flush);
+      flush();
+    };
+  }, [seen, queryClient]);
 }

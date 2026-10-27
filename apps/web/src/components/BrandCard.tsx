@@ -1,5 +1,5 @@
-import type { BrandCard as Brand, BrandMatch, BrandVerdict } from "@closet/shared";
-import { Badge, Chip, cn, focusRing } from "@closet/ui";
+import type { BrandCard as Brand, BrandMatch } from "@closet/shared";
+import { HeartIcon, IconButton, cn, focusRing } from "@closet/ui";
 import type { ReactNode } from "react";
 import { Link } from "react-router";
 import { useVote } from "../lib/catalog";
@@ -23,75 +23,67 @@ export function brandMeta(b: Brand) {
   return [b.where, price, b.platform ? (platforms[b.platform] ?? "Own site") : null].filter(Boolean).join(" · ");
 }
 
-/** Like / Not for me / Not a brand (a real one). Pressing the active one clears it. */
-export function VoteChips({ brand, context, className }: { brand: Brand; context?: string; className?: string }) {
+/** The heart on a brand: likes it, or takes the like back. The strongest taste signal, but optional. */
+export function HeartButton({ brand, context, className }: { brand: Brand; context?: string; className?: string }) {
   const { vote } = useVote();
-  const chip = (verdict: BrandVerdict, label: string, title?: string) => (
-    <Chip selected={brand.myVote === verdict} title={title} onClick={() => vote(brand.id, brand.myVote, verdict, context)}>
-      {label}
-    </Chip>
-  );
+  const liked = brand.myVote === "like";
   return (
-    <div className={cn("flex flex-wrap gap-2", className)}>
-      {chip("like", brand.myVote === "like" ? "Liked" : "Like")}
-      {chip("skip", "Not for me", "Moves your picks away from this look")}
-      {chip("flag", "Not a brand", "Not a real brand: resale, dropshipping, wholesale stock, uniforms or merch")}
-    </div>
+    <IconButton
+      label={liked ? `Unlike ${brand.name}` : `Like ${brand.name}`}
+      aria-pressed={liked}
+      tone="floating"
+      className={className}
+      onClick={(event) => {
+        // The card around it is a link; the heart shouldn't open the brand.
+        event.preventDefault();
+        event.stopPropagation();
+        vote(brand.id, brand.myVote, "like", context);
+      }}
+    >
+      <HeartIcon size={18} fill={liked ? "currentColor" : "none"} className={liked ? "text-accent" : undefined} />
+    </IconButton>
   );
 }
 
-/** A brand with four photos, where it's from, and votes. Neighbors and picks also show a match bar. */
-export function BrandCard({ brand, context, rank }: { brand: Brand | BrandMatch; context?: string; rank?: number }) {
+/**
+ * A brand as a small printed spread: one big photo and three small, its name and where it's from,
+ * and a heart. The whole card opens the brand; opening it and looking around is what teaches
+ * Discover your taste, so there's nothing else to press.
+ */
+export function BrandCard({ brand, context }: { brand: Brand | BrandMatch; context?: string }) {
   const match = "match" in brand ? brand : null;
+  const [hero, ...rest] = brand.photos;
   const dim = brand.myVote === "skip" || brand.myVote === "flag";
   return (
-    <article className={cn("flex min-w-0 flex-col gap-3 rounded-xl border border-line p-3 transition-opacity", dim && "opacity-55")}>
-      <div className="flex items-baseline justify-between gap-3">
-        <Link to={`/brands/${brand.id}`} className={cn("min-w-0 rounded-sm text-title-3 text-ink hover:underline", focusRing)}>
-          <span className="line-clamp-1 break-all">{brand.name}</span>
-        </Link>
-        {rank !== undefined && <span className="shrink-0 text-footnote text-muted tabular-nums">#{rank}</span>}
-      </div>
-      {match?.explore && (
-        <Badge tone="outline" className="self-start">
-          New to everyone
-        </Badge>
-      )}
-      <p className="-mt-1 line-clamp-1 text-footnote text-muted">{brandMeta(brand)}</p>
-      <Link to={`/brands/${brand.id}`} tabIndex={-1} aria-hidden="true" className="grid grid-cols-4 gap-1 overflow-hidden rounded-lg">
-        {[0, 1, 2, 3].map((i) =>
-          brand.photos[i] ? (
-            <img key={i} src={brand.photos[i]} alt="" loading="lazy" referrerPolicy="no-referrer" className="aspect-square w-full bg-tile object-cover" />
+    <Link to={`/brands/${brand.id}`} className={cn("group flex min-w-0 flex-col gap-2.5 rounded-xl transition-opacity", dim && "opacity-55", focusRing)}>
+      <div className="relative grid grid-cols-3 gap-1 overflow-hidden rounded-xl">
+        <div className="col-span-3 overflow-hidden bg-tile">
+          {hero ? (
+            <img src={hero} alt="" loading="lazy" referrerPolicy="no-referrer" className="aspect-[4/3] w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
+          ) : (
+            <div className="aspect-[4/3]" />
+          )}
+        </div>
+        {[0, 1, 2].map((i) =>
+          rest[i] ? (
+            <img key={i} src={rest[i]} alt="" loading="lazy" referrerPolicy="no-referrer" className="aspect-square w-full bg-tile object-cover" />
           ) : (
             <div key={i} className="aspect-square bg-tile" />
           ),
         )}
-      </Link>
-      {match && (
-        <div className="h-1 overflow-hidden rounded-full bg-line" title="How close a match">
-          <div className="h-full rounded-full bg-accent" style={{ width: `${Math.round(match.match * 100)}%` }} />
-        </div>
-      )}
-      {match?.because && (
-        <p className="text-footnote text-muted">
-          Close to{" "}
-          <Link to={`/brands/${match.because.id}`} className={cn("rounded-sm text-ink hover:underline", focusRing)}>
-            {match.because.name}
-          </Link>
-          , which you liked
-        </p>
-      )}
-      <div className="mt-auto flex flex-col gap-2">
-        <VoteChips brand={brand} context={context} />
-        <Link to={`/brands/${brand.id}`} className={cn("self-start rounded-full text-callout text-muted hover:text-ink", focusRing)}>
-          Brands like this →
-        </Link>
+        {brand.kind === "store" && <HeartButton brand={brand} context={context} className="absolute top-2.5 right-2.5" />}
       </div>
-    </article>
+      <div className="px-0.5">
+        <div className="line-clamp-1 text-callout font-semibold text-ink">{brand.name}</div>
+        <div className="line-clamp-1 text-footnote text-muted">
+          {match?.because ? `Close to ${match.because.name}` : brandMeta(brand)}
+        </div>
+      </div>
+    </Link>
   );
 }
 
-/** Cards in a responsive grid: one column on phones, up to three on wide screens. */
+/** Cards in a responsive grid: two columns on phones, up to four on wide screens. */
 export function BrandGrid({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn("grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3", className)}>{children}</div>;
+  return <div className={cn("grid grid-cols-2 gap-x-3 gap-y-6 md:grid-cols-3 lg:gap-x-5 lg:gap-y-8 xl:grid-cols-4", className)}>{children}</div>;
 }
