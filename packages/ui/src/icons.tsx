@@ -38,6 +38,13 @@ export const HomeIcon = (props: IconProps) => (
   </Icon>
 );
 
+export const ClockIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 6v6l4 2" />
+  </Icon>
+);
+
 export const SearchIcon = (props: IconProps) => (
   <Icon {...props}>
     <path d="m21 21-4.34-4.34" />

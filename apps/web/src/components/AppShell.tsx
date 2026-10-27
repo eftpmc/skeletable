@@ -1,8 +1,8 @@
-import { Avatar, BellIcon, BookmarkIcon, CompassIcon, HomeIcon, IconButton, MenuIcon, NavDrawer, PackageIcon, SideNav, XIcon, cn, focusRing } from "@closet/ui";
-import { type ReactNode, useEffect, useState } from "react";
+import { Avatar, BellIcon, BookmarkIcon, CompassIcon, HomeIcon, IconButton, MenuIcon, NavDrawer, PackageIcon, SearchIcon, SideNav, XIcon, cn, focusRing } from "@closet/ui";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router";
 import { useUnreadAlerts } from "../lib/alerts";
-import { HeaderSearch } from "./SearchBar";
+import { SearchTrigger, useSearchPalette } from "./SearchPalette";
 
 const tabs = [
   { to: "/", label: "Home", icon: HomeIcon, end: true },
@@ -23,14 +23,56 @@ export function Wordmark({ className, onClick }: { className?: string; onClick?:
 }
 
 /**
- * The narrow-screen top bar. The page header and the open drawer both use it at the same height, so
- * opening the menu turns the menu button into a close button and covers the search with the wordmark.
+ * The narrow-screen top bar. The page header and the open drawer both use it, so opening the menu
+ * only turns the menu button into a close button; nothing else moves.
  */
-function TopBar({ button, children }: { button: ReactNode; children: ReactNode }) {
+function TopBar({ button, onNavigate }: { button: ReactNode; onNavigate?: () => void }) {
   return (
-    <div className="box-content flex h-14 items-center gap-1 border-b border-line px-2 pt-[env(safe-area-inset-top)]">
+    <div className="box-content flex h-14 items-center border-b border-line px-2 pt-[env(safe-area-inset-top)]">
       {button}
-      {children}
+      <Wordmark onClick={onNavigate} className="px-0.5 py-1 text-title-3" />
+    </div>
+  );
+}
+
+/**
+ * Phones: search sits at the bottom, where thumbs are. It tucks away while you scroll down a page and
+ * comes back when you scroll up. Product pages have their own bar there (Buy), so it steps aside.
+ */
+function BottomSearch() {
+  const { open } = useSearchPalette();
+  const { pathname, search } = useLocation();
+  const [hidden, setHidden] = useState(false);
+  const last = useRef(0);
+  const q = pathname === "/search" ? (new URLSearchParams(search).get("q") ?? "") : "";
+
+  useEffect(() => {
+    function onScroll() {
+      const y = window.scrollY;
+      if (Math.abs(y - last.current) < 8) return;
+      setHidden(y > last.current && y > 80);
+      last.current = y;
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  if (pathname.startsWith("/p/")) return null;
+  return (
+    <div
+      className={cn(
+        "fixed inset-x-0 bottom-0 z-20 px-4 pb-[calc(12px+env(safe-area-inset-bottom))] transition-transform duration-300 lg:hidden",
+        hidden && "translate-y-[calc(100%+8px)]",
+      )}
+    >
+      <button
+        type="button"
+        onClick={() => open(q)}
+        className={cn("flex h-14 w-full items-center gap-3 rounded-full bg-canvas px-4 text-left shadow-field", focusRing)}
+      >
+        <SearchIcon size={22} strokeWidth={2.4} className="shrink-0 text-ink" />
+        <span className={cn("min-w-0 flex-1 truncate text-body", q ? "text-ink" : "text-muted")}>{q || "Search or paste a link"}</span>
+      </button>
     </div>
   );
 }
@@ -90,20 +132,17 @@ export function AppShell({ user }: { user: User }) {
               <MenuIcon size={22} />
             </IconButton>
           }
-        >
-          <HeaderSearch className="min-w-0 flex-1 pr-1" />
-        </TopBar>
+        />
       </header>
       <NavDrawer open={menuOpen} onOpenChange={setMenuOpen}>
         <TopBar
+          onNavigate={() => setMenuOpen(false)}
           button={
             <IconButton label="Close menu" onClick={() => setMenuOpen(false)}>
               <XIcon size={22} />
             </IconButton>
           }
-        >
-          <Wordmark onClick={() => setMenuOpen(false)} className="px-0.5 py-1 text-title-3" />
-        </TopBar>
+        />
         {sidebar(undefined, true)}
       </NavDrawer>
 
@@ -111,15 +150,16 @@ export function AppShell({ user }: { user: User }) {
         {/* Wide screens: search on every page, in a bar above it. */}
         <div className="sticky top-0 z-20 hidden border-b border-line bg-canvas/90 px-10 backdrop-blur lg:block">
           <div className="mx-auto flex h-[72px] max-w-6xl items-center">
-            <HeaderSearch className="w-full max-w-[640px]" />
+            <SearchTrigger className="max-w-[640px]" />
           </div>
         </div>
-        <main className="px-4 pt-4 pb-10 lg:px-10 lg:pt-8 lg:pb-16">
+        <main className="px-4 pt-4 pb-28 lg:px-10 lg:pt-8 lg:pb-16">
           <div className="mx-auto w-full max-w-6xl">
             <Outlet context={{ user }} />
           </div>
         </main>
       </div>
+      <BottomSearch />
     </div>
   );
 }

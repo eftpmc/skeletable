@@ -2,7 +2,7 @@ import { cn, focusRing } from "@closet/ui";
 import { Link, Outlet, useLocation } from "react-router";
 import { useNextParam } from "../lib/viewer";
 import { Wordmark } from "./AppShell";
-import { HeaderSearch } from "./SearchBar";
+import { SearchTrigger } from "./SearchPalette";
 
 /**
  * Around search, results and products for signed-out visitors: the wordmark, and a way in.
@@ -20,7 +20,7 @@ export function PublicShell() {
         {/* The wordmark's text lines up with the page content below. */}
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-1 px-2 lg:px-0">
           <Wordmark className="px-2 py-1 text-title-3 lg:-ml-2" />
-          {search && <HeaderSearch className="ml-6 hidden w-full max-w-[520px] lg:block" />}
+          {search && <SearchTrigger className="ml-6 hidden max-w-[520px] lg:flex" />}
           <Link to={`/sign-in${next}`} className={cn("ml-auto rounded-full px-3 py-2 text-callout font-medium text-ink hover:bg-surface", focusRing)}>
             Sign in
           </Link>
@@ -31,7 +31,11 @@ export function PublicShell() {
             Get started
           </Link>
         </div>
-        {search && <HeaderSearch className="px-4 pb-2 lg:hidden" />}
+        {search && (
+          <div className="px-4 pb-2 lg:hidden">
+            <SearchTrigger />
+          </div>
+        )}
       </header>
 
       <main className="min-w-0 flex-1 px-4 pt-4 pb-10 lg:px-10 lg:pt-6 lg:pb-16">

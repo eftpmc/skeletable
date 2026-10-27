@@ -1,6 +1,6 @@
 import { SearchField } from "@closet/ui";
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { api } from "../lib/api";
 import { rememberSearch } from "../lib/recent";
 
@@ -15,19 +15,11 @@ function looksLikeUrl(value: string) {
   }
 }
 
-/** The one search box: text searches every store; a pasted link finds that product everywhere. */
-export function SearchBar({
-  initial = "",
-  autoFocus = false,
-  size,
-  className,
-}: {
-  initial?: string;
-  autoFocus?: boolean;
-  size?: "lg" | "md";
-  className?: string;
-}) {
-  const [value, setValue] = useState(initial);
+/**
+ * What submitting a search does: text searches every store; a pasted link finds that product everywhere.
+ * `onDone` runs once the search has somewhere to go (the palette closes then).
+ */
+export function useSubmitSearch(onDone?: () => void) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -38,6 +30,7 @@ export function SearchBar({
       setBusy(true);
       try {
         const { productId } = await api.resolveLink(text);
+        onDone?.();
         navigate(`/p/${productId}`);
       } catch (linkError) {
         setError(linkError instanceof Error ? linkError.message : "We couldn't read that link. Try another, or search by name.");
@@ -47,20 +40,22 @@ export function SearchBar({
       return;
     }
     rememberSearch(text);
+    onDone?.();
     navigate(`/search?q=${encodeURIComponent(text)}`);
   }
 
+  return { submit, busy, error, isLink: looksLikeUrl };
+}
+
+/** The one search box, as a plain field (the signed-out front page). */
+export function SearchBar({ autoFocus = false }: { autoFocus?: boolean }) {
+  const [value, setValue] = useState("");
+  const { submit, busy, error } = useSubmitSearch();
+
   return (
-    <div className={className}>
-      <SearchField value={value} onChange={setValue} onSubmit={submit} status={busy ? "Reading…" : undefined} autoFocus={autoFocus} size={size} />
+    <div>
+      <SearchField value={value} onChange={setValue} onSubmit={submit} status={busy ? "Reading…" : undefined} autoFocus={autoFocus} />
       {error && <p className="mt-2 px-2 text-footnote text-ink">{error}</p>}
     </div>
   );
-}
-
-/** The search box in a shell's header: shows the current query on results, and starts empty everywhere else. */
-export function HeaderSearch({ className }: { className?: string }) {
-  const { pathname, search } = useLocation();
-  const q = pathname === "/search" ? (new URLSearchParams(search).get("q") ?? "") : "";
-  return <SearchBar key={`${pathname}?${q}`} initial={q} size="md" className={className} />;
 }

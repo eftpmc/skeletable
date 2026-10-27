@@ -1,8 +1,9 @@
 import { type Condition, type ResultCard, conditionLabels, conditions } from "@closet/shared";
 import { BellIcon, CheckIcon, Chip, ChipDivider, ChipRow, EmptyState, ProductTile, Skeleton, TileGrid, cn, focusRing } from "@closet/ui";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { Link, useSearchParams } from "react-router";
+import { ProductPeek } from "../components/ProductPeek";
 import { useSavedSearch } from "../lib/alerts";
 import { api } from "../lib/api";
 import { formatMoney } from "../lib/format";
@@ -11,12 +12,25 @@ const prices = [50, 100, 250, 500];
 const sorts = { best: "Best match", price: "Lowest price" } as const;
 type Sort = keyof typeof sorts;
 
+// Wide screens open products beside the results; phones go to the product page.
+const wide = window.matchMedia("(min-width: 1024px)");
+const useWide = () =>
+  useSyncExternalStore(
+    (onChange) => {
+      wide.addEventListener("change", onChange);
+      return () => wide.removeEventListener("change", onChange);
+    },
+    () => wide.matches,
+  );
+
 export function ResultsPage() {
   const [params, setParams] = useSearchParams();
   const q = params.get("q") ?? "";
   const condition = (params.get("condition") as Condition | null) ?? undefined;
   const max = params.get("max") ? Number(params.get("max")) : undefined;
   const sort: Sort = params.get("sort") === "price" ? "price" : "best";
+  const isWide = useWide();
+  const peek = isWide ? params.get("p") : null;
 
   const { data, isPending, isError } = useQuery({
     queryKey: ["search", q, condition, max],
@@ -59,8 +73,31 @@ export function ResultsPage() {
     setParams(next, { replace: true });
   };
 
-  const failed = data?.sources.filter((s) => s.status !== "ok") ?? [];
   const results = data ? (sort === "price" ? [...data.results].sort((a, b) => a.best.priceCents - b.best.priceCents) : data.results) : [];
+  const peekIndex = peek ? results.findIndex((card) => card.productId === peek) : -1;
+  const step = (by: 1 | -1) => {
+    if (results.length === 0) return;
+    set("p", results[(Math.max(peekIndex, 0) + by + results.length) % results.length]!.productId);
+  };
+
+  // With a product open beside the results: arrows step through them, Escape closes it.
+  useEffect(() => {
+    if (!peek) return;
+    function onKey(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null;
+      if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return;
+      if (document.querySelector("[role=dialog]")) return;
+      if (event.key === "ArrowRight" || event.key === "ArrowDown" || event.key === "j") step(1);
+      else if (event.key === "ArrowLeft" || event.key === "ArrowUp" || event.key === "k") step(-1);
+      else if (event.key === "Escape") set("p", undefined);
+      else return;
+      event.preventDefault();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
+  const failed = data?.sources.filter((s) => s.status !== "ok") ?? [];
 
   return (
     <section>
@@ -82,7 +119,7 @@ export function ResultsPage() {
       </ChipRow>
 
       <div className="mt-5 lg:mt-0 lg:flex lg:items-start lg:gap-12">
-        <aside aria-label="Filters" className="hidden w-52 shrink-0 flex-col gap-7 lg:flex">
+        <aside aria-label="Filters" className={cn("hidden w-52 shrink-0 flex-col gap-7", !peek && "lg:flex")}>
           <FilterGroup
             legend="Condition"
             name="condition"
@@ -143,12 +180,36 @@ export function ResultsPage() {
               )}
               <TileGrid className="mt-4">
                 {results.map((card) => (
-                  <Tile key={card.productId} card={card} />
+                  <Tile
+                    key={card.productId}
+                    card={card}
+                    selected={card.productId === peek}
+                    onOpen={
+                      isWide
+                        ? (event) => {
+                            event.preventDefault();
+                            set("p", card.productId);
+                          }
+                        : undefined
+                    }
+                  />
                 ))}
               </TileGrid>
             </>
           )}
         </div>
+
+        {peek && (
+          <div className="sticky top-[104px] hidden h-[calc(100dvh-128px)] w-[420px] shrink-0 lg:block xl:w-[460px]">
+            <ProductPeek
+              key={peek}
+              id={peek}
+              onClose={() => set("p", undefined)}
+              onStep={step}
+              position={peekIndex >= 0 ? `${peekIndex + 1} of ${results.length}` : ""}
+            />
+          </div>
+        )}
       </div>
     </section>
   );
@@ -204,11 +265,14 @@ function badgeFor(card: ResultCard) {
   return null;
 }
 
-function Tile({ card }: { card: ResultCard }) {
+function Tile({ card, selected, onOpen }: { card: ResultCard; selected: boolean; onOpen?: (event: React.MouseEvent) => void }) {
   return (
     <ProductTile
       as={Link}
       to={`/p/${card.productId}`}
+      onClick={onOpen}
+      aria-current={selected ? "true" : undefined}
+      className={cn(selected && "ring-2 ring-ink ring-offset-4 ring-offset-canvas")}
       image={card.imageUrl}
       alt={card.title}
       price={formatMoney(card.best.priceCents, card.best.currency) ?? ""}

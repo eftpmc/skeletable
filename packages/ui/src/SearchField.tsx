@@ -14,15 +14,12 @@ export type SearchFieldProps = {
   /** Extra button on the right when the field is empty (camera). */
   trailing?: ReactNode;
   autoFocus?: boolean;
-  /** "lg" is the lifted field on a page; "md" sits flat in a header bar. */
-  size?: "lg" | "md";
   className?: string;
 };
 
 /**
  * The one search box. Lifted on canvas with `shadow-field`; the only element that is. It has no focus
- * ring: it is usually focused on arrival, and the caret already shows where you are typing. In a header
- * bar it comes in `md`: shorter, flat on `surface`.
+ * ring: it is usually focused on arrival, and the caret already shows where you are typing.
  */
 export function SearchField({
   value,
@@ -33,7 +30,6 @@ export function SearchField({
   status,
   trailing,
   autoFocus,
-  size = "lg",
   className,
 }: SearchFieldProps) {
   function submit(event: FormEvent) {
@@ -46,8 +42,7 @@ export function SearchField({
       role="search"
       onSubmit={submit}
       className={cn(
-        "flex items-center gap-1 px-2",
-        size === "lg" ? "h-14 rounded-xl bg-canvas shadow-field" : "h-11 rounded-full bg-surface",
+        "flex h-14 items-center gap-1 rounded-xl bg-canvas px-2 shadow-field",
         className,
       )}
     >

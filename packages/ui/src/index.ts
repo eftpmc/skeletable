@@ -10,6 +10,7 @@ export { Avatar, EmptyState, ScreenTitle, SectionHeader, type SectionHeaderProps
 export { ListGroup, type ListGroupProps, ListRow, type ListRowProps, Thumb } from "./List";
 export { NavDrawer, type NavItem, NavPills, SideNav, TabBar } from "./Navigation";
 export { ProductTile, type ProductTileProps, TileGrid } from "./ProductTile";
+export { PaletteDialog } from "./Palette";
 export { SearchField, type SearchFieldProps } from "./SearchField";
 export { type Segment, SegmentedControl, type SegmentedControlProps } from "./SegmentedControl";
 export { Sheet, type SheetProps } from "./Sheet";
