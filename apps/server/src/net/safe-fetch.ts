@@ -21,6 +21,8 @@ export class FetchError extends Error {
 }
 
 export type SafeFetchOptions = {
+  /** Let storefront readers inspect error pages; network/SSRF protections still apply. */
+  allowHttpErrors?: boolean;
   maxBytes?: number;
   timeoutMs?: number;
   maxRedirects?: number;
@@ -54,7 +56,7 @@ export async function safeFetch(input: string, options: SafeFetchOptions = {}): 
       hopOptions = { ...options, method: "GET", body: undefined };
       continue;
     }
-    if (response.status >= 400) {
+    if (response.status >= 400 && !options.allowHttpErrors) {
       throw new FetchError(`Request failed with status ${response.status}`, "http_error", response.status);
     }
     return { url: url.toString(), status: response.status, contentType: response.contentType, body: response.body };

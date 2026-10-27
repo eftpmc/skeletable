@@ -2,6 +2,7 @@ import { searchQuerySchema } from "@closet/shared";
 import { Hono } from "hono";
 import { z } from "zod";
 import { FetchError } from "../net/safe-fetch.js";
+import { StoreUnavailableError } from "../catalog/connectors/storefront.js";
 import type { AppEnv } from "../env.js";
 import type { SourceInfo } from "@closet/shared";
 import { NotFoundError, type SearchService } from "./service.js";
@@ -24,6 +25,9 @@ export function searchRoutes(search: SearchService, sourceInfo: SourceInfo[], ic
     try {
       return c.json({ productId: await search.resolveLink(url) });
     } catch (error) {
+      if (error instanceof StoreUnavailableError) {
+        return c.json({ error: "store_unavailable", state: error.observation.state, message: error.message }, 422);
+      }
       if (error instanceof FetchError || error instanceof NotFoundError) {
         return c.json({ error: "unreadable", message: "We couldn't find a product on that page." }, 422);
       }

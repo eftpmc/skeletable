@@ -3,14 +3,27 @@ import { type HTMLElement, parse } from "node-html-parser";
 import { type SafeFetchOptions, safeFetch } from "../net/safe-fetch.js";
 import { normalizeGtin } from "../search/normalize.js";
 import { guessCategory, parseColorNames } from "./guess.js";
+import { readStorefront, StoreUnavailableError } from "../catalog/connectors/storefront.js";
+import { extractRecipe } from "../catalog/connectors/recipes.js";
+import { reviewedRecipeFor } from "../catalog/connectors/reviewed-recipes.js";
 
 type PageData = Omit<LinkPreview, "category" | "colors" | "url"> & { color: string | null; category: string | null };
 
 /** Read product details from a store page: JSON-LD first, then OpenGraph, then Shopify's product JSON. */
 export async function fetchLinkPreview(url: string, fetchOptions: SafeFetchOptions = {}): Promise<LinkPreview> {
-  const page = await safeFetch(url, { ...fetchOptions, accept: "text/html,application/xhtml+xml" });
+  const { page, observation } = await readStorefront(url, { ...fetchOptions, accept: "text/html,application/xhtml+xml" });
+  if (observation.state !== "open") throw new StoreUnavailableError(observation);
   const html = page.body.toString("utf8");
   const preview = parseProductPage(html, page.url);
+  const recipe = reviewedRecipeFor(page.url);
+  if (recipe && preview.priceCents === null) {
+    const recovered = extractRecipe(html, page.url, recipe).product;
+    if (recovered) {
+      preview.title = recovered.title;
+      preview.priceCents = recovered.priceCents;
+      preview.currency = recovered.currency;
+    }
+  }
 
   if (isShopify(html) && (!preview.brand || preview.images.length === 0 || preview.priceCents === null)) {
     const shopify = await fetchShopifyProduct(page.url, fetchOptions);

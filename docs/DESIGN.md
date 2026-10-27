@@ -198,7 +198,7 @@ Auth: OAuth on cloud, tokens for self-host, writes opt-in.
 | 1 Closet | Items, link import (JSON-LD/Shopify, SSRF-safe), images, sizes, export | ✅ done, becomes **Collection** and the link importer |
 | 2 Search core | Source adapters (eBay, Best Buy, Shopify index, link), search API with fan-out, results + product pages on web, offers and price history, verdict v0 | ✅ done. Matching handles model codes, nicknames and generations ("sony xm5", "ps5 slim", "airpods pro 2"), judged on `apps/server/test/search-queries.ts`. On the cloud, signed-out visitors can search (rate limited). |
 | 3 Alerts | Saved searches, watches, scheduler, alert events, email digest, ntfy | ✅ done: in-app feed, ntfy pushes, morning email digest (SMTP or Resend). Left for later: back-in-stock and target-price alerts. |
-| Catalog | Brand discovery and the product catalog ([CATALOG.md](CATALOG.md)) | First slice done: Discover, brand pages, votes, For you, catalog pack shipped in the image. Next is C1 (job queue, connectors, crawling). |
+| Catalog | Brand discovery and the product catalog ([CATALOG.md](CATALOG.md)) | First slice done: Discover, brand pages, votes, For you, catalog pack shipped in the image. C1 connector foundation added: Shopify and generic product pages share a contract, with temporary-store states and snapshot retention ([details](CONNECTORS.md)). Next: job queue, durable observations and scheduled crawling. |
 | 4 Mobile | Expo app: search, results, product, alerts, saved/collection, push, share extension | next |
 | 5 Camera + matching | Image search, AI matching and tagging | |
 | 6 MCP | Read tools, then write tools | |
