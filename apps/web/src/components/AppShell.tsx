@@ -1,10 +1,11 @@
-import { Avatar, BellIcon, BookmarkIcon, CompassIcon, IconButton, MenuIcon, NavDrawer, PackageIcon, SearchIcon, SideNav, XIcon, cn, focusRing } from "@closet/ui";
-import { type ReactNode, useEffect, useState } from "react";
+import { Avatar, BellIcon, BookmarkIcon, CompassIcon, HomeIcon, IconButton, MenuIcon, NavDrawer, PackageIcon, SearchIcon, SideNav, XIcon, cn, focusRing } from "@closet/ui";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router";
 import { useUnreadAlerts } from "../lib/alerts";
+import { SearchTrigger, useSearchPalette } from "./SearchPalette";
 
 const tabs = [
-  { to: "/", label: "Search", icon: SearchIcon, end: true },
+  { to: "/", label: "Home", icon: HomeIcon, end: true },
   { to: "/discover", label: "Discover", icon: CompassIcon, end: false },
   { to: "/alerts", label: "Alerts", icon: BellIcon, end: false },
   { to: "/saved", label: "Saved", icon: BookmarkIcon, end: false },
@@ -34,6 +35,48 @@ function TopBar({ button, onNavigate }: { button: ReactNode; onNavigate?: () => 
   );
 }
 
+/**
+ * Phones: search sits at the bottom, where thumbs are. It tucks away while you scroll down a page and
+ * comes back when you scroll up. Product pages have their own bar there (Buy), so it steps aside.
+ */
+function BottomSearch() {
+  const { open } = useSearchPalette();
+  const { pathname, search } = useLocation();
+  const [hidden, setHidden] = useState(false);
+  const last = useRef(0);
+  const q = pathname === "/search" ? (new URLSearchParams(search).get("q") ?? "") : "";
+
+  useEffect(() => {
+    function onScroll() {
+      const y = window.scrollY;
+      if (Math.abs(y - last.current) < 8) return;
+      setHidden(y > last.current && y > 80);
+      last.current = y;
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  if (pathname.startsWith("/p/")) return null;
+  return (
+    <div
+      className={cn(
+        "fixed inset-x-0 bottom-0 z-20 px-4 pb-[calc(12px+env(safe-area-inset-bottom))] transition-transform duration-300 lg:hidden",
+        hidden && "translate-y-[calc(100%+8px)]",
+      )}
+    >
+      <button
+        type="button"
+        onClick={() => open(q)}
+        className={cn("flex h-14 w-full items-center gap-3 rounded-full bg-canvas px-4 text-left shadow-field", focusRing)}
+      >
+        <SearchIcon size={22} strokeWidth={2.4} className="shrink-0 text-ink" />
+        <span className={cn("min-w-0 flex-1 truncate text-body", q ? "text-ink" : "text-muted")}>{q || "Search or paste a link"}</span>
+      </button>
+    </div>
+  );
+}
+
 /** The same sidebar everywhere: beside the page on wide screens, in a drawer behind the menu button on narrow ones. */
 export function AppShell({ user }: { user: User }) {
   const { pathname } = useLocation();
@@ -43,13 +86,11 @@ export function AppShell({ user }: { user: User }) {
   // Navigating closes the drawer.
   useEffect(() => setMenuOpen(false), [pathname]);
 
-  // Results and product pages belong to Search; brand pages to Discover.
+  // Search lives in the header, so results and product pages belong to no tab; brand pages belong to Discover.
   const items = tabs.map(({ to, end, ...tab }) => ({
     ...tab,
     to,
-    active: end
-      ? pathname === "/" || pathname.startsWith("/search") || pathname.startsWith("/p/")
-      : pathname.startsWith(to) || (to === "/discover" && pathname.startsWith("/brands/")),
+    active: end ? pathname === to : pathname.startsWith(to) || (to === "/discover" && pathname.startsWith("/brands/")),
     count: to === "/alerts" ? unread : undefined,
   }));
 
@@ -105,11 +146,20 @@ export function AppShell({ user }: { user: User }) {
         {sidebar(undefined, true)}
       </NavDrawer>
 
-      <main className="min-w-0 flex-1 px-4 pt-4 pb-10 lg:px-10 lg:pt-6 lg:pb-16">
-        <div className="mx-auto w-full max-w-6xl">
-          <Outlet context={{ user }} />
+      <div className="min-w-0 flex-1">
+        {/* Wide screens: search on every page, in a bar above it. */}
+        <div className="sticky top-0 z-20 hidden border-b border-line bg-canvas/90 px-10 backdrop-blur lg:block">
+          <div className="mx-auto flex h-[72px] max-w-6xl items-center">
+            <SearchTrigger className="max-w-[640px]" />
+          </div>
         </div>
-      </main>
+        <main className="px-4 pt-4 pb-28 lg:px-10 lg:pt-8 lg:pb-16">
+          <div className="mx-auto w-full max-w-6xl">
+            <Outlet context={{ user }} />
+          </div>
+        </main>
+      </div>
+      <BottomSearch />
     </div>
   );
 }

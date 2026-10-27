@@ -263,21 +263,21 @@ function OfferTable({ offers }: { offers: OfferSummary[] }) {
   );
 }
 
-const storeIconProps = (store: OfferSummary["store"]) => ({ name: store.name, src: storeIconUrl(store.domain) });
+export const storeIconProps = (store: OfferSummary["store"]) => ({ name: store.name, src: storeIconUrl(store.domain) });
 const storeIconUrl = (domain: string) => `/api/store-icons/${encodeURIComponent(domain)}`;
 
 /** Each store once, in the order given. */
-function storesOf(offers: OfferSummary[]) {
+export function storesOf(offers: OfferSummary[]) {
   return [...new Map(offers.map((o) => [o.store.domain, o.store])).values()];
 }
 
 /** The picked condition first, cheapest first within each condition. */
-function sortOffers(offers: OfferSummary[], condition: Condition) {
+export function sortOffers(offers: OfferSummary[], condition: Condition) {
   return [...offers].sort((a, b) => Number(b.condition === condition) - Number(a.condition === condition) || a.priceCents - b.priceCents);
 }
 
 /** Every store selling this product: the picked condition first, then the others. Each row opens the store. */
-function BuyMenu({ offers, condition }: { offers: OfferSummary[]; condition: Condition }) {
+export function BuyMenu({ offers, condition }: { offers: OfferSummary[]; condition: Condition }) {
   const sorted = sortOffers(offers, condition);
   const picked = sorted.filter((o) => o.condition === condition);
   const others = sorted.filter((o) => o.condition !== condition);

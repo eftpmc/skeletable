@@ -1,9 +1,9 @@
 import { type Condition, type ResultCard, conditionLabels, conditions } from "@closet/shared";
 import { BellIcon, CheckIcon, Chip, ChipDivider, ChipRow, EmptyState, ProductTile, Skeleton, TileGrid, cn, focusRing } from "@closet/ui";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { Link, useSearchParams } from "react-router";
-import { SearchBar } from "../components/SearchBar";
+import { useEffect, useSyncExternalStore } from "react";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
+import { ProductPeek, ProductSheet } from "../components/ProductPeek";
 import { useSavedSearch } from "../lib/alerts";
 import { api } from "../lib/api";
 import { formatMoney } from "../lib/format";
@@ -12,12 +12,29 @@ const prices = [50, 100, 250, 500];
 const sorts = { best: "Best match", price: "Lowest price" } as const;
 type Sort = keyof typeof sorts;
 
+// Wide screens open products beside the results; phones in a sheet over them.
+const wide = window.matchMedia("(min-width: 1024px)");
+const useWide = () =>
+  useSyncExternalStore(
+    (onChange) => {
+      wide.addEventListener("change", onChange);
+      return () => wide.removeEventListener("change", onChange);
+    },
+    () => wide.matches,
+  );
+
 export function ResultsPage() {
   const [params, setParams] = useSearchParams();
   const q = params.get("q") ?? "";
   const condition = (params.get("condition") as Condition | null) ?? undefined;
   const max = params.get("max") ? Number(params.get("max")) : undefined;
   const sort: Sort = params.get("sort") === "price" ? "price" : "best";
+  const isWide = useWide();
+  const peek = params.get("p");
+  const location = useLocation();
+  const navigate = useNavigate();
+  // Opening a product adds a history entry, so Back (or the phone's back swipe) closes it.
+  const openedHere = (location.state as { peek?: boolean } | null)?.peek === true;
 
   const { data, isPending, isError } = useQuery({
     queryKey: ["search", q, condition, max],
@@ -35,7 +52,7 @@ export function ResultsPage() {
     if (data && savedId && hasNew) markViewed(savedId);
   }, [data, savedId, hasNew, markViewed]);
 
-  const saveButton = (className?: string) => (
+  const saveButton = (className?: string, short = false) => (
     <button
       type="button"
       aria-pressed={saved.saved !== null}
@@ -49,28 +66,60 @@ export function ResultsPage() {
       )}
     >
       {saved.saved ? <CheckIcon size={16} /> : <BellIcon size={16} />}
-      {saved.saved ? "Saved · alerts on" : "Save search"}
+      {saved.saved ? (short ? "Saved" : "Saved · alerts on") : short ? "Save" : "Save search"}
     </button>
   );
 
-  const set = (key: string, value: string | undefined) => {
+  const set = (key: string, value: string | undefined, push = false) => {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
     else next.delete(key);
-    setParams(next, { replace: true });
+    setParams(next, push ? { state: { peek: true } } : { replace: true, state: location.state });
+  };
+  const open = (id: string) => set("p", id, !peek);
+  const close = () => (openedHere ? navigate(-1) : set("p", undefined));
+
+  const results = data ? (sort === "price" ? [...data.results].sort((a, b) => a.best.priceCents - b.best.priceCents) : data.results) : [];
+  const peekIndex = peek ? results.findIndex((card) => card.productId === peek) : -1;
+  const step = (by: 1 | -1) => {
+    if (results.length === 0) return;
+    set("p", results[(Math.max(peekIndex, 0) + by + results.length) % results.length]!.productId);
   };
 
+  // Focus follows the open product, so only one tile looks picked and the grid scrolls along with the panel.
+  useEffect(() => {
+    if (!peek || !isWide) return;
+    const tile = document.querySelector<HTMLElement>('[aria-current="true"]');
+    // Only when focus is already on a tile (you clicked one); never pull it out of the panel.
+    if (tile && document.activeElement !== tile && tile.parentElement?.contains(document.activeElement)) {
+      tile.focus({ preventScroll: true });
+      tile.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  }, [peek, isWide]);
+
+  // With a product open beside the results: arrows step through them, Escape closes it.
+  useEffect(() => {
+    if (!peek || !isWide) return;
+    function onKey(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null;
+      if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return;
+      if (document.querySelector("[role=dialog]")) return;
+      if (event.key === "ArrowRight" || event.key === "ArrowDown" || event.key === "j") step(1);
+      else if (event.key === "ArrowLeft" || event.key === "ArrowUp" || event.key === "k") step(-1);
+      else if (event.key === "Escape") close();
+      else return;
+      event.preventDefault();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
   const failed = data?.sources.filter((s) => s.status !== "ok") ?? [];
-  const results = data ? (sort === "price" ? [...data.results].sort((a, b) => a.best.priceCents - b.best.priceCents) : data.results) : [];
 
   return (
     <section>
-      <div className="mx-auto max-w-2xl lg:mx-0 lg:max-w-[640px]">
-        <SearchBar key={q} initial={q} back />
-      </div>
-
-      {/* Phones: filters as chips. Wide screens get the sidebar instead. */}
-      <ChipRow className="mt-3 lg:hidden">
+      {/* The search box is in the header. Phones: filters as chips. Wide screens get the sidebar instead. */}
+      <ChipRow className="lg:hidden">
         {saveButton()}
         <ChipDivider />
         {conditions.map((c) => (
@@ -86,8 +135,8 @@ export function ResultsPage() {
         ))}
       </ChipRow>
 
-      <div className="mt-5 lg:mt-8 lg:flex lg:items-start lg:gap-12">
-        <aside aria-label="Filters" className="hidden w-52 shrink-0 flex-col gap-7 lg:flex">
+      <div className="mt-5 lg:mt-0 lg:flex lg:items-start lg:gap-12">
+        <aside aria-label="Filters" className={cn("hidden w-52 shrink-0 flex-col gap-7", !(peek && isWide) && "lg:flex")}>
           <FilterGroup
             legend="Condition"
             name="condition"
@@ -117,8 +166,9 @@ export function ResultsPage() {
             <EmptyState title="Nothing found" body="Try fewer words, or paste a product link." />
           ) : (
             <>
+              {/* With a product open beside the grid there's less room: the count stacks and the controls get shorter. */}
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-1">
-                <h1 className="flex flex-wrap items-baseline gap-x-2">
+                <h1 className={cn("flex", peek && isWide ? "flex-col" : "flex-wrap items-baseline gap-x-2")}>
                   <span className="text-title-2 text-ink lg:text-[28px] lg:leading-8">
                     {results.length.toLocaleString()} {results.length === 1 ? "result" : "results"}
                   </span>
@@ -127,9 +177,9 @@ export function ResultsPage() {
                     {data.storeCount === 1 ? "store" : "stores"}
                   </span>
                 </h1>
-                <div className="ml-auto hidden lg:block">{saveButton("h-10")}</div>
+                <div className="ml-auto hidden lg:block">{saveButton("h-10", Boolean(peek))}</div>
                 <label className="hidden h-10 items-center gap-1.5 rounded-full border border-line pr-2 pl-4 text-callout font-normal text-muted lg:flex">
-                  Sort
+                  <span className={cn(peek && "sr-only")}>Sort</span>
                   <select
                     value={sort}
                     onChange={(event) => set("sort", event.target.value === "best" ? undefined : event.target.value)}
@@ -148,12 +198,39 @@ export function ResultsPage() {
               )}
               <TileGrid className="mt-4">
                 {results.map((card) => (
-                  <Tile key={card.productId} card={card} />
+                  <Tile
+                    key={card.productId}
+                    card={card}
+                    selected={card.productId === peek}
+                    onOpen={(event) => {
+                      event.preventDefault();
+                      open(card.productId);
+                    }}
+                  />
                 ))}
               </TileGrid>
             </>
           )}
         </div>
+
+        {peek && isWide && (
+          <div className="sticky top-[104px] hidden h-[calc(100dvh-128px)] w-[420px] shrink-0 lg:block xl:w-[460px]">
+            <ProductPeek
+              key={peek}
+              id={peek}
+              onClose={close}
+              onStep={step}
+              position={peekIndex >= 0 ? `${peekIndex + 1} of ${results.length}` : ""}
+            />
+          </div>
+        )}
+        <ProductSheet
+          open={Boolean(peek) && !isWide}
+          id={peek ?? ""}
+          onClose={close}
+          onStep={step}
+          position={peekIndex >= 0 ? `${peekIndex + 1} of ${results.length}` : ""}
+        />
       </div>
     </section>
   );
@@ -209,11 +286,14 @@ function badgeFor(card: ResultCard) {
   return null;
 }
 
-function Tile({ card }: { card: ResultCard }) {
+function Tile({ card, selected, onOpen }: { card: ResultCard; selected: boolean; onOpen?: (event: React.MouseEvent) => void }) {
   return (
     <ProductTile
       as={Link}
       to={`/p/${card.productId}`}
+      onClick={onOpen}
+      aria-current={selected ? "true" : undefined}
+      className={cn(selected && "ring-2 ring-ink ring-offset-4 ring-offset-canvas")}
       image={card.imageUrl}
       alt={card.title}
       price={formatMoney(card.best.priceCents, card.best.currency) ?? ""}
