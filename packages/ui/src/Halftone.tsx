@@ -41,19 +41,3 @@ export function Halftone({
     </div>
   );
 }
-
-/** The wordmark's mark: a corner of the halftone, dots shrinking away from the top left. */
-export function BrandMark({ size = 18, className }: { size?: number; className?: string }) {
-  const dots = [];
-  for (let row = 0; row < 4; row++) {
-    for (let col = 0; col < 4; col++) {
-      const r = 2.1 - (row + col) * 0.32;
-      if (r > 0.35) dots.push(<circle key={`${row}-${col}`} cx={3 + col * 6} cy={3 + row * 6} r={r * 1.25} />);
-    }
-  }
-  return (
-    <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" className={cn("shrink-0 fill-accent", className)}>
-      {dots}
-    </svg>
-  );
-}

@@ -1,4 +1,4 @@
-import { BellIcon, BrandMark, BookmarkIcon, CompassIcon, HomeIcon, IconButton, MenuIcon, NavDrawer, PackageIcon, SearchIcon, SideNav, XIcon, cn, focusRing } from "@closet/ui";
+import { BellIcon, BookmarkIcon, CompassIcon, HomeIcon, IconButton, MenuIcon, NavDrawer, PackageIcon, SearchIcon, SideNav, XIcon, cn, focusRing } from "@closet/ui";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router";
 import { useUnreadAlerts } from "../lib/alerts";
@@ -17,8 +17,7 @@ type User = { name: string; email: string; image?: string | null };
 
 export function Wordmark({ className, onClick }: { className?: string; onClick?: () => void }) {
   return (
-    <Link to="/" onClick={onClick} className={cn("inline-flex items-center gap-1.5 rounded-sm font-extrabold tracking-[-0.03em] text-ink", focusRing, className)}>
-      <BrandMark size={16} />
+    <Link to="/" onClick={onClick} className={cn("rounded-sm font-extrabold tracking-[-0.03em] text-ink", focusRing, className)}>
       skeleton
     </Link>
   );

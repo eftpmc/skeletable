@@ -11,7 +11,7 @@ export { ListGroup, type ListGroupProps, ListRow, type ListRowProps, Thumb } fro
 export { NavDrawer, type NavItem, NavPills, SideNav, TabBar } from "./Navigation";
 export { ProductTile, type ProductTileProps, TileGrid } from "./ProductTile";
 export { DragSheet } from "./DragSheet";
-export { BrandMark, Halftone } from "./Halftone";
+export { Halftone } from "./Halftone";
 export { Menu, MenuChoices, MenuHeader, MenuItem, MenuSeparator } from "./Menu";
 export { PaletteDialog } from "./Palette";
 export { SearchField, type SearchFieldProps } from "./SearchField";
