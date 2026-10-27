@@ -66,7 +66,13 @@ export function catalogRoutes(catalog: CatalogService, save: SaveItem) {
     ),
   );
 
-  app.get("/catalog/categories", async (c) => c.json(await catalog.categories(c.get("user").id)));
+  app.get("/catalog/search", async (c) => {
+    const q = searchSchema.safeParse(c.req.query("q"));
+    if (!q.success) return c.json([]);
+    return c.json(await catalog.searchItems(c.get("user").id, q.data));
+  });
+
+  app.get("/catalog/categories",async (c) => c.json(await catalog.categories(c.get("user").id)));
 
   app.get("/catalog/items/:id", async (c) => c.json(await catalog.item(c.get("user").id, c.req.param("id"))));
 

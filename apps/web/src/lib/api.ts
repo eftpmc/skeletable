@@ -143,6 +143,7 @@ export const api = {
   catalogCategories: () => request<CategoryCount[]>("GET", "/api/catalog/categories"),
   preferences: () => request<Preferences>("GET", "/api/preferences"),
   setPreferences: (input: PreferencesInput) => request<Preferences>("PATCH", "/api/preferences", input),
+  catalogSearch: (q: string) => request<ItemFeed["items"]>("GET", `/api/catalog/search?${new URLSearchParams({ q })}`),
   catalogItem: (id: string) => request<ItemDetail>("GET", `/api/catalog/items/${encodeURIComponent(id)}`),
   saveItem: (id: string) => request<{ productId: string }>("POST", `/api/catalog/items/${encodeURIComponent(id)}/save`),
   brands: () => request<string[]>("GET", "/api/brands"),

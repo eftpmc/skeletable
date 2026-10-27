@@ -3,13 +3,17 @@ import { BellIcon, CheckIcon, ChevronDownIcon, EmptyState, Menu, MenuChoices, Pr
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
+import { ItemPeek, ItemSheet, usd } from "../components/ItemPeek";
 import { ProductPeek, ProductSheet } from "../components/ProductPeek";
 import { useWide } from "../lib/media";
 import { useSavedSearch } from "../lib/alerts";
 import { api } from "../lib/api";
 import { formatMoney } from "../lib/format";
+import { useSignedIn } from "../lib/viewer";
 
 const prices = [50, 100, 250, 500];
+/** Catalog products shown above the stores' results; the stores' answer is the fuller one. */
+const CATALOG_SHOWN = 8;
 const sorts = { best: "Best match", price: "Lowest price" } as const;
 type Sort = keyof typeof sorts;
 
@@ -27,6 +31,7 @@ export function ResultsPage() {
   // Wide screens open products beside the results; phones in a sheet over them.
   const isWide = useWide();
   const peek = params.get("p");
+  const item = params.get("item");
   const location = useLocation();
   const navigate = useNavigate();
   // Opening a product adds a history entry, so Back (or the phone's back swipe) closes it.
@@ -36,6 +41,13 @@ export function ResultsPage() {
     queryKey: ["search", q, explicitCondition, explicitMax, serializedIntent, mode],
     queryFn: () => api.search({ q, condition: explicitCondition, max: explicitMax, intent: frozen, mode }),
     enabled: q.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+  // The catalog answers from memory, so its products show while the stores are still being asked.
+  const catalog = useQuery({
+    queryKey: ["catalog", "search", q],
+    queryFn: () => api.catalogSearch(q),
+    enabled: useSignedIn() && q.length > 0,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -103,8 +115,32 @@ export function ResultsPage() {
     else next.delete(key);
     setParams(next, push ? { state: { peek: true } } : { replace: true, state: location.state });
   };
-  const open = (id: string) => set("p", id, !peek);
-  const close = () => (openedHere ? navigate(-1) : set("p", undefined));
+  // One thing open at a time: a store product (p) or a catalog item (item).
+  const show = (key: "p" | "item", id: string) => {
+    const next = new URLSearchParams(params);
+    next.delete(key === "p" ? "item" : "p");
+    next.set(key, id);
+    setParams(next, peek || item ? { replace: true, state: location.state } : { state: { peek: true } });
+  };
+  const open = (id: string) => show("p", id);
+  const close = () => {
+    if (openedHere) return navigate(-1);
+    const next = new URLSearchParams(params);
+    next.delete("p");
+    next.delete("item");
+    setParams(next, { replace: true, state: location.state });
+  };
+
+  // The catalog sells new at list price in US dollars, so it only fits a "new" condition and a dollar budget.
+  const catalogFits = !intent.condition || intent.condition.strength !== "required" || intent.condition.values.includes("new");
+  const catalogItems = catalogFits
+    ? (catalog.data ?? []).filter((i) => !max || (i.priceUsd !== null && i.priceUsd <= max)).slice(0, CATALOG_SHOWN)
+    : [];
+  const itemIndex = item ? catalogItems.findIndex((i) => i.id === item) : -1;
+  const stepItem = (by: 1 | -1) => {
+    if (catalogItems.length === 0) return;
+    show("item", catalogItems[(Math.max(itemIndex, 0) + by + catalogItems.length) % catalogItems.length]!.id);
+  };
 
   const results = data ? (sort === "price" ? [...data.results].sort((a, b) => a.best.priceCents - b.best.priceCents) : data.results) : [];
   const peekIndex = peek ? results.findIndex((card) => card.productId === peek) : -1;
@@ -200,6 +236,34 @@ export function ResultsPage() {
 
       <div className="mt-3 lg:flex lg:items-start lg:gap-8">
         <div className="min-w-0 flex-1">
+          {catalogItems.length > 0 && (
+            <section aria-labelledby="catalog-results" className="mb-6">
+              <h2 id="catalog-results" className="mt-2 mb-3 px-1 text-title-3 text-ink">
+                From the catalog
+              </h2>
+              <TileGrid>
+                {catalogItems.map((i) => (
+                  <ProductTile
+                    key={i.id}
+                    as={Link}
+                    to={`/discover?${new URLSearchParams({ item: i.id })}`}
+                    onClick={(event: React.MouseEvent) => {
+                      event.preventDefault();
+                      show("item", i.id);
+                    }}
+                    aria-current={i.id === item ? "true" : undefined}
+                    className={cn(i.id === item && "ring-2 ring-ink ring-offset-4 ring-offset-canvas")}
+                    image={i.imageUrl}
+                    alt={i.title ?? i.brandName}
+                    price={usd(i.priceUsd) ?? ""}
+                    title={i.title ?? undefined}
+                    caption={i.brandName}
+                  />
+                ))}
+              </TileGrid>
+              <h2 className="mt-4 px-1 text-title-3 text-ink">From stores</h2>
+            </section>
+          )}
           {isPending ? (
             <TileGrid className="mt-2">
               {[220, 170, 200, 160, 240, 180, 210, 190].map((h, i) => (
@@ -258,6 +322,12 @@ export function ResultsPage() {
           onStep={step}
           position={peekIndex >= 0 ? `${peekIndex + 1} of ${results.length}` : ""}
         />
+        {item && isWide && (
+          <div className="sticky top-[136px] hidden h-[calc(100dvh-168px)] w-[420px] shrink-0 lg:block xl:w-[460px]">
+            <ItemPeek key={item} id={item} onClose={close} onStep={stepItem} onOpen={(id) => show("item", id)} />
+          </div>
+        )}
+        <ItemSheet open={Boolean(item) && !isWide} id={item ?? ""} onClose={close} onStep={stepItem} onOpen={(id) => show("item", id)} />
       </div>
     </section>
   );

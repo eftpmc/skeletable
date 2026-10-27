@@ -232,6 +232,33 @@ describe("catalog", () => {
     expect(top.filter((n) => /Loud|Neon|Acid/.test(n)).length).toBeGreaterThanOrEqual(5);
   });
 
+  it("searches products by brand and title, on the viewer's side of the catalog", async () => {
+    const suus = store("Suus", 0, 0, { department: "women" }, [
+      { title: "Linen Shirt Dress", category: "dresses", department: "women" },
+      { title: "Wool Overshirt", category: "shirts", department: "women" },
+    ]);
+    const winfield = store("Winfield", 10, 0, { department: "men" }, [
+      { title: "Steel Grey Linen Shirt", category: "shirts", department: "men" },
+      { title: "Heavy Tee", category: "tops", department: "unisex" },
+    ]);
+    await importCatalog(db, [suus, winfield, lowQuality]);
+    const user = await signUp(setup());
+    const search = async (q: string) =>
+      ((await (await user.get(`/api/catalog/search?q=${encodeURIComponent(q)}`)).json()) as ItemFeed["items"]).map((i) => i.title);
+
+    // Every word must appear, each at the start of a word: "tee" doesn't find "Steel".
+    expect((await search("linen shirt")).sort()).toEqual(["Linen Shirt Dress", "Steel Grey Linen Shirt"]);
+    expect(await search("tee")).toEqual(["Heavy Tee"]);
+    expect(await search("overshirt")).toEqual(["Wool Overshirt"]);
+    // A brand's name finds its products; brands under the quality bar never show.
+    expect((await search("winfield")).sort()).toEqual(["Heavy Tee", "Steel Grey Linen Shirt"]);
+    expect(await search("wholesale")).toEqual([]);
+    expect(await search("   ")).toEqual([]);
+
+    await user.patch("/api/preferences", { shopFor: "men" });
+    expect(await search("linen shirt")).toEqual(["Steel Grey Linen Shirt"]);
+  });
+
   it("opens an item with more from its brand and more like it", async () => {
     await importCatalog(db, [...quiet, ...loud, far]);
     const user = await signUp(setup());

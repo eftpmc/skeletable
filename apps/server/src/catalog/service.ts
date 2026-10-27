@@ -428,6 +428,29 @@ export class CatalogService {
     return { items: ordered.slice(start, start + FEED_PAGE).map((x) => this.toItem(x.i)), next: start + FEED_PAGE < ordered.length ? page + 1 : null };
   }
 
+  /**
+   * Products on someone's side of the catalog whose brand and title hold every word of the query
+   * (each at the start of a word, so "tee" doesn't find "steel"). Read from the cached catalog, so
+   * it answers before the live stores do. The brand itself first, then titles that say it, then the
+   * brand's own order.
+   */
+  async searchItems(userId: string, q: string, limit = 24): Promise<CatalogItem[]> {
+    const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+    if (!words.length) return [];
+    const patterns = words.map((w) => new RegExp(`(^|[^\\p{L}\\p{N}])${w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "u"));
+    const [{ items }, prefs] = await Promise.all([this.feedItems(), readPreferences(this.db, userId)]);
+    const query = words.join(" ");
+    const scored = this.visible(items, prefs).flatMap((i) => {
+      const brandName = i.brandName.toLowerCase();
+      const title = (i.title ?? "").toLowerCase();
+      if (!patterns.every((p) => p.test(brandName) || p.test(title))) return [];
+      const inTitle = patterns.filter((p) => p.test(title)).length;
+      return [{ i, score: (brandName === query ? 2 : 0) + inTitle / patterns.length + 0.2 * i.quality - 0.01 * i.position }];
+    });
+    scored.sort((a, z) => z.score - a.score);
+    return scored.slice(0, limit).map((x) => this.toItem(x.i));
+  }
+
   /** The categories someone can browse, in the taxonomy's order, with how many products each has for them. */
   async categories(userId: string): Promise<CategoryCount[]> {
     const [{ items }, prefs] = await Promise.all([this.feedItems(), readPreferences(this.db, userId)]);
