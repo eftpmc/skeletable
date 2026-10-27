@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "@closet/ui/tokens.css";
 @import "@closet/ui/theme.css";
+@import "@closet/ui/motion.css";
 @source "../../../packages/ui/src";
 
 html,

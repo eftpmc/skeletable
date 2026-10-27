@@ -2,6 +2,7 @@
    Token values come from the page's own tokens.css. */
 @import "tailwindcss";
 @import "./theme.css";
+@import "./motion.css";
 @source "./";
 
 body {

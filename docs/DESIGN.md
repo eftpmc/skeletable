@@ -42,13 +42,13 @@ Later: anyone who shops online, plus self-hosters who want a private price track
 | **Saved** | Products you're tracking, grouped by day, with price drops |
 | **Collection** | What you already have, with sizes, receipts and what it's worth used |
 
-Search isn't a tab: the search box (text, pasted link, camera) sits in the header on every page, so results and products belong to no tab. Account, sizes, sources (self-host), MCP and export sit behind the avatar.
+Search isn't a tab. The search box sits in the header on every page (along the bottom on phones, where thumbs are; it tucks away while you scroll down). It opens a palette, also on `/` or ⌘K: recent and saved searches before you type; while typing, search every store first, then what you already have that matches (tracked products with today's price, saved searches, recent searches, brands). A pasted link becomes "Find this product everywhere". Results and products belong to no tab. Account, sizes, sources (self-host), MCP and export sit behind the avatar.
 
 ### 4.2 Key screens (canvas round 4)
 
 - **Front page (signed out):** "Find anything, from every store." A big search bar (also takes links), black category chips (Sneakers, Tech, Clothing, Home, Used & refurb), then what the product is and a way to sign up.
 - **Home (signed in):** recent searches as chips (category chips when there are none), "New for your alerts" (cards with "12 new" badges), "Dropped on your list" (grid with "−$70" badges), "Picks for you" (three brands from Discover).
-- **Results:** search field with back and clear, then chips: **Filter**, **Save search** (turns into "Saved · alerts on"), condition, price and brand. Then "2,418 results from 312 stores" over a two-column masonry grid of photos with white price pills. Small labels like *Good price*, *Refurb* or *Used · like new* appear only where they help.
+- **Results:** a product opens beside the grid on wide screens (step through with the arrows or j/k) and in a sheet you pull down to close on phones; both keep your place and link to the full page. Chips: **Filter**, **Save search** (turns into "Saved · alerts on"), condition, price and brand. Then "2,418 results from 312 stores" over a two-column masonry grid of photos with white price pills. Small labels like *Good price*, *Refurb* or *Used · like new* appear only where they help.
 - **Product:** a large photo with save and back. Brand and short model name. A **New / Refurb / Used** switch, each with its best price, drives a big price, the store, and a one-line verdict. Then "Compare all 14 stores", and at the bottom **Track price** plus **Buy at [store]**.
 - **Alerts:** Gem-style cards ("12 NEW" with three photos) and price-drop cards. The Searches tab holds iOS-style grouped lists with counts and red dots.
 - **Saved:** a photo grid with price pills grouped by date.
