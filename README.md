@@ -23,6 +23,8 @@ A self-hosted server is private: searching needs an account, and there's no land
 |---|---|---|
 | `AUTH_SECRET` | required | Long random string. Keep it secret and don't change it. |
 | `MEILI_MASTER_KEY` | required | Long random string; the app and the search service share it. |
+| `CATALOG_PACK` | the image's pack | The catalog to load on start: a file path, or an `https://` URL to download (for a catalog too big for the image). Loaded only when it changes. |
+| `CATALOG_PACK_SHA256` | none | The pack's SHA-256; a download that doesn't match is refused. |
 | `PUBLIC_URL` | `http://localhost:3000` | The URL you open the app at. Must match, or sign-in fails. |
 | `PORT` | `3000` | Port on the host. |
 | `SIGNUPS_ENABLED` | `false` | Set to `true` to let anyone create an account. The first account can always be created. |

@@ -1,11 +1,12 @@
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { gzipSync } from "node:zlib";
 import { schema } from "@closet/db";
 import type { BrandCard, BrandDetail, CategoryCount, ForYou, ItemDetail, ItemFeed, Preferences } from "@closet/shared";
 import { eq } from "drizzle-orm";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { type CatalogRecord, importCatalog } from "../src/catalog/import.js";
 import { importPackIfNew } from "../src/catalog/pack.js";
 import { html, startFixtureServer } from "./helpers/fixture-server.js";
@@ -335,6 +336,20 @@ describe("catalog", () => {
     // Product vectors come through the bytes intact, normalized.
     const [item] = await db.select().from(schema.catalogItem).limit(1);
     expect(Math.hypot(...item!.look)).toBeCloseTo(1, 3);
+
+    // A pack too big for the image is downloaded instead, and checked against its hash when one is given.
+    const bigger = readFileSync(write([...quiet, uniqlo, ...loud, far]));
+    const sha = createHash("sha256").update(bigger).digest("hex");
+    const download = vi.spyOn(globalThis, "fetch").mockImplementation(async () => new Response(bigger));
+    try {
+      await expect(importPackIfNew(db, "https://packs.example/pack.jsonl.gz", "0".repeat(64))).rejects.toThrow(/doesn't match/);
+      expect(await importPackIfNew(db, "https://packs.example/pack.jsonl.gz", sha)).toMatchObject({ imported: true, added: 1 });
+      expect(download).toHaveBeenCalledWith("https://packs.example/pack.jsonl.gz", expect.anything());
+      download.mockImplementation(async () => new Response("gone", { status: 404 }));
+      await expect(importPackIfNew(db, "https://packs.example/pack.jsonl.gz")).rejects.toThrow(/404/);
+    } finally {
+      download.mockRestore();
+    }
   });
 
   it("imports onto brands people already added, and keeps same-named stores apart", async () => {

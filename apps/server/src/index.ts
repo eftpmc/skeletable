@@ -30,7 +30,7 @@ const server = serve({ fetch: app.fetch, port: config.PORT }, (info) => {
 void (async () => {
   if (config.CATALOG_PACK) {
     try {
-      const result = await importPackIfNew(db, config.CATALOG_PACK);
+      const result = await importPackIfNew(db, config.CATALOG_PACK, config.CATALOG_PACK_SHA256);
       console.log("catalog pack", result.imported ? "imported" : "already imported", result);
       if (result.imported) return console.log("catalog search index rebuilt:", await services.catalog.reindex(), "products");
     } catch (error) {

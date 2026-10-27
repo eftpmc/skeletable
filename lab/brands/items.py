@@ -34,7 +34,7 @@ def opener():
 
 
 def read_pack(path):
-    return [json.loads(line) for line in gzip.open(path, "rt") if line.strip()]
+    return [json.loads(line) for line in gzip.open(path, "rt", encoding="utf-8") if line.strip()]
 
 
 def photos_of(r):
