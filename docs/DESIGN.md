@@ -36,7 +36,7 @@ Later: anyone who shops online, plus self-hosters who want a private price track
 
 | Tab | Purpose |
 |---|---|
-| **Home** | What changed since your last visit: recent searches, new alert matches, price drops on your list, brand picks. A short "Get started" checklist until you've saved a search, tracked a price and liked enough brands |
+| **Discover** | Where signed-in people land. Small brands as photo spreads; open the ones you like the look of and Discover learns your taste from the time you spend, with an optional heart. "For you" once it knows enough |
 | **Camera** | Point at anything (or pick a screenshot) and search by image |
 | **Alerts** | **New:** feed of price drops and new matches · **Searches:** saved searches by channel (push, morning email) and watched prices |
 | **Saved** | Products you're tracking, grouped by day, with price drops |
@@ -50,14 +50,15 @@ The account button at the foot of the sidebar opens a menu: who you are (and you
 
 **Headers** are sentence case. No all-caps labels anywhere.
 
-**Brand.** The signed-out front page's halftone (the theme color with black printed off-register, on paper) shows up in small doses when signed in: the Home masthead, and a faint corner on empty states. The wordmark stays plain text. One per view, never behind body text it would muddy.
+**Brand.** The signed-out front page's halftone (the theme color with black printed off-register, on paper) shows up in small doses when signed in: a faint corner on empty states. The wordmark stays plain text. One per view, never behind body text it would muddy.
 
 **Roles.** The first account on a server is its **owner**. The owner can make others **admins**, who set up stores too; everyone else is a **member**. Anything set in the server's environment shows in the admin sections as read-only.
 
 ### 4.2 Key screens (canvas round 4)
 
 - **Front page (signed out):** "Find anything, from every store." A big search bar (also takes links), black category chips (Sneakers, Tech, Clothing, Home, Used & refurb), then what the product is and a way to sign up.
-- **Home (signed in):** recent searches as chips (category chips when there are none), "New for your alerts" (cards with "12 new" badges), "Dropped on your list" (grid with "−$70" badges), "Picks for you" (three brands from Discover).
+- **Signed in, there's no Home:** `/` opens Discover. Search is in the header everywhere, and new matches and drops have Alerts and Saved.
+- **Discover:** a calm grid of brands, each a small printed spread (one big photo, three small, name and where it's from) with a heart floating on the photo; the card opens the brand. Taste is learned passively: a brand page that stays on screen 8 seconds or more, or that you open twice, counts about half a heart (up to 0.8 for long or repeated looks; quick bounces count nothing), and "For you" opens after five brands you've hearted or looked at properly, shown as five dots until then. "Not for me" and "Not a real brand" sit in the brand page's "…" menu. "Show more brands" adds another handful.
 - **Results:** the query as the title, the count under it, then one filter bar on every screen (it stays in view while you scroll): **Condition**, **Price** and **Sort** as pills that open their choices, filled with ink and naming the choice once set ("Under $250"), **Clear** when any filter is on, and **Save search** at the end. The grid takes the full width. A product opens beside the grid on wide screens (step through with the arrows or j/k) and in a sheet you pull down to close on phones; both keep your place and link to the full page. Small labels like *Good price*, *Refurb* or *Used · like new* appear on photos only where they help.
 - **Product:** a large photo with save and back. Brand and short model name. A **New / Refurb / Used** switch, each with its best price, drives a big price, the store, and a one-line verdict. Then "Compare all 14 stores", and at the bottom **Track price** plus **Buy at [store]**.
 - **Alerts:** Gem-style cards ("12 NEW" with three photos) and price-drop cards. The Searches tab holds iOS-style grouped lists with counts and red dots.

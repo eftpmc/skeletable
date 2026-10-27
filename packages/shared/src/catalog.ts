@@ -10,7 +10,7 @@ export const voteInputSchema = z.object({
 });
 export type VoteInput = z.input<typeof voteInputSchema>;
 
-/** Likes needed before "For you" has a taste to rank by. */
+/** Brands someone needs to have shown interest in (hearted or looked at properly) before "For you" has a taste to rank by. */
 export const TASTE_UNLOCK = 5;
 
 /** A brand as cards show it. */
@@ -55,7 +55,10 @@ export type BrandDetail = BrandCard & {
 };
 
 export type ForYou = {
-  likes: number;
+  /** Brands someone has shown interest in so far: hearted, or looked at properly. */
+  interested: number;
   needed: number;
   brands: BrandMatch[];
 };
+
+export const seenInputSchema = z.object({ dwellMs: z.number().int().min(0).max(86_400_000) });

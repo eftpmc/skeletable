@@ -1,4 +1,4 @@
-import { BellIcon, BookmarkIcon, CompassIcon, HomeIcon, IconButton, MenuIcon, NavDrawer, PackageIcon, SearchIcon, SideNav, XIcon, cn, focusRing } from "@closet/ui";
+import { BellIcon, BookmarkIcon, CompassIcon, IconButton, MenuIcon, NavDrawer, PackageIcon, SearchIcon, SideNav, XIcon, cn, focusRing } from "@closet/ui";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router";
 import { useUnreadAlerts } from "../lib/alerts";
@@ -6,11 +6,10 @@ import { AccountMenu } from "./AccountMenu";
 import { SearchTrigger, useSearchPalette } from "./SearchPalette";
 
 const tabs = [
-  { to: "/", label: "Home", icon: HomeIcon, end: true },
-  { to: "/discover", label: "Discover", icon: CompassIcon, end: false },
-  { to: "/alerts", label: "Alerts", icon: BellIcon, end: false },
-  { to: "/saved", label: "Saved", icon: BookmarkIcon, end: false },
-  { to: "/collection", label: "Collection", icon: PackageIcon, end: false },
+  { to: "/discover", label: "Discover", icon: CompassIcon },
+  { to: "/alerts", label: "Alerts", icon: BellIcon },
+  { to: "/saved", label: "Saved", icon: BookmarkIcon },
+  { to: "/collection", label: "Collection", icon: PackageIcon },
 ];
 
 type User = { name: string; email: string; image?: string | null };
@@ -88,10 +87,10 @@ export function AppShell({ user }: { user: User }) {
   useEffect(() => setMenuOpen(false), [pathname]);
 
   // Search lives in the header, so results and product pages belong to no tab; brand pages belong to Discover.
-  const items = tabs.map(({ to, end, ...tab }) => ({
+  const items = tabs.map(({ to, ...tab }) => ({
     ...tab,
     to,
-    active: end ? pathname === to : pathname.startsWith(to) || (to === "/discover" && pathname.startsWith("/brands/")),
+    active: pathname.startsWith(to) || (to === "/discover" && pathname.startsWith("/brands/")),
     count: to === "/alerts" ? unread : undefined,
   }));
 

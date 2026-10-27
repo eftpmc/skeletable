@@ -79,6 +79,27 @@ export const brandVote = pgTable(
   (table) => [primaryKey({ columns: [table.userId, table.brandId] }), index("brand_vote_brand_idx").on(table.brandId)],
 );
 
+/**
+ * Brands someone opened and how long they looked: Discover's quiet signal of taste, alongside the
+ * hearts in brand_vote. One row per person per brand; time on the page adds up across visits.
+ */
+export const brandView = pgTable(
+  "brand_view",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    brandId: uuid("brand_id")
+      .notNull()
+      .references(() => brand.id, { onDelete: "cascade" }),
+    views: integer("views").notNull().default(0),
+    // Time the brand's page was on screen, summed over visits (each visit capped; see CatalogService.seen).
+    dwellMs: integer("dwell_ms").notNull().default(0),
+    lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.brandId] })],
+);
+
 /** Catalog packs already imported (by content hash), so a restart doesn't import the same one again. */
 export const catalogPack = pgTable("catalog_pack", {
   hash: text("hash").primaryKey(),

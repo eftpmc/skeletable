@@ -1,4 +1,4 @@
-import { voteInputSchema } from "@closet/shared";
+import { seenInputSchema, voteInputSchema } from "@closet/shared";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { AuthedEnv } from "../env.js";
@@ -33,6 +33,16 @@ export function catalogRoutes(catalog: CatalogService) {
     const body = voteInputSchema.safeParse(await c.req.json().catch(() => ({})));
     if (!body.success) return c.json({ error: "invalid_request", issues: body.error.issues }, 400);
     await catalog.vote(c.get("user").id, id, body.data.verdict, body.data.context);
+    return c.body(null, 204);
+  });
+
+  // The brand page reports how long it was on screen when you leave it: Discover's quiet taste signal.
+  app.post("/catalog/brands/:id/seen", async (c) => {
+    const id = c.req.param("id");
+    if (!idSchema.safeParse(id).success) return c.json({ error: "not_found" }, 404);
+    const body = seenInputSchema.safeParse(await c.req.json().catch(() => ({})));
+    if (!body.success) return c.json({ error: "invalid_request", issues: body.error.issues }, 400);
+    await catalog.seen(c.get("user").id, id, body.data.dwellMs);
     return c.body(null, 204);
   });
 

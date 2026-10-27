@@ -150,13 +150,13 @@ describe("catalog", () => {
     await importCatalog(db, [...quiet, ...loud, ...more, far]);
     const user = await signUp(setup());
     let forYou = (await (await user.get("/api/catalog/for-you")).json()) as ForYou;
-    expect(forYou).toEqual({ likes: 0, needed: 5, brands: [] });
+    expect(forYou).toEqual({ interested: 0, needed: 5, brands: [] });
     for (const name of ["Neon Riot", "Acid Club", "Loud 4", "Loud 5", "Loud 6"]) {
       await user.put(`/api/catalog/brands/${await idOf(user, name)}/vote`, { verdict: "like" });
     }
     await user.put(`/api/catalog/brands/${await idOf(user, "Line of Oslo")}/vote`, { verdict: "skip" });
     forYou = (await (await user.get("/api/catalog/for-you")).json()) as ForYou;
-    expect(forYou.likes).toBe(5);
+    expect(forYou.interested).toBe(5);
     const names = forYou.brands.map((b) => b.name);
     expect(names).not.toContain("Neon Riot");
     expect(names).not.toContain("Line of Oslo");
@@ -166,6 +166,39 @@ describe("catalog", () => {
     expect(picks[0]!.because?.name).toMatch(/Loud|Neon|Acid/);
     const detail = (await (await user.get(`/api/catalog/brands/${await idOf(user, "Winfield")}`)).json()) as BrandDetail;
     expect(detail.personal).toBe(true);
+  });
+
+  it("learns taste from brands someone looks at properly, not from quick bounces", async () => {
+    const more = [4, 5, 6, 7, 8, 9].map((k) => store(`Loud ${k}`, 10, k / 20));
+    await importCatalog(db, [...quiet, ...loud, ...more, far]);
+    const user = await signUp(setup());
+    const seen = async (name: string, dwellMs: number) =>
+      expect((await user.post(`/api/catalog/brands/${await idOf(user, name)}/seen`, { dwellMs })).status).toBe(204);
+
+    // Bounces (a couple of seconds, once) say nothing.
+    for (const name of ["Line of Oslo", "Winfield", "Suus"]) await seen(name, 1500);
+    let forYou = (await (await user.get("/api/catalog/for-you")).json()) as ForYou;
+    expect(forYou.interested).toBe(0);
+
+    // Real looks at four loud brands, plus one opened twice, unlock picks without a single heart.
+    for (const name of ["Neon Riot", "Acid Club", "Loud 4", "Loud 5"]) await seen(name, 20_000);
+    await seen("Loud 6", 2000);
+    await seen("Loud 6", 2000);
+    forYou = (await (await user.get("/api/catalog/for-you")).json()) as ForYou;
+    expect(forYou.interested).toBe(5);
+    const names = forYou.brands.filter((b) => !b.explore).map((b) => b.name);
+    expect(names.slice(0, 3).every((n) => n.startsWith("Loud"))).toBe(true);
+    // Brands already looked at aren't offered back as news.
+    expect(names).not.toContain("Neon Riot");
+
+    // Marking one not for you takes it back out of the taste.
+    await user.put(`/api/catalog/brands/${await idOf(user, "Acid Club")}/vote`, { verdict: "skip" });
+    forYou = (await (await user.get("/api/catalog/for-you")).json()) as ForYou;
+    expect(forYou.interested).toBe(4);
+    expect(forYou.brands).toEqual([]);
+
+    expect((await user.post("/api/catalog/brands/00000000-0000-4000-8000-000000000000/seen", { dwellMs: 1000 })).status).toBe(404);
+    expect((await user.post(`/api/catalog/brands/${await idOf(user, "Suus")}/seen`, { dwellMs: -5 })).status).toBe(400);
   });
 
   it("imports a catalog pack once, and again only when it changes", async () => {

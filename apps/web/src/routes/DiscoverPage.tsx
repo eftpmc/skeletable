@@ -1,50 +1,85 @@
-import { EmptyState, ScreenTitle, SearchField, SectionHeader, Skeleton } from "@closet/ui";
+import type { BrandCard as Brand } from "@closet/shared";
+import { Button, EmptyState, ScreenTitle, SearchField, Skeleton, cn } from "@closet/ui";
 import { useDeferredValue, useState } from "react";
 import { BrandCard, BrandGrid } from "../components/BrandCard";
+import { api } from "../lib/api";
 import { useBrandSearch, useForYou, useStarters } from "../lib/catalog";
 
-function Loading() {
+function Loading({ count = 8 }: { count?: number }) {
   return (
-    <BrandGrid className="mt-4">
-      {[0, 1, 2].map((i) => (
-        <Skeleton key={i} className="h-[260px] rounded-xl" />
+    <BrandGrid className="mt-5">
+      {Array.from({ length: count }, (_, i) => (
+        <div key={i}>
+          <Skeleton className="aspect-[4/3] rounded-xl" />
+          <Skeleton className="mt-3 h-4 w-2/3" />
+        </div>
       ))}
     </BrandGrid>
   );
 }
 
-/** Find brands people haven't heard of: start from any brand, or let your likes pick. */
+/** How far along your picks are, as dots: one per brand you've shown interest in, out of what's needed. */
+function Progress({ interested, needed }: { interested: number; needed: number }) {
+  return (
+    <p className="mt-4 flex items-center gap-3 text-callout font-normal text-muted">
+      <span aria-hidden="true" className="flex gap-1">
+        {Array.from({ length: needed }, (_, i) => (
+          <span key={i} className={cn("size-2 rounded-full", i < interested ? "bg-accent" : "bg-line")} />
+        ))}
+      </span>
+      {interested === 0
+        ? `Picks of your own start after ${needed} brands.`
+        : `${interested} of ${needed} brands so far. Picks of your own start after ${needed}.`}
+    </p>
+  );
+}
+
+/**
+ * Find brands people haven't heard of. Browse, and open the ones you like the look of: the time you
+ * spend on a brand teaches Discover your taste. A heart says it outright, but it's optional.
+ */
 export function DiscoverPage() {
   const [q, setQ] = useState("");
   const typed = useDeferredValue(q);
   const found = useBrandSearch(typed);
   const forYou = useForYou();
   const starters = useStarters();
+  const [more, setMore] = useState<Brand[]>([]);
+  const [loadingMore, setLoadingMore] = useState(false);
   const searching = typed.trim().length > 0;
-  const likes = forYou.data?.likes ?? 0;
+  const interested = forYou.data?.interested ?? 0;
   const needed = forYou.data?.needed ?? 5;
-  const ready = (forYou.data?.brands.length ?? 0) > 0;
+  const picks = forYou.data?.brands ?? [];
+
+  // Another handful of starting points, without repeats.
+  const browse = [...(starters.data ?? []), ...more].filter((b, i, all) => all.findIndex((x) => x.id === b.id) === i);
+  async function loadMore() {
+    setLoadingMore(true);
+    try {
+      const next = await api.starters();
+      setMore((list) => [...list, ...next]);
+    } finally {
+      setLoadingMore(false);
+    }
+  }
 
   return (
     <section className="pt-4 lg:pt-0">
-      <ScreenTitle className="lg:text-[40px] lg:leading-[44px]">Discover</ScreenTitle>
-      <p className="mt-1 max-w-2xl text-callout font-normal text-muted">
-        Small clothing brands found across the open web. Start from a brand you know, and like the ones you'd wear: your picks
-        learn from every like.
-      </p>
-
-      <SearchField
-        className="mt-6 max-w-2xl"
-        value={q}
-        onChange={setQ}
-        onSubmit={setQ}
-        placeholder="Start from any brand, like Uniqlo"
-      />
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <div className="max-w-2xl">
+          <ScreenTitle className="lg:text-[40px] lg:leading-[44px]">Discover</ScreenTitle>
+          <p className="mt-1 text-callout font-normal text-muted">
+            Small brands found across the open web. Open the ones you like the look of; Discover learns from what you spend time on.
+          </p>
+        </div>
+        <SearchField className="w-full lg:max-w-sm" value={q} onChange={setQ} onSubmit={setQ} placeholder="Find a brand by name" />
+      </div>
+      {!searching && forYou.data && !picks.length && <Progress interested={interested} needed={needed} />}
 
       {searching ? (
         <section aria-label="Brands found" className="mt-8">
           {found.isPending ? (
-            <Loading />
+            <Loading count={4} />
           ) : found.data?.length ? (
             <BrandGrid>
               {found.data.map((b) => (
@@ -52,58 +87,47 @@ export function DiscoverPage() {
               ))}
             </BrandGrid>
           ) : (
-            <EmptyState
-              title={`We don't know “${typed.trim()}” yet`}
-              body="The catalog grows as it reads more of the web. Try another brand you like, or pick one below."
-            />
+            <EmptyState title={`We don't know “${typed.trim()}” yet`} body="The catalog grows as it reads more of the web. Try another brand, or browse below." />
           )}
         </section>
       ) : (
         <>
-          <section aria-labelledby="for-you" className="mt-10">
-            <SectionHeader title={<span id="for-you">For you</span>} />
-            {forYou.isPending ? (
-              <Loading />
-            ) : ready ? (
-              <BrandGrid className="mt-4">
-                {forYou.data!.brands.map((b, i) => (
-                  <BrandCard key={b.id} brand={b} context="for-you" rank={i + 1} />
+          {picks.length > 0 && (
+            <section aria-labelledby="for-you" className="mt-10">
+              <h2 id="for-you" className="text-title-2 text-ink">
+                For you
+              </h2>
+              <BrandGrid className="mt-5">
+                {picks.map((b) => (
+                  <BrandCard key={b.id} brand={b} context="for-you" />
                 ))}
               </BrandGrid>
-            ) : (
-              <div className="mt-4 rounded-xl bg-surface p-5">
-                <p className="text-title-3 text-ink">
-                  {likes === 0 ? `Like ${needed} brands to get picks of your own` : `${needed - likes} more ${needed - likes === 1 ? "like" : "likes"} to go`}
-                </p>
-                <p className="mt-1 max-w-xl text-callout font-normal text-muted">
-                  Picks are ranked by how close each brand looks to the ones you liked. Mark misses “Not for me” too: it learns from both.
-                </p>
-                <div
-                  className="mt-4 h-1.5 max-w-xs overflow-hidden rounded-full bg-line"
-                  role="progressbar"
-                  aria-valuemin={0}
-                  aria-valuemax={needed}
-                  aria-valuenow={likes}
-                  aria-label="Likes so far"
-                >
-                  <div className="h-full rounded-full bg-accent" style={{ width: `${(100 * likes) / needed}%` }} />
-                </div>
-              </div>
-            )}
-          </section>
+            </section>
+          )}
 
-          <section aria-labelledby="start-from" className="mt-12">
-            <SectionHeader title={<span id="start-from">{ready ? "More to explore" : "Start from one of these"}</span>} />
+          <section aria-labelledby="browse" className={picks.length ? "mt-14" : "mt-8"}>
+            {picks.length > 0 && (
+              <h2 id="browse" className="text-title-2 text-ink">
+                More to explore
+              </h2>
+            )}
             {starters.isPending ? (
               <Loading />
-            ) : starters.data?.length ? (
-              <BrandGrid className="mt-4">
-                {starters.data.map((b) => (
-                  <BrandCard key={b.id} brand={b} context="starters" />
-                ))}
-              </BrandGrid>
+            ) : browse.length ? (
+              <>
+                <BrandGrid className={picks.length ? "mt-5" : undefined}>
+                  {browse.map((b) => (
+                    <BrandCard key={b.id} brand={b} context="starters" />
+                  ))}
+                </BrandGrid>
+                <div className="mt-10 flex justify-center">
+                  <Button variant="secondary" disabled={loadingMore} onClick={() => void loadMore()}>
+                    {loadingMore ? "Finding more…" : "Show more brands"}
+                  </Button>
+                </div>
+              </>
             ) : (
-              <EmptyState className="mt-4" title="The catalog is empty" body="Brands appear here once the catalog has been imported." />
+              <EmptyState title="The catalog is empty" body="Brands appear here once the catalog has been imported." />
             )}
           </section>
         </>

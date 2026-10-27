@@ -10,7 +10,6 @@ import { AuthPage } from "./routes/AuthPage";
 import { BrandPage } from "./routes/BrandPage";
 import { ClosetPage } from "./routes/ClosetPage";
 import { DiscoverPage } from "./routes/DiscoverPage";
-import { Home } from "./routes/Home";
 import { ItemPage } from "./routes/ItemPage";
 import { ProductPage } from "./routes/ProductPage";
 import { PublicHome } from "./routes/PublicHome";
@@ -62,7 +61,7 @@ export function App() {
           <Route path="/sign-in" element={<Continue />} />
           <Route path="/sign-up" element={<Continue />} />
           <Route element={<AppShell user={session.user} />}>
-            <Route index element={<Home />} />
+            <Route index element={<Navigate to="/discover" replace />} />
             <Route path="/search" element={<ResultsPage />} />
             <Route path="/p/:id" element={<ProductPage />} />
             <Route path="/discover" element={<DiscoverPage />} />

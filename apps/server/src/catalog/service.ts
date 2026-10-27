@@ -9,7 +9,7 @@ import {
 } from "@closet/shared";
 import { and, asc, cosineDistance, desc, eq, gte, ilike, inArray, ne, notInArray, sql } from "drizzle-orm";
 
-const { brand, brandPhoto, brandProfile, brandVote } = schema;
+const { brand, brandPhoto, brandProfile, brandView, brandVote } = schema;
 
 export class NotFoundError extends Error {}
 
@@ -21,6 +21,19 @@ const NEIGHBORS = 10;
 const CANDIDATES = 60;
 // Of every ten "For you" picks, how many go to brands nobody has voted on yet.
 const EXPLORE = 2;
+// A look at a brand counts toward taste once it's this long, or the second time you open it.
+const ENGAGED_MS = 8000;
+// One visit adds at most this much time, so a tab left open doesn't outweigh everything else.
+const VISIT_CAP_MS = 5 * 60 * 1000;
+
+/**
+ * How much having looked at a brand says about taste, next to a heart's 1: nothing for a quick
+ * bounce, about half for a real look, a little more for coming back or staying longer.
+ */
+export function viewWeight(views: number, dwellMs: number) {
+  if (views < 2 && dwellMs < ENGAGED_MS) return 0;
+  return Math.min(0.8, 0.4 + 0.1 * Math.max(0, views - 1) + (0.3 * Math.min(dwellMs, 60_000)) / 60_000);
+}
 
 type Profile = typeof brandProfile.$inferSelect;
 type Vector = number[];
@@ -132,26 +145,58 @@ export class CatalogService {
   }
 
   /**
-   * Taste: the mean look of brands someone liked, minus half the mean of what they skipped or
-   * flagged, normalized. Null until they've liked TASTE_UNLOCK brands.
+   * Taste: the weighted mean look of brands someone showed interest in (a heart counts 1, a real
+   * look at a brand's page counts less; see viewWeight), minus half the mean of what they marked not
+   * for them or not a brand, normalized. Null until they're interested in TASTE_UNLOCK brands.
    */
-  async taste(userId: string): Promise<{ likes: number; vector: Vector | null; liked: { id: string; name: string; look: Vector }[] }> {
-    const votes = await this.db
-      .select({ id: brand.id, name: brand.name, verdict: brandVote.verdict, look: brandProfile.look })
-      .from(brandVote)
-      .innerJoin(brandProfile, eq(brandProfile.brandId, brandVote.brandId))
-      .innerJoin(brand, eq(brand.id, brandVote.brandId))
-      .where(eq(brandVote.userId, userId));
-    const liked = votes.filter((v) => v.verdict === "like");
-    if (liked.length < TASTE_UNLOCK) return { likes: liked.length, vector: null, liked };
-    const rest = votes.filter((v) => v.verdict !== "like");
+  async taste(userId: string): Promise<{ interested: number; vector: Vector | null; liked: { id: string; name: string; look: Vector }[] }> {
+    const [votes, views] = await Promise.all([
+      this.db
+        .select({ id: brand.id, name: brand.name, verdict: brandVote.verdict, look: brandProfile.look })
+        .from(brandVote)
+        .innerJoin(brandProfile, eq(brandProfile.brandId, brandVote.brandId))
+        .innerJoin(brand, eq(brand.id, brandVote.brandId))
+        .where(eq(brandVote.userId, userId)),
+      this.db
+        .select({ id: brand.id, name: brand.name, views: brandView.views, dwellMs: brandView.dwellMs, look: brandProfile.look })
+        .from(brandView)
+        .innerJoin(brandProfile, eq(brandProfile.brandId, brandView.brandId))
+        .innerJoin(brand, eq(brand.id, brandView.brandId))
+        .where(eq(brandView.userId, userId)),
+    ]);
+    const against = votes.filter((v) => v.verdict !== "like");
+    const ruledOut = new Set(against.map((v) => v.id));
+    const interest = new Map<string, { id: string; name: string; look: Vector; weight: number }>();
+    for (const v of views) {
+      const weight = viewWeight(v.views, v.dwellMs);
+      if (weight > 0 && !ruledOut.has(v.id)) interest.set(v.id, { id: v.id, name: v.name, look: v.look, weight });
+    }
+    for (const v of votes) if (v.verdict === "like") interest.set(v.id, { id: v.id, name: v.name, look: v.look, weight: 1 });
+
+    const liked = [...interest.values()];
+    if (liked.length < TASTE_UNLOCK) return { interested: liked.length, vector: null, liked };
+    const total = liked.reduce((s, v) => s + v.weight, 0);
     const t = liked[0]!.look.map((_, k) => {
-      const plus = liked.reduce((s, v) => s + v.look[k]!, 0) / liked.length;
-      const minus = rest.length ? rest.reduce((s, v) => s + v.look[k]!, 0) / rest.length : 0;
+      const plus = liked.reduce((s, v) => s + v.weight * v.look[k]!, 0) / total;
+      const minus = against.length ? against.reduce((s, v) => s + v.look[k]!, 0) / against.length : 0;
       return plus - 0.5 * minus;
     });
     const n = norm(t);
-    return { likes: liked.length, vector: t.map((x) => x / n), liked };
+    return { interested: liked.length, vector: t.map((x) => x / n), liked };
+  }
+
+  /** Someone had a brand's page open for dwellMs: one more view, and the time (capped per visit). */
+  async seen(userId: string, brandId: string, dwellMs: number) {
+    const [exists] = await this.db.select({ id: brandProfile.brandId }).from(brandProfile).where(eq(brandProfile.brandId, brandId));
+    if (!exists) throw new NotFoundError();
+    const ms = Math.max(0, Math.min(Math.round(dwellMs), VISIT_CAP_MS));
+    await this.db
+      .insert(brandView)
+      .values({ userId, brandId, views: 1, dwellMs: ms })
+      .onConflictDoUpdate({
+        target: [brandView.userId, brandView.brandId],
+        set: { views: sql`${brandView.views} + 1`, dwellMs: sql`${brandView.dwellMs} + ${ms}`, lastViewedAt: sql`now()` },
+      });
   }
 
   /**
@@ -160,7 +205,9 @@ export class CatalogService {
    */
   async forYou(userId: string): Promise<ForYou> {
     const taste = await this.taste(userId);
-    if (!taste.vector) return { likes: taste.likes, needed: TASTE_UNLOCK, brands: [] };
+    if (!taste.vector) return { interested: taste.interested, needed: TASTE_UNLOCK, brands: [] };
+    // Brands you've already shown interest in aren't news; neither are ones you voted on.
+    const known = new Set(taste.liked.map((l) => l.id));
     const voted = this.db.select({ id: brandVote.brandId }).from(brandVote).where(eq(brandVote.userId, userId));
     const distance = cosineDistance(brandProfile.look, taste.vector);
     const rows = await this.db
@@ -171,6 +218,7 @@ export class CatalogService {
       .orderBy(distance)
       .limit(CANDIDATES * 2);
     const scored = rows
+      .filter((r) => !known.has(r.brand.id))
       .map((r) => ({ r, score: 1 - Number(r.distance) + 0.1 * r.profile.quality }))
       .sort((a, b) => b.score - a.score);
     const picks = scored.slice(0, NEIGHBORS - EXPLORE);
@@ -194,7 +242,7 @@ export class CatalogService {
       }).l;
       return { ...c, explore: explore.has(c.id) || undefined, because: { id: near.id, name: near.name } };
     });
-    return { likes: taste.likes, needed: TASTE_UNLOCK, brands };
+    return { interested: taste.interested, needed: TASTE_UNLOCK, brands };
   }
 
   /** Cards for brand rows: first four photos, like counts and the viewer's own vote. */

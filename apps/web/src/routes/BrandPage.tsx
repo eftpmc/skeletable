@@ -6,6 +6,9 @@ import {
   EmptyState,
   HeartIcon,
   IconButton,
+  Menu,
+  MenuItem,
+  MoreIcon,
   SectionHeader,
   Skeleton,
   buttonClass,
@@ -14,14 +17,16 @@ import {
 } from "@closet/ui";
 import { useNavigate, useParams } from "react-router";
 import { BrandCard, BrandGrid, brandMeta } from "../components/BrandCard";
-import { useBrand, useVote } from "../lib/catalog";
+import { useBrand, useDwell, useVote } from "../lib/catalog";
 
-/** One brand: its photos, where it's from, votes, and the closest brands to it. */
+/** One brand: its photos, where it's from, a heart, and the closest brands to it. Time spent here counts toward your taste. */
 export function BrandPage() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
   const { data: brand, isPending, isError } = useBrand(id);
   const { vote } = useVote();
+  // How long this page is on screen is Discover's quiet signal of taste.
+  useDwell(brand?.id);
 
   if (isPending) {
     return (
@@ -82,28 +87,44 @@ export function BrandPage() {
             </p>
           )}
 
-          {brand.kind === "store" && (
-            <div className="mt-6 flex flex-wrap gap-2">
-              <Button icon={<HeartIcon size={20} fill={liked ? "currentColor" : "none"} />} onClick={() => cast("like")} aria-pressed={liked}>
+          {/* Looking around is what counts; the heart says it outright. "Not for me" lives in the menu. */}
+          <div className="mt-6 flex flex-wrap items-center gap-2">
+            {brand.kind === "store" && (
+              <Button
+                variant={liked ? "primary" : "secondary"}
+                icon={<HeartIcon size={20} fill={liked ? "currentColor" : "none"} />}
+                onClick={() => cast("like")}
+                aria-pressed={liked}
+              >
                 {liked ? "Liked" : "Like"}
               </Button>
-              <Button variant={brand.myVote === "skip" ? "primary" : "secondary"} onClick={() => cast("skip")} aria-pressed={brand.myVote === "skip"}>
-                Not for me
-              </Button>
-              <Button
-                variant={brand.myVote === "flag" ? "primary" : "quiet"}
-                onClick={() => cast("flag")}
-                aria-pressed={brand.myVote === "flag"}
-                title="Resale, dropshipping, wholesale stock, uniforms or merch"
+            )}
+            {brand.site && (
+              <a href={brand.site} target="_blank" rel="noopener noreferrer" className={buttonClass({ variant: "secondary" })}>
+                {brand.kind === "store" ? "Visit their store" : "Visit their site"} <ArrowUpRightIcon size={18} />
+              </a>
+            )}
+            {brand.kind === "store" && (
+              <Menu
+                side="bottom"
+                align="end"
+                trigger={
+                  <IconButton label="More" tone="surface" size="lg">
+                    <MoreIcon size={20} />
+                  </IconButton>
+                }
               >
-                Not a real brand
-              </Button>
-            </div>
-          )}
-          {brand.site && (
-            <a href={brand.site} target="_blank" rel="noopener noreferrer" className={buttonClass({ variant: "secondary", className: "mt-3" })}>
-              {brand.kind === "store" ? "Visit their store" : "Visit their site"} <ArrowUpRightIcon size={18} />
-            </a>
+                <MenuItem onSelect={() => cast("skip")}>{brand.myVote === "skip" ? "Undo “Not for me”" : "Not for me"}</MenuItem>
+                <MenuItem onSelect={() => cast("flag")}>
+                  {brand.myVote === "flag" ? "Undo “Not a real brand”" : "Not a real brand (resale, dropshipping, merch)"}
+                </MenuItem>
+              </Menu>
+            )}
+          </div>
+          {(brand.myVote === "skip" || brand.myVote === "flag") && (
+            <p className="mt-3 text-footnote text-muted">
+              {brand.myVote === "skip" ? "Marked not for you: Discover steers away from this look." : "Marked not a real brand."} Undo it from the menu.
+            </p>
           )}
           {brand.likes > 0 && (
             <p className="mt-4 text-footnote text-muted">
@@ -119,9 +140,9 @@ export function BrandPage() {
           {brand.personal ? "Closest by look and price, ordered with your taste." : "Closest by look and price."}
         </p>
         {brand.neighbors.length ? (
-          <BrandGrid className="mt-4">
-            {brand.neighbors.map((b, i) => (
-              <BrandCard key={b.id} brand={b} context={`brand:${brand.id}`} rank={i + 1} />
+          <BrandGrid className="mt-5">
+            {brand.neighbors.map((b) => (
+              <BrandCard key={b.id} brand={b} context={`brand:${brand.id}`} />
             ))}
           </BrandGrid>
         ) : (

@@ -1,5 +1,6 @@
 import type { BrandVerdict } from "@closet/shared";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { api } from "./api";
 
 export const catalogKeys = {
@@ -64,4 +65,43 @@ export function useVote() {
     vote: (id: string, current: BrandVerdict | null, verdict: BrandVerdict, context?: string) =>
       mutation.mutate({ id, verdict: current === verdict ? null : verdict, context }),
   };
+}
+
+/**
+ * Report how long a brand's page was on screen when you leave it (or close the tab): Discover's
+ * quiet taste signal. Only visible time counts, and glances under a second aren't sent at all.
+ */
+export function useDwell(brandId: string | undefined) {
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    if (!brandId) return;
+    let since: number | null = document.visibilityState === "visible" ? performance.now() : null;
+    let total = 0;
+    let sent = false;
+    const pause = () => {
+      if (since !== null) total += performance.now() - since;
+      since = null;
+    };
+    const onVisibility = () => (document.visibilityState === "hidden" ? pause() : (since = performance.now()));
+    const flush = () => {
+      if (sent) return;
+      pause();
+      sent = true;
+      if (total < 1000) return;
+      void fetch(`/api/catalog/brands/${brandId}/seen`, {
+        method: "POST",
+        credentials: "same-origin",
+        keepalive: true,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ dwellMs: Math.round(total) }),
+      }).then(() => queryClient.invalidateQueries({ queryKey: catalogKeys.forYou }), () => {});
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pagehide", flush);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pagehide", flush);
+      flush();
+    };
+  }, [brandId, queryClient]);
 }
