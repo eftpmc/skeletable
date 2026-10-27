@@ -1,4 +1,4 @@
-import { seenInputSchema, voteInputSchema } from "@closet/shared";
+import { catalogCategorySchema, seenInputSchema, voteInputSchema } from "@closet/shared";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { AuthedEnv } from "../env.js";
@@ -12,6 +12,7 @@ export type SaveItem = { readLink: (url: string) => Promise<string>; track: (use
 
 const pageSchema = z.coerce.number().int().min(0).max(1000).catch(0);
 const seedSchema = z.string().trim().max(40).catch("");
+const categoryParam = catalogCategorySchema.optional().catch(undefined);
 
 export function catalogRoutes(catalog: CatalogService, save: SaveItem) {
   const app = new Hono<AuthedEnv>();
@@ -52,27 +53,36 @@ export function catalogRoutes(catalog: CatalogService, save: SaveItem) {
     return c.body(null, 204);
   });
 
-  // Discover: a feed of catalog products, ranked by your taste. The seed keeps one session's order stable.
+  // Discover: a feed of catalog products, ranked by your taste, all of them or one category. The seed
+  // keeps one session's order stable.
   app.get("/catalog/feed", async (c) =>
-    c.json(await catalog.feed(c.get("user").id, pageSchema.parse(c.req.query("page")), seedSchema.parse(c.req.query("seed")))),
+    c.json(
+      await catalog.feed(
+        c.get("user").id,
+        pageSchema.parse(c.req.query("page")),
+        seedSchema.parse(c.req.query("seed")),
+        categoryParam.parse(c.req.query("category")),
+      ),
+    ),
   );
+
+  app.get("/catalog/categories", async (c) => c.json(await catalog.categories(c.get("user").id)));
 
   app.get("/catalog/items/:id", async (c) => c.json(await catalog.item(c.get("user").id, c.req.param("id"))));
 
-  // Time with an item open counts toward taste through its brand, like time on the brand's page.
+  // Time with a product open counts toward taste through the product's own look.
   app.post("/catalog/items/:id/seen", async (c) => {
     const body = seenInputSchema.safeParse(await c.req.json().catch(() => ({})));
     if (!body.success) return c.json({ error: "invalid_request", issues: body.error.issues }, 400);
     const item = await catalog.itemRef(c.req.param("id"));
-    await catalog.seen(c.get("user").id, item.brandId, body.data.dwellMs);
+    await catalog.seenItem(c.get("user").id, item.id, body.data.dwellMs);
     return c.body(null, 204);
   });
 
-  // Saving reads the store's product page (like pasting its link), then tracks its price. A save is a
-  // strong signal too: it counts as a long look at the brand.
+  // Saving reads the store's product page (like pasting its link), then tracks its price. A save is
+  // the strongest signal of taste there is: it counts like a heart.
   app.post("/catalog/items/:id/save", async (c) => {
     const item = await catalog.itemRef(c.req.param("id"));
-    if (!item.productUrl) return c.json({ error: "unreadable", message: "This item has no product page to save." }, 422);
     let productId: string;
     try {
       productId = await save.readLink(item.productUrl);
@@ -80,7 +90,7 @@ export function catalogRoutes(catalog: CatalogService, save: SaveItem) {
       return c.json({ error: "unreadable", message: "We couldn't read this item's page right now. Try again in a bit." }, 422);
     }
     await save.track(c.get("user").id, productId);
-    await catalog.seen(c.get("user").id, item.brandId, 60_000);
+    await catalog.seenItem(c.get("user").id, item.id, 0, true);
     return c.json({ productId });
   });
 

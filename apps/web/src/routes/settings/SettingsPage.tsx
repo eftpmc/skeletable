@@ -3,6 +3,7 @@ import {
   BellIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  CompassIcon,
   DownloadIcon,
   GaugeIcon,
   PaletteIcon,
@@ -18,7 +19,7 @@ import type { ComponentType, ReactNode } from "react";
 import { Link, Navigate, useParams } from "react-router";
 import { useMe } from "../../lib/me";
 import { useWide } from "../../lib/media";
-import { Account, Appearance, Notifications, SizesAndFit, YourData } from "./personal";
+import { Account, Appearance, DiscoverPreferences, Notifications, SizesAndFit, YourData } from "./personal";
 import { Members, Overview, Stores } from "./server";
 
 type Section = {
@@ -44,6 +45,14 @@ const sections: Section[] = [
     icon: BellIcon,
     group: "you",
     render: () => <Notifications />,
+  },
+  {
+    id: "discover",
+    label: "Discover",
+    description: "What the feed shows you: your side of the catalog, prices and categories.",
+    icon: CompassIcon,
+    group: "you",
+    render: () => <DiscoverPreferences />,
   },
   { id: "appearance", label: "Appearance", description: "How the app looks on this device.", icon: PaletteIcon, group: "you", render: () => <Appearance /> },
   {

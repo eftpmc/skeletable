@@ -23,6 +23,8 @@ embed what's new.
 | Learn from use | `feedback.py` | the page's votes, `labels.json` | merged grades for `quality.py train` |
 | Brand name index | `names.py add` / `index` | brand mentions from `sources/wdc.py` | `names.db`, brands known by name |
 | All of it, in rounds | `grow.py` | everything above | the page, `grow.log` |
+| Each store's products | `items.py fetch` | the catalog pack | `products/` (one `products.json` per Shopify store) |
+| Products, sorted | `items.py build` | the pack, `products/` | the pack again, with products, `items_report.json` |
 
 A candidate is one website that sells products, before we know it's a clothing brand (fields in
 `common.py`). Sources only have to produce candidates; everything after is platform-agnostic.
@@ -97,6 +99,39 @@ ships in the app image as the catalog pack: on start the server imports it in th
 its content hash is new (`catalog_pack` remembers which were imported). So shipping a new catalog is
 export, commit, deploy; votes and Collection links survive because imports match brands, never
 replace them.
+
+## Products and categories
+
+The app's catalog is products, not just brands: `items.py` turns each brand into up to 24 of its
+current pieces (newest and in stock first, one colour per style), each filed under a **department**
+(women, men, unisex) and a **category** (`taxonomy.py`; the ids match
+`packages/shared/src/taxonomy.ts`), with its own photo vector.
+
+- **Fetch.** One `/products.json` request per Shopify store, after reading its robots.txt. Shopify
+  answers 429 to one address reading many stores quickly, so this runs one store at a time with a
+  pause, and a re-run asks again only where the answer was 429. Stores we can't read keep the
+  products already in the pack, filed by their titles and photos alone.
+- **Category.** The words stores use first: the product type when it names a garment, then the
+  title's garment noun (the category word that ends last, so "Shirt Dress" is a dress and "Swim
+  Shorts" swimwear), then tags that name exactly one. What's left is filed by a logistic regression
+  on the photo vectors, trained on the products the words did file, and only when it's at least 50%
+  sure. Kids' clothes and things that aren't clothing (gift cards, candles, shipping protection) are
+  left out.
+- **Department.** The words first ("women's", "mens", "unisex" in the title, type or tags), then the
+  garment (dresses and skirts are women's), then the brand's lean (a brand whose labeled products are
+  85% one side lends it to the rest), then the photo: a logistic regression trained on the
+  products the words labeled, trusted at 75% or more either way and unisex in between.
+- **Measured.** Both models report their accuracy on a fifth of the labeled products held out, in
+  `items_report.json` with how many products each step filed.
+
+Prices from `products.json` are in the store's currency; the rate is the ratio to the dollar prices
+the pack already has for the same products, snapped to the nearest known currency.
+
+```sh
+python3 -I items.py fetch ../../apps/server/catalog/pack.jsonl.gz
+venv/bin/python -I items.py build ../../apps/server/catalog/pack.jsonl.gz pack-new.jsonl.gz
+# check items_report.json, then ship it: cp pack-new.jsonl.gz ../../apps/server/catalog/pack.jsonl.gz
+```
 
 ## Growing
 

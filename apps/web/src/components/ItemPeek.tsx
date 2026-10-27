@@ -1,4 +1,4 @@
-import type { CatalogItem } from "@closet/shared";
+import { type CatalogItem, categoryLabel, departmentLabel } from "@closet/shared";
 import {
   ArrowUpRightIcon,
   BookmarkIcon,
@@ -110,6 +110,13 @@ function ItemBody({ id, onOpen }: { id: string; onOpen: (id: string) => void }) 
       <span className="ml-2 text-footnote text-muted">{brandMeta(brand)}</span>
       {item.title && <h2 className="mt-1 text-title-2 text-ink">{item.title}</h2>}
       {item.priceUsd !== null && <p className="mt-2 text-price-hero text-ink tabular-nums">{usd(item.priceUsd)}</p>}
+      <p className="mt-1 text-footnote text-muted">
+        <Link to={`/discover?c=${item.category}`} className={cn("rounded-sm hover:text-ink hover:underline", focusRing)}>
+          {categoryLabel(item.category)}
+        </Link>
+        {" · "}
+        {departmentLabel[item.department]}
+      </p>
 
       <div className="mt-5 flex gap-2">
         {item.productUrl && (

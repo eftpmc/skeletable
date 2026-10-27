@@ -14,6 +14,7 @@ import { AlertsService } from "./alerts/service.js";
 import { catalogRoutes } from "./catalog/routes.js";
 import { CatalogService } from "./catalog/service.js";
 import { closetRoutes } from "./closet/routes.js";
+import { preferencesRoutes } from "./preferences/routes.js";
 import { RateLimiter } from "./rate-limit.js";
 import { searchRoutes } from "./search/routes.js";
 import { SearchService } from "./search/service.js";
@@ -127,6 +128,7 @@ export function createApp(deps: Deps, services: Services = createServices(deps))
       track: (userId, productId) => alerts.watch(userId, { productId }),
     }),
   );
+  authed.route("/", preferencesRoutes(db));
   authed.route("/admin", adminRoutes({ config, db, stores, email }));
   app.route("/api", authed);
 

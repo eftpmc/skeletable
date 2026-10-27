@@ -1,9 +1,28 @@
 import { type Db, schema } from "@closet/db";
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { catalogCategorySchema, departments } from "@closet/shared";
+import { and, eq, isNull, notInArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { slugify } from "../closet/service.js";
 
-const { brand, brandPhoto, brandProfile, PHOTO_DIMENSIONS } = schema;
+const { brand, brandProfile, catalogItem, PHOTO_DIMENSIONS } = schema;
+
+/**
+ * A photo vector as the pack stores it: 512 signed bytes in base64 (lab/brands/build_items.py),
+ * scaled so the largest is 127. Decoded and normalized here.
+ */
+const packedVector = z
+  .string()
+  .max(1000)
+  .transform((value, ctx) => {
+    const bytes = Buffer.from(value, "base64");
+    if (bytes.length !== PHOTO_DIMENSIONS) {
+      ctx.addIssue({ code: "custom", message: `expected ${PHOTO_DIMENSIONS} bytes` });
+      return z.NEVER;
+    }
+    const v = Array.from(new Int8Array(bytes.buffer, bytes.byteOffset, bytes.length));
+    const n = Math.hypot(...v) || 1;
+    return v.map((x) => Math.round((x / n) * 1e5) / 1e5);
+  });
 
 /** One line of the lab's export (lab/brands/export.py). */
 export const catalogRecordSchema = z.object({
@@ -18,17 +37,21 @@ export const catalogRecordSchema = z.object({
   priceHighUsd: z.number().int().nonnegative().nullable(),
   quality: z.number().min(0).max(1),
   seenAt: z.number().int().nonnegative().nullable(),
+  department: z.enum(["women", "men", "both"]).nullable().default(null),
   look: z.array(z.number()).length(PHOTO_DIMENSIONS),
-  photos: z
+  items: z
     .array(
       z.object({
         imageUrl: z.string().url(),
         title: z.string().max(300).nullable(),
         priceUsd: z.number().nonnegative().nullable(),
-        productUrl: z.string().url().nullable(),
+        productUrl: z.string().url(),
+        category: catalogCategorySchema,
+        department: z.enum(departments),
+        look: packedVector,
       }),
     )
-    .max(12),
+    .max(48),
 });
 export type CatalogRecord = z.infer<typeof catalogRecordSchema>;
 
@@ -39,7 +62,8 @@ const domainOf = (site: string | null) => (site ? new URL(site).hostname.replace
  * - a store brand takes over a brand people already added by name (their Collection items now
  *   link to its catalog page); two different stores with one name get the site in the slug;
  * - a "name" brand attaches to a brand with that name unless a store already covers it.
- * Brands missing from an import are left as they are.
+ * Brands missing from an import are left as they are. A brand's products are replaced by the
+ * import's, keeping the id of each one whose page is the same, so views of it carry over.
  */
 export async function importCatalog(db: Db, records: CatalogRecord[]) {
   const counts = { added: 0, updated: 0, skipped: 0 };
@@ -85,6 +109,7 @@ export async function importCatalog(db: Db, records: CatalogRecord[]) {
         priceHighUsd: r.priceHighUsd,
         quality: r.quality,
         seenAt: r.seenAt,
+        department: r.department,
         look: r.look,
       };
       const existing = await tx.select({ id: brandProfile.brandId }).from(brandProfile).where(eq(brandProfile.brandId, id));
@@ -94,8 +119,30 @@ export async function importCatalog(db: Db, records: CatalogRecord[]) {
         .onConflictDoUpdate({ target: brandProfile.brandId, set: { ...profile, updatedAt: sql`now()` } });
       if (existing.length) counts.updated++;
       else counts.added++;
-      await tx.delete(brandPhoto).where(eq(brandPhoto.brandId, id));
-      if (r.photos.length) await tx.insert(brandPhoto).values(r.photos.map((p, position) => ({ brandId: id, position, ...p })));
+      // One row per product page; a pack listing a page twice keeps the first.
+      const items = r.items.filter((p, i) => r.items.findIndex((q) => q.productUrl === p.productUrl) === i);
+      const urls = items.map((p) => p.productUrl);
+      await tx
+        .delete(catalogItem)
+        .where(and(eq(catalogItem.brandId, id), urls.length ? notInArray(catalogItem.productUrl, urls) : undefined));
+      if (items.length) {
+        await tx
+          .insert(catalogItem)
+          .values(items.map((p, position) => ({ brandId: id, position, ...p })))
+          .onConflictDoUpdate({
+            target: [catalogItem.brandId, catalogItem.productUrl],
+            set: {
+              position: sql`excluded.position`,
+              imageUrl: sql`excluded.image_url`,
+              title: sql`excluded.title`,
+              priceUsd: sql`excluded.price_usd`,
+              category: sql`excluded.category`,
+              department: sql`excluded.department`,
+              look: sql`excluded.look`,
+              updatedAt: sql`now()`,
+            },
+          });
+      }
     });
   }
   return counts;
