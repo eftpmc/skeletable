@@ -41,6 +41,12 @@ Pasting a product link always works. Searching by name needs at least one source
 
 Store logos are read from each store's own site. When a site has none the server can read, it asks Google's favicon service, which only sees the store's domain. Set `STORE_ICON_FALLBACK=none` to keep every request on the store itself; those stores then show their initial.
 
+### Optional search interpretation
+
+AI interpretation is an experiment, disabled by default. Keyword search and manual
+filters need no AI provider. See [search interpretation](docs/SEARCH-INTENT.md)
+for configuration, limits and evaluation before enabling it.
+
 ### Alerts
 
 Saved searches re-run and tracked prices are checked every `ALERTS_INTERVAL_MINUTES` (default 360; `0` turns it off). Each person picks where alerts go under **Settings → Notifications**:

@@ -57,7 +57,8 @@ export function shopifySource(stores: ShopifyStore[], options: { protocol?: "htt
           const data = JSON.parse(response.body.toString("utf8")) as {
             resources?: { results?: { products?: PredictiveProduct[] } };
           };
-          const products = data.resources?.results?.products ?? [];
+          const products = data.resources?.results?.products;
+          if (!Array.isArray(products)) throw new Error("Store did not return product search results");
           return products.flatMap((item): RawOffer[] => {
             const priceCents = dollarsToCents(item.price);
             if (!item.title || !item.url || priceCents === null) return [];
@@ -83,6 +84,9 @@ export function shopifySource(stores: ShopifyStore[], options: { protocol?: "htt
           });
         }),
       );
+      if (perStore.length > 0 && perStore.every((result) => result.status === "rejected")) {
+        throw new Error("No Shopify stores answered this search");
+      }
       return perStore.flatMap((result) => (result.status === "fulfilled" ? result.value : []));
     },
   };

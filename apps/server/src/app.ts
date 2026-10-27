@@ -18,6 +18,7 @@ import { preferencesRoutes } from "./preferences/routes.js";
 import { RateLimiter } from "./rate-limit.js";
 import { searchRoutes } from "./search/routes.js";
 import { SearchService } from "./search/service.js";
+import { interpreterFromConfig } from "./search/interpreter.js";
 import { StoreIcons } from "./search/store-icons.js";
 import type { AppEnv, AuthedEnv, Deps } from "./env.js";
 
@@ -25,7 +26,7 @@ import type { AppEnv, AuthedEnv, Deps } from "./env.js";
 export function createServices(deps: Deps) {
   const { config, db } = deps;
   const fetchOptions = { allowPrivate: config.ALLOW_PRIVATE_FETCH };
-  const search = new SearchService(db, deps.sources?.sources ?? [], fetchOptions);
+  const search = new SearchService(db, deps.sources?.sources ?? [], fetchOptions, interpreterFromConfig(config));
   // The stores to search: the environment's plus the admin page's. load() reads the saved ones.
   const stores = new StoreSettings(db, config, search, fetchOptions, deps.sources);
   if (!deps.sources) search.setSources(stores.currentSources());

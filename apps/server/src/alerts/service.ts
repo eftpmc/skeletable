@@ -8,6 +8,7 @@ import type {
   WatchInput,
   WatchSummary,
 } from "@closet/shared";
+import { intentKey, keywordIntent, searchIntentSchema } from "@closet/shared";
 import { and, desc, eq, gt, inArray, isNull, sql } from "drizzle-orm";
 import { modelWord } from "../search/normalize.js";
 import type { SearchService } from "../search/service.js";
@@ -94,14 +95,15 @@ export class AlertsService {
 
   /** Saving the same search twice returns the first. Current results count as seen, not new. */
   async saveSearch(userId: string, input: SavedSearchInput): Promise<SavedSearchSummary> {
+    const intent = await this.search.interpret(input.q, { intent: input.intent, condition: input.condition, maxPriceCents: input.max === undefined ? undefined : input.max * 100 });
     const existing = (await this.searchRows(userId)).find(
-      (s) => s.query.toLowerCase() === input.q.toLowerCase() && s.condition === (input.condition ?? null) && s.maxPrice === (input.max ?? null),
+      (s) => s.intent ? intentKey(searchIntentSchema.parse(s.intent)) === intentKey(intent) : s.query.toLowerCase() === input.q.toLowerCase() && s.condition === (input.condition ?? null) && s.maxPrice === (input.max ?? null) && intent.mode === "keyword",
     );
     const row =
       existing ??
       (await this.db
         .insert(savedSearch)
-        .values({ userId, query: input.q, condition: input.condition ?? null, maxPrice: input.max ?? null })
+        .values({ userId, query: input.q, condition: input.condition ?? null, maxPrice: input.max ?? null, intent })
         .returning())[0]!;
     if (!existing) await this.run(row).catch(() => undefined);
     const summary = (await this.savedSearches(userId)).find((s) => s.id === row.id);
@@ -140,6 +142,7 @@ export class AlertsService {
           query: s.query,
           condition: s.condition as Condition | null,
           max: s.maxPrice,
+          intent: s.intent ? searchIntentSchema.parse(s.intent) : null,
           newCount: counted?.count ?? 0,
           images: await this.newestImages(s.id),
           createdAt: s.createdAt.toISOString(),
@@ -170,7 +173,7 @@ export class AlertsService {
           ...base,
           kind: "new_matches",
           count: e.count ?? 0,
-          search: { id: s.id, query: s.query, condition: s.condition as Condition | null, max: s.maxPrice },
+          search: { id: s.id, query: s.query, condition: s.condition as Condition | null, max: s.maxPrice, intent: s.intent ? searchIntentSchema.parse(s.intent) : null },
           images: await this.newestImages(s.id),
         });
       } else if (e.kind === "price_drop" && e.productId && title !== null) {
@@ -220,8 +223,9 @@ export class AlertsService {
   private async run(s: SavedSearchRow) {
     const first = s.lastRunAt === null;
     const response = await this.search.search(s.query, {
-      condition: (s.condition as Condition | null) ?? undefined,
-      maxPriceCents: s.maxPrice ? s.maxPrice * 100 : undefined,
+      intent: s.intent ? searchIntentSchema.parse(s.intent) : keywordIntent(s.query),
+      condition: s.intent ? undefined : (s.condition as Condition | null) ?? undefined,
+      maxPriceCents: !s.intent && s.maxPrice ? s.maxPrice * 100 : undefined,
       fresh: true,
     });
     const ids = response.results.map((r) => r.productId);
@@ -252,7 +256,7 @@ export class AlertsService {
       .where(eq(product.id, productId));
     if (!row) return;
     const query = [row.brandName, modelWord(row.title) ?? row.title].filter(Boolean).join(" ");
-    await this.search.search(query, { fresh: true });
+    await this.search.search(query, { fresh: true, mode: "keyword" });
   }
 
   private async checkWatch(w: WatchRow) {

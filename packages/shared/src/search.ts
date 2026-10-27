@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { SearchIntent } from "./search-intent.js";
 
 export const conditions = ["new", "refurb", "used"] as const;
 export const conditionSchema = z.enum(conditions);
@@ -14,6 +15,8 @@ export const searchQuerySchema = z.object({
   q: z.string().trim().min(1).max(200),
   condition: conditionSchema.optional(),
   max: z.coerce.number().int().positive().max(1_000_000).optional(),
+  intent: z.string().max(6000).optional(),
+  mode: z.enum(["auto", "assisted", "keyword"]).optional(),
 });
 export type SearchQueryInput = z.input<typeof searchQuerySchema>;
 
@@ -54,6 +57,7 @@ export type SourceStatus = {
 
 export type SearchResponse = {
   query: string;
+  intent: SearchIntent;
   total: number;
   storeCount: number;
   sources: SourceStatus[];

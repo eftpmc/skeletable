@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import sharp from "sharp";
-import { matchKey, normalizeGtin, parseCondition, relevance } from "../src/search/normalize.js";
+import { isAccessoryFor, matchKey, normalizeGtin, parseCondition, relevance } from "../src/search/normalize.js";
 import { MIN_RELEVANCE } from "../src/search/service.js";
 import { parseShopifyStores } from "../src/search/sources/shopify.js";
 import { queryCases } from "./search-queries.js";
@@ -8,6 +8,17 @@ import { iconLinks, toPng } from "../src/search/store-icons.js";
 import { verdictFor } from "../src/search/verdict.js";
 
 describe("normalize", () => {
+  it.each([
+    ["airpods pro 2", "Apple AirPods Pro 2 with MagSafe Charging Case", false],
+    ["headphones", "Wireless Headphones for Travel", false],
+    ["sony xm5", "Replacement Ear Pads for Sony WH-1000XM5", true],
+    ["iphone 15", "Protective Cases for iPhone 15", true],
+    ["iphone 15 case", "Protective Case for iPhone 15", false],
+    ["sony xm5", "Sony WH-1000XM5 includes Carrying Case", false],
+  ])("accessory filtering: %s → %s", (query, title, excluded) => {
+    expect(isAccessoryFor(query, title)).toBe(excluded);
+  });
+
   it("scores relevance by query words found", () => {
     expect(relevance("sony wireless headphones", "Sony WH-1000XM5 Headphones", null)).toBeCloseTo(2 / 3);
     expect(relevance("sony headphones", "Sony WH-1000XM5 Wireless Headphones", null)).toBe(1);

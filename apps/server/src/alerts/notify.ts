@@ -178,6 +178,7 @@ export class NotifyService {
     return rows.flatMap(({ event: e, search: s, title, imageUrl, brandName }): AlertMessage[] => {
       if (e.kind === "new_matches" && s) {
         const params = new URLSearchParams({ q: s.query });
+        if (s.intent) params.set("intent", JSON.stringify(s.intent));
         if (s.condition) params.set("condition", s.condition);
         if (s.maxPrice) params.set("max", String(s.maxPrice));
         const count = e.count ?? 0;

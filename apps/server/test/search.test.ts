@@ -1,11 +1,12 @@
 import http from "node:http";
 import type { AddressInfo } from "node:net";
 import type { ProductDetail, SearchResponse } from "@closet/shared";
+import { keywordIntent } from "@closet/shared";
 import sharp from "sharp";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { bestBuySource } from "../src/search/sources/bestbuy.js";
 import { ebaySource } from "../src/search/sources/ebay.js";
-import type { Source } from "../src/search/sources/index.js";
+import type { RawOffer, Source } from "../src/search/sources/index.js";
 import { shopifySource } from "../src/search/sources/shopify.js";
 import { signUp, useTestApp } from "./helpers/setup.js";
 
@@ -113,6 +114,57 @@ async function client(extra: Source[] = []) {
 }
 
 describe("search", () => {
+  async function fixtureSearch(overrides: Partial<RawOffer>[]) {
+    const source: Source = {
+      id: "fixture", label: "Fixture",
+      search: async () => overrides.map((fields, index) => ({
+        source: "fixture", store: { name: "Fixture", domain: "fixture.example" },
+        url: `https://fixture.example/${index}`, title: "Acme AB-1234 Headphones",
+        brand: "Acme", priceCents: 10000 + index * 1000, currency: "USD",
+        condition: "new", imageUrl: null, gtin: null, mpn: null, inStock: true,
+        ...fields,
+      })),
+    };
+    const user = await signUp(setup({}, { sources: { sources: [source], info: [] } }));
+    return (await (await user.get("/api/search?q=AB-1234")).json()) as SearchResponse;
+  }
+
+  it("does not offer sold-out listings as the best deal", async () => {
+    const result = await fixtureSearch([{ inStock: false }, {}]);
+    expect(result.total).toBe(1);
+    expect(result.results[0]?.best.priceCents).toBe(11000);
+  });
+
+  it("returns no cards when every matching offer is sold out", async () => {
+    expect((await fixtureSearch([{ inStock: false }])).results).toEqual([]);
+  });
+
+  it("keeps conflicting barcodes separate despite identical model names", async () => {
+    const result = await fixtureSearch([{ gtin: "00000000000001" }, { gtin: "00000000000002" }]);
+    expect(result.results).toHaveLength(2);
+  });
+
+  it("keeps conflicting manufacturer part numbers separate", async () => {
+    const result = await fixtureSearch([{ mpn: "AB-1234/B" }, { mpn: "AB-1234/W" }]);
+    expect(result.results).toHaveLength(2);
+  });
+
+  it("does not assign an unidentified offer arbitrarily to competing barcode variants", async () => {
+    const result = await fixtureSearch([{ gtin: "00000000000001" }, { gtin: "00000000000002" }, {}]);
+    expect(result.results).toHaveLength(3);
+  });
+
+  it("does not treat an MPN shared by different brands as the same product", async () => {
+    const result = await fixtureSearch([{ mpn: "AB-1234" }, { mpn: "AB-1234", brand: "Other" }]);
+    expect(result.results).toHaveLength(2);
+  });
+
+  it("still groups equal barcodes and compatible listings without identifiers", async () => {
+    const result = await fixtureSearch([{ gtin: "00000000000001" }, { gtin: "00000000000001" }, {}]);
+    expect(result.results).toHaveLength(1);
+    expect(result.results[0]?.offerCount).toBe(3);
+  });
+
   it("requires a session", async () => {
     const response = await setup().request("/api/search?q=sony");
     expect(response.status).toBe(401);
@@ -160,6 +212,21 @@ describe("search", () => {
 
     const cheap = (await (await user.get("/api/search?q=sony%20wh-1000xm5&max=170")).json()) as SearchResponse;
     expect(cheap.results.map((r) => r.best.priceCents)).toEqual([16000]);
+  });
+
+  it("replays validated interpretation without sending constraints as product words", async () => {
+    const user = await client();
+    const intent = keywordIntent("sony wh-1000xm5");
+    intent.condition = { values: ["used"], strength: "required", evidence: "used" };
+    intent.budget = { amountCents: 20000, currency: "USD", comparison: "lt", strength: "required", evidence: "under $200" };
+    const params = new URLSearchParams({ q: "used sony wh-1000xm5 under $200", intent: JSON.stringify(intent) });
+    const result = await (await user.get(`/api/search?${params}`)).json() as SearchResponse;
+    expect(result.intent).toEqual(intent);
+    expect(result.results.map((r) => r.best.priceCents)).toEqual([16000]);
+    expect(seen.bestBuyPath).not.toContain("search=used");
+    expect(seen.bestBuyPath).not.toContain("search=under");
+    const overridden = await (await user.get(`/api/search?${params}&condition=new&max=300`)).json() as SearchResponse;
+    expect(overridden.results[0]?.best).toMatchObject({ condition: "new", priceCents: 27999 });
   });
 
   it("keeps going when a source fails", async () => {

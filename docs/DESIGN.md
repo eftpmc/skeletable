@@ -178,6 +178,33 @@ Phase 1 tables carry over: `item` becomes **owned**, `media`, `brand`, `brand_fi
 
 ## 9. AI (behind the scenes)
 
+Search quality is the immediate priority. Dedicated voice input is deferred: phone
+keyboards already provide dictation. Image plus text and aesthetic discovery should
+build on the same search pipeline, keeping exact-product comparisons separate from
+similar-product recommendations.
+
+The first reliability pass tightens model-code boundaries, keeps bundled products
+from being rejected as accessories, excludes sold-out offers from search cards, and
+prevents conflicting identifiers or ambiguous fallback matches from grouping new
+offers. Existing offer-to-product assignments are retained; this does not repair
+historical merges. Regression cases live in the server search tests.
+
+AI interpretation is experimental and disabled by default. The earlier phrase
+parser has been removed: ordinary searches use literal keywords and user-selected
+filters. A configurable model can propose requirements, preferences and uncertain
+attributes for descriptive requests. Proposals are validated, visibly editable,
+and frozen for saved searches. Strict budgets preserve cents and currency;
+preferences influence ranking without excluding offers. Attribute matching is
+explicitly unverified. See [SEARCH-INTENT.md](SEARCH-INTENT.md) for limits and the
+evaluation required before enabling this path. No live model evaluation has run.
+
+Next search work: catalog retrieval with fast initial results; image plus text
+refinement. Size, currency,
+variant availability and offer freshness need explicit handling before promising
+that a result satisfies every shopping constraint. Vibe search should propose
+interpretations people can refine, rather than silently treating inferred taste
+as a hard filter.
+
 - **Image search:** describe the photo (vision model) → query plus attributes, and image-embedding similarity against our catalog.
 - **Matching:** embeddings and rules to group offers into products when identifiers are missing.
 - **Tagging:** category and attributes for owned items and products.

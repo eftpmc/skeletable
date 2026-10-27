@@ -7,8 +7,9 @@ import type {
   ResultCard,
   SearchResponse,
   SourceStatus,
+  SearchIntent,
 } from "@closet/shared";
-import { conditions } from "@closet/shared";
+import { conditions, searchIntentSchema } from "@closet/shared";
 import { and, eq, gte, inArray, sql } from "drizzle-orm";
 import { upsertBrand } from "../closet/service.js";
 import { fetchLinkPreview } from "../closet/link-preview.js";
@@ -16,12 +17,17 @@ import type { SafeFetchOptions } from "../net/safe-fetch.js";
 import { isAccessoryFor, matchKey, modelCode, modelWord, relevance } from "./normalize.js";
 import type { RawOffer, Source, SourceQuery } from "./sources/index.js";
 import { verdictFor } from "./verdict.js";
+import { matchingProduct } from "./matching.js";
+import { SearchInterpreter } from "./interpreter.js";
+import { preferenceScore, retrievalQueries, satisfiesIntent } from "./intent-ranking.js";
 
 const { brand, offer, pricePoint, product, store } = schema;
 
 export class NotFoundError extends Error {}
 
 export type SearchOptions = {
+  intent?: SearchIntent;
+  mode?: "auto" | "assisted" | "keyword";
   condition?: Condition;
   maxPriceCents?: number;
   /** Skip the cache and ask every source again (scheduled re-runs). */
@@ -41,27 +47,38 @@ export class SearchService {
     private readonly db: Db,
     private sources: Source[],
     private readonly fetchOptions: SafeFetchOptions,
+    private readonly interpreter = new SearchInterpreter(),
   ) {}
+
+  async interpret(text: string, options: SearchOptions = {}): Promise<SearchIntent> {
+    const intent = options.intent ? searchIntentSchema.parse(options.intent) : await this.interpreter.interpret(text, options.mode);
+    if (options.condition) intent.condition = { values: [options.condition], strength: "required", evidence: "Selected condition" };
+    if (options.maxPriceCents !== undefined) intent.budget = { amountCents: options.maxPriceCents, currency: "USD", comparison: "lte", strength: "required", evidence: "Selected budget" };
+    return intent;
+  }
 
   /** One search across every enabled source. Results are stored so prices build up history. */
   async search(text: string, options: SearchOptions = {}): Promise<SearchResponse> {
-    const key = JSON.stringify([text.toLowerCase(), options.condition ?? null, options.maxPriceCents ?? null]);
+    const intent = await this.interpret(text, options);
+    const key = JSON.stringify([text, intent]);
     const cached = this.cache.get(key);
     if (!options.fresh && cached && Date.now() - cached.at < CACHE_TTL_MS) return cached.value;
 
     // Ask sources for every condition and price, then filter after grouping: relevance is judged
     // per product, so a terse used listing ("XM5, good condition") still shows up when it's the
     // same product as a new listing that matches the query well.
-    const query: SourceQuery = { text, limit: 30 };
-    const { offers: raw, statuses } = await this.fanOut(query);
-    const stored = await this.store(raw.filter((o) => !isAccessoryFor(text, o.title)));
-    const keep = (o: StoredOffer) =>
-      (!options.condition || o.condition === options.condition) &&
-      (!options.maxPriceCents || o.priceCents <= options.maxPriceCents);
-    const { cards: results, offers: kept } = await this.cards(stored, text, keep);
+    const batches = await Promise.all(retrievalQueries(intent).map((query) => this.fanOut({ text: query, limit: 30 })));
+    const raw = batches.flatMap((batch) => batch.offers);
+    const statuses = batches[0]!.statuses.map((status, index) => {
+      const entries = batches.map((batch) => batch.statuses[index]!);
+      return { ...status, count: entries.reduce((sum, entry) => sum + entry.count, 0), ms: Math.max(...entries.map((entry) => entry.ms)), status: entries.every((entry) => entry.status === "ok") ? "ok" as const : entries.find((entry) => entry.status !== "ok")!.status };
+    });
+    const stored = await this.store(raw.filter((o) => !isAccessoryFor(intent.text, o.title)));
+    const { cards: results, offers: kept } = await this.cards(stored, intent.text, (o) => satisfiesIntent(o, intent), intent);
 
     const value: SearchResponse = {
       query: text,
+      intent,
       total: kept.length,
       storeCount: new Set(kept.map((o) => o.store.domain)).size,
       sources: statuses,
@@ -96,7 +113,7 @@ export class SearchService {
     // Searching stores matching offers from other stores against the same product. Brand + model code
     // ("Sony WH-1000XM5") finds more listings than the store's full marketing title.
     const query = [preview.brand, modelWord(preview.title) ?? preview.title].filter(Boolean).join(" ");
-    await this.search(query).catch(() => undefined);
+    await this.search(query, { mode: "keyword" }).catch(() => undefined);
     return stored!.productId;
   }
 
@@ -124,9 +141,9 @@ export class SearchService {
         condition,
         best,
         count: list.length,
-        verdict: best
+        verdict: best && best.currency === "USD"
           ? verdictFor(best.priceCents, history.get(`${id}:${condition}`) ?? [], list.slice(1).map((o) => o.priceCents))
-          : { label: "unknown", text: "None right now" },
+          : { label: "unknown", text: best ? "Price comparison unavailable for this currency" : "None right now" },
       };
     });
 
@@ -230,12 +247,7 @@ export class SearchService {
         sql`${o.gtin ? sql`${product.gtin} = ${o.gtin} or ` : sql``}${o.mpn ? sql`lower(${product.mpn}) = ${o.mpn.toLowerCase()} or ` : sql``}${model ? sql`${product.model} = ${model} or ` : sql``}${product.matchKey} = ${key}`,
       )
       .limit(10);
-    const sameBrand = (b: string | null) => !b || !o.brand || b.toLowerCase() === o.brand.toLowerCase();
-    const match =
-      candidates.find((c) => o.gtin && c.gtin === o.gtin) ??
-      candidates.find((c) => o.mpn && c.mpn?.toLowerCase() === o.mpn.toLowerCase()) ??
-      candidates.find((c) => model && c.model === model && sameBrand(c.brand)) ??
-      candidates.find((c) => c.matchKey === key);
+    const match = matchingProduct({ ...o, model, matchKey: key }, candidates);
 
     if (match) {
       if ((o.gtin && !match.gtin) || (o.mpn && !match.mpn)) {
@@ -259,6 +271,7 @@ export class SearchService {
     offers: StoredOffer[],
     text: string,
     keep: (o: StoredOffer) => boolean,
+    intent: SearchIntent,
   ): Promise<{ cards: ResultCard[]; offers: StoredOffer[] }> {
     const groups = new Map<string, StoredOffer[]>();
     for (const o of offers) groups.set(o.productId, [...(groups.get(o.productId) ?? []), o]);
@@ -279,12 +292,13 @@ export class SearchService {
     }));
 
     const cards = scored.filter((group) => group.list.length > 0).map(({ productId, score, list }) => {
-      const sorted = [...list].sort((a, b) => a.priceCents - b.priceCents);
+      const sorted = [...list].sort((a, b) => preferenceScore(b, intent) - preferenceScore(a, intent) || a.priceCents - b.priceCents);
       const best = sorted[0]!;
-      const sameCondition = sorted.filter((o) => o.condition === best.condition);
+      const sameCondition = sorted.filter((o) => o.condition === best.condition && o.currency === best.currency);
       return {
         list,
         score,
+        preference: preferenceScore(best, intent),
         card: {
           productId,
           title: productInfo.get(productId)?.title ?? best.title,
@@ -293,7 +307,9 @@ export class SearchService {
           best: toSummary({ ...best, id: best.id }, best.store),
           offerCount: list.length,
           storeCount: new Set(list.map((o) => o.store.domain)).size,
-          verdict: verdictFor(
+          verdict: best.currency !== "USD" || sameCondition.some((o) => o.priceCents < best.priceCents)
+            ? { label: "unknown", text: "Selected for your preferences; compare all offers" }
+            : verdictFor(
             best.priceCents,
             history.get(`${productId}:${best.condition}`) ?? [],
             sameCondition.slice(1).map((o) => o.priceCents),
@@ -304,7 +320,7 @@ export class SearchService {
 
     const relevant = cards
       .filter((entry) => entry.score >= MIN_RELEVANCE)
-      .sort((a, b) => Math.round(b.score * 10) - Math.round(a.score * 10) || a.card.best.priceCents - b.card.best.priceCents);
+      .sort((a, b) => Math.round(b.score * 10) - Math.round(a.score * 10) || b.preference - a.preference || a.card.best.priceCents - b.card.best.priceCents);
     return { cards: relevant.map((entry) => entry.card), offers: relevant.flatMap((entry) => entry.list) };
   }
 
@@ -321,7 +337,7 @@ export class SearchService {
       })
       .from(pricePoint)
       .innerJoin(offer, eq(pricePoint.offerId, offer.id))
-      .where(and(inArray(offer.productId, productIds), gte(pricePoint.seenAt, since)))
+      .where(and(inArray(offer.productId, productIds), eq(offer.currency, "USD"), gte(pricePoint.seenAt, since)))
       .groupBy(sql`1, 2, 3`)
       .orderBy(sql`3`);
     const map = new Map<string, number[]>();

@@ -9,6 +9,7 @@
     "start": "node dist/index.js",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
+    "search:eval": "tsx --env-file-if-exists=../../.env scripts/search-eval.ts",
     "catalog:import": "tsx src/catalog/import-cli.ts",
     "catalog:recipes": "tsx src/catalog/connectors/recipe-cli.ts"
   },

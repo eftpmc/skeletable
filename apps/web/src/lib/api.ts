@@ -30,6 +30,7 @@ import {
   type SavedSearchInput,
   type SavedSearchSummary,
   type SearchResponse,
+  type SearchIntent,
   type Condition,
   type SourceInfo,
   type ServerInfo,
@@ -73,13 +74,15 @@ export async function getServerInfo(): Promise<ServerInfo> {
 
 export type ItemFilters = { category?: Category; color?: ColorName; q?: string };
 
-export type SearchParams = { q: string; condition?: Condition; max?: number };
+export type SearchParams = { q: string; condition?: Condition; max?: number; intent?: SearchIntent; mode?: "auto" | "assisted" | "keyword" };
 
 export const api = {
-  search: ({ q, condition, max }: SearchParams) => {
+  search: ({ q, condition, max, intent, mode }: SearchParams) => {
     const params = new URLSearchParams({ q });
     if (condition) params.set("condition", condition);
     if (max) params.set("max", String(max));
+    if (intent) params.set("intent", JSON.stringify(intent));
+    if (mode) params.set("mode", mode);
     return request<SearchResponse>("GET", `/api/search?${params}`);
   },
   resolveLink: (url: string) => request<{ productId: string }>("POST", "/api/search/link", { url }),

@@ -35,6 +35,10 @@ const configSchema = z.object({
   EBAY_API_BASE: z.string().url().optional(),
   BESTBUY_API_KEY: z.string().optional(),
   BESTBUY_API_BASE: z.string().url().optional(),
+  OPENAI_API_KEY: z.string().optional(),
+  SEARCH_INTENT_MODEL: z.string().default("gpt-5.6-luna"),
+  SEARCH_INTENT_ENABLED: booleanFromEnv.default(false),
+  SEARCH_INTENT_DAILY_LIMIT: z.coerce.number().int().min(0).default(1000),
   // Store logos come from each store's own site. When a site has none we can read, ask Google's
   // favicon service (it only sees the store's domain). "none" keeps every request on the store itself.
   STORE_ICON_FALLBACK: z.enum(["google", "none"]).default("google"),

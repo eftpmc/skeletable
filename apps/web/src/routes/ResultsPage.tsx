@@ -1,7 +1,7 @@
-import { type Condition, type ResultCard, conditionLabels, conditions } from "@closet/shared";
+import { type Condition, type ResultCard, type SearchIntent, budgetLabel, conditionLabels, conditions, intentFromParam, keywordIntent } from "@closet/shared";
 import { BellIcon, CheckIcon, ChevronDownIcon, EmptyState, Menu, MenuChoices, ProductTile, Skeleton, TileGrid, cn, focusRing } from "@closet/ui";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
 import { ProductPeek, ProductSheet } from "../components/ProductPeek";
 import { useWide } from "../lib/media";
@@ -17,8 +17,12 @@ type Sort = keyof typeof sorts;
 export function ResultsPage() {
   const [params, setParams] = useSearchParams();
   const q = params.get("q") ?? "";
-  const condition = (params.get("condition") as Condition | null) ?? undefined;
-  const max = params.get("max") ? Number(params.get("max")) : undefined;
+  const explicitCondition = (params.get("condition") as Condition | null) ?? undefined;
+  const explicitMax = params.get("max") ? Number(params.get("max")) : undefined;
+  // A frozen interpretation (edited, or from a saved search) replays without another model call.
+  const serializedIntent = params.get("intent");
+  const frozen = intentFromParam(serializedIntent);
+  const mode = params.get("mode") === "keyword" ? "keyword" : params.get("mode") === "assisted" ? "assisted" : "auto";
   const sort: Sort = params.get("sort") === "price" ? "price" : "best";
   // Wide screens open products beside the results; phones in a sheet over them.
   const isWide = useWide();
@@ -29,13 +33,23 @@ export function ResultsPage() {
   const openedHere = (location.state as { peek?: boolean } | null)?.peek === true;
 
   const { data, isPending, isError } = useQuery({
-    queryKey: ["search", q, condition, max],
-    queryFn: () => api.search({ q, condition, max }),
+    queryKey: ["search", q, explicitCondition, explicitMax, serializedIntent, mode],
+    queryFn: () => api.search({ q, condition: explicitCondition, max: explicitMax, intent: frozen, mode }),
     enabled: q.length > 0,
     staleTime: 5 * 60 * 1000,
   });
 
-  const saved = useSavedSearch(q, condition, max);
+  // The filters shown are the interpretation's: a single required condition, a USD "up to" budget.
+  const intent = data?.intent ?? frozen ?? keywordIntent(q);
+  const condition =
+    intent.condition?.strength === "required" && intent.condition.values.length === 1 ? intent.condition.values[0] : undefined;
+  const max =
+    intent.budget?.strength === "required" && intent.budget.currency === "USD" && intent.budget.comparison === "lte"
+      ? intent.budget.amountCents / 100
+      : undefined;
+  const priceOptions = [...new Set([...prices, ...(max ? [max] : [])])].sort((a, b) => a - b);
+
+  const saved = useSavedSearch(q, undefined, undefined, data?.intent);
   const savedId = saved.saved?.id;
   const hasNew = (saved.saved?.newCount ?? 0) > 0;
   const { markViewed } = saved;
@@ -48,7 +62,7 @@ export function ResultsPage() {
     <button
       type="button"
       aria-pressed={saved.saved !== null}
-      disabled={saved.pending || !q}
+      disabled={saved.pending || !q || !data}
       onClick={saved.toggle}
       className={cn(
         "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-callout transition-colors disabled:opacity-60",
@@ -62,7 +76,28 @@ export function ResultsPage() {
     </button>
   );
 
+  // Changing a filter edits the interpretation, which then travels in the URL.
+  const editIntent = (nextIntent: SearchIntent) => {
+    const next = new URLSearchParams(params);
+    next.set("q", nextIntent.text);
+    next.set("intent", JSON.stringify({ ...nextIntent, mode: "edited" }));
+    next.delete("condition");
+    next.delete("max");
+    setParams(next, { replace: true, state: location.state });
+  };
   const set = (key: string, value: string | undefined, push = false) => {
+    if (key === "condition")
+      return editIntent({
+        ...intent,
+        condition: value ? { values: [value as Condition], strength: "required", evidence: "Selected condition" } : null,
+      });
+    if (key === "max")
+      return editIntent({
+        ...intent,
+        budget: value
+          ? { amountCents: Math.round(Number(value) * 100), currency: "USD", comparison: "lte", strength: "required", evidence: "Selected budget" }
+          : null,
+      });
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
     else next.delete(key);
@@ -108,7 +143,9 @@ export function ResultsPage() {
 
   const failed = data?.sources.filter((s) => s.status !== "ok") ?? [];
 
-  const filtered = Boolean(condition || max);
+  const noSources = data?.sources.length === 0;
+  const allFailed = !!data?.sources.length && failed.length === data.sources.length;
+  const filtered = Boolean(intent.condition || intent.budget);
 
   return (
     <section>
@@ -137,7 +174,7 @@ export function ResultsPage() {
             label="Price"
             value={max ? String(max) : ""}
             onChange={(value) => set("max", value || undefined)}
-            options={[{ value: "", label: "Any price" }, ...prices.map((p) => ({ value: String(p), label: `Under $${p}` }))]}
+            options={[{ value: "", label: "Any price" }, ...priceOptions.map((p) => ({ value: String(p), label: `Up to $${p}` }))]}
           />
           <FilterPill
             label="Sort"
@@ -149,12 +186,7 @@ export function ResultsPage() {
           {filtered && (
             <button
               type="button"
-              onClick={() => {
-                const next = new URLSearchParams(params);
-                next.delete("condition");
-                next.delete("max");
-                setParams(next, { replace: true, state: location.state });
-              }}
+              onClick={() => editIntent({ ...intent, condition: null, budget: null })}
               className={cn("h-9 shrink-0 rounded-full px-2 text-callout font-normal text-muted hover:text-ink", focusRing)}
             >
               Clear
@@ -163,6 +195,7 @@ export function ResultsPage() {
           <div className="ml-auto shrink-0 pl-2">{saveButton()}</div>
         </div>
       </div>
+      {data && <Interpretation intent={intent} q={q} set={set} editIntent={editIntent} />}
       {failed.length > 0 && <p className="mt-1 px-1 text-footnote text-muted">{failed.map((s) => s.label).join(", ")} didn't answer this time.</p>}
 
       <div className="mt-3 lg:flex lg:items-start lg:gap-8">
@@ -177,8 +210,18 @@ export function ResultsPage() {
             <EmptyState title="Search isn't working right now" body="Try again in a moment." />
           ) : results.length === 0 ? (
             <EmptyState
-              title="Nothing found"
-              body={filtered ? "Nothing matches these filters. Clear them to see everything." : "Try fewer words, or paste a product link."}
+              title={noSources ? "No stores connected" : allFailed ? "Stores couldn't be reached" : "Nothing found"}
+              body={
+                noSources
+                  ? "Store search hasn't been configured on this server. You can still paste a product link."
+                  : allFailed
+                    ? "The stores didn't answer this search. Try again in a moment."
+                    : failed.length
+                      ? "Some stores didn't answer, so these results are incomplete. Try again or change your search."
+                      : filtered
+                        ? "Nothing matches these filters. Clear them to see everything."
+                        : "Try fewer words, or paste a product link."
+              }
             />
           ) : (
             <TileGrid className="mt-2">
@@ -221,6 +264,130 @@ export function ResultsPage() {
 }
 
 type FilterOption = { value: string; label: string };
+
+/** What the search was understood as: each applied condition, budget and attribute, removable, plus a custom budget. */
+function Interpretation({
+  intent,
+  q,
+  set,
+  editIntent,
+}: {
+  intent: SearchIntent;
+  q: string;
+  set: (key: string, value: string | undefined) => void;
+  editIntent: (intent: SearchIntent) => void;
+}) {
+  const chip = cn("inline-flex h-8 shrink-0 items-center rounded-full bg-surface px-3 text-footnote text-ink hover:bg-line", focusRing);
+  return (
+    <div className="mt-2 flex flex-col gap-2 px-1 text-footnote text-muted" aria-label="Applied search filters">
+      <div className="flex flex-wrap items-center gap-2">
+        <span>Searching for “{intent.text}”</span>
+        {intent.condition && (
+          <button type="button" className={chip} onClick={() => set("condition", undefined)}>
+            {intent.condition.strength === "preferred" ? "Prefer: " : "Required: "}
+            {intent.condition.values.map((c) => conditionLabels[c]).join(" or ")} · Remove
+          </button>
+        )}
+        {intent.budget && (
+          <button type="button" className={chip} onClick={() => set("max", undefined)}>
+            {intent.budget.strength === "preferred" ? "Prefer: " : "Required: "}
+            {budgetLabel(intent.budget)} · Remove
+          </button>
+        )}
+        {intent.attributes.map((attribute, index) => (
+          <button
+            key={index}
+            type="button"
+            className={chip}
+            onClick={() => editIntent({ ...intent, attributes: intent.attributes.filter((_, i) => i !== index) })}
+          >
+            {attribute.strength === "required" ? "Requested" : "Prefer"}: {attribute.text} · Unverified · Remove
+          </button>
+        ))}
+        {intent.mode === "model" && (
+          <button type="button" className={cn("underline", focusRing)} onClick={() => editIntent(keywordIntent(q))}>
+            Use my original words
+          </button>
+        )}
+      </div>
+      {intent.attributes.length > 0 && <p>Style, size, material and other details help find candidates, but must be checked on the listing.</p>}
+      {intent.uncertainties.map((uncertainty, index) => (
+        <p key={index}>{uncertainty}</p>
+      ))}
+      <BudgetFilter key={JSON.stringify(intent.budget)} budget={intent.budget} onApply={(budget) => editIntent({ ...intent, budget })} />
+    </div>
+  );
+}
+
+function BudgetFilter({ budget, onApply }: { budget: SearchIntent["budget"]; onApply: (value: SearchIntent["budget"]) => void }) {
+  const [value, setValue] = useState(budget ? String(budget.amountCents / 100) : "");
+  const [currency, setCurrency] = useState<NonNullable<SearchIntent["budget"]>["currency"]>(budget?.currency ?? "USD");
+  const [comparison, setComparison] = useState<NonNullable<SearchIntent["budget"]>["comparison"]>(budget?.comparison ?? "lte");
+  const [strength, setStrength] = useState<"required" | "preferred">(budget?.strength ?? "required");
+  const field = cn("rounded-lg border border-line bg-transparent p-1 text-ink", focusRing);
+  return (
+    <details>
+      <summary className={cn("w-fit cursor-pointer", focusRing)}>Custom budget</summary>
+      <form
+        className="mt-2 flex flex-wrap items-center gap-2"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onApply(
+            value
+              ? {
+                  amountCents: Math.round(Number(value) * 100),
+                  currency,
+                  comparison,
+                  strength: comparison === "around" ? "preferred" : strength,
+                  evidence: "Selected budget",
+                }
+              : null,
+          );
+        }}
+      >
+        <input
+          aria-label="Budget amount"
+          type="number"
+          min="0.01"
+          max="1000000"
+          step="0.01"
+          value={value}
+          onChange={(event) => setValue(event.target.value)}
+          placeholder="Any"
+          className={cn(field, "w-24 px-2")}
+        />
+        <select aria-label="Budget currency" value={currency} onChange={(e) => setCurrency(e.target.value as typeof currency)} className={field}>
+          {["USD", "EUR", "GBP", "CAD", "AUD"].map((c) => (
+            <option key={c}>{c}</option>
+          ))}
+        </select>
+        <select
+          aria-label="Budget comparison"
+          value={comparison}
+          onChange={(e) => setComparison(e.target.value as typeof comparison)}
+          className={field}
+        >
+          <option value="lt">Under</option>
+          <option value="lte">Up to</option>
+          <option value="around">Around</option>
+        </select>
+        <select
+          aria-label="Budget priority"
+          value={comparison === "around" ? "preferred" : strength}
+          disabled={comparison === "around"}
+          onChange={(e) => setStrength(e.target.value as typeof strength)}
+          className={field}
+        >
+          <option value="required">Required</option>
+          <option value="preferred">Preferred</option>
+        </select>
+        <button type="submit" className={cn("rounded-lg bg-surface px-3 py-1 text-ink", focusRing)}>
+          Apply
+        </button>
+      </form>
+    </details>
+  );
+}
 
 /**
  * One filter as a pill that opens its choices. Set, it fills with ink and names what's picked

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { type Condition, conditionSchema } from "./search.js";
+import { searchIntentSchema, type SearchIntent } from "./search-intent.js";
 
 export const watchInputSchema = z.object({
   productId: z.uuid(),
@@ -24,6 +25,7 @@ export type WatchSummary = {
 };
 
 export const savedSearchInputSchema = z.object({
+  intent: searchIntentSchema.optional(),
   q: z.string().trim().min(1).max(200),
   condition: conditionSchema.optional(),
   max: z.number().int().positive().max(1_000_000).optional(),
@@ -31,6 +33,7 @@ export const savedSearchInputSchema = z.object({
 export type SavedSearchInput = z.input<typeof savedSearchInputSchema>;
 
 export type SavedSearchSummary = {
+  intent?: SearchIntent | null;
   id: string;
   query: string;
   condition: Condition | null;
@@ -50,7 +53,7 @@ export type AlertEvent =
       createdAt: string;
       read: boolean;
       count: number;
-      search: { id: string; query: string; condition: Condition | null; max: number | null };
+      search: { id: string; query: string; condition: Condition | null; max: number | null; intent?: SearchIntent | null };
       images: string[];
     }
   | {
