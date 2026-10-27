@@ -46,6 +46,8 @@ Search isn't a tab. The search box sits in the header on every page (along the b
 
 The account button at the foot of the sidebar opens a menu: who you are (and your role), Settings, help, and sign out. Owners and admins find the server sections inside Settings. **Settings** is one page of sections, each at `/settings/<section>`: a list beside the section on wide screens, a list then a page on phones. *You*: Account (name, password, sign out), Notifications, Appearance, Sizes & fit, Your data. *Server* (owners and admins only): Overview (counts and what's switched on), Stores (Shopify shops by address, eBay and Best Buy keys, stored encrypted and applied without a restart), Members (the owner makes admins). A new section is one entry in the list in `routes/settings/SettingsPage.tsx`.
 
+**Frame (wide screens).** The sidebar sits on a `surface` backdrop and the page is a rounded `canvas` panel inset 8px from the window, with a hairline border; the panel scrolls, the frame stays still. Phones keep the full-bleed layout.
+
 **Status** is a mark plus words: a filled ink circle with a check for on or connected, an outlined circle with an X for off. Never color or a dot alone.
 
 **Headers** are sentence case. No all-caps labels anywhere.

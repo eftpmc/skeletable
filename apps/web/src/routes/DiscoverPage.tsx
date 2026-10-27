@@ -125,7 +125,7 @@ export function DiscoverPage() {
         </div>
 
         {open && wide && (
-          <div className="sticky top-[96px] hidden h-[calc(100dvh-120px)] w-[420px] shrink-0 lg:block xl:w-[460px]">
+          <div className="sticky top-[96px] hidden h-[calc(100dvh-136px)] w-[420px] shrink-0 lg:block xl:w-[460px]">
             <ItemPeek key={open} id={open} onClose={close} onStep={step} onOpen={(id) => show(id, false)} />
           </div>
         )}

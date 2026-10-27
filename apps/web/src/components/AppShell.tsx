@@ -109,8 +109,8 @@ export function AppShell({ user }: { user: User }) {
   };
 
   return (
-    <div className="flex min-h-full flex-col lg:flex-row">
-      {sidebar("sticky top-0 hidden h-dvh lg:flex")}
+    <div className="flex min-h-full flex-col lg:h-dvh lg:flex-row lg:overflow-hidden lg:bg-surface">
+      {sidebar("sticky top-0 hidden h-dvh lg:flex lg:border-r-0")}
 
       <header className="sticky top-0 z-20 bg-canvas/90 backdrop-blur lg:hidden">
         <TopBar
@@ -133,7 +133,7 @@ export function AppShell({ user }: { user: User }) {
         {sidebar(undefined, true)}
       </NavDrawer>
 
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 lg:my-2 lg:mr-2 lg:overflow-y-auto lg:rounded-2xl lg:border lg:border-line lg:bg-canvas">
         {/* Wide screens: search on every page, in a bar above it. */}
         <div className="sticky top-0 z-20 hidden border-b border-line bg-canvas/90 px-10 backdrop-blur lg:block">
           <div className="mx-auto flex h-[72px] max-w-6xl items-center">
