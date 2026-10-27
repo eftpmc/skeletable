@@ -73,6 +73,8 @@ export const catalogItem = pgTable(
   (table) => [
     uniqueIndex("catalog_item_brand_url_idx").on(table.brandId, table.productUrl),
     index("catalog_item_category_idx").on(table.category, table.department),
+    // Discover's shortlists and "more like this": the products nearest a look.
+    index("catalog_item_look_idx").using("hnsw", table.look.op("vector_cosine_ops")),
   ],
 );
 

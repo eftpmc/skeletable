@@ -462,4 +462,27 @@ describe("catalog", () => {
     expect(forYou.interested).toBeGreaterThanOrEqual(5);
     expect(forYou.brands.every((b) => b.because === null)).toBe(true);
   });
+
+  it("leans toward the side someone opens until they pick one in Settings", async () => {
+    // Four brands on each side, all looking alike, so only the side they open can separate them.
+    const side = (department: "women" | "men", k: number) =>
+      store(`${department} ${k}`, 0, 0, { department }, [1, 2, 3].map(() => ({ department, category: "tops" as const })));
+    await importCatalog(db, [1, 2, 3, 4].flatMap((k) => [side("women", k), side("men", k)]));
+    const user = await signUp(setup());
+    const feed = async () => ((await (await user.get("/api/catalog/feed?seed=x")).json()) as ItemFeed).items;
+
+    const first = await feed();
+    expect(new Set(first.map((i) => i.department))).toEqual(new Set(["women", "men"]));
+    for (const item of first.filter((i) => i.department === "women").slice(0, 3)) {
+      expect((await user.post(`/api/catalog/items/${item.id}/seen`, { dwellMs: 30_000 })).status).toBe(204);
+    }
+    const leaning = (await feed()).slice(0, 6);
+    expect(leaning.filter((i) => i.department === "women").length).toBeGreaterThanOrEqual(5);
+
+    // Picking a side in Settings filters instead; picking "everything" stops the lean.
+    await user.patch("/api/preferences", { shopFor: "men" });
+    expect((await feed()).every((i) => i.department === "men")).toBe(true);
+    await user.patch("/api/preferences", { shopFor: "all" });
+    expect((await feed()).slice(0, 6).filter((i) => i.department === "women").length).toBeLessThan(6);
+  });
 });

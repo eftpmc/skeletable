@@ -1,40 +1,14 @@
-import { type CategoryCount, type CategoryGroupId, type CategoryId, type ShopFor, catalogCategorySchema, categoriesIn, categoryGroupSchema, categoryGroups, categoryLabel } from "@closet/shared";
-import { Button, ChevronDownIcon, Chip, ChipRow, EmptyState, Menu, MenuChoices, ProductTile, ScreenTitle, Skeleton, TileGrid, cn } from "@closet/ui";
+import { type CategoryCount, type CategoryGroupId, type CategoryId, catalogCategorySchema, categoriesIn, categoryGroupSchema, categoryGroups, categoryLabel } from "@closet/shared";
+import { ChevronDownIcon, Chip, ChipRow, EmptyState, Menu, MenuChoices, ProductTile, ScreenTitle, Skeleton, TileGrid, cn } from "@closet/ui";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
 import { ItemPeek, ItemSheet, usd } from "../components/ItemPeek";
 import { api } from "../lib/api";
 import { useWide } from "../lib/media";
-import { usePreferences, useSetPreferences } from "../lib/preferences";
 
 // One shuffle per visit: the feed keeps its order while you browse, and changes next time you come.
 const SEED = Math.random().toString(36).slice(2, 10);
-
-/** The one question Discover asks, once: which side of the catalog to show. Settings has it after. */
-function ShopForPrompt() {
-  const set = useSetPreferences();
-  const choices: { value: ShopFor; label: string }[] = [
-    { value: "women", label: "Womenswear" },
-    { value: "men", label: "Menswear" },
-    { value: "all", label: "Everything" },
-  ];
-  return (
-    <div className="mt-6 flex flex-col gap-3 rounded-xl border border-line bg-canvas p-4 sm:flex-row sm:items-center">
-      <div className="min-w-0 flex-1">
-        <p className="text-body font-semibold text-ink">What do you shop for?</p>
-        <p className="text-footnote text-muted">Unisex pieces show either way. You can change it in Settings.</p>
-      </div>
-      <div className="flex gap-2">
-        {choices.map((c) => (
-          <Button key={c.value} variant="secondary" className="h-11 flex-1 px-4 sm:flex-none" disabled={set.isPending} onClick={() => set.mutate({ shopFor: c.value })}>
-            {c.label}
-          </Button>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 /**
  * Discover: products from small brands across the open web, as a feed to browse, all of it or one
@@ -52,7 +26,6 @@ export function DiscoverPage() {
   const category: CategoryId | undefined = parsedCategory.success ? parsedCategory.data : undefined;
   const parsedGroup = categoryGroupSchema.safeParse(params.get("g"));
   const group: CategoryGroupId | undefined = !category && parsedGroup.success ? parsedGroup.data : undefined;
-  const { data: prefs } = usePreferences();
   const { data: categories = [] } = useQuery({ queryKey: ["catalog", "categories"], queryFn: api.catalogCategories, staleTime: 5 * 60 * 1000 });
   // Opening an item adds a history entry, so Back (or the phone's back swipe) closes it.
   const openedHere = (location.state as { item?: boolean } | null)?.item === true;
@@ -134,8 +107,6 @@ export function DiscoverPage() {
       <p className="mt-1 max-w-2xl text-callout font-normal text-muted">
         Pieces from small brands across the open web. Open what you like the look of; the feed learns from what you spend time on.
       </p>
-
-      {prefs && prefs.shopFor === null && <ShopForPrompt />}
 
       {categories.length > 1 && (
         <div ref={chips}>

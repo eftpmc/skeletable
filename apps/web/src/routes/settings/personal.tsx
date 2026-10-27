@@ -154,16 +154,21 @@ export function DiscoverPreferences() {
     <div className="flex flex-col gap-8">
       <section>
         <h3 className="text-body font-semibold text-ink">Shop for</h3>
-        <p className="mt-1 text-callout font-normal text-muted">Unisex pieces show either way.</p>
+        <p className="mt-1 text-callout font-normal text-muted">
+          {prefs.shopFor === null
+            ? "Discover shows everything and leans toward the side you open and save."
+            : "Discover shows only this side. Unisex pieces show either way."}
+        </p>
         <SegmentedControl
           className="mt-4"
           label="Shop for"
-          value={prefs.shopFor ?? "all"}
-          onValueChange={(value) => set.mutate({ shopFor: value as ShopFor })}
+          value={prefs.shopFor ?? "learn"}
+          onValueChange={(value) => set.mutate({ shopFor: value === "learn" ? null : (value as ShopFor) })}
           segments={[
-            { value: "women", label: "Womenswear" },
-            { value: "men", label: "Menswear" },
-            { value: "all", label: "Everything" },
+            { value: "learn", label: "Learn it" },
+            { value: "women", label: "Women" },
+            { value: "men", label: "Men" },
+            { value: "all", label: "All" },
           ]}
         />
       </section>
