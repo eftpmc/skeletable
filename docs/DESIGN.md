@@ -42,7 +42,11 @@ Later: anyone who shops online, plus self-hosters who want a private price track
 | **Saved** | Products you're tracking, grouped by day, with price drops |
 | **Collection** | What you already have, with sizes, receipts and what it's worth used |
 
-Search isn't a tab. The search box sits in the header on every page (along the bottom on phones, where thumbs are; it tucks away while you scroll down). It opens a palette, also on `/` or ⌘K: recent and saved searches before you type; while typing, search every store first, then what you already have that matches (tracked products with today's price, saved searches, recent searches, brands). A pasted link becomes "Find this product everywhere". Results and products belong to no tab. Account, sizes, sources (self-host), MCP and export sit behind the avatar.
+Search isn't a tab. The search box sits in the header on every page (along the bottom on phones, where thumbs are; it tucks away while you scroll down). It opens a palette, also on `/` or ⌘K: recent and saved searches before you type; while typing, search every store first, then what you already have that matches (tracked products with today's price, saved searches, recent searches, brands). A pasted link becomes "Find this product everywhere". Results and products belong to no tab.
+
+The account button at the foot of the sidebar opens a menu: who you are (and your role), Settings, **Run this server** for owners and admins, help, and sign out. **Settings** is one page of sections, each at `/settings/<section>`: a list beside the section on wide screens, a list then a page on phones. *You*: Account (name, password, sign out), Notifications, Appearance, Sizes & fit, Your data. *Server* (owners and admins only): Overview (counts and what's switched on), Stores (Shopify shops by address, eBay and Best Buy keys, stored encrypted and applied without a restart), Members (the owner makes admins). A new section is one entry in the list in `routes/settings/SettingsPage.tsx`.
+
+**Roles.** The first account on a server is its **owner**. The owner can make others **admins**, who set up stores too; everyone else is a **member**. Anything set in the server's environment shows in the admin sections as read-only.
 
 ### 4.2 Key screens (canvas round 4)
 

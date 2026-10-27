@@ -1,9 +1,10 @@
 import { type Condition, type ResultCard, conditionLabels, conditions } from "@closet/shared";
 import { BellIcon, CheckIcon, Chip, ChipDivider, ChipRow, EmptyState, ProductTile, Skeleton, TileGrid, cn, focusRing } from "@closet/ui";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
 import { ProductPeek, ProductSheet } from "../components/ProductPeek";
+import { useWide } from "../lib/media";
 import { useSavedSearch } from "../lib/alerts";
 import { api } from "../lib/api";
 import { formatMoney } from "../lib/format";
@@ -12,16 +13,6 @@ const prices = [50, 100, 250, 500];
 const sorts = { best: "Best match", price: "Lowest price" } as const;
 type Sort = keyof typeof sorts;
 
-// Wide screens open products beside the results; phones in a sheet over them.
-const wide = window.matchMedia("(min-width: 1024px)");
-const useWide = () =>
-  useSyncExternalStore(
-    (onChange) => {
-      wide.addEventListener("change", onChange);
-      return () => wide.removeEventListener("change", onChange);
-    },
-    () => wide.matches,
-  );
 
 export function ResultsPage() {
   const [params, setParams] = useSearchParams();
@@ -29,6 +20,7 @@ export function ResultsPage() {
   const condition = (params.get("condition") as Condition | null) ?? undefined;
   const max = params.get("max") ? Number(params.get("max")) : undefined;
   const sort: Sort = params.get("sort") === "price" ? "price" : "best";
+  // Wide screens open products beside the results; phones in a sheet over them.
   const isWide = useWide();
   const peek = params.get("p");
   const location = useLocation();

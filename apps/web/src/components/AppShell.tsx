@@ -1,7 +1,8 @@
-import { Avatar, BellIcon, BookmarkIcon, CompassIcon, HomeIcon, IconButton, MenuIcon, NavDrawer, PackageIcon, SearchIcon, SideNav, XIcon, cn, focusRing } from "@closet/ui";
+import { BellIcon, BookmarkIcon, CompassIcon, HomeIcon, IconButton, MenuIcon, NavDrawer, PackageIcon, SearchIcon, SideNav, XIcon, cn, focusRing } from "@closet/ui";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router";
 import { useUnreadAlerts } from "../lib/alerts";
+import { AccountMenu } from "./AccountMenu";
 import { SearchTrigger, useSearchPalette } from "./SearchPalette";
 
 const tabs = [
@@ -103,20 +104,7 @@ export function AppShell({ user }: { user: User }) {
         inDrawer={inDrawer}
         className={className}
         brand={inDrawer ? undefined : <Wordmark className="self-start px-3 py-2 text-title-2" />}
-        footer={
-          <Link
-            to="/profile"
-            onClick={close}
-            aria-current={pathname.startsWith("/profile") ? "page" : undefined}
-            className={cn("flex h-[52px] items-center gap-3 rounded-lg px-3 hover:bg-surface aria-[current=page]:bg-surface", focusRing)}
-          >
-            <Avatar name={user.name || user.email} image={user.image} size={32} />
-            <span className="min-w-0">
-              <span className="block truncate text-callout font-semibold text-ink">{user.name || user.email}</span>
-              <span className="block text-footnote text-muted">Profile &amp; settings</span>
-            </span>
-          </Link>
-        }
+        footer={<AccountMenu user={user} onNavigate={close} />}
       />
     );
   };

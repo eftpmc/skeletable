@@ -1,44 +1,11 @@
-import { type AccentName, Button, IconButton, ListGroup, ListRow, ScreenTitle, TextField, XIcon, accents, buttonClass, cn, focusRing } from "@closet/ui";
+import { type AccentName, Badge, Button, DownloadIcon, IconButton, TextField, XIcon, accents, buttonClass, cn, focusRing } from "@closet/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
-import type { NotifySettings } from "@closet/shared";
-import { ApiError, api } from "../lib/api";
-import { useAccent } from "../lib/accent";
-import { signOut } from "../lib/auth-client";
-
-type User = { name: string; email: string };
-
-export function SettingsPage({ user }: { user: User }) {
-  const queryClient = useQueryClient();
-  // Drop everything cached for this account, so signed-out pages (and the next account) start clean.
-  const leave = () => signOut().then(() => queryClient.clear());
-
-  return (
-    <section className="mx-auto max-w-xl space-y-10">
-      <ScreenTitle className="pt-4 md:pt-0">Profile</ScreenTitle>
-      <AlertDelivery />
-      <ThemeColor />
-      <Sources />
-      <SizesAndFit />
-      <div>
-        <h2 className="text-title-3 text-ink">Your data</h2>
-        <p className="mt-1 text-callout font-normal text-muted">Download everything: your items, sizes, wear history and photos.</p>
-        <a href="/api/export" download className={buttonClass({ variant: "secondary", className: "mt-4" })}>
-          Export everything
-        </a>
-      </div>
-      <div>
-        <h2 className="text-title-3 text-ink">Account</h2>
-        <p className="mt-1 text-callout font-normal text-muted">
-          {user.name} · {user.email}
-        </p>
-        <Button variant="secondary" className="mt-4" onClick={() => void leave()}>
-          Sign out
-        </Button>
-      </div>
-    </section>
-  );
-}
+import type { Me, NotifySettings } from "@closet/shared";
+import { ApiError, api } from "../../lib/api";
+import { useAccent } from "../../lib/accent";
+import { changePassword, signOut, updateUser } from "../../lib/auth-client";
+import { meKey } from "../../lib/me";
 
 const timezone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 
@@ -49,7 +16,8 @@ function hourLabel(hour: number) {
   return new Date(2000, 0, 1, hour).toLocaleTimeString([], { hour: "numeric" });
 }
 
-function AlertDelivery() {
+/** Where alerts go outside the app: ntfy on a phone, a morning email. */
+export function Notifications() {
   const queryClient = useQueryClient();
   const { data: settings } = useQuery({ queryKey: ["notifications"], queryFn: api.notifications });
   const [ntfyDraft, setNtfyDraft] = useState<string | null>(null);
@@ -92,10 +60,7 @@ function AlertDelivery() {
 
   return (
     <div>
-      <h2 className="text-title-3 text-ink">Get alerts</h2>
-      <p className="mt-1 text-callout font-normal text-muted">New matches and price drops, without opening the app.</p>
-
-      <h3 className="mt-6 text-body font-semibold text-ink">On your phone</h3>
+      <h3 className="text-body font-semibold text-ink">On your phone</h3>
       <p className="mt-1 text-callout font-normal text-muted">
         Install the free{" "}
         <a href="https://ntfy.sh" target="_blank" rel="noreferrer" className="underline">
@@ -175,13 +140,13 @@ function AlertDelivery() {
   );
 }
 
-function ThemeColor() {
+export function Appearance() {
   const { name: current, setName } = useAccent();
   return (
     <div>
-      <h2 className="text-title-3 text-ink">Theme color</h2>
-      <p className="mt-1 text-callout font-normal text-muted">Colors the home page art and the sidebar. Saved in this browser.</p>
-      <div role="group" aria-label="Theme color" className="mt-4 flex gap-3">
+      <h3 className="text-body font-semibold text-ink">Theme color</h3>
+      <p className="mt-1 text-callout font-normal text-muted">Colors the art and the sidebar. Saved in this browser.</p>
+      <div role="group" aria-label="Theme color" className="mt-4 flex flex-wrap gap-3">
         {(Object.keys(accents) as AccentName[]).map((name) => (
           <button
             key={name}
@@ -202,33 +167,7 @@ function ThemeColor() {
   );
 }
 
-function Sources() {
-  const { data: sources = [] } = useQuery({ queryKey: ["sources"], queryFn: api.sources });
-  return (
-    <div>
-      <ListGroup label="Stores we search">
-        {sources.map((source) => (
-          <ListRow
-            key={source.id}
-            title={source.label}
-            value={
-              source.enabled ? (
-                "Connected"
-              ) : (
-                <span className="text-callout font-normal text-muted">
-                  Set <code className="text-footnote">{source.needs}</code>
-                </span>
-              )
-            }
-          />
-        ))}
-      </ListGroup>
-      <p className="mt-2 px-4 text-footnote text-muted">Pasting a product link always works. These add search by name.</p>
-    </div>
-  );
-}
-
-function SizesAndFit() {
+export function SizesAndFit() {
   const queryClient = useQueryClient();
   const { data: fits = [] } = useQuery({ queryKey: ["brand-fits"], queryFn: api.brandFits });
   const { data: brands = [] } = useQuery({ queryKey: ["brands"], queryFn: api.brands });
@@ -251,11 +190,8 @@ function SizesAndFit() {
 
   return (
     <div>
-      <h2 className="text-title-3 text-ink">Sizes &amp; fit</h2>
-      <p className="mt-1 text-callout font-normal text-muted">Your size in each brand, so you never have to guess again.</p>
-
       {fits.length > 0 && (
-        <ul className="mt-4 divide-y divide-line overflow-hidden rounded-xl bg-surface">
+        <ul className="mb-4 divide-y divide-line overflow-hidden rounded-xl bg-surface">
           {fits.map((fit) => (
             <li key={fit.brand} className="flex min-h-[52px] items-center gap-3 py-2 pr-2 pl-4 text-body">
               <span className="min-w-0 flex-1">
@@ -271,7 +207,7 @@ function SizesAndFit() {
         </ul>
       )}
 
-      <form onSubmit={submit} className="mt-4 grid grid-cols-[1fr_5rem] gap-2 sm:grid-cols-[1fr_5rem_1fr_auto]">
+      <form onSubmit={submit} className="grid grid-cols-[1fr_5rem] gap-2 sm:grid-cols-[1fr_5rem_1fr_auto]">
         <TextField
           aria-label="Brand"
           placeholder="Brand"
@@ -296,6 +232,130 @@ function SizesAndFit() {
           Save
         </Button>
       </form>
+    </div>
+  );
+}
+
+/** Who you are here: name, email, password, and signing out. */
+export function Account({ me }: { me: Me }) {
+  const queryClient = useQueryClient();
+  const [name, setName] = useState<string | null>(null);
+  const [passwords, setPasswords] = useState({ current: "", next: "" });
+  const [note, setNote] = useState<{ text: string; error?: boolean } | null>(null);
+  // Drop everything cached for this account, so signed-out pages (and the next account) start clean.
+  const leave = () => signOut().then(() => queryClient.clear());
+
+  const rename = useMutation({
+    mutationFn: async (value: string) => {
+      const { error } = await updateUser({ name: value });
+      if (error) throw new Error(error.message ?? "Couldn't save your name.");
+    },
+    onSuccess: () => {
+      setName(null);
+      setNote({ text: "Name saved." });
+      void queryClient.invalidateQueries({ queryKey: meKey });
+    },
+    onError: (error) => setNote({ text: error.message, error: true }),
+  });
+  const repass = useMutation({
+    mutationFn: async () => {
+      const { error } = await changePassword({ currentPassword: passwords.current, newPassword: passwords.next, revokeOtherSessions: true });
+      if (error) throw new Error(error.message ?? "Couldn't change your password.");
+    },
+    onSuccess: () => {
+      setPasswords({ current: "", next: "" });
+      setNote({ text: "Password changed. You're signed out everywhere else." });
+    },
+    onError: (error) => setNote({ text: error.message, error: true }),
+  });
+
+  const draft = name ?? me.name;
+  return (
+    <div className="space-y-8">
+      <div>
+        <div className="flex items-center gap-2">
+          <h3 className="text-body font-semibold text-ink">{me.email}</h3>
+          {me.role !== "member" && <Badge tone="outline">{me.role === "owner" ? "Owner" : "Admin"}</Badge>}
+        </div>
+        <p className="mt-1 text-callout font-normal text-muted">The email you sign in with.</p>
+      </div>
+
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          setNote(null);
+          if (draft.trim() && draft.trim() !== me.name) rename.mutate(draft.trim());
+        }}
+      >
+        <label htmlFor="account-name" className="text-body font-semibold text-ink">
+          Name
+        </label>
+        <div className="mt-2 flex gap-2">
+          <TextField id="account-name" value={draft} onChange={(event) => setName(event.target.value)} className="min-w-0 flex-1" />
+          <Button type="submit" disabled={rename.isPending || !draft.trim() || draft.trim() === me.name}>
+            Save
+          </Button>
+        </div>
+      </form>
+
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          setNote(null);
+          repass.mutate();
+        }}
+      >
+        <h3 className="text-body font-semibold text-ink">Password</h3>
+        <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+          <TextField
+            type="password"
+            autoComplete="current-password"
+            aria-label="Current password"
+            placeholder="Current password"
+            value={passwords.current}
+            onChange={(event) => setPasswords({ ...passwords, current: event.target.value })}
+          />
+          <TextField
+            type="password"
+            autoComplete="new-password"
+            aria-label="New password"
+            placeholder="New password (8+ characters)"
+            minLength={8}
+            value={passwords.next}
+            onChange={(event) => setPasswords({ ...passwords, next: event.target.value })}
+          />
+          <Button type="submit" variant="secondary" disabled={repass.isPending || !passwords.current || passwords.next.length < 8}>
+            Change
+          </Button>
+        </div>
+      </form>
+
+      {note && (
+        <p role="status" className={cn("text-callout font-normal", note.error ? "text-alert" : "text-muted")}>
+          {note.text}
+        </p>
+      )}
+
+      <div className="border-t border-line pt-6">
+        <Button variant="secondary" onClick={() => void leave()}>
+          Sign out
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/** Everything you've put in, to take with you. */
+export function YourData() {
+  return (
+    <div>
+      <p className="text-callout font-normal text-muted">
+        A zip of your collection, sizes and wear history, with every photo.
+      </p>
+      <a href="/api/export" download className={buttonClass({ variant: "secondary", className: "mt-4 gap-2" })}>
+        <DownloadIcon size={18} />
+        Export everything
+      </a>
     </div>
   );
 }

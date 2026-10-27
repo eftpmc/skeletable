@@ -8,6 +8,7 @@ import { api } from "../lib/api";
 import { useForYou } from "../lib/catalog";
 import { formatMoney } from "../lib/format";
 import { clearRecentSearches, rememberSearch, useRecentSearches } from "../lib/recent";
+import { useIsAdmin } from "../lib/me";
 import { shortcutHref, shortcuts } from "../lib/shortcuts";
 
 /**
@@ -17,6 +18,7 @@ import { shortcutHref, shortcuts } from "../lib/shortcuts";
 export function Home() {
   const navigate = useNavigate();
   const recent = useRecentSearches();
+  const admin = useIsAdmin();
   const { data: sources = [] } = useQuery({ queryKey: ["sources"], queryFn: api.sources });
   const noSources = sources.length > 0 && !sources.some((s) => s.enabled);
   const searches = useSavedSearches();
@@ -79,8 +81,12 @@ export function Home() {
         <EmptyState
           className="mt-8"
           title="No stores connected yet"
-          body="Pasting a product link works now. To search by name, add Shopify stores or free eBay and Best Buy keys."
-          action={<Button onClick={() => navigate("/profile")}>Connect stores</Button>}
+          body={
+            admin
+              ? "Pasting a product link works now. To search by name, add Shopify stores or free eBay and Best Buy keys."
+              : "Pasting a product link works now. Searching by name starts once this server's owner adds stores."
+          }
+          action={admin ? <Button onClick={() => navigate("/settings/stores")}>Set up stores</Button> : undefined}
         />
       )}
 

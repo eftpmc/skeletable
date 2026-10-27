@@ -8,7 +8,7 @@ import type { SourceInfo } from "@closet/shared";
 import { NotFoundError, type SearchService } from "./service.js";
 import type { StoreIcons } from "./store-icons.js";
 
-export function searchRoutes(search: SearchService, sourceInfo: SourceInfo[], icons: StoreIcons) {
+export function searchRoutes(search: SearchService, sourceInfo: () => SourceInfo[], icons: StoreIcons) {
   const app = new Hono<AppEnv>();
 
   app.get("/search", async (c) => {
@@ -46,7 +46,7 @@ export function searchRoutes(search: SearchService, sourceInfo: SourceInfo[], ic
     }
   });
 
-  app.get("/sources", (c) => c.json(sourceInfo));
+  app.get("/sources", (c) => c.json(sourceInfo()));
 
   // The store's own icon as a 64px PNG, for offer lists and the Buy menu.
   app.get("/store-icons/:domain", async (c) => {
