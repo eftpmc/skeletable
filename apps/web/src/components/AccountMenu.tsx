@@ -1,19 +1,18 @@
-import { ArrowUpRightIcon, Avatar, Badge, LogOutIcon, Menu, MenuHeader, MenuItem, MenuSeparator, SettingsIcon, ShieldIcon, cn, focusRing } from "@closet/ui";
+import { ArrowUpRightIcon, Avatar, Badge, LogOutIcon, Menu, MenuHeader, MenuItem, MenuSeparator, SettingsIcon, cn, focusRing } from "@closet/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "react-router";
 import { signOut } from "../lib/auth-client";
-import { useIsAdmin, useMe } from "../lib/me";
+import { useMe } from "../lib/me";
 
 const REPO = "https://github.com/eftpmc/skeleton";
 
 type User = { name: string; email: string; image?: string | null };
 
-/** The account button at the foot of the sidebar: who you are, settings, running the server, signing out. */
+/** The account button at the foot of the sidebar: who you are, settings (server sections included for owners and admins), signing out. */
 export function AccountMenu({ user, onNavigate }: { user: User; onNavigate?: () => void }) {
   const { pathname } = useLocation();
   const queryClient = useQueryClient();
   const role = useMe().data?.role;
-  const admin = useIsAdmin();
   const label = user.name || user.email;
   // Drop everything cached for this account, so signed-out pages (and the next account) start clean.
   const leave = () => signOut().then(() => queryClient.clear());
@@ -51,14 +50,6 @@ export function AccountMenu({ user, onNavigate }: { user: User; onNavigate?: () 
           Settings
         </Link>
       </MenuItem>
-      {admin && (
-        <MenuItem asChild>
-          <Link to="/settings/overview" onClick={onNavigate}>
-            <ShieldIcon size={18} />
-            Run this server
-          </Link>
-        </MenuItem>
-      )}
       <MenuItem asChild tone="muted">
         <a href={REPO} target="_blank" rel="noopener noreferrer">
           <ArrowUpRightIcon size={18} />

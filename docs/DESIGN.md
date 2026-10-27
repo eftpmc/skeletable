@@ -44,13 +44,13 @@ Later: anyone who shops online, plus self-hosters who want a private price track
 
 Search isn't a tab. The search box sits in the header on every page (along the bottom on phones, where thumbs are; it tucks away while you scroll down). It opens a palette, also on `/` or ⌘K: recent and saved searches before you type; while typing, search every store first, then what you already have that matches (tracked products with today's price, saved searches, recent searches, brands). A pasted link becomes "Find this product everywhere". Results and products belong to no tab.
 
-The account button at the foot of the sidebar opens a menu: who you are (and your role), Settings, **Run this server** for owners and admins, help, and sign out. **Settings** is one page of sections, each at `/settings/<section>`: a list beside the section on wide screens, a list then a page on phones. *You*: Account (name, password, sign out), Notifications, Appearance, Sizes & fit, Your data. *Server* (owners and admins only): Overview (counts and what's switched on), Stores (Shopify shops by address, eBay and Best Buy keys, stored encrypted and applied without a restart), Members (the owner makes admins). A new section is one entry in the list in `routes/settings/SettingsPage.tsx`.
+The account button at the foot of the sidebar opens a menu: who you are (and your role), Settings, help, and sign out. Owners and admins find the server sections inside Settings. **Settings** is one page of sections, each at `/settings/<section>`: a list beside the section on wide screens, a list then a page on phones. *You*: Account (name, password, sign out), Notifications, Appearance, Sizes & fit, Your data. *Server* (owners and admins only): Overview (counts and what's switched on), Stores (Shopify shops by address, eBay and Best Buy keys, stored encrypted and applied without a restart), Members (the owner makes admins). A new section is one entry in the list in `routes/settings/SettingsPage.tsx`.
 
 **Status** is a mark plus words: a filled ink circle with a check for on or connected, an outlined circle with an X for off. Never color or a dot alone.
 
 **Headers** are sentence case. No all-caps labels anywhere.
 
-**Brand.** The signed-out front page's halftone (the theme color with black printed off-register, on paper) shows up in small doses when signed in: the Home masthead, a faint corner on empty states, and the dot mark beside the wordmark. One per view, never behind body text it would muddy.
+**Brand.** The signed-out front page's halftone (the theme color with black printed off-register, on paper) shows up in small doses when signed in: the Home masthead, and a faint corner on empty states. The wordmark stays plain text. One per view, never behind body text it would muddy.
 
 **Roles.** The first account on a server is its **owner**. The owner can make others **admins**, who set up stores too; everyone else is a **member**. Anything set in the server's environment shows in the admin sections as read-only.
 
