@@ -2,11 +2,13 @@ import type { LinkPreview } from "@closet/shared";
 import { parse } from "node-html-parser";
 import { fetchLinkPreview } from "../../closet/link-preview.js";
 import type { SafeFetchOptions } from "../../net/safe-fetch.js";
+import { discoverProducts, type DiscoverySource } from "./sitemap.js";
 import { readStorefront, StoreUnavailableError, type StoreObservation } from "./storefront.js";
 
 export type Discovery = {
   observation: StoreObservation;
   productUrls: string[];
+  via?: DiscoverySource | null;
   /** These are bounded discoveries, never a complete inventory or deletion signal. */
   complete: false;
 };
@@ -83,7 +85,23 @@ export const shopifyConnector: StoreConnector = {
   },
 };
 
-export const connectors: Record<string, StoreConnector> = { page: pageConnector, shopify: shopifyConnector };
+/**
+ * General reader for any store: Shopify feed as a fast path, then robots.txt sitemaps, then
+ * front-page links; products are read from schema.org JSON-LD/microdata, OpenGraph and Shopify JSON.
+ */
+export const sitemapConnector: StoreConnector = {
+  id: "sitemap",
+  readProduct,
+  async discover(site, options = {}) {
+    try {
+      return await discoverProducts(site, options);
+    } catch {
+      return { observation: failed(), productUrls: [], complete: false };
+    }
+  },
+};
+
+export const connectors: Record<string, StoreConnector> = { page: pageConnector, shopify: shopifyConnector, sitemap: sitemapConnector };
 
 export type ProductSnapshot = {
   observation: StoreObservation;

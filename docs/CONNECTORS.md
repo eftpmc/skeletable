@@ -8,7 +8,27 @@ The catalog foundation supports two connectors with the same `discover` and
 - `shopify`: a bounded public product feed plus product-page reading, including
   the existing Shopify product JSON fallback when page metadata is incomplete.
 
-The generic connector is not universal site coverage. JavaScript-only sites,
+- `sitemap`: the general reader. Discovery tries Shopify's public feed first
+  (when the page shows Shopify signals), then the sitemaps listed in
+  `robots.txt` (or `/sitemap.xml`), then front-page links. Product-named and
+  locale-matching sitemaps are read first, gzipped sitemaps are supported, and
+  recently modified entries come first. Products are read from schema.org
+  JSON-LD, then schema.org microdata, then OpenGraph and Shopify product JSON
+  (`apps/server/src/catalog/connectors/sitemap.ts`).
+
+The sitemap connector honours `robots.txt` for `*` and `ClosetBot`: disallowed
+sitemaps, feeds and product URLs are never requested or returned. Every request
+goes through the store-state check, so a password page, maintenance notice or
+rate limit on the front door, feed or any sitemap stops discovery immediately
+rather than trying another route in. Off-host sitemap entries are ignored, and
+reads are bounded (8 sitemaps, 500 URLs by default).
+
+On 26 October, `scripts/sitemap-check.ts` read two products each from Palace,
+Adafruit, IKEA, Article, Wayfair and Brooklinen (one of two on Wayfair). Back
+Market's product pages were restricted and Patagonia served a placeholder. This
+is a single small check, not a coverage rate.
+
+The `page` connector is not universal site coverage. JavaScript-only sites,
 other URL patterns, and sites without product metadata need additional adapters.
 Both connectors use the existing SSRF-safe, size-limited fetcher.
 
