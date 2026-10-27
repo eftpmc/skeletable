@@ -2,6 +2,7 @@
 @import "@closet/ui/tokens.css";
 @import "@closet/ui/theme.css";
 @import "@closet/ui/motion.css";
+@import "@closet/ui/brand.css";
 @source "../../../packages/ui/src";
 
 html,

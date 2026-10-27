@@ -1,5 +1,5 @@
 import type { AdminKeyedSource, AdminStores, Me } from "@closet/shared";
-import { ArrowUpRightIcon, Badge, Button, IconButton, Skeleton, StoreIcon, TextField, XIcon, cn, focusRing } from "@closet/ui";
+import { ArrowUpRightIcon, Badge, Button, IconButton, Skeleton, StatusMark, StoreIcon, TextField, XIcon, cn, focusRing } from "@closet/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, type ReactNode, useState } from "react";
 import { Link } from "react-router";
@@ -25,15 +25,6 @@ function Block({ title, detail, trailing, children }: { title: string; detail?: 
       </div>
       <div className="mt-3">{children}</div>
     </section>
-  );
-}
-
-function Status({ on, children }: { on: boolean; children: ReactNode }) {
-  return (
-    <span className={cn("inline-flex items-center gap-1.5 text-footnote", on ? "text-ink" : "text-muted")}>
-      <span aria-hidden="true" className={cn("size-2 rounded-full", on ? "bg-accent" : "bg-line")} />
-      {children}
-    </span>
   );
 }
 
@@ -69,6 +60,31 @@ export function Overview() {
           </div>
         ))}
       </dl>
+      {stores && (
+        <Block
+          title="What search covers"
+          trailing={
+            <Link to="/settings/stores" className={cn("shrink-0 rounded-full text-callout font-normal text-muted hover:text-ink", focusRing)}>
+              Manage
+            </Link>
+          }
+        >
+          <ul className="divide-y divide-line overflow-hidden rounded-xl bg-surface">
+            {(
+              [
+                ["Shopify stores", stores.shopify.length > 0, stores.shopify.length ? `${stores.shopify.length} ${stores.shopify.length === 1 ? "store" : "stores"}` : "None added"],
+                ["eBay", stores.ebay.configured, stores.ebay.configured ? "Connected" : "No keys"],
+                ["Best Buy", stores.bestbuy.configured, stores.bestbuy.configured ? "Connected" : "No key"],
+              ] as const
+            ).map(([label, on, detail]) => (
+              <li key={label} className="flex min-h-12 items-center justify-between gap-4 px-4 text-callout">
+                <span className="text-ink">{label}</span>
+                <StatusMark ok={on}>{detail}</StatusMark>
+              </li>
+            ))}
+          </ul>
+        </Block>
+      )}
       <Block title="This server" detail="Set in the server's environment. Change them where it's hosted, then redeploy.">
         <ul className="divide-y divide-line overflow-hidden rounded-xl bg-surface">
           {[
@@ -89,7 +105,7 @@ export function Overview() {
           ).map(([label, on]) => (
             <li key={label} className="flex min-h-12 items-center justify-between gap-4 px-4 text-callout">
               <span className="text-muted">{label}</span>
-              <Status on={on}>{on ? "On" : "Off"}</Status>
+              <StatusMark ok={on}>{on ? "On" : "Off"}</StatusMark>
             </li>
           ))}
         </ul>
@@ -249,10 +265,14 @@ function KeyedSource({
   const complete = fields.every((f) => (values[f.name] ?? "").trim().length >= 8);
 
   const status = (
-    <Status on={state.configured}>
-      {state.configured ? `Connected ${state.hint ?? ""}` : "Not connected"}
-      {extra && state.configured ? ` · ${extra}` : ""}
-    </Status>
+    <StatusMark ok={state.configured}>
+      {state.configured ? "Connected" : "Not connected"}
+      {state.configured && (
+        <span className="text-footnote text-muted">
+          {[state.hint ? `key ${state.hint}` : null, extra].filter(Boolean).join(" · ")}
+        </span>
+      )}
+    </StatusMark>
   );
 
   return (

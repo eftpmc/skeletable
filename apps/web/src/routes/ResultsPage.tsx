@@ -1,5 +1,5 @@
 import { type Condition, type ResultCard, conditionLabels, conditions } from "@closet/shared";
-import { BellIcon, CheckIcon, Chip, ChipDivider, ChipRow, EmptyState, ProductTile, Skeleton, TileGrid, cn, focusRing } from "@closet/ui";
+import { BellIcon, CheckIcon, ChevronDownIcon, EmptyState, Menu, MenuChoices, ProductTile, Skeleton, TileGrid, cn, focusRing } from "@closet/ui";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
@@ -44,7 +44,7 @@ export function ResultsPage() {
     if (data && savedId && hasNew) markViewed(savedId);
   }, [data, savedId, hasNew, markViewed]);
 
-  const saveButton = (className?: string, short = false) => (
+  const saveButton = (className?: string) => (
     <button
       type="button"
       aria-pressed={saved.saved !== null}
@@ -58,7 +58,7 @@ export function ResultsPage() {
       )}
     >
       {saved.saved ? <CheckIcon size={16} /> : <BellIcon size={16} />}
-      {saved.saved ? (short ? "Saved" : "Saved · alerts on") : short ? "Save" : "Save search"}
+      {saved.saved ? "Saved · alerts on" : "Save search"}
     </button>
   );
 
@@ -108,43 +108,64 @@ export function ResultsPage() {
 
   const failed = data?.sources.filter((s) => s.status !== "ok") ?? [];
 
+  const filtered = Boolean(condition || max);
+
   return (
     <section>
-      {/* The search box is in the header. Phones: filters as chips. Wide screens get the sidebar instead. */}
-      <ChipRow className="lg:hidden">
-        {saveButton()}
-        <ChipDivider />
-        {conditions.map((c) => (
-          <Chip key={c} selected={condition === c} onClick={() => set("condition", condition === c ? undefined : c)}>
-            {conditionLabels[c]}
-          </Chip>
-        ))}
-        <ChipDivider />
-        {prices.map((p) => (
-          <Chip key={p} selected={max === p} onClick={() => set("max", max === p ? undefined : String(p))}>
-            Under ${p}
-          </Chip>
-        ))}
-      </ChipRow>
+      <header className="px-1">
+        <h1 className="truncate text-title-1 text-ink lg:text-[34px] lg:leading-[38px]">{q}</h1>
+        <p className="mt-1 h-5 text-callout font-normal text-muted">
+          {data && results.length > 0 && (
+            <>
+              {results.length.toLocaleString()} {results.length === 1 ? "result" : "results"} · {data.total.toLocaleString()}{" "}
+              {data.total === 1 ? "offer" : "offers"} from {data.storeCount} {data.storeCount === 1 ? "store" : "stores"}
+            </>
+          )}
+        </p>
+      </header>
 
-      <div className="mt-5 lg:mt-0 lg:flex lg:items-start lg:gap-12">
-        <aside aria-label="Filters" className={cn("hidden w-52 shrink-0 flex-col gap-7", !(peek && isWide) && "lg:flex")}>
-          <FilterGroup
-            legend="Condition"
-            name="condition"
+      {/* One filter bar on every screen: each filter is a pill that opens its choices. It stays in view while you scroll. */}
+      <div className="sticky top-[calc(56px+env(safe-area-inset-top))] z-10 -mx-4 mt-3 bg-canvas px-4 py-2 lg:top-[72px] lg:mx-0 lg:px-0">
+        <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 [scrollbar-width:none] lg:mx-0 lg:px-0">
+          <FilterPill
+            label="Condition"
             value={condition ?? ""}
             onChange={(value) => set("condition", value || undefined)}
             options={[{ value: "", label: "Any condition" }, ...conditions.map((c) => ({ value: c, label: conditionLabels[c] }))]}
           />
-          <FilterGroup
-            legend="Price"
-            name="max"
+          <FilterPill
+            label="Price"
             value={max ? String(max) : ""}
             onChange={(value) => set("max", value || undefined)}
             options={[{ value: "", label: "Any price" }, ...prices.map((p) => ({ value: String(p), label: `Under $${p}` }))]}
           />
-        </aside>
+          <FilterPill
+            label="Sort"
+            value={sort}
+            neutral
+            onChange={(value) => set("sort", value === "best" ? undefined : value)}
+            options={(Object.keys(sorts) as Sort[]).map((key) => ({ value: key, label: sorts[key] }))}
+          />
+          {filtered && (
+            <button
+              type="button"
+              onClick={() => {
+                const next = new URLSearchParams(params);
+                next.delete("condition");
+                next.delete("max");
+                setParams(next, { replace: true, state: location.state });
+              }}
+              className={cn("h-9 shrink-0 rounded-full px-2 text-callout font-normal text-muted hover:text-ink", focusRing)}
+            >
+              Clear
+            </button>
+          )}
+          <div className="ml-auto shrink-0 pl-2">{saveButton()}</div>
+        </div>
+      </div>
+      {failed.length > 0 && <p className="mt-1 px-1 text-footnote text-muted">{failed.map((s) => s.label).join(", ")} didn't answer this time.</p>}
 
+      <div className="mt-3 lg:flex lg:items-start lg:gap-8">
         <div className="min-w-0 flex-1">
           {isPending ? (
             <TileGrid className="mt-2">
@@ -155,58 +176,29 @@ export function ResultsPage() {
           ) : isError ? (
             <EmptyState title="Search isn't working right now" body="Try again in a moment." />
           ) : results.length === 0 ? (
-            <EmptyState title="Nothing found" body="Try fewer words, or paste a product link." />
+            <EmptyState
+              title="Nothing found"
+              body={filtered ? "Nothing matches these filters. Clear them to see everything." : "Try fewer words, or paste a product link."}
+            />
           ) : (
-            <>
-              {/* With a product open beside the grid there's less room: the count stacks and the controls get shorter. */}
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-1">
-                <h1 className={cn("flex", peek && isWide ? "flex-col" : "flex-wrap items-baseline gap-x-2")}>
-                  <span className="text-title-2 text-ink lg:text-[28px] lg:leading-8">
-                    {results.length.toLocaleString()} {results.length === 1 ? "result" : "results"}
-                  </span>
-                  <span className="text-footnote text-muted lg:text-callout lg:font-normal">
-                    {data.total.toLocaleString()} {data.total === 1 ? "offer" : "offers"} from {data.storeCount}{" "}
-                    {data.storeCount === 1 ? "store" : "stores"}
-                  </span>
-                </h1>
-                <div className="ml-auto hidden lg:block">{saveButton("h-10", Boolean(peek))}</div>
-                <label className="hidden h-10 items-center gap-1.5 rounded-full border border-line pr-2 pl-4 text-callout font-normal text-muted lg:flex">
-                  <span className={cn(peek && "sr-only")}>Sort</span>
-                  <select
-                    value={sort}
-                    onChange={(event) => set("sort", event.target.value === "best" ? undefined : event.target.value)}
-                    className="bg-transparent text-callout text-ink outline-none"
-                  >
-                    {(Object.keys(sorts) as Sort[]).map((key) => (
-                      <option key={key} value={key}>
-                        {sorts[key]}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-              {failed.length > 0 && (
-                <p className="mt-1 px-1 text-footnote text-muted">{failed.map((s) => s.label).join(", ")} didn't answer this time.</p>
-              )}
-              <TileGrid className="mt-4">
-                {results.map((card) => (
-                  <Tile
-                    key={card.productId}
-                    card={card}
-                    selected={card.productId === peek}
-                    onOpen={(event) => {
-                      event.preventDefault();
-                      open(card.productId);
-                    }}
-                  />
-                ))}
-              </TileGrid>
-            </>
+            <TileGrid className="mt-2">
+              {results.map((card) => (
+                <Tile
+                  key={card.productId}
+                  card={card}
+                  selected={card.productId === peek}
+                  onOpen={(event) => {
+                    event.preventDefault();
+                    open(card.productId);
+                  }}
+                />
+              ))}
+            </TileGrid>
           )}
         </div>
 
         {peek && isWide && (
-          <div className="sticky top-[104px] hidden h-[calc(100dvh-128px)] w-[420px] shrink-0 lg:block xl:w-[460px]">
+          <div className="sticky top-[136px] hidden h-[calc(100dvh-152px)] w-[420px] shrink-0 lg:block xl:w-[460px]">
             <ProductPeek
               key={peek}
               id={peek}
@@ -230,43 +222,55 @@ export function ResultsPage() {
 
 type FilterOption = { value: string; label: string };
 
-/** One sidebar filter: a radio group, so exactly one option is always on ("Any" clears it). */
-function FilterGroup({
-  legend,
-  name,
+/**
+ * One filter as a pill that opens its choices. Set, it fills with ink and names what's picked
+ * ("Used", "Under $100"); unset, it names the filter. Sort is `neutral`: it always has a value.
+ */
+function FilterPill({
+  label,
   value,
   options,
   onChange,
+  neutral = false,
 }: {
-  legend: string;
-  name: string;
+  label: string;
   value: string;
   options: FilterOption[];
   onChange: (value: string) => void;
+  neutral?: boolean;
 }) {
+  const picked = options.find((o) => o.value === value);
+  const active = !neutral && Boolean(value);
   return (
-    <fieldset className="flex flex-col gap-1">
-      <legend className="mb-2 text-section-label text-muted uppercase">{legend}</legend>
-      {options.map((option) => (
-        <label
-          key={option.value}
+    <Menu
+      side="bottom"
+      align="start"
+      className="min-w-[200px]"
+      trigger={
+        <button
+          type="button"
+          aria-label={`${label}: ${picked?.label ?? "Any"}`}
           className={cn(
-            "flex h-9 cursor-pointer items-center gap-2.5 rounded-lg px-2 text-callout text-ink hover:bg-surface has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-focus",
-            option.value === value ? "font-semibold" : "font-normal",
+            "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full pr-3 pl-4 text-callout transition-colors",
+            active ? "bg-ink font-medium text-on-ink" : "bg-surface font-normal text-ink hover:bg-line",
+            focusRing,
           )}
         >
-          <input
-            type="radio"
-            name={name}
-            value={option.value}
-            checked={option.value === value}
-            onChange={() => onChange(option.value)}
-            className="size-4 accent-ink outline-none"
-          />
-          {option.label}
-        </label>
-      ))}
-    </fieldset>
+          {neutral ? (
+            <>
+              <span className="text-muted">{label}</span> {picked?.label}
+            </>
+          ) : active ? (
+            picked?.label
+          ) : (
+            label
+          )}
+          <ChevronDownIcon size={16} className={active ? "" : "text-muted"} />
+        </button>
+      }
+    >
+      <MenuChoices value={value} onValueChange={onChange} options={options} />
+    </Menu>
   );
 }
 

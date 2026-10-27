@@ -11,9 +11,11 @@ export { ListGroup, type ListGroupProps, ListRow, type ListRowProps, Thumb } fro
 export { NavDrawer, type NavItem, NavPills, SideNav, TabBar } from "./Navigation";
 export { ProductTile, type ProductTileProps, TileGrid } from "./ProductTile";
 export { DragSheet } from "./DragSheet";
-export { Menu, MenuHeader, MenuItem, MenuSeparator } from "./Menu";
+export { BrandMark, Halftone } from "./Halftone";
+export { Menu, MenuChoices, MenuHeader, MenuItem, MenuSeparator } from "./Menu";
 export { PaletteDialog } from "./Palette";
 export { SearchField, type SearchFieldProps } from "./SearchField";
+export { StatusMark } from "./Status";
 export { type Segment, SegmentedControl, type SegmentedControlProps } from "./SegmentedControl";
 export { Sheet, type SheetProps } from "./Sheet";
 export { StoreIcon, type StoreIconProps, StoreStack } from "./StoreIcon";

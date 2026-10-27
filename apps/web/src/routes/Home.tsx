@@ -1,4 +1,4 @@
-import { Badge, Button, CheckIcon, Chip, ChipRow, EmptyState, ProductTile, ScreenTitle, SectionHeader, cn, focusRing } from "@closet/ui";
+import { Badge, Button, CheckIcon, Chip, ChipRow, EmptyState, Halftone, ProductTile, SectionHeader, cn, focusRing } from "@closet/ui";
 import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { Link, useNavigate } from "react-router";
@@ -8,7 +8,7 @@ import { api } from "../lib/api";
 import { useForYou } from "../lib/catalog";
 import { formatMoney } from "../lib/format";
 import { clearRecentSearches, rememberSearch, useRecentSearches } from "../lib/recent";
-import { useIsAdmin } from "../lib/me";
+import { useIsAdmin, useMe } from "../lib/me";
 import { shortcutHref, shortcuts } from "../lib/shortcuts";
 
 /**
@@ -19,6 +19,7 @@ export function Home() {
   const navigate = useNavigate();
   const recent = useRecentSearches();
   const admin = useIsAdmin();
+  const firstName = useMe().data?.name.split(" ")[0];
   const { data: sources = [] } = useQuery({ queryKey: ["sources"], queryFn: api.sources });
   const noSources = sources.length > 0 && !sources.some((s) => s.enabled);
   const searches = useSavedSearches();
@@ -33,6 +34,7 @@ export function Home() {
   const needed = forYou.data?.needed ?? 5;
 
   const loaded = !searches.isPending && !watches.isPending && !forYou.isPending;
+  const newMatches = (searches.data ?? []).reduce((sum, s) => sum + s.newCount, 0);
   const steps = [
     { done: (searches.data?.length ?? 0) > 0, title: "Save a search", body: "Search for something, then tap Save search. New matches show up here." },
     { done: (watches.data?.length ?? 0) > 0, title: "Track a price", body: "Open a product and tap Track price to hear when it drops." },
@@ -47,10 +49,19 @@ export function Home() {
 
   return (
     <section>
-      <ScreenTitle className="lg:text-[40px] lg:leading-[44px]">Home</ScreenTitle>
+      {/* The masthead: the front page's printed paper and halftone, small. Same in light and dark mode. */}
+      <header className="relative overflow-hidden rounded-[24px] bg-[#f6f1e7] px-6 pt-6 pb-7 text-black lg:px-10 lg:pt-9 lg:pb-10">
+        <Halftone corner="top-right" reach={62} />
+        <p className="relative text-callout font-normal text-[#3a3a3c]">{today()}</p>
+        <h1 className="relative mt-1 max-w-[16ch] text-[34px] leading-[1.02] font-extrabold tracking-[-0.04em] lg:text-[52px]">
+          {greeting()}
+          {firstName ? `, ${firstName}` : ""}.
+        </h1>
+        <p className="relative mt-3 text-body text-[#3a3a3c]">{headline(newMatches, drops.length, loaded)}</p>
+      </header>
 
       <div className="mt-5 flex items-baseline justify-between gap-4">
-        <h2 className="text-section-label text-muted uppercase">{recent.length > 0 ? "Recent searches" : "Try a search"}</h2>
+        <h2 className="text-section-label text-muted">{recent.length > 0 ? "Recent searches" : "Try a search"}</h2>
         {recent.length > 0 && (
           <button type="button" onClick={clearRecentSearches} className={cn("rounded-full text-footnote text-muted hover:text-ink", focusRing)}>
             Clear
@@ -195,4 +206,21 @@ function Step({ done, title, to, children }: { done: boolean; title: string; to?
       <p className="mt-1 pl-8 text-footnote text-muted">{children}</p>
     </li>
   );
+}
+
+const today = () => new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+
+function greeting() {
+  const hour = new Date().getHours();
+  return hour < 5 ? "Good evening" : hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+}
+
+/** One line on what's new, the way a front page leads with its news. */
+function headline(matches: number, drops: number, loaded: boolean) {
+  if (!loaded) return "\u00a0";
+  const parts = [
+    matches > 0 ? `${matches} new ${matches === 1 ? "match" : "matches"} for your alerts` : null,
+    drops > 0 ? `${drops} ${drops === 1 ? "price" : "prices"} dropped on your list` : null,
+  ].filter(Boolean);
+  return parts.length ? `${parts.join(", and ")}.` : "Nothing new yet. Search for something, or see what's turned up in Discover.";
 }

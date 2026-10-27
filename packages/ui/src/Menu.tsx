@@ -1,6 +1,7 @@
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import type { ReactNode } from "react";
 import { cn } from "./cn";
+import { CheckIcon } from "./icons";
 
 /**
  * A menu that opens from a button: the account menu, row actions. Arrow keys move, Enter picks,
@@ -83,4 +84,34 @@ export function MenuHeader({ children }: { children: ReactNode }) {
 
 export function MenuSeparator() {
   return <Dropdown.Separator className="my-1.5 h-px bg-line" />;
+}
+
+/** Pick one of a few options (a filter, a sort). The picked one has a check. */
+export function MenuChoices({
+  value,
+  onValueChange,
+  options,
+}: {
+  value: string;
+  onValueChange: (value: string) => void;
+  options: { value: string; label: ReactNode }[];
+}) {
+  return (
+    <Dropdown.RadioGroup value={value} onValueChange={onValueChange}>
+      {options.map((option) => (
+        <Dropdown.RadioItem
+          key={option.value}
+          value={option.value}
+          className="flex h-10 cursor-pointer items-center gap-2.5 rounded-lg px-2.5 text-callout text-ink outline-none select-none data-[highlighted]:bg-surface data-[state=checked]:font-semibold"
+        >
+          <span className="flex size-4 shrink-0 items-center justify-center">
+            <Dropdown.ItemIndicator>
+              <CheckIcon size={16} strokeWidth={2.6} />
+            </Dropdown.ItemIndicator>
+          </span>
+          {option.label}
+        </Dropdown.RadioItem>
+      ))}
+    </Dropdown.RadioGroup>
+  );
 }

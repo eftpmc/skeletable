@@ -228,3 +228,9 @@ export const GaugeIcon = (props: IconProps) => (
     <path d="M3.34 19a10 10 0 1 1 17.32 0" />
   </Icon>
 );
+
+export const ChevronDownIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="m6 9 6 6 6-6" />
+  </Icon>
+);

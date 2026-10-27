@@ -95,7 +95,7 @@ export function AlertsPage() {
 function Feed({ label, events }: { label: string; events: AlertEvent[] }) {
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="text-section-label text-muted uppercase">{label}</h2>
+      <h2 className="text-section-label text-muted">{label}</h2>
       {events.map((e) =>
         e.kind === "price_drop" ? (
           <DropCard

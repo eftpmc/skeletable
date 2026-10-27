@@ -91,7 +91,7 @@ export function SettingsPage() {
           if (!items.length) return null;
           return (
             <div key={group.id} className="mt-6">
-              <h2 className="px-1 text-section-label text-muted uppercase lg:px-3">{group.label}</h2>
+              <h2 className="px-1 text-section-label text-muted lg:px-3">{group.label}</h2>
               {/* Phones: a grouped list with chevrons. Wide screens: a quiet sidebar list. */}
               <ul className="mt-2 divide-y divide-line overflow-hidden rounded-xl bg-surface lg:divide-y-0 lg:rounded-none lg:bg-transparent">
                 {items.map((s) => (

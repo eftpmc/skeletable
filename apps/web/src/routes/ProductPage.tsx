@@ -213,7 +213,7 @@ function OfferTable({ offers }: { offers: OfferSummary[] }) {
   return (
     <table className="mt-4 w-full border-collapse text-left text-body">
       <thead>
-        <tr className="text-section-label text-muted uppercase">
+        <tr className="text-section-label text-muted">
           <th scope="col" className="border-b border-line pr-3 pb-3 font-semibold">
             Store
           </th>
@@ -240,7 +240,7 @@ function OfferTable({ offers }: { offers: OfferSummary[] }) {
             <td className="border-b border-line px-3 py-3">{conditionLabels[o.condition]}</td>
             <td className="border-b border-line px-3 py-3 text-right font-bold tabular-nums">
               {o.priceCents === cheapest && offers.length > 1 && (
-                <span className="mr-2 align-middle text-label font-semibold text-muted uppercase">Lowest</span>
+                <span className="mr-2 align-middle text-label font-semibold text-muted">Lowest</span>
               )}
               {formatMoney(o.priceCents, o.currency)}
             </td>
