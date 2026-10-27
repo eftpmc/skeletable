@@ -254,6 +254,7 @@ export function ResultsPage() {
                     aria-current={i.id === item ? "true" : undefined}
                     className={cn(i.id === item && "ring-2 ring-ink ring-offset-4 ring-offset-canvas")}
                     image={i.imageUrl}
+                    imageSize={{ width: i.imageWidth, height: i.imageHeight }}
                     alt={i.title ?? i.brandName}
                     price={usd(i.priceUsd) ?? ""}
                     title={i.title ?? undefined}

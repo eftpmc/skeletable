@@ -54,7 +54,7 @@ type Vector = number[];
 type ItemRow = typeof catalogItem.$inferSelect;
 
 /** A product as a card shows it. */
-type CardRow = Pick<ItemRow, "id" | "brandId" | "imageUrl" | "title" | "priceUsd" | "productUrl"> & {
+type CardRow = Pick<ItemRow, "id" | "brandId" | "imageUrl" | "imageWidth" | "imageHeight" | "title" | "priceUsd" | "productUrl"> & {
   brandName: string;
   category: CategoryId;
   department: Department;
@@ -79,6 +79,8 @@ const cardColumns = {
   brandId: catalogItem.brandId,
   brandName: brand.name,
   imageUrl: catalogItem.imageUrl,
+  imageWidth: catalogItem.imageWidth,
+  imageHeight: catalogItem.imageHeight,
   title: catalogItem.title,
   priceUsd: catalogItem.priceUsd,
   productUrl: catalogItem.productUrl,
@@ -420,6 +422,8 @@ export class CatalogService {
       brandId: i.brandId,
       brandName: i.brandName,
       imageUrl: sized(i.imageUrl, 640),
+      imageWidth: i.imageWidth,
+      imageHeight: i.imageHeight,
       title: i.title,
       priceUsd: i.priceUsd,
       productUrl: i.productUrl,
@@ -526,6 +530,8 @@ export class CatalogService {
         category: catalogItem.category,
         department: catalogItem.department,
         imageUrl: catalogItem.imageUrl,
+        imageWidth: catalogItem.imageWidth,
+        imageHeight: catalogItem.imageHeight,
         productUrl: catalogItem.productUrl,
         quality: brandProfile.quality,
         position: catalogItem.position,

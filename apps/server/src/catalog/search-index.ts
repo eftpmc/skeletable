@@ -13,6 +13,8 @@ export type IndexedItem = {
   group: string;
   department: Department;
   imageUrl: string;
+  imageWidth: number | null;
+  imageHeight: number | null;
   productUrl: string;
   quality: number;
   position: number;

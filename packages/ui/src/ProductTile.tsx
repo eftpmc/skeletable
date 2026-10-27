@@ -13,6 +13,8 @@ export type ProductTileProps = {
   title?: ReactNode;
   /** One muted line under the photo (or under the title): "3 stores · Sony WH-1000XM5". */
   caption?: ReactNode;
+  /** The photo's size in pixels, when known: the tile holds that shape before the photo loads. */
+  imageSize?: { width: number | null; height: number | null } | null;
   /** Render as a router link: `as={Link} to="/p/1"`. Defaults to `<a href>`. */
   as?: ElementType;
   className?: string;
@@ -23,12 +25,22 @@ export type ProductTileProps = {
  * A product in the photo grid. The photo keeps its own shape (masonry); put tiles in a TileGrid.
  * Nothing else sits on the photo.
  */
-export function ProductTile({ image, alt, price, badge, title, caption, as: Component = "a", className, ...linkProps }: ProductTileProps) {
+export function ProductTile({ image, alt, price, badge, title, caption, imageSize, as: Component = "a", className, ...linkProps }: ProductTileProps) {
+  const shape = imageSize?.width && imageSize.height ? `${imageSize.width} / ${imageSize.height}` : undefined;
   return (
     <Component className={cn("group mb-2 block rounded-lg md:mb-5", focusRing, className)} {...linkProps}>
       <div className="relative overflow-hidden rounded-lg bg-tile">
         {image ? (
-          <img src={image} alt={alt} loading="lazy" referrerPolicy="no-referrer" className="block w-full transition-transform duration-300 group-hover:scale-[1.02]" />
+          <img
+            src={image}
+            alt={alt}
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            width={imageSize?.width ?? undefined}
+            height={imageSize?.height ?? undefined}
+            style={shape ? { aspectRatio: shape } : undefined}
+            className="block h-auto w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+          />
         ) : (
           <div className="flex aspect-square items-center justify-center p-4 text-center text-footnote text-muted">{alt}</div>
         )}

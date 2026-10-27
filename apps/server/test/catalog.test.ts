@@ -463,6 +463,18 @@ describe("catalog", () => {
     expect(forYou.brands.every((b) => b.because === null)).toBe(true);
   });
 
+  it("imports whole stores, with each photo's size when the store gave it", async () => {
+    // More products than a brand used to be allowed (48), one with its photo's size.
+    const big = store("Winfield", 0, 0, {}, [{ title: "Sized", imageWidth: 800, imageHeight: 1200 }, ...Array.from({ length: 59 }, () => ({}))]);
+    await importCatalog(db, [big]);
+    const user = await signUp(setup());
+    const all: ItemFeed["items"] = [];
+    for (let page = 0; page < 3; page++) all.push(...((await (await user.get(`/api/catalog/feed?seed=x&page=${page}`)).json()) as ItemFeed).items);
+    expect(all).toHaveLength(60);
+    expect(all.find((i) => i.title === "Sized")).toMatchObject({ imageWidth: 800, imageHeight: 1200 });
+    expect(all.find((i) => i.title !== "Sized")).toMatchObject({ imageWidth: null, imageHeight: null });
+  });
+
   it("leans toward the side someone opens until they pick one in Settings", async () => {
     // Four brands on each side, all looking alike, so only the side they open can separate them.
     const side = (department: "women" | "men", k: number) =>

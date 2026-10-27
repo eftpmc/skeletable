@@ -53,12 +53,14 @@ def shop_products(r):
     for p in d["products"]:
         variants = p.get("variants") or []
         prices = [float(v["price"]) for v in variants if v.get("price")]
-        image = https((p.get("images") or [{}])[0].get("src"))
+        first = (p.get("images") or [{}])[0]
+        image = https(first.get("src"))
         if not prices or not image or not p.get("handle"):
             continue
         out.append({
             "title": (p.get("title") or "").strip(), "type": p.get("product_type") or "", "tags": p.get("tags") or [],
-            "image": image, "price": min(prices), "url": f"https://{d['host']}/products/{p['handle']}",
+            "image": image, "width": first.get("width"), "height": first.get("height"),
+            "price": min(prices), "url": f"https://{d['host']}/products/{p['handle']}",
             "available": any(v.get("available") for v in variants),
         })
     return out
@@ -238,6 +240,8 @@ def build(pack_path, out_path):
             rec["items"] = [{
                 "imageUrl": p["image"], "title": (p["title"] or None) and p["title"][:300], "priceUsd": p["priceUsd"],
                 "productUrl": https(p["url"]), "category": p["category"], "department": p["department"], "look": pack_vector(v),
+                # The photo's shape, so the app can hold its space before it loads.
+                **({"imageWidth": p["width"], "imageHeight": p["height"]} if p.get("width") and p.get("height") else {}),
             } for p, v in items]
             out.write((json.dumps(rec, ensure_ascii=False) + "\n").encode())
             n_brands += 1

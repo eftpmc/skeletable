@@ -165,6 +165,7 @@ export function DiscoverPage() {
                     aria-current={item.id === open ? "true" : undefined}
                     className={cn(item.id === open && "ring-2 ring-ink ring-offset-4 ring-offset-canvas")}
                     image={item.imageUrl}
+                    imageSize={{ width: item.imageWidth, height: item.imageHeight }}
                     alt={item.title ?? item.brandName}
                     price={usd(item.priceUsd) ?? ""}
                     title={item.title ?? undefined}

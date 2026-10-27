@@ -60,6 +60,9 @@ export const catalogItem = pgTable(
     position: integer("position").notNull(),
     productUrl: text("product_url").notNull(),
     imageUrl: text("image_url").notNull(),
+    // The photo's size in pixels when the store gave it: cards hold its shape before it loads.
+    imageWidth: integer("image_width"),
+    imageHeight: integer("image_height"),
     title: text("title"),
     priceUsd: real("price_usd"),
     category: text("category").notNull(),
