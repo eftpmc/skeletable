@@ -1,0 +1,584 @@
+{
+  "kind": "synthetic repair demonstration",
+  "before": {
+    "status": "repair_needed",
+    "product": {
+      "title": "Jacket",
+      "priceCents": 20000,
+      "currency": "USD",
+      "availability": "unknown",
+      "variants": [
+        {
+          "label": "M",
+          "availability": "in_stock"
+        },
+        {
+          "label": "L",
+          "availability": "out_of_stock"
+        }
+      ]
+    },
+    "previousRetained": true,
+    "observedAt": "2026-10-26T00:00:00.000Z",
+    "attempts": [
+      {
+        "transport": "http",
+        "ms": 0,
+        "observation": {
+          "state": "open",
+          "reason": "Public page is accessible",
+          "checkedAt": "2026-10-26T00:00:00.000Z"
+        },
+        "extraction": {
+          "product": null,
+          "issues": [
+            "price: expected one element, found 0"
+          ],
+          "evidence": [
+            {
+              "field": "title",
+              "selector": "h1",
+              "raw": "Jacket"
+            },
+            {
+              "field": "currency",
+              "selector": "recipe configuration",
+              "raw": "USD"
+            },
+            {
+              "field": "variant.0.label",
+              "selector": ":scope",
+              "attribute": "data-size",
+              "raw": "M"
+            },
+            {
+              "field": "variant.0.availability",
+              "selector": ":scope",
+              "attribute": "data-stock",
+              "raw": "yes"
+            },
+            {
+              "field": "variant.1.label",
+              "selector": ":scope",
+              "attribute": "data-size",
+              "raw": "L"
+            },
+            {
+              "field": "variant.1.availability",
+              "selector": ":scope",
+              "attribute": "data-stock",
+              "raw": "no"
+            }
+          ],
+          "recipeHash": "318406624ce9d134cccefcfc3d40be5e4744f358bb3a9b8939d0d38ab3f472f3",
+          "documentHash": "fcaa9477b339ca6b51dc43981eef8b5075178f1a1d48d2d58ee0b60f810c5d51"
+        }
+      }
+    ],
+    "browserRequested": false,
+    "costUsd": null
+  },
+  "activeBeforeReview": 1,
+  "proposals": [
+    {
+      "id": "de6cd1a2-a8c7-4afd-8c51-e41094087893",
+      "recipe": {
+        "id": "demo-store",
+        "version": 2,
+        "origin": "https://store.example.com",
+        "pathPrefix": "/products/",
+        "title": {
+          "selector": "h1"
+        },
+        "price": {
+          "selector": ".current-price"
+        },
+        "currency": {
+          "constant": "USD"
+        },
+        "variants": {
+          "selector": ".size",
+          "label": {
+            "selector": ":scope",
+            "attribute": "data-size"
+          },
+          "stock": {
+            "field": {
+              "selector": ":scope",
+              "attribute": "data-stock"
+            },
+            "inStock": [
+              "yes"
+            ],
+            "outOfStock": [
+              "no"
+            ]
+          }
+        }
+      },
+      "baseHash": "318406624ce9d134cccefcfc3d40be5e4744f358bb3a9b8939d0d38ab3f472f3",
+      "fixtureHash": "ce543530c5eae47e91403d870438108123e0cd338ad45e36ae0634ea269b5677",
+      "status": "pending",
+      "createdAt": "2026-10-26T22:45:16.768Z",
+      "validation": {
+        "passed": true,
+        "issues": [],
+        "cases": [
+          {
+            "id": "jacket",
+            "passed": true,
+            "state": "open",
+            "issues": [],
+            "actual": {
+              "title": "Jacket",
+              "priceCents": 20000,
+              "currency": "USD",
+              "availability": "unknown",
+              "variants": [
+                {
+                  "label": "M",
+                  "availability": "in_stock"
+                },
+                {
+                  "label": "L",
+                  "availability": "out_of_stock"
+                }
+              ]
+            },
+            "expected": {
+              "title": "Jacket",
+              "priceCents": 20000,
+              "currency": "USD",
+              "availability": "unknown",
+              "variants": [
+                {
+                  "label": "M",
+                  "availability": "in_stock"
+                },
+                {
+                  "label": "L",
+                  "availability": "out_of_stock"
+                }
+              ]
+            }
+          },
+          {
+            "id": "shirt",
+            "passed": true,
+            "state": "open",
+            "issues": [],
+            "actual": {
+              "title": "Shirt",
+              "priceCents": 8000,
+              "currency": "USD",
+              "availability": "unknown",
+              "variants": [
+                {
+                  "label": "M",
+                  "availability": "in_stock"
+                },
+                {
+                  "label": "L",
+                  "availability": "out_of_stock"
+                }
+              ]
+            },
+            "expected": {
+              "title": "Shirt",
+              "priceCents": 8000,
+              "currency": "USD",
+              "availability": "unknown",
+              "variants": [
+                {
+                  "label": "M",
+                  "availability": "in_stock"
+                },
+                {
+                  "label": "L",
+                  "availability": "out_of_stock"
+                }
+              ]
+            }
+          },
+          {
+            "id": "boots",
+            "passed": true,
+            "state": "open",
+            "issues": [],
+            "actual": {
+              "title": "Boots",
+              "priceCents": 16000,
+              "currency": "USD",
+              "availability": "unknown",
+              "variants": [
+                {
+                  "label": "M",
+                  "availability": "in_stock"
+                },
+                {
+                  "label": "L",
+                  "availability": "out_of_stock"
+                }
+              ]
+            },
+            "expected": {
+              "title": "Boots",
+              "priceCents": 16000,
+              "currency": "USD",
+              "availability": "unknown",
+              "variants": [
+                {
+                  "label": "M",
+                  "availability": "in_stock"
+                },
+                {
+                  "label": "L",
+                  "availability": "out_of_stock"
+                }
+              ]
+            }
+          },
+          {
+            "id": "changed-layout",
+            "passed": true,
+            "state": "open",
+            "issues": [],
+            "actual": {
+              "title": "Jacket",
+              "priceCents": 20000,
+              "currency": "USD",
+              "availability": "unknown",
+              "variants": [
+                {
+                  "label": "M",
+                  "availability": "in_stock"
+                },
+                {
+                  "label": "L",
+                  "availability": "out_of_stock"
+                }
+              ]
+            },
+            "expected": {
+              "title": "Jacket",
+              "priceCents": 20000,
+              "currency": "USD",
+              "availability": "unknown",
+              "variants": [
+                {
+                  "label": "M",
+                  "availability": "in_stock"
+                },
+                {
+                  "label": "L",
+                  "availability": "out_of_stock"
+                }
+              ]
+            }
+          }
+        ],
+        "recipeHash": "333f09cacd223a873e61898c1456ac6ffcc27641ca44f67c5ce860dadaf64bc8",
+        "fixtureHash": "ce543530c5eae47e91403d870438108123e0cd338ad45e36ae0634ea269b5677"
+      }
+    },
+    {
+      "id": "8d567f30-7b59-46f0-a9fc-af2330cbe949",
+      "recipe": {
+        "id": "demo-store",
+        "version": 2,
+        "origin": "https://store.example.com",
+        "pathPrefix": "/products/",
+        "title": {
+          "selector": "h1"
+        },
+        "price": {
+          "selector": "#installment-price"
+        },
+        "currency": {
+          "constant": "USD"
+        },
+        "variants": {
+          "selector": ".size",
+          "label": {
+            "selector": ":scope",
+            "attribute": "data-size"
+          },
+          "stock": {
+            "field": {
+              "selector": ":scope",
+              "attribute": "data-stock"
+            },
+            "inStock": [
+              "yes"
+            ],
+            "outOfStock": [
+              "no"
+            ]
+          }
+        }
+      },
+      "baseHash": "318406624ce9d134cccefcfc3d40be5e4744f358bb3a9b8939d0d38ab3f472f3",
+      "fixtureHash": "ce543530c5eae47e91403d870438108123e0cd338ad45e36ae0634ea269b5677",
+      "status": "rejected",
+      "createdAt": "2026-10-26T22:45:16.782Z",
+      "validation": {
+        "passed": false,
+        "issues": [],
+        "cases": [
+          {
+            "id": "jacket",
+            "passed": false,
+            "state": "open",
+            "issues": [],
+            "actual": {
+              "title": "Jacket",
+              "priceCents": 5000,
+              "currency": "USD",
+              "availability": "unknown",
+              "variants": [
+                {
+                  "label": "M",
+                  "availability": "in_stock"
+                },
+                {
+                  "label": "L",
+                  "availability": "out_of_stock"
+                }
+              ]
+            },
+            "expected": {
+              "title": "Jacket",
+              "priceCents": 20000,
+              "currency": "USD",
+              "availability": "unknown",
+              "variants": [
+                {
+                  "label": "M",
+                  "availability": "in_stock"
+                },
+                {
+                  "label": "L",
+                  "availability": "out_of_stock"
+                }
+              ]
+            }
+          },
+          {
+            "id": "shirt",
+            "passed": false,
+            "state": "open",
+            "issues": [],
+            "actual": {
+              "title": "Shirt",
+              "priceCents": 2000,
+              "currency": "USD",
+              "availability": "unknown",
+              "variants": [
+                {
+                  "label": "M",
+                  "availability": "in_stock"
+                },
+                {
+                  "label": "L",
+                  "availability": "out_of_stock"
+                }
+              ]
+            },
+            "expected": {
+              "title": "Shirt",
+              "priceCents": 8000,
+              "currency": "USD",
+              "availability": "unknown",
+              "variants": [
+                {
+                  "label": "M",
+                  "availability": "in_stock"
+                },
+                {
+                  "label": "L",
+                  "availability": "out_of_stock"
+                }
+              ]
+            }
+          },
+          {
+            "id": "boots",
+            "passed": false,
+            "state": "open",
+            "issues": [],
+            "actual": {
+              "title": "Boots",
+              "priceCents": 4000,
+              "currency": "USD",
+              "availability": "unknown",
+              "variants": [
+                {
+                  "label": "M",
+                  "availability": "in_stock"
+                },
+                {
+                  "label": "L",
+                  "availability": "out_of_stock"
+                }
+              ]
+            },
+            "expected": {
+              "title": "Boots",
+              "priceCents": 16000,
+              "currency": "USD",
+              "availability": "unknown",
+              "variants": [
+                {
+                  "label": "M",
+                  "availability": "in_stock"
+                },
+                {
+                  "label": "L",
+                  "availability": "out_of_stock"
+                }
+              ]
+            }
+          },
+          {
+            "id": "changed-layout",
+            "passed": false,
+            "state": "open",
+            "issues": [],
+            "actual": {
+              "title": "Jacket",
+              "priceCents": 5000,
+              "currency": "USD",
+              "availability": "unknown",
+              "variants": [
+                {
+                  "label": "M",
+                  "availability": "in_stock"
+                },
+                {
+                  "label": "L",
+                  "availability": "out_of_stock"
+                }
+              ]
+            },
+            "expected": {
+              "title": "Jacket",
+              "priceCents": 20000,
+              "currency": "USD",
+              "availability": "unknown",
+              "variants": [
+                {
+                  "label": "M",
+                  "availability": "in_stock"
+                },
+                {
+                  "label": "L",
+                  "availability": "out_of_stock"
+                }
+              ]
+            }
+          }
+        ],
+        "recipeHash": "f8da968dd3b5b57ba37a21a0c9f5875b6ec72c02cdc2df1b7b1a578bb6a08d7f",
+        "fixtureHash": "ce543530c5eae47e91403d870438108123e0cd338ad45e36ae0634ea269b5677"
+      }
+    }
+  ],
+  "after": {
+    "status": "ok",
+    "product": {
+      "title": "Jacket",
+      "priceCents": 20000,
+      "currency": "USD",
+      "availability": "unknown",
+      "variants": [
+        {
+          "label": "M",
+          "availability": "in_stock"
+        },
+        {
+          "label": "L",
+          "availability": "out_of_stock"
+        }
+      ]
+    },
+    "previousRetained": false,
+    "observedAt": "2026-10-26T00:00:00.000Z",
+    "attempts": [
+      {
+        "transport": "http",
+        "ms": 0,
+        "observation": {
+          "state": "open",
+          "reason": "Public page is accessible",
+          "checkedAt": "2026-10-26T00:00:00.000Z"
+        },
+        "extraction": {
+          "product": {
+            "title": "Jacket",
+            "priceCents": 20000,
+            "currency": "USD",
+            "availability": "unknown",
+            "variants": [
+              {
+                "label": "M",
+                "availability": "in_stock"
+              },
+              {
+                "label": "L",
+                "availability": "out_of_stock"
+              }
+            ]
+          },
+          "issues": [],
+          "evidence": [
+            {
+              "field": "title",
+              "selector": "h1",
+              "raw": "Jacket"
+            },
+            {
+              "field": "price",
+              "selector": ".current-price",
+              "raw": "$200"
+            },
+            {
+              "field": "currency",
+              "selector": "recipe configuration",
+              "raw": "USD"
+            },
+            {
+              "field": "variant.0.label",
+              "selector": ":scope",
+              "attribute": "data-size",
+              "raw": "M"
+            },
+            {
+              "field": "variant.0.availability",
+              "selector": ":scope",
+              "attribute": "data-stock",
+              "raw": "yes"
+            },
+            {
+              "field": "variant.1.label",
+              "selector": ":scope",
+              "attribute": "data-size",
+              "raw": "L"
+            },
+            {
+              "field": "variant.1.availability",
+              "selector": ":scope",
+              "attribute": "data-stock",
+              "raw": "no"
+            }
+          ],
+          "recipeHash": "333f09cacd223a873e61898c1456ac6ffcc27641ca44f67c5ce860dadaf64bc8",
+          "documentHash": "fcaa9477b339ca6b51dc43981eef8b5075178f1a1d48d2d58ee0b60f810c5d51"
+        }
+      }
+    ],
+    "browserRequested": false,
+    "costUsd": null
+  },
+  "rolledBackVersion": 1,
+  "registry": "C:\\Users\\Zack\\AppData\\Local\\Temp\\skeleton-repair-vd9g5V\\registry.json"
+}

@@ -9,7 +9,8 @@
     "start": "node dist/index.js",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "catalog:import": "tsx src/catalog/import-cli.ts"
+    "catalog:import": "tsx src/catalog/import-cli.ts",
+    "catalog:recipes": "tsx src/catalog/connectors/recipe-cli.ts"
   },
   "dependencies": {
     "@closet/db": "workspace:*",

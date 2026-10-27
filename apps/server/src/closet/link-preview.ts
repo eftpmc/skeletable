@@ -3,14 +3,27 @@ import { type HTMLElement, parse } from "node-html-parser";
 import { type SafeFetchOptions, safeFetch } from "../net/safe-fetch.js";
 import { normalizeGtin } from "../search/normalize.js";
 import { guessCategory, parseColorNames } from "./guess.js";
+import { readStorefront, StoreUnavailableError } from "../catalog/connectors/storefront.js";
+import { extractRecipe } from "../catalog/connectors/recipes.js";
+import { reviewedRecipeFor } from "../catalog/connectors/reviewed-recipes.js";
 
 type PageData = Omit<LinkPreview, "category" | "colors" | "url"> & { color: string | null; category: string | null };
 
-/** Read product details from a store page: JSON-LD first, then OpenGraph, then Shopify's product JSON. */
+/** Read product details from a store page: schema.org JSON-LD, then microdata, then OpenGraph, then Shopify's product JSON. */
 export async function fetchLinkPreview(url: string, fetchOptions: SafeFetchOptions = {}): Promise<LinkPreview> {
-  const page = await safeFetch(url, { ...fetchOptions, accept: "text/html,application/xhtml+xml" });
+  const { page, observation } = await readStorefront(url, { ...fetchOptions, accept: "text/html,application/xhtml+xml" });
+  if (observation.state !== "open") throw new StoreUnavailableError(observation);
   const html = page.body.toString("utf8");
   const preview = parseProductPage(html, page.url);
+  const recipe = reviewedRecipeFor(page.url);
+  if (recipe && preview.priceCents === null) {
+    const recovered = extractRecipe(html, page.url, recipe).product;
+    if (recovered) {
+      preview.title = recovered.title;
+      preview.priceCents = recovered.priceCents;
+      preview.currency = recovered.currency;
+    }
+  }
 
   if (isShopify(html) && (!preview.brand || preview.images.length === 0 || preview.priceCents === null)) {
     const shopify = await fetchShopifyProduct(page.url, fetchOptions);
@@ -28,7 +41,7 @@ export async function fetchLinkPreview(url: string, fetchOptions: SafeFetchOptio
 
 export function parseProductPage(html: string, pageUrl: string): LinkPreview {
   const root = parse(html);
-  const fromJsonLd = readJsonLd(root, pageUrl);
+  const fromJsonLd = merge(readJsonLd(root, pageUrl), readMicrodata(root, pageUrl));
   const fromMeta = readMeta(root, pageUrl);
 
   const siteName = fromMeta.siteName;
@@ -82,6 +95,53 @@ function readJsonLd(root: HTMLElement, pageUrl: string): PageData {
       result.currency = text(offer.priceCurrency);
     }
   }
+  return result;
+}
+
+/** schema.org microdata (`itemscope itemtype=".../Product"`), for stores without JSON-LD. */
+function readMicrodata(root: HTMLElement, pageUrl: string): PageData {
+  const result: PageData = empty();
+  const scope = root.querySelectorAll("[itemscope][itemtype]")
+    .find((el) => /schema\.org\/Product(?:Group)?$/i.test(el.getAttribute("itemtype")?.trim() ?? ""));
+  if (!scope) return result;
+  const props = (name: string) => scope.querySelectorAll(`[itemprop~="${name}"]`);
+  // A product's own properties, not those of a nested item such as its brand or offer.
+  const own = (name: string) => props(name).filter((el) => owner(el) === scope);
+  const first = (els: HTMLElement[]) => els.map(itemValue).find(Boolean) ?? null;
+
+  result.title = first(own("name"));
+  const brand = own("brand")[0];
+  result.brand = brand ? (brand.hasAttribute("itemscope") ? first(brand.querySelectorAll('[itemprop~="name"]')) : itemValue(brand)) : null;
+  result.color = first(own("color"));
+  result.category = first(own("category"));
+  result.gtin = normalizeGtin(first(["gtin13", "gtin12", "gtin14", "gtin8", "gtin"].flatMap(own)));
+  result.mpn = first(own("mpn"));
+  result.images = own("image").flatMap((el) => imageUrls(itemValue(el), pageUrl));
+  result.priceCents = toCents(first(props("price")) ?? first(props("lowPrice")));
+  result.currency = first(props("priceCurrency"));
+  return result;
+}
+
+function owner(el: HTMLElement): HTMLElement | null {
+  let node = el.parentNode;
+  while (node && !node.hasAttribute?.("itemscope")) node = node.parentNode;
+  return node ?? null;
+}
+
+function itemValue(el: HTMLElement): string | null {
+  const tag = el.tagName?.toLowerCase();
+  const attribute = el.getAttribute("content") ??
+    (tag === "a" || tag === "link" ? el.getAttribute("href") : tag === "img" ? el.getAttribute("src") : tag === "data" || tag === "meter" ? el.getAttribute("value") : undefined);
+  return text(attribute ?? el.text.replace(/\s+/g, " "));
+}
+
+function merge(primary: PageData, fallback: PageData): PageData {
+  const result = { ...primary, images: [...primary.images, ...fallback.images] };
+  for (const key of Object.keys(fallback) as (keyof PageData)[]) {
+    if (key !== "images" && result[key] === null) (result as Record<string, unknown>)[key] = fallback[key];
+  }
+  // A price and its currency come from the same source.
+  if (primary.priceCents === null && fallback.priceCents !== null) result.currency = fallback.currency;
   return result;
 }
 

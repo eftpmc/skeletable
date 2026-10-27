@@ -10,6 +10,7 @@ import { bodyLimit } from "hono/body-limit";
 import { z } from "zod";
 import type { AuthedEnv, Deps } from "../env.js";
 import { FetchError, safeFetch } from "../net/safe-fetch.js";
+import { StoreUnavailableError } from "../catalog/connectors/storefront.js";
 import { exportUserData } from "./export.js";
 import { InvalidImageError, MAX_UPLOAD_BYTES } from "./images.js";
 import { fetchLinkPreview } from "./link-preview.js";
@@ -42,6 +43,9 @@ export function closetRoutes({ config, db, storage }: Deps) {
     try {
       return c.json(await fetchLinkPreview(normalized, fetchOptions));
     } catch (error) {
+      if (error instanceof StoreUnavailableError) {
+        return c.json({ error: "store_unavailable", state: error.observation.state, message: error.message }, 422);
+      }
       if (error instanceof FetchError) {
         const message =
           error.code === "invalid_url" || error.code === "blocked"

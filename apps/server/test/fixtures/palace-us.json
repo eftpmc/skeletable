@@ -1,0 +1,53 @@
+[
+  {
+    "id": "z2p9r5lpfqwv",
+    "document": {
+      "url": "https://usa.palaceskateboards.com/products/z2p9r5lpfqwv",
+      "html": "<div data-testid=\"product-header\" id=\"product-header\" class=\"md:max-w-54 flex gap-3.75 md:gap-5 flex-col\"><h1 data-testid=\"product-title\" id=\"product-title\" class=\"font-sans capsize text-md uppercase font-bold\">SHEEPSKIN FLYING JACKET BROWN</h1><p data-testid=\"product-price\" id=\"product-price\" class=\"font-sans capsize text-base uppercase font-bold\"><span class=\"text-black\"><span>$1,898</span></span></p></div>",
+      "status": 200,
+      "transport": "http",
+      "observedAt": "2026-10-26T22:45:16.042Z"
+    },
+    "expected": {
+      "title": "SHEEPSKIN FLYING JACKET BROWN",
+      "priceCents": 189800,
+      "currency": "USD",
+      "availability": "unknown",
+      "variants": []
+    }
+  },
+  {
+    "id": "av1bal6eijz1",
+    "document": {
+      "url": "https://usa.palaceskateboards.com/products/av1bal6eijz1",
+      "html": "<div data-testid=\"product-header\" id=\"product-header\" class=\"md:max-w-54 flex gap-3.75 md:gap-5 flex-col\"><h1 data-testid=\"product-title\" id=\"product-title\" class=\"font-sans capsize text-md uppercase font-bold\">PALACE AVIREX JACKET BLACK</h1><p data-testid=\"product-price\" id=\"product-price\" class=\"font-sans capsize text-base uppercase font-bold\"><span class=\"text-black\"><span>$1,570</span></span></p></div>",
+      "status": 200,
+      "transport": "http",
+      "observedAt": "2026-10-26T22:45:16.238Z"
+    },
+    "expected": {
+      "title": "PALACE AVIREX JACKET BLACK",
+      "priceCents": 157000,
+      "currency": "USD",
+      "availability": "unknown",
+      "variants": []
+    }
+  },
+  {
+    "id": "9kzpdwhlbspn",
+    "document": {
+      "url": "https://usa.palaceskateboards.com/products/9kzpdwhlbspn",
+      "html": "<div data-testid=\"product-header\" id=\"product-header\" class=\"md:max-w-54 flex gap-3.75 md:gap-5 flex-col\"><h1 data-testid=\"product-title\" id=\"product-title\" class=\"font-sans capsize text-md uppercase font-bold\">BETTY BOOP VARSITY JACKET BROWN</h1><p data-testid=\"product-price\" id=\"product-price\" class=\"font-sans capsize text-base uppercase font-bold\"><span class=\"text-black\"><span>$548</span></span></p></div>",
+      "status": 200,
+      "transport": "http",
+      "observedAt": "2026-10-26T22:45:16.448Z"
+    },
+    "expected": {
+      "title": "BETTY BOOP VARSITY JACKET BROWN",
+      "priceCents": 54800,
+      "currency": "USD",
+      "availability": "unknown",
+      "variants": []
+    }
+  }
+]
