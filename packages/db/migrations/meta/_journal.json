@@ -64,6 +64,20 @@
       "when": 1793069711843,
       "tag": "0008_brand_views",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793114765881,
+      "tag": "0009_catalog_items",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793114770390,
+      "tag": "0010_drop_brand_photo",
+      "breakpoints": true
     }
   ]
 }

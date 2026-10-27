@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { BrandDepartment, CategoryId, Department } from "./taxonomy.js";
 
 export const brandVerdictSchema = z.enum(["like", "skip", "flag"]);
 /** "like": a find. "skip": not for me (taste only). "flag": not a real brand (quality only). */
@@ -28,6 +29,8 @@ export type BrandCard = {
   priceHighUsd: number | null;
   /** How many stores list it ("name" brands). */
   seenAt: number | null;
+  /** What it mostly makes, from its products; null for "name" brands. */
+  department: BrandDepartment | null;
   /** Up to four product photo URLs. */
   photos: string[];
   myVote: BrandVerdict | null;
@@ -63,7 +66,7 @@ export type ForYou = {
 
 export const seenInputSchema = z.object({ dwellMs: z.number().int().min(0).max(86_400_000) });
 
-/** One product from the catalog: a photo from a brand's store, with its title, price and page. Ids are "<brandId>.<position>". */
+/** One product from the catalog: a brand's product, with its photo, title, price, page and where it's filed. */
 export type CatalogItem = {
   id: string;
   brandId: string;
@@ -71,11 +74,16 @@ export type CatalogItem = {
   imageUrl: string;
   title: string | null;
   priceUsd: number | null;
-  productUrl: string | null;
+  productUrl: string;
+  category: CategoryId;
+  department: Department;
 };
 
 /** A page of Discover's feed. `next` is the page to ask for after this one, null at the end. */
 export type ItemFeed = { items: CatalogItem[]; next: number | null };
+
+/** The categories someone can browse (after their preferences), with how many products each has. */
+export type CategoryCount = { id: CategoryId; count: number };
 
 /** One item opened: the brand it's from, more from that brand, more like it, and whether you've saved it. */
 export type ItemDetail = {

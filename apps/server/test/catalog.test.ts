@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { gzipSync } from "node:zlib";
 import { schema } from "@closet/db";
-import type { BrandCard, BrandDetail, ForYou, ItemDetail, ItemFeed } from "@closet/shared";
+import type { BrandCard, BrandDetail, CategoryCount, ForYou, ItemDetail, ItemFeed, Preferences } from "@closet/shared";
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { type CatalogRecord, importCatalog } from "../src/catalog/import.js";
@@ -22,7 +22,9 @@ function look(axis: number, lean = 0, toward = (axis + 1) % 512) {
   return v.map((x) => x / n);
 }
 
-function store(name: string, axis: number, lean: number, extra: Partial<CatalogRecord> = {}): CatalogRecord {
+type Item = CatalogRecord["items"][number];
+
+function store(name: string, axis: number, lean: number, extra: Partial<CatalogRecord> = {}, items: Partial<Item>[] = [{}, {}, {}, {}, {}]): CatalogRecord {
   const slug = name.toLowerCase().replace(/\W+/g, "");
   return {
     kind: "store",
@@ -36,12 +38,17 @@ function store(name: string, axis: number, lean: number, extra: Partial<CatalogR
     priceHighUsd: 200,
     quality: 0.8,
     seenAt: null,
+    department: "both",
     look: look(axis, lean),
-    photos: [1, 2, 3, 4, 5].map((i) => ({
-      imageUrl: `https://cdn.shopify.com/s/files/${slug}/${i}.jpg`,
-      title: `Piece ${i}`,
+    items: items.map((item, k) => ({
+      imageUrl: `https://cdn.shopify.com/s/files/${slug}/${k + 1}.jpg`,
+      title: `Piece ${k + 1}`,
       priceUsd: 120,
-      productUrl: `https://${slug}.example/products/${i}`,
+      productUrl: `https://${slug}.example/products/${k + 1}`,
+      category: "tops",
+      department: "unisex",
+      look: look(axis, lean),
+      ...item,
     })),
     ...extra,
   };
@@ -239,7 +246,7 @@ describe("catalog", () => {
     expect(detail.moreLikeThis.slice(0, 2).map((i) => i.brandName).sort()).toEqual(["Suus", "Winfield"]);
     expect(detail.savedProductId).toBeNull();
     expect((await user.get("/api/catalog/items/not-an-item")).status).toBe(404);
-    expect((await user.get(`/api/catalog/items/${oslo.brandId}.99`)).status).toBe(404);
+    expect((await user.get("/api/catalog/items/00000000-0000-4000-8000-000000000000")).status).toBe(404);
   });
 
   it("saves an item by reading its page and tracking its price", async () => {
@@ -250,7 +257,7 @@ describe("catalog", () => {
     });
     try {
       const oslo = store("Line of Oslo", 0, 0);
-      oslo.photos[0]!.productUrl = shop.url("/products/oslo-coat");
+      oslo.items[0]!.productUrl = shop.url("/products/oslo-coat");
       await importCatalog(db, [oslo, ...loud]);
       const user = await signUp(setup({ ALLOW_PRIVATE_FETCH: "true" }));
       const { items } = (await (await user.get("/api/catalog/feed?seed=x")).json()) as ItemFeed;
@@ -275,9 +282,12 @@ describe("catalog", () => {
   it("imports a catalog pack once, and again only when it changes", async () => {
     await db.delete(schema.catalogPack);
     const dir = mkdtempSync(path.join(tmpdir(), "closet-pack-"));
+    // The pack stores product vectors as 512 signed bytes in base64.
+    const packed = (v: number[]) => Buffer.from(Int8Array.from(v.map((x) => Math.round(x * 127)))).toString("base64");
     const write = (records: CatalogRecord[]) => {
       const file = path.join(dir, `pack-${records.length}.jsonl.gz`);
-      writeFileSync(file, gzipSync(records.map((r) => JSON.stringify(r)).join("\n") + "\n"));
+      const lines = records.map((r) => JSON.stringify({ ...r, items: r.items.map((i) => ({ ...i, look: packed(i.look) })) }));
+      writeFileSync(file, gzipSync(lines.join("\n") + "\n"));
       return file;
     };
     const first = write([...quiet, uniqlo]);
@@ -286,6 +296,9 @@ describe("catalog", () => {
     expect(await importPackIfNew(db, write([...quiet, uniqlo, ...loud]))).toMatchObject({ imported: true, added: 2, updated: 4 });
     const user = await signUp(setup());
     expect(((await (await user.get("/api/catalog/brands?q=acid")).json()) as BrandCard[])[0]?.name).toBe("Acid Club");
+    // Product vectors come through the bytes intact, normalized.
+    const [item] = await db.select().from(schema.catalogItem).limit(1);
+    expect(Math.hypot(...item!.look)).toBeCloseTo(1, 3);
   });
 
   it("imports onto brands people already added, and keeps same-named stores apart", async () => {
@@ -303,5 +316,110 @@ describe("catalog", () => {
 
     // A name-only brand never replaces a store with that name.
     expect(await importCatalog(db, [{ ...uniqlo, name: "Suus" }])).toEqual({ added: 0, updated: 0, skipped: 1 });
+  });
+  it("keeps a product's id across imports while its page stays, and drops products that are gone", async () => {
+    const oslo = store("Line of Oslo", 0, 0);
+    await importCatalog(db, [oslo]);
+    const before = await db.select().from(schema.catalogItem).orderBy(schema.catalogItem.position);
+    expect(before).toHaveLength(5);
+    // The store's newest piece comes first now, piece 5 sold out, and piece 1 got cheaper.
+    const fresh = { ...oslo.items[0]!, productUrl: "https://lineofoslo.example/products/new", title: "New" };
+    const again = { ...oslo, items: [fresh, { ...oslo.items[0]!, priceUsd: 90 }, ...oslo.items.slice(1, 4)] };
+    await importCatalog(db, [again]);
+    const after = await db.select().from(schema.catalogItem).orderBy(schema.catalogItem.position);
+    expect(after.map((i) => i.title)).toEqual(["New", "Piece 1", "Piece 2", "Piece 3", "Piece 4"]);
+    expect(after[1]!.id).toBe(before[0]!.id);
+    expect(after[1]!.priceUsd).toBe(90);
+  });
+
+  it("saves and reads preferences, rejecting what isn't one", async () => {
+    const user = await signUp(setup());
+    expect(await (await user.get("/api/preferences")).json()).toEqual({ shopFor: null, priceMaxUsd: null, hiddenCategories: [] });
+    let res = await user.patch("/api/preferences", { shopFor: "women" });
+    expect(res.status).toBe(200);
+    res = await user.patch("/api/preferences", { priceMaxUsd: 300, hiddenCategories: ["swimwear", "swimwear", "intimates"] });
+    expect(await res.json()).toEqual({ shopFor: "women", priceMaxUsd: 300, hiddenCategories: ["swimwear", "intimates"] });
+    expect((await user.patch("/api/preferences", { shopFor: "kids" })).status).toBe(400);
+    expect((await user.patch("/api/preferences", { hiddenCategories: ["gadgets"] })).status).toBe(400);
+    expect((await user.patch("/api/preferences", { priceMaxUsd: -1 })).status).toBe(400);
+    res = await user.patch("/api/preferences", { priceMaxUsd: null });
+    expect(((await res.json()) as Preferences).priceMaxUsd).toBeNull();
+    // Each person has their own.
+    const other = await signUp(setup(), "sam@example.com");
+    expect(((await (await other.get("/api/preferences")).json()) as Preferences).shopFor).toBeNull();
+  });
+
+  it("shows each person their side of the catalog, by category, without what they hid", async () => {
+    const women = store("Suus", 0, 0, { department: "women" }, [
+      { category: "dresses", department: "women" },
+      { category: "dresses", department: "women" },
+      { category: "swimwear", department: "women" },
+      { category: "tops", department: "unisex" },
+    ]);
+    const men = store("Winfield", 10, 0, { department: "men" }, [
+      { category: "shirts", department: "men" },
+      { category: "outerwear", department: "men" },
+      { category: "tops", department: "unisex" },
+    ]);
+    await importCatalog(db, [women, men]);
+    const user = await signUp(setup());
+    const feed = async (query = "") => ((await (await user.get(`/api/catalog/feed?seed=x${query}`)).json()) as ItemFeed).items;
+    const cats = async () => ((await (await user.get("/api/catalog/categories")).json()) as CategoryCount[]).map((c) => `${c.id}:${c.count}`);
+
+    // Before answering, everything; categories in the taxonomy's order.
+    expect(await feed()).toHaveLength(7);
+    expect(await cats()).toEqual(["tops:2", "shirts:1", "outerwear:1", "dresses:2", "swimwear:1"]);
+
+    await user.patch("/api/preferences", { shopFor: "men" });
+    expect((await feed()).map((i) => i.department).sort()).toEqual(["men", "men", "unisex", "unisex"]);
+    expect(await cats()).toEqual(["tops:2", "shirts:1", "outerwear:1"]);
+
+    await user.patch("/api/preferences", { shopFor: "women", hiddenCategories: ["swimwear"] });
+    const items = await feed();
+    expect(items.map((i) => i.category).sort()).toEqual(["dresses", "dresses", "tops", "tops"]);
+    expect(await cats()).toEqual(["tops:2", "dresses:2"]);
+    // Asking for one category shows it, hidden or not; an unknown one is ignored.
+    expect((await feed("&category=dresses")).map((i) => i.category)).toEqual(["dresses", "dresses"]);
+    expect((await feed("&category=swimwear")).map((i) => i.category)).toEqual(["swimwear"]);
+    expect(await feed("&category=gadgets")).toHaveLength(4);
+
+    // Brands that only make the other side don't come up as neighbors either.
+    const detail = (await (await user.get(`/api/catalog/brands/${await idOf(user, "Suus")}`)).json()) as BrandDetail;
+    expect(detail.department).toBe("women");
+    expect(detail.neighbors.map((n) => n.name)).not.toContain("Winfield");
+  });
+
+  it("ranks products over the price cap lower, without hiding them", async () => {
+    const pricey = store("Line of Oslo", 0, 0, {}, [{ priceUsd: 900 }, { priceUsd: 950 }, { priceUsd: 80 }]);
+    await importCatalog(db, [pricey]);
+    const user = await signUp(setup());
+    await user.patch("/api/preferences", { priceMaxUsd: 100 });
+    const items = ((await (await user.get("/api/catalog/feed?seed=x")).json()) as ItemFeed).items;
+    expect(items[0]!.priceUsd).toBe(80);
+    expect(items).toHaveLength(3);
+  });
+
+  it("learns taste from the products someone opens and saves", async () => {
+    // Two brands on each side; the loud brand's second product looks quiet.
+    const quietOne = store("Line of Oslo", 0, 0);
+    const loudOne = store("Neon Riot", 10, 0, {}, [{}, { look: look(0, 0.1) }, {}]);
+    await importCatalog(db, [quietOne, loudOne, ...loud.slice(1), ...quiet.slice(1)]);
+    const user = await signUp(setup());
+    const items = ((await (await user.get("/api/catalog/feed?seed=x")).json()) as ItemFeed).items;
+    // A real look at the quiet-looking product of a loud brand pulls quiet products up, not loud ones.
+    const odd = items.find((i) => i.brandName === "Neon Riot" && i.title === "Piece 2")!;
+    expect((await user.post(`/api/catalog/items/${odd.id}/seen`, { dwellMs: 30_000 })).status).toBe(204);
+    const top = ((await (await user.get("/api/catalog/feed?seed=x")).json()) as ItemFeed).items.slice(0, 4);
+    expect(top.filter((i) => ["Line of Oslo", "Winfield", "Suus"].includes(i.brandName) || i.id === odd.id).length).toBeGreaterThanOrEqual(3);
+    const [row] = await db.select().from(schema.itemView);
+    expect(row).toMatchObject({ itemId: odd.id, views: 1, dwellMs: 30_000, saved: 0 });
+
+    // Taste from products alone opens For you too, with no brand to name as the reason.
+    for (const item of items.slice(0, 5)) await user.post(`/api/catalog/items/${item.id}/seen`, { dwellMs: 30_000 });
+    const res = await user.get("/api/catalog/for-you");
+    expect(res.status).toBe(200);
+    const forYou = (await res.json()) as ForYou;
+    expect(forYou.interested).toBeGreaterThanOrEqual(5);
+    expect(forYou.brands.every((b) => b.because === null)).toBe(true);
   });
 });

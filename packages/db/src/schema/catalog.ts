@@ -1,4 +1,4 @@
-import { index, integer, jsonb, pgTable, primaryKey, real, text, timestamp, uuid, vector } from "drizzle-orm/pg-core";
+import { index, integer, jsonb, pgTable, primaryKey, real, text, timestamp, uniqueIndex, uuid, vector } from "drizzle-orm/pg-core";
 import { user } from "./auth.js";
 import { brand } from "./closet.js";
 
@@ -29,6 +29,8 @@ export const brandProfile = pgTable(
     quality: real("quality").notNull().default(0),
     // For "name" brands: how many stores list it.
     seenAt: integer("seen_at"),
+    // What it mostly makes, from its products: "women", "men" or "both"; null for "name" brands.
+    department: text("department"),
     // The mean of the brand's clothing photo vectors, normalized.
     look: vector("look", { dimensions: PHOTO_DIMENSIONS }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
@@ -42,20 +44,36 @@ export const brandProfile = pgTable(
   ],
 );
 
-/** Product photos that show a brand's look, in display order. Images stay on the store's site. */
-export const brandPhoto = pgTable(
-  "brand_photo",
+/**
+ * The catalog's products: a brand's current pieces, each filed under one category and one
+ * department (packages/shared/src/taxonomy.ts) and with its own photo vector. Images stay on the
+ * store's site. An import keeps a product's id while its page stays the same, so views of it last.
+ */
+export const catalogItem = pgTable(
+  "catalog_item",
   {
+    id: uuid("id").primaryKey().defaultRandom(),
     brandId: uuid("brand_id")
       .notNull()
       .references(() => brand.id, { onDelete: "cascade" }),
+    // The brand's order: newest and in stock first.
     position: integer("position").notNull(),
+    productUrl: text("product_url").notNull(),
     imageUrl: text("image_url").notNull(),
     title: text("title"),
     priceUsd: real("price_usd"),
-    productUrl: text("product_url"),
+    category: text("category").notNull(),
+    department: text("department").notNull(),
+    look: vector("look", { dimensions: PHOTO_DIMENSIONS }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
-  (table) => [primaryKey({ columns: [table.brandId, table.position] })],
+  (table) => [
+    uniqueIndex("catalog_item_brand_url_idx").on(table.brandId, table.productUrl),
+    index("catalog_item_category_idx").on(table.category, table.department),
+  ],
 );
 
 /**
@@ -98,6 +116,25 @@ export const brandView = pgTable(
     lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [primaryKey({ columns: [table.userId, table.brandId] })],
+);
+
+/** Products someone opened and how long they looked: like brand_view, for one product. */
+export const itemView = pgTable(
+  "item_view",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    itemId: uuid("item_id")
+      .notNull()
+      .references(() => catalogItem.id, { onDelete: "cascade" }),
+    views: integer("views").notNull().default(0),
+    dwellMs: integer("dwell_ms").notNull().default(0),
+    // Saving it from Discover: as strong as a heart.
+    saved: integer("saved").notNull().default(0),
+    lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.itemId] })],
 );
 
 /** Catalog packs already imported (by content hash), so a restart doesn't import the same one again. */

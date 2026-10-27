@@ -4,15 +4,22 @@ import {
   type BrandDetail,
   type BrandMatch,
   type CatalogItem,
+  type CategoryCount,
+  type CategoryId,
+  type Department,
   type ForYou,
   type ItemDetail,
   type ItemFeed,
+  type Preferences,
   TASTE_UNLOCK,
   type BrandVerdict,
+  catalogCategories,
+  departmentsFor,
 } from "@closet/shared";
-import { and, asc, cosineDistance, desc, eq, gte, ilike, inArray, ne, notInArray, sql } from "drizzle-orm";
+import { and, asc, cosineDistance, desc, eq, gte, ilike, inArray, lt, ne, notInArray, sql } from "drizzle-orm";
+import { readPreferences } from "../preferences/service.js";
 
-const { brand, brandPhoto, brandProfile, brandView, brandVote, offer, watch } = schema;
+const { brand, brandProfile, brandView, brandVote, catalogItem, itemView, offer, watch } = schema;
 
 export class NotFoundError extends Error {}
 
@@ -41,13 +48,15 @@ export function viewWeight(views: number, dwellMs: number) {
 type Profile = typeof brandProfile.$inferSelect;
 type Vector = number[];
 
-/** A store brand in Discover's feed, with its look and its products in order. */
-type FeedBrand = {
-  id: string;
-  name: string;
+type ItemRow = typeof catalogItem.$inferSelect;
+
+/** A product in Discover's feed, with its brand and its own look (kept as floats to save memory). */
+type FeedItem = Omit<ItemRow, "look" | "updatedAt" | "category" | "department"> & {
+  category: CategoryId;
+  department: Department;
+  brandName: string;
   quality: number;
-  look: Vector;
-  items: { position: number; imageUrl: string; title: string | null; priceUsd: number | null; productUrl: string | null }[];
+  look: Float32Array;
 };
 
 const FEED_PAGE = 30;
@@ -63,15 +72,23 @@ function jitter(seed: string, key: string) {
   return (h >>> 0) / 4294967296;
 }
 
-export const itemId = (brandId: string, position: number) => `${brandId}.${position}`;
-
-export function parseItemId(id: string) {
-  const m = /^([0-9a-f-]{36})\.(\d{1,3})$/.exec(id);
-  return m ? { brandId: m[1]!, position: Number(m[2]) } : null;
-}
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const norm = (v: Vector) => Math.hypot(...v) || 1;
-const dot = (a: Vector, b: Vector) => a.reduce((s, x, i) => s + x * b[i]!, 0);
+const dot = (a: ArrayLike<number>, b: ArrayLike<number>) => {
+  let s = 0;
+  for (let i = 0; i < a.length; i++) s += a[i]! * b[i]!;
+  return s;
+};
+
+/** How far over someone's price cap a product is, as a ranking penalty: up to 0.5 at three times the cap. */
+export function pricePenalty(price: number | null, cap: number | null) {
+  if (!price || !cap || price <= cap) return 0;
+  return 0.5 * Math.min(1, Math.log(price / cap) / Math.log(3));
+}
+
+/** Brands someone shopping one side shouldn't be shown: the ones that only make the other side. */
+const otherSide = (prefs: Preferences) => (prefs.shopFor === "women" ? "men" : prefs.shopFor === "men" ? "women" : null);
 const mid = (p: Pick<Profile, "priceLowUsd" | "priceHighUsd">) =>
   p.priceLowUsd && p.priceHighUsd ? (p.priceLowUsd + p.priceHighUsd) / 2 : null;
 const priceGap = (a: number | null, b: number | null) => (a && b ? Math.abs(Math.log(a / b)) : 0);
@@ -109,11 +126,12 @@ export class CatalogService {
     const [card] = await this.cards(userId, [row]);
     const photos = await this.db
       .select()
-      .from(brandPhoto)
-      .where(eq(brandPhoto.brandId, brandId))
-      .orderBy(asc(brandPhoto.position));
-    const taste = await this.taste(userId);
-    const neighbors = await this.neighbors(userId, row.profile, taste.vector);
+      .from(catalogItem)
+      .where(eq(catalogItem.brandId, brandId))
+      .orderBy(asc(catalogItem.position))
+      .limit(8);
+    const [taste, prefs] = await Promise.all([this.taste(userId), readPreferences(this.db, userId)]);
+    const neighbors = await this.neighbors(userId, row.profile, taste.vector, prefs);
     return {
       ...card!,
       description: row.profile.description,
@@ -125,15 +143,24 @@ export class CatalogService {
 
   /**
    * The closest store brands by look, nudged by price and quality, and by the viewer's taste once
-   * they have one. "name" brands skip the price term: their prices are resale prices.
+   * they have one. "name" brands skip the price term: their prices are resale prices. Brands that
+   * only make the side someone doesn't shop are left out.
    */
-  private async neighbors(userId: string, from: Profile, taste: Vector | null): Promise<BrandMatch[]> {
+  private async neighbors(userId: string, from: Profile, taste: Vector | null, prefs: Preferences): Promise<BrandMatch[]> {
     const distance = cosineDistance(brandProfile.look, from.look);
+    const skip = otherSide(prefs);
     const rows = await this.db
       .select({ brand, profile: brandProfile, distance })
       .from(brandProfile)
       .innerJoin(brand, eq(brand.id, brandProfile.brandId))
-      .where(and(eq(brandProfile.kind, "store"), gte(brandProfile.quality, QUALITY_BAR), ne(brandProfile.brandId, from.brandId)))
+      .where(
+        and(
+          eq(brandProfile.kind, "store"),
+          gte(brandProfile.quality, QUALITY_BAR),
+          ne(brandProfile.brandId, from.brandId),
+          skip ? sql`${brandProfile.department} is distinct from ${skip}` : undefined,
+        ),
+      )
       .orderBy(distance)
       .limit(CANDIDATES);
     const fromMid = from.kind === "store" ? mid(from) : null;
@@ -177,12 +204,13 @@ export class CatalogService {
   }
 
   /**
-   * Taste: the weighted mean look of brands someone showed interest in (a heart counts 1, a real
-   * look at a brand's page counts less; see viewWeight), minus half the mean of what they marked not
-   * for them or not a brand, normalized. Null until they're interested in TASTE_UNLOCK brands.
+   * Taste: the weighted mean look of brands and products someone showed interest in (a heart or a
+   * save counts 1, a real look at a brand's page or a product counts less; see viewWeight), minus
+   * half the mean of brands they marked not for them or not a brand, normalized. Null until they're
+   * interested in TASTE_UNLOCK brands and products.
    */
   async taste(userId: string, unlock = TASTE_UNLOCK): Promise<{ interested: number; vector: Vector | null; liked: { id: string; name: string; look: Vector }[] }> {
-    const [votes, views] = await Promise.all([
+    const [votes, views, itemViews] = await Promise.all([
       this.db
         .select({ id: brand.id, name: brand.name, verdict: brandVote.verdict, look: brandProfile.look })
         .from(brandVote)
@@ -195,6 +223,11 @@ export class CatalogService {
         .innerJoin(brandProfile, eq(brandProfile.brandId, brandView.brandId))
         .innerJoin(brand, eq(brand.id, brandView.brandId))
         .where(eq(brandView.userId, userId)),
+      this.db
+        .select({ brandId: catalogItem.brandId, views: itemView.views, dwellMs: itemView.dwellMs, saved: itemView.saved, look: catalogItem.look })
+        .from(itemView)
+        .innerJoin(catalogItem, eq(catalogItem.id, itemView.itemId))
+        .where(eq(itemView.userId, userId)),
     ]);
     const against = votes.filter((v) => v.verdict !== "like");
     const ruledOut = new Set(against.map((v) => v.id));
@@ -204,17 +237,23 @@ export class CatalogService {
       if (weight > 0 && !ruledOut.has(v.id)) interest.set(v.id, { id: v.id, name: v.name, look: v.look, weight });
     }
     for (const v of votes) if (v.verdict === "like") interest.set(v.id, { id: v.id, name: v.name, look: v.look, weight: 1 });
+    const products = itemViews
+      .filter((v) => !ruledOut.has(v.brandId))
+      .map((v) => ({ look: v.look, weight: v.saved > 0 ? 1 : viewWeight(v.views, v.dwellMs) }))
+      .filter((v) => v.weight > 0);
 
     const liked = [...interest.values()];
-    if (!liked.length || liked.length < unlock) return { interested: liked.length, vector: null, liked };
-    const total = liked.reduce((s, v) => s + v.weight, 0);
-    const t = liked[0]!.look.map((_, k) => {
-      const plus = liked.reduce((s, v) => s + v.weight * v.look[k]!, 0) / total;
+    const all = [...liked, ...products];
+    const interested = all.length;
+    if (!interested || interested < unlock) return { interested, vector: null, liked };
+    const total = all.reduce((s, v) => s + v.weight, 0);
+    const t = all[0]!.look.map((_, k) => {
+      const plus = all.reduce((s, v) => s + v.weight * v.look[k]!, 0) / total;
       const minus = against.length ? against.reduce((s, v) => s + v.look[k]!, 0) / against.length : 0;
       return plus - 0.5 * minus;
     });
     const n = norm(t);
-    return { interested: liked.length, vector: t.map((x) => x / n), liked };
+    return { interested, vector: t.map((x) => x / n), liked };
   }
 
   /** Someone had a brand's page open for dwellMs: one more view, and the time (capped per visit). */
@@ -231,12 +270,31 @@ export class CatalogService {
       });
   }
 
+  /** Someone had a product open for dwellMs (or saved it): like seen, for one product. */
+  async seenItem(userId: string, itemId: string, dwellMs: number, saved = false) {
+    const ms = Math.max(0, Math.min(Math.round(dwellMs), VISIT_CAP_MS));
+    const s = saved ? 1 : 0;
+    await this.db
+      .insert(itemView)
+      .values({ userId, itemId, views: 1, dwellMs: ms, saved: s })
+      .onConflictDoUpdate({
+        target: [itemView.userId, itemView.itemId],
+        set: {
+          views: sql`${itemView.views} + 1`,
+          dwellMs: sql`${itemView.dwellMs} + ${ms}`,
+          saved: sql`greatest(${itemView.saved}, ${s})`,
+          lastViewedAt: sql`now()`,
+        },
+      });
+  }
+
   /**
    * Store brands closest to someone's taste that they haven't voted on, nudged by quality. Two of
    * every ten slots go to brands nobody has voted on yet, so new brands keep getting seen.
    */
   async forYou(userId: string): Promise<ForYou> {
-    const taste = await this.taste(userId);
+    const [taste, prefs] = await Promise.all([this.taste(userId), readPreferences(this.db, userId)]);
+    const skip = otherSide(prefs);
     if (!taste.vector) return { interested: taste.interested, needed: TASTE_UNLOCK, brands: [] };
     // Brands you've already shown interest in aren't news; neither are ones you voted on.
     const known = new Set(taste.liked.map((l) => l.id));
@@ -246,7 +304,14 @@ export class CatalogService {
       .select({ brand, profile: brandProfile, distance })
       .from(brandProfile)
       .innerJoin(brand, eq(brand.id, brandProfile.brandId))
-      .where(and(eq(brandProfile.kind, "store"), gte(brandProfile.quality, QUALITY_BAR), notInArray(brandProfile.brandId, voted)))
+      .where(
+        and(
+          eq(brandProfile.kind, "store"),
+          gte(brandProfile.quality, QUALITY_BAR),
+          notInArray(brandProfile.brandId, voted),
+          skip ? sql`${brandProfile.department} is distinct from ${skip}` : undefined,
+        ),
+      )
       .orderBy(distance)
       .limit(CANDIDATES * 2);
     const scored = rows
@@ -268,108 +333,157 @@ export class CatalogService {
     const cards = withMatch(await this.cards(userId, picks.map((p) => p.r)), picks.map((p) => p.score));
     const brands = cards.map((c, i) => {
       const look = picks[i]!.r.profile.look;
-      const near = taste.liked.reduce((best, l) => (dot(l.look, look) > best.s ? { s: dot(l.look, look), l } : best), {
-        s: -Infinity,
-        l: taste.liked[0]!,
-      }).l;
-      return { ...c, explore: explore.has(c.id) || undefined, because: { id: near.id, name: near.name } };
+      // Taste can come from products alone, with no brand to name as the reason.
+      const near = taste.liked.reduce<(typeof taste.liked)[number] | null>(
+        (best, l) => (!best || dot(l.look, look) > dot(best.look, look) ? l : best),
+        null,
+      );
+      return { ...c, explore: explore.has(c.id) || undefined, because: near && { id: near.id, name: near.name } };
     });
     return { interested: taste.interested, needed: TASTE_UNLOCK, brands };
   }
 
-  private feedCache: { at: number; brands: FeedBrand[] } | null = null;
+  private feedCache: { at: number; items: FeedItem[]; byId: Map<string, FeedItem>; byBrand: Map<string, FeedItem[]> } | null = null;
 
-  /** Every store brand above the quality bar, with its products: what Discover's feed is made of. */
-  private async feedBrands(): Promise<FeedBrand[]> {
-    if (this.feedCache && Date.now() - this.feedCache.at < FEED_CACHE_MS) return this.feedCache.brands;
-    const [rows, photos] = await Promise.all([
-      this.db
-        .select({ id: brand.id, name: brand.name, quality: brandProfile.quality, look: brandProfile.look })
-        .from(brandProfile)
-        .innerJoin(brand, eq(brand.id, brandProfile.brandId))
-        .where(and(eq(brandProfile.kind, "store"), gte(brandProfile.quality, QUALITY_BAR))),
-      this.db.select().from(brandPhoto).orderBy(asc(brandPhoto.brandId), asc(brandPhoto.position)),
-    ]);
-    const byBrand = new Map<string, FeedBrand["items"]>();
-    for (const p of photos) byBrand.set(p.brandId, [...(byBrand.get(p.brandId) ?? []), p]);
-    const brands = rows.map((r) => ({ ...r, items: byBrand.get(r.id) ?? [] })).filter((b) => b.items.length > 0);
-    this.feedCache = { at: Date.now(), brands };
-    return brands;
+  /** Every product of every store brand above the quality bar: what Discover is made of. */
+  private async feedItems() {
+    if (this.feedCache && Date.now() - this.feedCache.at < FEED_CACHE_MS) return this.feedCache;
+    const rows = await this.db
+      .select({ item: catalogItem, brandName: brand.name, quality: brandProfile.quality })
+      .from(catalogItem)
+      .innerJoin(brandProfile, eq(brandProfile.brandId, catalogItem.brandId))
+      .innerJoin(brand, eq(brand.id, catalogItem.brandId))
+      .where(and(eq(brandProfile.kind, "store"), gte(brandProfile.quality, QUALITY_BAR)))
+      .orderBy(asc(catalogItem.brandId), asc(catalogItem.position));
+    const items: FeedItem[] = rows.map(({ item: { updatedAt: _, look, ...item }, brandName, quality }) => ({
+      ...item,
+      category: item.category as CategoryId,
+      department: item.department as Department,
+      brandName,
+      quality,
+      look: Float32Array.from(look),
+    }));
+    const byBrand = new Map<string, FeedItem[]>();
+    for (const i of items) byBrand.set(i.brandId, [...(byBrand.get(i.brandId) ?? []), i]);
+    this.feedCache = { at: Date.now(), items, byId: new Map(items.map((i) => [i.id, i])), byBrand };
+    return this.feedCache;
   }
 
-  private toItem(b: Pick<FeedBrand, "id" | "name">, p: FeedBrand["items"][number]): CatalogItem {
+  /** Products someone wants to see: their side of the catalog, without the categories they hid (unless they asked for one). */
+  private visible(items: FeedItem[], prefs: Preferences, category?: CategoryId) {
+    const departments = new Set<string>(departmentsFor(prefs.shopFor));
+    const hidden = new Set<string>(prefs.hiddenCategories);
+    return items.filter((i) => departments.has(i.department) && (category ? i.category === category : !hidden.has(i.category)));
+  }
+
+  private toItem(i: Pick<FeedItem, "id" | "brandId" | "brandName" | "imageUrl" | "title" | "priceUsd" | "productUrl" | "category" | "department">): CatalogItem {
     return {
-      id: itemId(b.id, p.position),
-      brandId: b.id,
-      brandName: b.name,
-      imageUrl: sized(p.imageUrl, 640),
-      title: p.title,
-      priceUsd: p.priceUsd,
-      productUrl: p.productUrl,
+      id: i.id,
+      brandId: i.brandId,
+      brandName: i.brandName,
+      imageUrl: sized(i.imageUrl, 640),
+      title: i.title,
+      priceUsd: i.priceUsd,
+      productUrl: i.productUrl,
+      category: i.category,
+      department: i.department,
     };
   }
 
   /**
-   * Discover's feed: every catalog product, ranked by how close its brand's look is to your taste
-   * (from what you've opened and saved; quality before that), shuffled a little per session so it
-   * isn't the same every time, leaning to each brand's first products, and never the same brand
-   * twice in a row. Personal from the first item you open.
+   * Discover's feed: the catalog's products on someone's side of it, ranked by how close each one
+   * looks to their taste (from what they've opened and saved; quality before that), lower when it's
+   * over their price cap, shuffled a little per session so it isn't the same every time, leaning to
+   * each brand's newest products, and never the same brand twice in a row. Personal from the first
+   * product they open.
    */
-  async feed(userId: string, page: number, seed: string): Promise<ItemFeed> {
-    const [brands, taste] = await Promise.all([this.feedBrands(), this.taste(userId, 1)]);
-    const scored = brands.flatMap((b) => {
-      const fit = taste.vector ? dot(taste.vector, b.look) : 0;
-      const base = (taste.vector ? 1.5 * fit : 0) + 0.15 * b.quality + 0.3 * jitter(seed, b.id);
-      return b.items.map((p) => ({ b, p, score: base - 0.08 * p.position + 0.05 * jitter(seed, `${b.id}${p.position}`) }));
-    });
+  async feed(userId: string, page: number, seed: string, category?: CategoryId): Promise<ItemFeed> {
+    const [{ items }, taste, prefs] = await Promise.all([this.feedItems(), this.taste(userId, 1), readPreferences(this.db, userId)]);
+    const t = taste.vector ? Float32Array.from(taste.vector) : null;
+    const scored = this.visible(items, prefs, category).map((i) => ({
+      i,
+      score:
+        (t ? 1.5 * dot(t, i.look) : 0) +
+        0.15 * i.quality +
+        0.3 * jitter(seed, i.brandId) +
+        0.1 * jitter(seed, i.id) -
+        0.03 * i.position -
+        pricePenalty(i.priceUsd, prefs.priceMaxUsd),
+    }));
     scored.sort((a, z) => z.score - a.score);
 
-    // Spread brands out: hold an item back while its brand appeared in the last three.
+    // Spread brands out: hold a product back while its brand appeared in the last three.
     const ordered: typeof scored = [];
     const waiting: typeof scored = [];
-    const recent = () => ordered.slice(-3).map((x) => x.b.id);
+    const recent = () => ordered.slice(-3).map((x) => x.i.brandId);
     for (const x of scored) {
-      const ready = waiting.findIndex((w) => !recent().includes(w.b.id));
+      const ready = waiting.findIndex((w) => !recent().includes(w.i.brandId));
       if (ready >= 0) ordered.push(...waiting.splice(ready, 1));
-      if (recent().includes(x.b.id)) waiting.push(x);
+      if (recent().includes(x.i.brandId)) waiting.push(x);
       else ordered.push(x);
     }
     ordered.push(...waiting);
 
     const start = page * FEED_PAGE;
-    const items = ordered.slice(start, start + FEED_PAGE).map((x) => this.toItem(x.b, x.p));
-    return { items, next: start + FEED_PAGE < ordered.length ? page + 1 : null };
+    return { items: ordered.slice(start, start + FEED_PAGE).map((x) => this.toItem(x.i)), next: start + FEED_PAGE < ordered.length ? page + 1 : null };
   }
 
-  /** One item: its brand, more from the brand, the nearest brands' products, and whether you saved it. */
+  /** The categories someone can browse, in the taxonomy's order, with how many products each has for them. */
+  async categories(userId: string): Promise<CategoryCount[]> {
+    const [{ items }, prefs] = await Promise.all([this.feedItems(), readPreferences(this.db, userId)]);
+    const counts = new Map<string, number>();
+    for (const i of this.visible(items, prefs)) counts.set(i.category, (counts.get(i.category) ?? 0) + 1);
+    return catalogCategories.filter((c) => counts.has(c.id)).map((c) => ({ id: c.id, count: counts.get(c.id)! }));
+  }
+
+  /**
+   * One product: its brand, more from the brand, the closest-looking products from other brands on
+   * the viewer's side of the catalog (one per brand), and whether they saved it.
+   */
   async item(userId: string, id: string): Promise<ItemDetail> {
-    const key = parseItemId(id);
-    if (!key) throw new NotFoundError();
-    const [row] = await this.db
+    const row = await this.itemRef(id);
+    const [brandRow] = await this.db
       .select({ brand, profile: brandProfile })
       .from(brandProfile)
       .innerJoin(brand, eq(brand.id, brandProfile.brandId))
-      .where(eq(brandProfile.brandId, key.brandId));
-    const photos = row ? await this.db.select().from(brandPhoto).where(eq(brandPhoto.brandId, key.brandId)).orderBy(asc(brandPhoto.position)) : [];
-    const photo = photos.find((p) => p.position === key.position);
-    if (!row || !photo) throw new NotFoundError();
+      .where(eq(brandProfile.brandId, row.brandId));
+    if (!brandRow) throw new NotFoundError();
+    const [[card], { items, byBrand }, prefs] = await Promise.all([
+      this.cards(userId, [brandRow]),
+      this.feedItems(),
+      readPreferences(this.db, userId),
+    ]);
+    const self = { ...row, category: row.category as CategoryId, department: row.department as Department, brandName: brandRow.brand.name };
+    const look = Float32Array.from(row.look);
 
-    const self = { id: row.brand.id, name: row.brand.name };
-    const [card] = await this.cards(userId, [row]);
-    const brands = await this.feedBrands();
-    const nearest = brands
-      .filter((b) => b.id !== self.id)
-      .map((b) => ({ b, s: dot(b.look, row.profile.look) }))
-      .sort((a, z) => z.s - a.s)
-      .slice(0, MORE_LIKE_THIS);
+    const near: FeedItem[] = [];
+    const used = new Set([row.brandId]);
+    const ranked = this.visible(items, prefs)
+      .filter((i) => i.brandId !== row.brandId)
+      .map((i) => ({ i, s: dot(look, i.look) + (i.category === row.category ? 0.05 : 0) }))
+      .sort((a, z) => z.s - a.s);
+    for (const { i } of ranked) {
+      if (used.has(i.brandId)) continue;
+      used.add(i.brandId);
+      near.push(i);
+      if (near.length === MORE_LIKE_THIS) break;
+    }
+
+    const fromBrand =
+      byBrand.get(row.brandId) ??
+      (await this.db.select().from(catalogItem).where(eq(catalogItem.brandId, row.brandId)).orderBy(asc(catalogItem.position))).map((i) => ({
+        ...i,
+        category: i.category as CategoryId,
+        department: i.department as Department,
+        brandName: brandRow.brand.name,
+      }));
 
     return {
-      item: this.toItem(self, photo),
+      item: this.toItem(self),
       brand: card!,
-      moreFromBrand: photos.filter((p) => p.position !== key.position).slice(0, MORE_FROM_BRAND).map((p) => this.toItem(self, p)),
-      // One product from each of the closest brands, the same place in their list as this one when they have it.
-      moreLikeThis: nearest.map(({ b }) => this.toItem(b, b.items[Math.min(key.position, b.items.length - 1)]!)),
-      savedProductId: photo.productUrl ? await this.savedProduct(userId, photo.productUrl) : null,
+      moreFromBrand: fromBrand.filter((i) => i.id !== row.id).slice(0, MORE_FROM_BRAND).map((i) => this.toItem(i)),
+      moreLikeThis: near.map((i) => this.toItem(i)),
+      savedProductId: await this.savedProduct(userId, row.productUrl),
     };
   }
 
@@ -390,16 +504,12 @@ export class CatalogService {
     return found?.id ?? null;
   }
 
-  /** The item a feed id points at, for saving it (its product page) and counting looks (its brand). */
-  async itemRef(id: string) {
-    const key = parseItemId(id);
-    if (!key) throw new NotFoundError();
-    const [photo] = await this.db
-      .select()
-      .from(brandPhoto)
-      .where(and(eq(brandPhoto.brandId, key.brandId), eq(brandPhoto.position, key.position)));
-    if (!photo) throw new NotFoundError();
-    return photo;
+  /** The product an id points at, for opening it, saving it (its page) and counting looks. */
+  async itemRef(id: string): Promise<ItemRow> {
+    if (!UUID.test(id)) throw new NotFoundError();
+    const [row] = await this.db.select().from(catalogItem).where(eq(catalogItem.id, id));
+    if (!row) throw new NotFoundError();
+    return row;
   }
 
   /** Cards for brand rows: first four photos, like counts and the viewer's own vote. */
@@ -408,10 +518,10 @@ export class CatalogService {
     const ids = rows.map((r) => r.brand.id);
     const [photos, likes, mine] = await Promise.all([
       this.db
-        .select({ brandId: brandPhoto.brandId, imageUrl: brandPhoto.imageUrl })
-        .from(brandPhoto)
-        .where(and(inArray(brandPhoto.brandId, ids), sql`${brandPhoto.position} < 4`))
-        .orderBy(asc(brandPhoto.position)),
+        .select({ brandId: catalogItem.brandId, imageUrl: catalogItem.imageUrl })
+        .from(catalogItem)
+        .where(and(inArray(catalogItem.brandId, ids), lt(catalogItem.position, 4)))
+        .orderBy(asc(catalogItem.position)),
       this.db
         .select({ brandId: brandVote.brandId, n: sql<number>`count(*)::int` })
         .from(brandVote)
@@ -436,6 +546,7 @@ export class CatalogService {
       priceLowUsd: p.priceLowUsd,
       priceHighUsd: p.priceHighUsd,
       seenAt: p.seenAt,
+      department: (p.department as BrandCard["department"]) ?? null,
       photos: photoMap.get(b.id) ?? [],
       myVote: mineMap.get(b.id) ?? null,
       likes: likeMap.get(b.id) ?? 0,

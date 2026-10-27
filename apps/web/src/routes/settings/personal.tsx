@@ -1,11 +1,12 @@
-import { type AccentName, Badge, Button, DownloadIcon, IconButton, TextField, XIcon, accents, buttonClass, cn, focusRing } from "@closet/ui";
+import { type AccentName, Badge, Button, Chip, DownloadIcon, IconButton, SegmentedControl, Skeleton, TextField, XIcon, accents, buttonClass, cn, focusRing } from "@closet/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
-import type { Me, NotifySettings } from "@closet/shared";
+import { type Me, type NotifySettings, type ShopFor, catalogCategories } from "@closet/shared";
 import { ApiError, api } from "../../lib/api";
 import { useAccent } from "../../lib/accent";
 import { changePassword, signOut, updateUser } from "../../lib/auth-client";
 import { meKey } from "../../lib/me";
+import { usePreferences, useSetPreferences } from "../../lib/preferences";
 
 const timezone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 
@@ -136,6 +137,68 @@ export function Notifications() {
           {note.text}
         </p>
       )}
+    </div>
+  );
+}
+
+const priceCaps = [null, 50, 100, 200, 300, 500, 1000] as const;
+
+/** What Discover shows: which side of the catalog, a price to stay under, and categories to leave out. */
+export function DiscoverPreferences() {
+  const { data: prefs } = usePreferences();
+  const set = useSetPreferences();
+  if (!prefs) return <Skeleton className="h-64 w-full" />;
+  const hidden = new Set<string>(prefs.hiddenCategories);
+
+  return (
+    <div className="flex flex-col gap-8">
+      <section>
+        <h3 className="text-body font-semibold text-ink">Shop for</h3>
+        <p className="mt-1 text-callout font-normal text-muted">Unisex pieces show either way.</p>
+        <SegmentedControl
+          className="mt-4"
+          label="Shop for"
+          value={prefs.shopFor ?? "all"}
+          onValueChange={(value) => set.mutate({ shopFor: value as ShopFor })}
+          segments={[
+            { value: "women", label: "Womenswear" },
+            { value: "men", label: "Menswear" },
+            { value: "all", label: "Everything" },
+          ]}
+        />
+      </section>
+
+      <section>
+        <h3 className="text-body font-semibold text-ink">Price</h3>
+        <p className="mt-1 text-callout font-normal text-muted">Pieces over it come up less often. Nothing is hidden for its price.</p>
+        <div role="group" aria-label="Price to stay under" className="mt-4 flex flex-wrap gap-2">
+          {priceCaps.map((cap) => (
+            <Chip key={cap ?? "any"} selected={prefs.priceMaxUsd === cap} onClick={() => set.mutate({ priceMaxUsd: cap })}>
+              {cap === null ? "Any price" : `Under $${cap.toLocaleString()}`}
+            </Chip>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <h3 className="text-body font-semibold text-ink">Categories</h3>
+        <p className="mt-1 text-callout font-normal text-muted">
+          What the feed shows. Turn one off to leave it out; you can still open it on its own in Discover.
+        </p>
+        <div role="group" aria-label="Categories in the feed" className="mt-4 flex flex-wrap gap-2">
+          {catalogCategories.map((c) => (
+            <Chip
+              key={c.id}
+              selected={!hidden.has(c.id)}
+              onClick={() =>
+                set.mutate({ hiddenCategories: hidden.has(c.id) ? prefs.hiddenCategories.filter((h) => h !== c.id) : [...prefs.hiddenCategories, c.id] })
+              }
+            >
+              {c.label}
+            </Chip>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

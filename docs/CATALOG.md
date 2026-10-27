@@ -96,7 +96,7 @@ Rough scale: 100,000 good stores × 500 products is 50M products. A weekly pass 
 ## 7. Pipeline
 
 1. **Parse and normalize.** Units, currency, condition vocabulary, URL canonicalization, image URL normalization.
-2. **Enrich (model, once per new or changed product).** Category in our taxonomy, color, material, style tags, gender and fit, size system, condition detail for used items. A small, cheap model reads title, description and the main image and returns structured fields with a confidence. Low-confidence fields are left empty rather than guessed.
+2. **Enrich (model, once per new or changed product).** Category in our taxonomy, color, material, style tags, gender and fit, size system, condition detail for used items. A small, cheap model reads title, description and the main image and returns structured fields with a confidence. Low-confidence fields are left empty rather than guessed. **Today:** department (women, men, unisex) and category (18 of them, in four groups: `packages/shared/src/taxonomy.ts`) for every catalog product, from the store's own words first and a classifier on the photo vector for the rest, with held-out accuracy reported on each build ([lab/brands/README.md](../lab/brands/README.md#products-and-categories)). Products the classifier isn't sure of are left out rather than misfiled.
 3. **Embed.** One text vector and one image vector per product, from an embedding model (open models like CLIP-style image encoders self-host well). Re-embedded only when the content hash changes.
 4. **Match.** Decide which listings are the same product (section 9).
 5. **Score.** Store and product quality (section 10), and deal strength from price history.

@@ -1,4 +1,4 @@
-import type { BrandCard as Brand, BrandMatch } from "@closet/shared";
+import { type BrandCard as Brand, type BrandMatch, departmentLabel } from "@closet/shared";
 import { HeartIcon, IconButton, cn, focusRing } from "@closet/ui";
 import type { ReactNode } from "react";
 import { Link } from "react-router";
@@ -15,12 +15,13 @@ const platforms: Record<string, string> = {
   salesforce: "Salesforce",
 };
 
-/** "London, GB · $80–$200 · Shopify", or for brands we know by name, where we've seen them. */
+/** "London, GB · Womenswear · $80–$200 · Shopify", or for brands we know by name, where we've seen them. */
 export function brandMeta(b: Brand) {
   if (b.kind === "name") return `Seen at ${b.seenAt ?? "a few"} stores`;
   const price =
     b.priceLowUsd && b.priceHighUsd ? (b.priceLowUsd === b.priceHighUsd ? `$${b.priceLowUsd}` : `$${b.priceLowUsd}–$${b.priceHighUsd}`) : null;
-  return [b.where, price, b.platform ? (platforms[b.platform] ?? "Own site") : null].filter(Boolean).join(" · ");
+  const side = b.department ? departmentLabel[b.department] : null;
+  return [b.where, side, price, b.platform ? (platforms[b.platform] ?? "Own site") : null].filter(Boolean).join(" · ");
 }
 
 /** The heart on a brand: likes it, or takes the like back. The strongest taste signal, but optional. */
