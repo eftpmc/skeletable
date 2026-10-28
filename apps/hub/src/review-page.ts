@@ -13,6 +13,7 @@ export function reviewPage(name: string): string {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Check ${escape(name)}</title>
+<link rel="icon" href="data:,">
 <style>
   :root { --bg: #fafaf9; --card: #fff; --ink: #1c1917; --muted: #78716c; --line: #e7e5e4; --accent: #4f46e5; --good: #15803d; color-scheme: light dark; }
   @media (prefers-color-scheme: dark) { :root { --bg: #0c0a09; --card: #1c1917; --ink: #f5f5f4; --muted: #a8a29e; --line: #292524; --accent: #818cf8; --good: #4ade80; } }
