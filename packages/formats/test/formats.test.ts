@@ -8,6 +8,7 @@ import {
   parseAnswer,
   parseFieldValue,
   readingSchema,
+  toMinorUnits,
   unpackVector,
 } from "../src/index.js";
 
@@ -20,6 +21,15 @@ describe("reading", () => {
       price: { amount: 24000, currency: "USD" },
     });
     expect(reading).toMatchObject({ title: "Wool coat", tags: [], images: [], variants: [] });
+  });
+
+  it("counts prices in each currency's own minor units", () => {
+    expect(toMinorUnits("12.50", "USD")).toBe(1250);
+    expect(toMinorUnits("9900", "JPY")).toBe(9900);
+    expect(toMinorUnits(9900, "JPY")).toBe(9900);
+    expect(toMinorUnits("1.234", "KWD")).toBe(1234);
+    expect(toMinorUnits("free", "USD")).toBeUndefined();
+    expect(toMinorUnits("-5", "USD")).toBeUndefined();
   });
 
   it("rejects prices that aren't whole minor units", () => {

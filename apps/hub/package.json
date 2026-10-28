@@ -1,0 +1,26 @@
+{
+  "name": "@skeleton/hub",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "hub": "tsx --env-file-if-exists=../../.env src/cli.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@skeleton/formats": "workspace:*",
+    "@skeleton/hub-db": "workspace:*",
+    "@skeleton/readers": "workspace:*",
+    "drizzle-orm": "^0.45.4",
+    "fflate": "^0.8.3",
+    "node-html-parser": "^9.0.5",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.0"
+  }
+}

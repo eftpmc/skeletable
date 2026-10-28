@@ -39,6 +39,8 @@ export type SafeResponse = {
   status: number;
   contentType: string;
   body: Buffer;
+  // The server's Retry-After, when it asks to be left alone for a while (429, 503).
+  retryAfter?: string;
 };
 
 export const USER_AGENT = "Mozilla/5.0 (compatible; SkeletonBot/0.1; +https://github.com/eftpmc/skeleton)";
@@ -59,7 +61,7 @@ export async function safeFetch(input: string, options: SafeFetchOptions = {}): 
     if (response.status >= 400 && !options.allowHttpErrors) {
       throw new FetchError(`Request failed with status ${response.status}`, "http_error", response.status);
     }
-    return { url: url.toString(), status: response.status, contentType: response.contentType, body: response.body };
+    return { url: url.toString(), status: response.status, contentType: response.contentType, body: response.body, retryAfter: response.retryAfter };
   }
   throw new FetchError("Too many redirects", "network");
 }
@@ -78,7 +80,7 @@ function parseUrl(input: string): URL {
   return url;
 }
 
-type RawResponse = { status: number; location?: string; contentType: string; body: Buffer };
+type RawResponse = { status: number; location?: string; contentType: string; body: Buffer; retryAfter?: string };
 
 function request(url: URL, options: SafeFetchOptions): Promise<RawResponse> {
   const { maxBytes = 5 * 1024 * 1024, timeoutMs = 10_000, allowPrivate = false } = options;
@@ -155,7 +157,12 @@ function request(url: URL, options: SafeFetchOptions): Promise<RawResponse> {
           chunks.push(chunk);
         });
         stream.on("end", () =>
-          resolve({ status, contentType: String(res.headers["content-type"] ?? ""), body: Buffer.concat(chunks) }),
+          resolve({
+            status,
+            contentType: String(res.headers["content-type"] ?? ""),
+            body: Buffer.concat(chunks),
+            retryAfter: res.headers["retry-after"] === undefined ? undefined : String(res.headers["retry-after"]),
+          }),
         );
         stream.on("error", (error) => reject(new FetchError(error.message, "network")));
       },

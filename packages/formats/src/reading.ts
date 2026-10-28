@@ -3,9 +3,22 @@ import { z } from "zod";
 /**
  * What a site showed for one listing, as a reader saw it: the raw layer. Readers fill in what the
  * site states and leave the rest out; nothing here is inferred, and AI never writes it. Prices are
- * in minor units (cents) of the stated currency, so nothing is lost to rounding or conversion.
+ * whole minor units of the stated currency (cents for USD, yen for JPY), so nothing is lost to
+ * rounding or conversion.
  */
 export const READING_FORMAT = 1;
+
+/** How many decimals a currency's prices have: 2 for USD, 0 for JPY, 3 for KWD. */
+export function currencyDigits(currency: string): number {
+  return new Intl.NumberFormat("en", { style: "currency", currency }).resolvedOptions().maximumFractionDigits ?? 2;
+}
+
+/** A decimal price as the site shows it ("12.50", 9900) in the currency's minor units; undefined if it isn't one. */
+export function toMinorUnits(price: string | number, currency: string): number | undefined {
+  if (price === "" || !/^\d+(\.\d+)?$/.test(String(price).trim())) return undefined;
+  const value = Math.round(Number(price) * 10 ** currencyDigits(currency));
+  return Number.isSafeInteger(value) && value >= 0 ? value : undefined;
+}
 
 const url = z.string().url().max(2000);
 const text = (max: number) => z.string().trim().min(1).max(max);
