@@ -1,5 +1,5 @@
 import type { ReadingInput } from "@skeleton/formats";
-import { looksLikeProduct } from "@skeleton/readers";
+import { looksLikeProduct } from "../sitemap.js";
 import { parse, type HTMLElement } from "node-html-parser";
 import { parsePrice } from "./recipe.js";
 import { linkPages } from "./link-pages.js";

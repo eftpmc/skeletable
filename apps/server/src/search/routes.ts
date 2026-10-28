@@ -1,8 +1,8 @@
 import { searchQuerySchema, intentFromParam } from "@skeleton/shared";
 import { Hono } from "hono";
 import { z } from "zod";
-import { FetchError } from "@skeleton/readers";
-import { StoreUnavailableError } from "@skeleton/readers";
+import { FetchError } from "@skeleton/engine";
+import { StoreUnavailableError } from "@skeleton/engine";
 import type { AppEnv } from "../env.js";
 import type { SourceInfo } from "@skeleton/shared";
 import { NotFoundError, type SearchService } from "./service.js";

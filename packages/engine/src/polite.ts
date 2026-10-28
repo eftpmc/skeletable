@@ -1,5 +1,6 @@
-import { FetchError, parseRobots, robotsAllows, safeFetch, type Robots, type SafeFetchOptions } from "@skeleton/readers";
-import type { ReadContext } from "../readers/index.js";
+import { FetchError, safeFetch, type SafeFetchOptions } from "./safe-fetch.js";
+import { parseRobots, robotsAllows, type Robots } from "./sitemap.js";
+import type { ReadContext } from "./readers/index.js";
 
 export class RobotsBlocked extends Error {
   constructor(readonly url: string) {

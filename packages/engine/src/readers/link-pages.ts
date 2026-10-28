@@ -1,4 +1,4 @@
-import { looksLikeProduct } from "@skeleton/readers";
+import { looksLikeProduct } from "../sitemap.js";
 import { parse } from "node-html-parser";
 import { sameSite } from "./sitemap-pages.js";
 import type { ReadContext } from "./types.js";

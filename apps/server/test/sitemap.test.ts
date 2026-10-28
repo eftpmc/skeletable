@@ -1,7 +1,7 @@
 import zlib from "node:zlib";
 import { afterEach, describe, expect, it } from "vitest";
 import { sitemapConnector } from "../src/catalog/connectors/index.js";
-import { discoverProducts, looksLikeProduct, parseRobots, parseSitemap, robotsAllows } from "@skeleton/readers";
+import { discoverProducts, looksLikeProduct, parseRobots, parseSitemap, robotsAllows } from "@skeleton/engine";
 import { parseProductPage } from "../src/closet/link-preview.js";
 import { bytes, html, json, redirect, type Route, startFixtureServer } from "./helpers/fixture-server.js";
 

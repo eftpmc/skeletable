@@ -15,7 +15,7 @@
     "@modelcontextprotocol/sdk": "^1.32.2",
     "@skeleton/formats": "workspace:*",
     "@skeleton/hub-db": "workspace:*",
-    "@skeleton/readers": "workspace:*",
+    "@skeleton/engine": "workspace:*",
     "@skeleton/shared": "workspace:*",
     "drizzle-orm": "^0.45.4",
     "fflate": "^0.8.3",

@@ -1,9 +1,9 @@
 import type { LinkPreview } from "@skeleton/shared";
 import { parse } from "node-html-parser";
 import { fetchLinkPreview } from "../../closet/link-preview.js";
-import type { SafeFetchOptions } from "@skeleton/readers";
-import { discoverProducts, type DiscoverySource } from "@skeleton/readers";
-import { readStorefront, StoreUnavailableError, type StoreObservation } from "@skeleton/readers";
+import type { SafeFetchOptions } from "@skeleton/engine";
+import { discoverProducts, type DiscoverySource } from "@skeleton/engine";
+import { readStorefront, StoreUnavailableError, type StoreObservation } from "@skeleton/engine";
 
 export type Discovery = {
   observation: StoreObservation;

@@ -1,10 +1,10 @@
 import { schema } from "@skeleton/hub-db";
 import { and, eq, isNull } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
+import { parsePrice } from "@skeleton/engine";
 import { hubApi, issueToken } from "../src/api.js";
 import { crawlSource, type CrawlOptions } from "../src/engine/crawl.js";
 import { decideProposal, flagsFor, pendingProposals, proposeSite } from "../src/proposals.js";
-import { parsePrice } from "../src/readers/recipe.js";
 import { setRole } from "../src/roles.js";
 import { useHubDb } from "./helpers/db.js";
 import { html, startFixtureServer, type Route } from "./helpers/fixture-server.js";

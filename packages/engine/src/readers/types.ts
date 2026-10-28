@@ -1,5 +1,5 @@
 import type { ReadingInput } from "@skeleton/formats";
-import type { SafeResponse } from "@skeleton/readers";
+import type { SafeResponse } from "../safe-fetch.js";
 
 /**
  * What a reader gets from the crawl engine: a fetch that is already polite (robots.txt checked,

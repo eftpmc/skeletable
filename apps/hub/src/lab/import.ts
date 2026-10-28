@@ -4,9 +4,9 @@ import { join } from "node:path";
 import { type HubDb, schema } from "@skeleton/hub-db";
 import { and, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
+import { shopifyProductSchema, shopifyReading } from "@skeleton/engine";
 import { contributorId } from "../contributors.js";
 import { storeReadings } from "../engine/store.js";
-import { shopifyProductSchema, shopifyReading } from "../readers/shopify.js";
 import { domainOf } from "../sources.js";
 import { npyRow, npyStrings, readNpz } from "./npz.js";
 

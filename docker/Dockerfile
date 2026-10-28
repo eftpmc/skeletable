@@ -8,7 +8,7 @@ COPY apps/server/package.json apps/server/
 COPY apps/web/package.json apps/web/
 COPY packages/db/package.json packages/db/
 COPY packages/formats/package.json packages/formats/
-COPY packages/readers/package.json packages/readers/
+COPY packages/engine/package.json packages/engine/
 COPY packages/shared/package.json packages/shared/
 COPY packages/ui/package.json packages/ui/
 RUN pnpm install --frozen-lockfile

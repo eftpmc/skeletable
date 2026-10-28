@@ -2,11 +2,9 @@ import { readingSchema } from "@skeleton/formats";
 import { schema } from "@skeleton/hub-db";
 import { eq } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
+import { readStructured, sameSite, shopifyProductSchema, shopifyReading, standardReader } from "@skeleton/engine";
 import { crawlSource, type CrawlOptions } from "../src/engine/crawl.js";
 import { decideProposal, proposeSite } from "../src/proposals.js";
-import { sameSite } from "../src/readers/sitemap-pages.js";
-import { readStructured, standardReader } from "../src/readers/standard.js";
-import { shopifyProductSchema, shopifyReading } from "../src/readers/shopify.js";
 import { useHubDb } from "./helpers/db.js";
 import { html, startFixtureServer, type Route } from "./helpers/fixture-server.js";
 
@@ -149,7 +147,7 @@ describe("reading any shop from its structured data", () => {
       "/products/g": product("g"),
     });
     closers.push(listed.close, linked.close);
-    const ctxFor = async (server: typeof listed) => (await import("../src/engine/polite.js")).politeContext(new URL(server.url("/")), { pauseMs: 0, fetch: { allowPrivate: true } });
+    const ctxFor = async (server: typeof listed) => (await import("@skeleton/engine")).politeContext(new URL(server.url("/")), { pauseMs: 0, fetch: { allowPrivate: true } });
     const fromSitemap = await standardReader.sample!(new URL(listed.url("/")), null, await ctxFor(listed), 5);
     expect(fromSitemap).toMatchObject({ pagesFound: 5 });
     expect(fromSitemap.pages.filter((p) => p.reading)).toHaveLength(5);

@@ -1,5 +1,5 @@
 import type { Condition } from "@skeleton/shared";
-import { safeFetch } from "@skeleton/readers";
+import { safeFetch } from "@skeleton/engine";
 import { dollarsToCents, normalizeGtin } from "../normalize.js";
 import type { RawOffer, Source } from "./types.js";
 

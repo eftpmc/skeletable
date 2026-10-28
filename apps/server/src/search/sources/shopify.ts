@@ -1,4 +1,4 @@
-import { safeFetch } from "@skeleton/readers";
+import { safeFetch } from "@skeleton/engine";
 import { dollarsToCents, parseCondition } from "../normalize.js";
 import type { RawOffer, Source } from "./types.js";
 

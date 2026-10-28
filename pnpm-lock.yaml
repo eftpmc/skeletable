@@ -32,15 +32,15 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.32.2
         version: 1.32.2(zod@4.6.7)
+      '@skeleton/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
       '@skeleton/formats':
         specifier: workspace:*
         version: link:../../packages/formats
       '@skeleton/hub-db':
         specifier: workspace:*
         version: link:../../packages/hub-db
-      '@skeleton/readers':
-        specifier: workspace:*
-        version: link:../../packages/readers
       '@skeleton/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -84,12 +84,12 @@ importers:
       '@skeleton/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@skeleton/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
       '@skeleton/formats':
         specifier: workspace:*
         version: link:../../packages/formats
-      '@skeleton/readers':
-        specifier: workspace:*
-        version: link:../../packages/readers
       '@skeleton/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -211,6 +211,31 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  packages/engine:
+    dependencies:
+      '@skeleton/formats':
+        specifier: workspace:*
+        version: link:../formats
+      node-html-parser:
+        specifier: ^9.0.5
+        version: 9.0.5
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@types/node':
+        specifier: ^22.19.0
+        version: 22.20.5
+      tsx:
+        specifier: ^4.23.15
+        version: 4.23.15
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.0
+        version: 4.1.12(@types/node@22.20.5)(vite@8.3.5(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))
+
   packages/formats:
     dependencies:
       '@skeleton/shared':
@@ -251,31 +276,6 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
-
-  packages/readers:
-    dependencies:
-      '@skeleton/formats':
-        specifier: workspace:*
-        version: link:../formats
-      node-html-parser:
-        specifier: ^9.0.5
-        version: 9.0.5
-      zod:
-        specifier: ^4.6.7
-        version: 4.6.7
-    devDependencies:
-      '@types/node':
-        specifier: ^22.19.0
-        version: 22.20.5
-      tsx:
-        specifier: ^4.23.15
-        version: 4.23.15
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-      vitest:
-        specifier: ^4.0.0
-        version: 4.1.12(@types/node@22.20.5)(vite@8.3.5(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))
 
   packages/shared:
     dependencies:

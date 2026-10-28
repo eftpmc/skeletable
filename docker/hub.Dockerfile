@@ -9,13 +9,13 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
 COPY apps/hub/package.json apps/hub/
 COPY packages/formats/package.json packages/formats/
 COPY packages/hub-db/package.json packages/hub-db/
-COPY packages/readers/package.json packages/readers/
+COPY packages/engine/package.json packages/engine/
 COPY packages/shared/package.json packages/shared/
 RUN pnpm install --frozen-lockfile --filter @skeleton/hub...
 COPY apps/hub apps/hub
 COPY packages/formats packages/formats
 COPY packages/hub-db packages/hub-db
-COPY packages/readers packages/readers
+COPY packages/engine packages/engine
 COPY packages/shared packages/shared
 RUN pnpm --filter @skeleton/hub build
 RUN pnpm deploy --legacy --filter @skeleton/hub --prod /out

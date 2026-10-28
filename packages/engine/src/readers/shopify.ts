@@ -1,5 +1,5 @@
 import { toMinorUnits, type ReadingInput } from "@skeleton/formats";
-import { FetchError } from "@skeleton/readers";
+import { FetchError } from "../safe-fetch.js";
 import { parse } from "node-html-parser";
 import { z } from "zod";
 import type { Reader } from "./types.js";

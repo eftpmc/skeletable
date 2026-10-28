@@ -1,4 +1,4 @@
-import { parseRobots, parseSitemap, type ParsedSitemap } from "@skeleton/readers";
+import { parseRobots, parseSitemap, type ParsedSitemap } from "../sitemap.js";
 import type { ReadContext } from "./types.js";
 
 // Sitemap files one walk reads at most: a big shop's index points to dozens.

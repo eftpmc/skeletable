@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { pageConnector, shopifyConnector, reconcileProduct } from "../src/catalog/connectors/index.js";
-import { readStorefront } from "@skeleton/readers";
+import { readStorefront } from "@skeleton/engine";
 import { fetchLinkPreview } from "../src/closet/link-preview.js";
 import { html, json, redirect, startFixtureServer } from "./helpers/fixture-server.js";
 
