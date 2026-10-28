@@ -6,6 +6,7 @@ import { hubApi, issueToken } from "../src/api.js";
 import { contributorId } from "../src/contributors.js";
 import { storeReadings } from "../src/engine/store.js";
 import { claimJob, JobError, queueExtractFacts, submitAnswer } from "../src/jobs.js";
+import { setRole } from "../src/roles.js";
 import { runWorker } from "../src/worker.js";
 import { useHubDb } from "./helpers/db.js";
 
@@ -67,6 +68,19 @@ describe("the job queue", () => {
     expect(done!.accepted).toBe(true);
     // Placed now, so it isn't queued again.
     expect(await queueExtractFacts(db)).toBe(0);
+  });
+
+  it("ranks a person's answer as a person's only when they hold a curator's role", async () => {
+    await listings("Hunter", "Ranger");
+    await queueExtractFacts(db);
+    const ana = await contributorId(db, "ana", "person");
+    const first = (await claimJob(db, ana))!;
+    await submitAnswer(db, first.assignmentId, ana, { answer });
+    await setRole(db, "ana", "curator");
+    const second = (await claimJob(db, ana))!;
+    await submitAnswer(db, second.assignmentId, ana, { answer });
+    const methods = await db.select({ jobId: listingAnnotation.jobId, method: listingAnnotation.method }).from(listingAnnotation).where(eq(listingAnnotation.field, "category"));
+    expect(Object.fromEntries(methods.map((m) => [m.jobId, m.method]))).toEqual({ [first.jobId]: "agent", [second.jobId]: "person" });
   });
 
   it("keeps a home category for a home thing, but no clothing category or department on it", async () => {

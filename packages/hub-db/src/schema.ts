@@ -35,6 +35,10 @@ const oneOf = (column: string, values: readonly string[]) =>
   sql.raw(`${column} in (${values.map((v) => `'${v}'`).join(", ")})`);
 
 export const CONTRIBUTOR_KINDS = ["person", "worker", "agent", "system"] as const;
+// What a contributor may change. Anyone with a token answers jobs, which count only when copies
+// agree; curators, who applied and were approved, check and correct directly; the owner approves them.
+export const ROLES = ["contributor", "curator", "owner"] as const;
+export const APPLICATION_STATUSES = ["pending", "approved", "declined"] as const;
 export const SOURCE_STATUSES = ["candidate", "approved", "paused", "rejected"] as const;
 export const READERS = ["shopify", "woocommerce", "bigcommerce", "squarespace", "standard", "recipe"] as const;
 export const RECIPE_STATUSES = ["draft", "live", "retired"] as const;
@@ -45,7 +49,7 @@ export const SUBJECTS = ["listing", "source"] as const;
 
 /**
  * Who did the work: a person, a local worker, an agent session, or the hub's own rules.
- * `trust` (0 to 1) is learned from hidden test jobs and agreement with others.
+ * `trust` (0 to 1) is learned from hidden test jobs and agreement with others; `role` is granted.
  */
 export const contributor = pgTable(
   "contributor",
@@ -54,11 +58,34 @@ export const contributor = pgTable(
     handle: text("handle").notNull().unique(),
     kind: text("kind").notNull(),
     trust: real("trust").notNull().default(0.5),
+    role: text("role").notNull().default("contributor"),
     // SHA-256 of the token a worker or agent sends with its answers; null for those that never call in.
     tokenHash: text("token_hash").unique(),
     createdAt,
   },
-  () => [check("contributor_kind_check", oneOf("kind", CONTRIBUTOR_KINDS))],
+  () => [check("contributor_kind_check", oneOf("kind", CONTRIBUTOR_KINDS)), check("contributor_role_check", oneOf("role", ROLES))],
+);
+
+/** A contributor asking for a role, with what they'd do with it; the owner decides. One open at a time. */
+export const application = pgTable(
+  "application",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    contributorId: uuid("contributor_id")
+      .notNull()
+      .references(() => contributor.id, { onDelete: "cascade" }),
+    role: text("role").notNull(),
+    note: text("note").notNull(),
+    status: text("status").notNull().default("pending"),
+    decidedById: uuid("decided_by_id").references(() => contributor.id, { onDelete: "set null" }),
+    decidedAt: timestamp("decided_at", { withTimezone: true }),
+    createdAt,
+  },
+  (table) => [
+    check("application_role_check", oneOf("role", ["curator"])),
+    check("application_status_check", oneOf("status", APPLICATION_STATUSES)),
+    uniqueIndex("application_one_open").on(table.contributorId).where(sql`status = 'pending'`),
+  ],
 );
 
 /**

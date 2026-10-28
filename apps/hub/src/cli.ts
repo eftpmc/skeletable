@@ -14,6 +14,7 @@ import { serve } from "@hono/node-server";
 import { hubApi, issueToken } from "./api.js";
 import { queueExtractFacts } from "./jobs.js";
 import { loadPhotoVectors, photosToEmbed } from "./photos.js";
+import { pendingApplications, setRole, type Role } from "./roles.js";
 import { runWorker } from "./worker.js";
 import { addSource, domainOf } from "./sources.js";
 
@@ -36,6 +37,8 @@ const usage = `Usage: hub <command>
   benchmark agree <name> <a> <b> <out>  answer where two labellers agree; write the disagreements to <out>
   benchmark answers <name> <file>       record a judge's answers ([{ listingId, answer }]) as the panel's
   benchmark score <name> [model]        score a local model against the checked answers
+  role <handle> <contributor|curator|owner>   set a contributor's role (how the first owner is made)
+  applications                          requests for a role, waiting on the owner
   photos todo <file> [count]            list listings that need a photo vector, for embed/photos.py (default all)
   photos load <file>                    store the vectors embed/photos.py wrote
   status                                counts`;
@@ -130,6 +133,11 @@ try {
   } else if (command === "benchmark" && args[0] === "score" && args[1]) {
     const score = await scoreModel(db, args[1], { ollama: process.env.OLLAMA_URL ?? "http://localhost:11434", model: args[2] ?? "qwen3:4b" });
     console.dir({ ...score, misses: score.misses.slice(0, 40) }, { depth: 4 });
+  } else if (command === "role" && args[0] && schema.ROLES.includes(args[1] as Role)) {
+    await setRole(db, args[0], args[1] as Role);
+    console.log({ handle: args[0], role: args[1] });
+  } else if (command === "applications") {
+    console.log(await pendingApplications(db));
   } else if (command === "photos" && args[0] === "todo" && args[1]) {
     const todo = await photosToEmbed(db, args[2] ? Number(args[2]) : 1_000_000);
     await writeFile(args[1], todo.map((t) => JSON.stringify(t)).join("\n") + "\n");

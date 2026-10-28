@@ -1,12 +1,13 @@
 import { createHash, randomBytes } from "node:crypto";
 import { type HubDb, schema } from "@skeleton/hub-db";
 import { eq } from "drizzle-orm";
-import { Hono } from "hono";
+import { type Context, Hono } from "hono";
 import { z } from "zod";
 import { contributorId } from "./contributors.js";
 import { benchmarkItems, recordCheck } from "./benchmark.js";
 import { claimJob, JobError, submitAnswer } from "./jobs.js";
 import { reviewPage } from "./review-page.js";
+import { applyForRole, canCurate, decideApplication, pendingApplications, RoleError, whoIs } from "./roles.js";
 
 const { contributor } = schema;
 
@@ -56,13 +57,39 @@ export function hubApi(db: HubDb) {
   });
   app.get("/api/benchmark/:name", async (c) => c.json(await benchmarkItems(db, c.req.param("name"))));
   app.put("/api/benchmark/:name/:listingId", async (c) => {
-    const [who] = await db.select({ kind: contributor.kind }).from(contributor).where(eq(contributor.id, c.get("contributorId")));
-    if (who?.kind !== "person") return c.json({ error: "only a person can check a benchmark" }, 403);
+    const who = await whoIs(db, c.get("contributorId"));
+    if (who?.kind !== "person" || !canCurate(who.role)) return c.json({ error: "checking a benchmark takes a curator's role" }, 403);
     try {
       return c.json(await recordCheck(db, c.req.param("name"), c.req.param("listingId"), c.get("contributorId"), await c.req.json()));
     } catch (error) {
       return c.json({ error: error instanceof z.ZodError ? error.issues[0]?.message : error instanceof Error ? error.message : "invalid" }, 422);
     }
   });
+  app.get("/api/me", async (c) => c.json(await whoIs(db, c.get("contributorId"))));
+  app.post("/api/applications", (c) => roleCall(c, async () => applyForRole(db, c.get("contributorId"), await c.req.json().catch(() => null))));
+  app.get("/api/applications", (c) =>
+    roleCall(c, async () => {
+      if ((await whoIs(db, c.get("contributorId")))?.role !== "owner") throw new RoleError(403, "only the owner sees requests");
+      return pendingApplications(db);
+    }),
+  );
+  app.post("/api/applications/:id/decision", (c) =>
+    roleCall(c, async () => {
+      const body = z.object({ approve: z.boolean() }).safeParse(await c.req.json().catch(() => null));
+      if (!body.success) throw new RoleError(422, "send { approve: true } or { approve: false }");
+      const id = z.uuid().safeParse(c.req.param("id"));
+      if (!id.success) throw new RoleError(404, "no request waiting with that id");
+      return decideApplication(db, c.get("contributorId"), id.data, body.data.approve);
+    }),
+  );
   return app;
+}
+
+async function roleCall(c: Context, run: () => Promise<unknown>) {
+  try {
+    return c.json(await run());
+  } catch (error) {
+    if (error instanceof RoleError) return c.json({ error: error.message }, error.status);
+    throw error;
+  }
 }

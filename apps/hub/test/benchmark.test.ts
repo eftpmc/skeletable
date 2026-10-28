@@ -8,6 +8,7 @@ import { benchmarkItems, drawBenchmark, recordCheck, saveDrafts, scoreModel, set
 import { contributorId } from "../src/contributors.js";
 import { storeReadings } from "../src/engine/store.js";
 import { resolveListings } from "../src/resolve.js";
+import { setRole } from "../src/roles.js";
 import { useHubDb } from "./helpers/db.js";
 
 const db = useHubDb();
@@ -50,11 +51,12 @@ describe("benchmarks", () => {
     ])).toEqual({ saved: 1, invalid: 1 });
   });
 
-  it("records a person's check, which also corrects the catalog", async () => {
+  it("records a curator's check, which also corrects the catalog", async () => {
     await catalog();
     await drawBenchmark(db, "b1", { random: 4, unplaced: 0 });
     const towel = (await benchmarkItems(db, "b1")).find((i) => i.input.title === "Linen Towel")!;
     const zack = await contributorId(db, "zack", "person");
+    await setRole(db, "zack", "curator");
     await recordCheck(db, "b1", towel.listingId, zack, { area: "home", category: "bath", department: null, audience: "adults" });
     const [row] = await db.select().from(benchmark).where(eq(benchmark.listingId, towel.listingId));
     expect(row).toMatchObject({ answer: { category: "bath" }, checkedById: zack });
@@ -95,7 +97,7 @@ describe("benchmarks", () => {
     expect(score.byConfidence.find((c) => c.at === 0.5)).toMatchObject({ kept: 1 });
   });
 
-  it("serves the checking page and lets only people check", async () => {
+  it("serves the checking page and lets only curators check", async () => {
     await catalog();
     await drawBenchmark(db, "b1", { random: 4, unplaced: 0 });
     const api = hubApi(db);
@@ -105,6 +107,8 @@ describe("benchmarks", () => {
       api.request(`/api/benchmark/b1/${first!.listingId}`, { method: "PUT", headers: { authorization: `Bearer ${token}`, "content-type": "application/json" }, body: JSON.stringify(coat) });
     expect((await put(await issueToken(db, "gpu", "worker"))).status).toBe(403);
     const person = await issueToken(db, "zack", "person");
+    expect((await put(person)).status).toBe(403);
+    await setRole(db, "zack", "curator");
     expect((await put(person)).status).toBe(200);
     const listed = (await (await api.request("/api/benchmark/b1", { headers: { authorization: `Bearer ${person}` } })).json()) as { answer: unknown }[];
     expect(listed.filter((i) => i.answer)).toHaveLength(1);

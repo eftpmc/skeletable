@@ -29,6 +29,13 @@
       "when": 1793158263478,
       "tag": "0003_benchmark",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793163192776,
+      "tag": "0004_roles",
+      "breakpoints": true
     }
   ]
 }

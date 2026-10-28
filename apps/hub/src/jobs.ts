@@ -3,6 +3,7 @@ import { type HubDb, schema } from "@skeleton/hub-db";
 import { and, eq, sql } from "drizzle-orm";
 import { areaOf, catalogCategorySchema } from "@skeleton/shared";
 import { resolveListings } from "./resolve.js";
+import { directMethod } from "./roles.js";
 
 const { assignment, contributor, job, listingAnnotation } = schema;
 
@@ -65,7 +66,10 @@ export async function claimJob(db: HubDb, contributorId: string, can: { kinds?: 
 
 export type Submission = { answer: unknown; model?: string; promptVersion?: string };
 
-const METHOD_BY_KIND = { person: "person", agent: "agent", worker: "model", system: "rule" } as const;
+// How a settled answer ranks, by who gave it. A person ranks as one only with a curator's role.
+const METHOD_BY_KIND = { person: "agent", agent: "agent", worker: "model", system: "rule" } as const;
+const methodOf = (author: { kind: string; role: string } | undefined) =>
+  author?.kind === "person" ? directMethod(author) : METHOD_BY_KIND[(author?.kind ?? "worker") as keyof typeof METHOD_BY_KIND];
 
 /**
  * Record a contributor's answer. It must fit the job kind's answer format, or nothing is stored.
@@ -105,7 +109,7 @@ export async function submitAnswer(db: HubDb, assignmentId: string, contributorI
     for (const a of answers) await tx.update(assignment).set({ accepted: winners.includes(a) }).where(eq(assignment.id, a.id));
     await tx.update(job).set({ status: "settled", settledAt: new Date() }).where(eq(job.id, claimed.job.id));
     const result = chosen.result as { answer: Record<string, unknown>; model?: string; promptVersion?: string };
-    const [author] = await tx.select({ kind: contributor.kind }).from(contributor).where(eq(contributor.id, chosen.contributorId));
+    const [author] = await tx.select({ kind: contributor.kind, role: contributor.role }).from(contributor).where(eq(contributor.id, chosen.contributorId));
     const rows = annotationsFrom(claimed.job.kind as JobKind, result.answer).map(({ field, value }) => ({
       listingId: claimed.job.subjectId,
       field,
@@ -113,7 +117,7 @@ export async function submitAnswer(db: HubDb, assignmentId: string, contributorI
       value,
       confidence: typeof result.answer.confidence === "number" ? result.answer.confidence : null,
       reason: typeof result.answer.reason === "string" ? result.answer.reason : null,
-      method: METHOD_BY_KIND[(author?.kind ?? "worker") as keyof typeof METHOD_BY_KIND],
+      method: methodOf(author),
       model: result.model ?? null,
       promptVersion: result.promptVersion ?? null,
       contributorId: chosen.contributorId,

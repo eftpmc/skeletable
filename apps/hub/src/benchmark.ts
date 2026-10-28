@@ -4,6 +4,7 @@ import { areaOf, areaSchema, catalogCategorySchema, departments } from "@skeleto
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { resolveListings } from "./resolve.js";
+import { directMethod } from "./roles.js";
 import { instructionsFor } from "./worker.js";
 
 const { benchmark, contributor, listingAnnotation } = schema;
@@ -100,13 +101,13 @@ export async function saveDrafts(db: HubDb, name: string, drafts: { listingId: s
 
 /**
  * A check of one listing: kept as the set's answer, and every stated fact added as an annotation by
- * whoever checked it (a person's outranks every model's; a panel of agents' outranks a single model's),
+ * whoever checked it (a curator's outranks every model's; a panel of agents' outranks a single model's),
  * so the catalog is corrected at the same time.
  */
 export async function recordCheck(db: HubDb, name: string, listingId: string, contributorId: string, check: unknown): Promise<Check> {
   const answer = checkSchema.parse(check);
-  const [who] = await db.select({ kind: contributor.kind }).from(contributor).where(eq(contributor.id, contributorId));
-  const method = who?.kind === "person" ? "person" : "agent";
+  const [who] = await db.select({ kind: contributor.kind, role: contributor.role }).from(contributor).where(eq(contributor.id, contributorId));
+  const method = directMethod(who ?? null);
   const updated = await db
     .update(benchmark)
     .set({ answer, checkedById: contributorId, checkedAt: new Date() })
