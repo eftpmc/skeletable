@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { createDb, runMigrations } from "@closet/db";
+import { createDb, runMigrations } from "@skeleton/db";
 import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach } from "vitest";
 import { createApp, createServices } from "../../src/app.js";
@@ -12,7 +12,7 @@ import { CatalogIndex } from "../../src/catalog/search-index.js";
 import { DiskStorage } from "../../src/storage.js";
 
 export const DATABASE_URL =
-  process.env.TEST_DATABASE_URL ?? "postgres://postgres:postgres@localhost:5432/closet_test";
+  process.env.TEST_DATABASE_URL ?? "postgres://postgres:postgres@localhost:5432/skeleton_test";
 export const PUBLIC_URL = "http://localhost:3000";
 export const MEILI_URL = process.env.TEST_MEILI_URL ?? "http://localhost:7700";
 export const MEILI_MASTER_KEY = process.env.TEST_MEILI_MASTER_KEY ?? "test-master-key-0123456789";

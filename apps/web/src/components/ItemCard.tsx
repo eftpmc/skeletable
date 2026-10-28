@@ -1,5 +1,5 @@
-import type { Item } from "@closet/shared";
-import { cn, focusRing } from "@closet/ui";
+import type { Item } from "@skeleton/shared";
+import { cn, focusRing } from "@skeleton/ui";
 import { Link } from "react-router";
 
 export function ItemCard({ item }: { item: Item }) {

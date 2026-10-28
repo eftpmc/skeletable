@@ -1,4 +1,4 @@
-import { intentProposalSchema, keywordIntent, type IntentProposal, type SearchIntent } from "@closet/shared";
+import { intentProposalSchema, keywordIntent, type IntentProposal, type SearchIntent } from "@skeleton/shared";
 import { z } from "zod";
 import type { Config } from "../config.js";
 

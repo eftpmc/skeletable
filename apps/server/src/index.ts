@@ -1,4 +1,4 @@
-import { createDb, runMigrations } from "@closet/db";
+import { createDb, runMigrations } from "@skeleton/db";
 import { serve } from "@hono/node-server";
 import { startAlertsScheduler } from "./alerts/scheduler.js";
 import { createApp, createServices } from "./app.js";

@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { safeFetch } from "@closet/readers";
+import { safeFetch } from "@skeleton/readers";
 import { shopifySource } from "../src/search/sources/shopify.js";
 import { SearchService } from "../src/search/service.js";
-import type { Db } from "@closet/db";
+import type { Db } from "@skeleton/db";
 
-vi.mock("@closet/readers", async (importOriginal) => ({ ...await importOriginal<typeof import("@closet/readers")>(), safeFetch: vi.fn() }));
+vi.mock("@skeleton/readers", async (importOriginal) => ({ ...await importOriginal<typeof import("@skeleton/readers")>(), safeFetch: vi.fn() }));
 const fetch = vi.mocked(safeFetch);
 const shop = { domain: "shop.example", name: "Shop", condition: "new" as const, currency: "USD" };
 const response = (body: unknown) => ({ url: "https://shop.example/search/suggest.json", status: 200, headers: {}, contentType: "application/json", body: Buffer.from(JSON.stringify(body)) });

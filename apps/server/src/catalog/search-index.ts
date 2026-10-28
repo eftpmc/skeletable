@@ -1,4 +1,4 @@
-import { type CategoryId, type Department, catalogCategories, categoryLabel } from "@closet/shared";
+import { type CategoryId, type Department, catalogCategories, categoryLabel } from "@skeleton/shared";
 import { type EnqueuedTaskPromise, Meilisearch, MeilisearchApiError, type Settings } from "meilisearch";
 
 /** One catalog product as the search index holds it. */

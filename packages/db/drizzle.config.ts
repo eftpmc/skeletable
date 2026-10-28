@@ -5,6 +5,6 @@ export default defineConfig({
   schema: "./src/schema/index.ts",
   out: "./migrations",
   dbCredentials: {
-    url: process.env.DATABASE_URL ?? "postgres://postgres:postgres@localhost:5432/closet",
+    url: process.env.DATABASE_URL ?? "postgres://postgres:postgres@localhost:5432/skeleton",
   },
 });

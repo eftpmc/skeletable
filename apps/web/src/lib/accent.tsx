@@ -1,4 +1,4 @@
-import { type AccentName, accents, defaultAccent, isAccentName } from "@closet/ui";
+import { type AccentName, accents, defaultAccent, isAccentName } from "@skeleton/ui";
 import { type ReactNode, createContext, useContext, useEffect, useState } from "react";
 
 const storageKey = "accent";

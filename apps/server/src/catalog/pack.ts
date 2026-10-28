@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { gunzipSync } from "node:zlib";
-import { type Db, schema } from "@closet/db";
+import { type Db, schema } from "@skeleton/db";
 import { eq } from "drizzle-orm";
 import { catalogRecordSchema, importCatalog } from "./import.js";
 

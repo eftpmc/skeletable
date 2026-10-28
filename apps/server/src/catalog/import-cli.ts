@@ -1,6 +1,6 @@
 // Load the brand lab's export into the catalog: tsx src/catalog/import-cli.ts <catalog.jsonl>
 import { readFileSync } from "node:fs";
-import { createDb, runMigrations } from "@closet/db";
+import { createDb, runMigrations } from "@skeleton/db";
 import { catalogRecordSchema, importCatalog } from "./import.js";
 import { CatalogIndex } from "./search-index.js";
 import { CatalogService } from "./service.js";

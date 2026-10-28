@@ -26,18 +26,18 @@ importers:
 
   apps/server:
     dependencies:
-      '@closet/db':
-        specifier: workspace:*
-        version: link:../../packages/db
-      '@closet/readers':
-        specifier: workspace:*
-        version: link:../../packages/readers
-      '@closet/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
       '@hono/node-server':
         specifier: ^2.1.5
         version: 2.1.5(hono@4.13.14)
+      '@skeleton/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@skeleton/readers':
+        specifier: workspace:*
+        version: link:../../packages/readers
+      '@skeleton/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       better-auth:
         specifier: ^1.7.13
         version: 1.7.13(drizzle-kit@0.31.11)(drizzle-orm@0.45.4(kysely@0.29.7)(postgres@3.4.9))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(vitest@4.1.12(@types/node@22.20.5)(vite@8.3.5(@types/node@22.20.5)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.23.15)))
@@ -87,15 +87,15 @@ importers:
 
   apps/web:
     dependencies:
-      '@closet/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
-      '@closet/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       '@paper-design/shaders-react':
         specifier: 0.0.81
         version: 0.0.81(@types/react@19.3.0)(react@19.3.1)
+      '@skeleton/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@skeleton/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@tanstack/react-query':
         specifier: ^5.104.5
         version: 5.104.5(@types/react@19.3.0)(react@19.3.1)
@@ -158,7 +158,7 @@ importers:
 
   packages/formats:
     dependencies:
-      '@closet/shared':
+      '@skeleton/shared':
         specifier: workspace:*
         version: link:../shared
       zod:
@@ -199,7 +199,7 @@ importers:
 
   packages/readers:
     dependencies:
-      '@closet/formats':
+      '@skeleton/formats':
         specifier: workspace:*
         version: link:../formats
       node-html-parser:

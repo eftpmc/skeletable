@@ -1,4 +1,4 @@
-import { type CatalogItem, categoryLabel, departmentLabel } from "@closet/shared";
+import { type CatalogItem, categoryLabel, departmentLabel } from "@skeleton/shared";
 import {
   ArrowUpRightIcon,
   BookmarkIcon,
@@ -12,7 +12,7 @@ import {
   buttonClass,
   cn,
   focusRing,
-} from "@closet/ui";
+} from "@skeleton/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "react-router";

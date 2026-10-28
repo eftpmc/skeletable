@@ -1,4 +1,4 @@
-import type { BrandVerdict } from "@closet/shared";
+import type { BrandVerdict } from "@skeleton/shared";
 import {
   ArrowUpRightIcon,
   Button,
@@ -14,7 +14,7 @@ import {
   buttonClass,
   cn,
   focusRing,
-} from "@closet/ui";
+} from "@skeleton/ui";
 import { useNavigate, useParams } from "react-router";
 import { BrandCard, BrandGrid, brandMeta } from "../components/BrandCard";
 import { useBrand, useDwell, useVote } from "../lib/catalog";

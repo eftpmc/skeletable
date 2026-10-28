@@ -1,5 +1,5 @@
-import { type CategoryCount, type CategoryGroupId, type CategoryId, catalogCategorySchema, categoriesIn, categoryGroupSchema, categoryGroups, categoryLabel } from "@closet/shared";
-import { ChevronDownIcon, Chip, ChipRow, EmptyState, Menu, MenuChoices, ProductTile, ScreenTitle, Skeleton, TileGrid, cn } from "@closet/ui";
+import { type CategoryCount, type CategoryGroupId, type CategoryId, catalogCategorySchema, categoriesIn, categoryGroupSchema, categoryGroups, categoryLabel } from "@skeleton/shared";
+import { ChevronDownIcon, Chip, ChipRow, EmptyState, Menu, MenuChoices, ProductTile, ScreenTitle, Skeleton, TileGrid, cn } from "@skeleton/ui";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router";

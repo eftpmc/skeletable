@@ -1,4 +1,4 @@
-import { type Db, schema } from "@closet/db";
+import { type Db, schema } from "@skeleton/db";
 import { eq } from "drizzle-orm";
 import { zipSync } from "fflate";
 import type { Storage } from "../storage.js";

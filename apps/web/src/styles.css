@@ -1,8 +1,8 @@
 @import "tailwindcss";
-@import "@closet/ui/tokens.css";
-@import "@closet/ui/theme.css";
-@import "@closet/ui/motion.css";
-@import "@closet/ui/brand.css";
+@import "@skeleton/ui/tokens.css";
+@import "@skeleton/ui/theme.css";
+@import "@skeleton/ui/motion.css";
+@import "@skeleton/ui/brand.css";
 @source "../../../packages/ui/src";
 
 html,

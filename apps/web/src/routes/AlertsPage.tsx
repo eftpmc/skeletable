@@ -1,5 +1,5 @@
-import type { AlertEvent } from "@closet/shared";
-import { AlertCard, DropCard, EmptyState, ListGroup, ListRow, ScreenTitle, Skeleton, buttonClass } from "@closet/ui";
+import type { AlertEvent } from "@skeleton/shared";
+import { AlertCard, DropCard, EmptyState, ListGroup, ListRow, ScreenTitle, Skeleton, buttonClass } from "@skeleton/ui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { Link } from "react-router";

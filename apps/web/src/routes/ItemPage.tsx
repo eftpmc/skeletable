@@ -1,5 +1,5 @@
-import { type Item, categoryLabels } from "@closet/shared";
-import { ArrowUpRightIcon, Button, CheckIcon, ChevronLeftIcon, EmptyState, Sheet, buttonClass } from "@closet/ui";
+import { type Item, categoryLabels } from "@skeleton/shared";
+import { ArrowUpRightIcon, Button, CheckIcon, ChevronLeftIcon, EmptyState, Sheet, buttonClass } from "@skeleton/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";

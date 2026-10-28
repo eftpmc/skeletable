@@ -1,5 +1,5 @@
-import { type Condition, type ResultCard, type SearchIntent, budgetLabel, conditionLabels, conditions, intentFromParam, keywordIntent } from "@closet/shared";
-import { BellIcon, CheckIcon, ChevronDownIcon, EmptyState, Menu, MenuChoices, ProductTile, Skeleton, TileGrid, cn, focusRing } from "@closet/ui";
+import { type Condition, type ResultCard, type SearchIntent, budgetLabel, conditionLabels, conditions, intentFromParam, keywordIntent } from "@skeleton/shared";
+import { BellIcon, CheckIcon, ChevronDownIcon, EmptyState, Menu, MenuChoices, ProductTile, Skeleton, TileGrid, cn, focusRing } from "@skeleton/ui";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router";

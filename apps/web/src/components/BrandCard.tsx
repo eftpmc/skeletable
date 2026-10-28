@@ -1,5 +1,5 @@
-import { type BrandCard as Brand, type BrandMatch, departmentLabel } from "@closet/shared";
-import { HeartIcon, IconButton, cn, focusRing } from "@closet/ui";
+import { type BrandCard as Brand, type BrandMatch, departmentLabel } from "@skeleton/shared";
+import { HeartIcon, IconButton, cn, focusRing } from "@skeleton/ui";
 import type { ReactNode } from "react";
 import { Link } from "react-router";
 import { useVote } from "../lib/catalog";

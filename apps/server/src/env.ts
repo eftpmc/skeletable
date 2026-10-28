@@ -1,7 +1,7 @@
-import type { Db } from "@closet/db";
+import type { Db } from "@skeleton/db";
 import type { Auth } from "./auth.js";
 import type { Config } from "./config.js";
-import type { SourceInfo } from "@closet/shared";
+import type { SourceInfo } from "@skeleton/shared";
 import type { Source } from "./search/sources/index.js";
 import type { Mailer } from "./alerts/mailer.js";
 import type { Storage } from "./storage.js";

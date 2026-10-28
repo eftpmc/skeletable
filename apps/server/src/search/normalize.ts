@@ -1,4 +1,4 @@
-import type { Condition } from "@closet/shared";
+import type { Condition } from "@skeleton/shared";
 
 const STOP_WORDS = new Set(["the", "a", "an", "and", "for", "with", "of", "in", "by", "new", "brand"]);
 

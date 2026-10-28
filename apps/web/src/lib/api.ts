@@ -41,7 +41,7 @@ import {
   type WatchInput,
   type WatchSummary,
   serverInfoSchema,
-} from "@closet/shared";
+} from "@skeleton/shared";
 
 export class ApiError extends Error {
   constructor(

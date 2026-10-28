@@ -1,5 +1,5 @@
-import type { WatchSummary } from "@closet/shared";
-import { EmptyState, ProductTile, ScreenTitle, Skeleton, TileGrid, buttonClass } from "@closet/ui";
+import type { WatchSummary } from "@skeleton/shared";
+import { EmptyState, ProductTile, ScreenTitle, Skeleton, TileGrid, buttonClass } from "@skeleton/ui";
 import { Link } from "react-router";
 import { useWatches } from "../lib/alerts";
 import { formatMoney } from "../lib/format";

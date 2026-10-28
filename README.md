@@ -31,7 +31,7 @@ A self-hosted server is private: searching needs an account, and there's no land
 | `PUBLIC_SEARCH` | `false` | Set to `true` to let signed-out visitors search and open products, using your store keys. Each address gets 30 searches a minute. |
 | `SERVER_NAME` | `skeleton` | Shown on the sign-in screen. |
 | `TRUST_PROXY` | `false` | Set to `true` if a reverse proxy (Caddy, nginx, Traefik) sits in front of the app, so sign-in rate limits apply per visitor. Leave `false` if the app is reached directly. |
-| `POSTGRES_PASSWORD` | `closet` | Database password (internal to the stack). |
+| `POSTGRES_PASSWORD` | `skeleton` | Database password (internal to the stack). |
 
 ### Stores to search
 
@@ -78,12 +78,12 @@ pnpm dev                    # web on :5173, API on :3000
 | Command | What it does |
 |---|---|
 | `pnpm dev` | Run web and server with reload |
-| `pnpm test` | Server tests (needs Postgres and Meilisearch; uses `TEST_DATABASE_URL` or `closet_test`, and `TEST_MEILI_URL`/`TEST_MEILI_MASTER_KEY` or `localhost:7700` with the key in `test/helpers/setup.ts`) |
+| `pnpm test` | Server tests (needs Postgres and Meilisearch; uses `TEST_DATABASE_URL` or `skeleton_test`, and `TEST_MEILI_URL`/`TEST_MEILI_MASTER_KEY` or `localhost:7700` with the key in `test/helpers/setup.ts`) |
 | `pnpm typecheck` | Type-check every package |
 | `pnpm build` | Production builds |
 | `pnpm db:generate` | Create a migration after changing `packages/db/src/schema` |
 
-Build the Docker image locally with `docker build -f docker/Dockerfile -t closet .`.
+Build the Docker image locally with `docker build -f docker/Dockerfile -t skeleton .`.
 
 ### Layout
 

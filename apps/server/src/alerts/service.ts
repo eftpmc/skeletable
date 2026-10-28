@@ -1,4 +1,4 @@
-import { type Db, schema } from "@closet/db";
+import { type Db, schema } from "@skeleton/db";
 import type {
   AlertEvent,
   AlertsResponse,
@@ -7,8 +7,8 @@ import type {
   SavedSearchSummary,
   WatchInput,
   WatchSummary,
-} from "@closet/shared";
-import { intentKey, keywordIntent, searchIntentSchema } from "@closet/shared";
+} from "@skeleton/shared";
+import { intentKey, keywordIntent, searchIntentSchema } from "@skeleton/shared";
 import { and, desc, eq, gt, inArray, isNull, sql } from "drizzle-orm";
 import { modelWord } from "../search/normalize.js";
 import type { SearchService } from "../search/service.js";

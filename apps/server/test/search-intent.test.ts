@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { keywordIntent, intentFromParam, intentKey, searchIntentSchema, type IntentProposal } from "@closet/shared";
-import type { Db } from "@closet/db";
+import { keywordIntent, intentFromParam, intentKey, searchIntentSchema, type IntentProposal } from "@skeleton/shared";
+import type { Db } from "@skeleton/db";
 import { SearchService } from "../src/search/service.js";
 import { SearchInterpreter, interpreterFromConfig, openAIIntentProvider, validateProposal } from "../src/search/interpreter.js";
 import { loadConfig } from "../src/config.js";

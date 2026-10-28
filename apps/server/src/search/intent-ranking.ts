@@ -1,4 +1,4 @@
-import type { SearchIntent } from "@closet/shared";
+import type { SearchIntent } from "@skeleton/shared";
 import type { RawOffer } from "./sources/types.js";
 import { relevance } from "./normalize.js";
 

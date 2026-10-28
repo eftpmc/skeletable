@@ -1,4 +1,4 @@
-import { type Db, schema } from "@closet/db";
+import { type Db, schema } from "@skeleton/db";
 import {
   type BrandCard,
   type BrandDetail,
@@ -17,7 +17,7 @@ import {
   catalogCategories,
   categoriesIn,
   departmentsFor,
-} from "@closet/shared";
+} from "@skeleton/shared";
 import { type AnyColumn, and, asc, cosineDistance, desc, eq, gte, ilike, inArray, lt, ne, notInArray, sql } from "drizzle-orm";
 import { readPreferences } from "../preferences/service.js";
 import { type CatalogIndex, toIndexed } from "./search-index.js";

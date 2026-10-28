@@ -1,4 +1,4 @@
-import { SearchField } from "@closet/ui";
+import { SearchField } from "@skeleton/ui";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { api } from "../lib/api";

@@ -1,5 +1,5 @@
-import { type Db, schema } from "@closet/db";
-import { type AdminOverview, type AdminUser, type Role, isAdmin, roleInputSchema } from "@closet/shared";
+import { type Db, schema } from "@skeleton/db";
+import { type AdminOverview, type AdminUser, type Role, isAdmin, roleInputSchema } from "@skeleton/shared";
 import { asc, count, eq } from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
 import { Hono } from "hono";

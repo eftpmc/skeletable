@@ -1,4 +1,4 @@
-import { deploymentSchema } from "@closet/shared";
+import { deploymentSchema } from "@skeleton/shared";
 import { z } from "zod";
 
 const booleanFromEnv = z

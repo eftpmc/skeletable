@@ -1,5 +1,5 @@
-import { type Category, type ColorName, type ItemInput, categories, categoryLabels } from "@closet/shared";
-import { Button, CheckIcon, Chip, Field, TextArea, TextField } from "@closet/ui";
+import { type Category, type ColorName, type ItemInput, categories, categoryLabels } from "@skeleton/shared";
+import { Button, CheckIcon, Chip, Field, TextArea, TextField } from "@skeleton/ui";
 import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, type InputHTMLAttributes, useRef, useState } from "react";
 import { api } from "../lib/api";

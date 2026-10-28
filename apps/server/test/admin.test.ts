@@ -1,5 +1,5 @@
-import { schema } from "@closet/db";
-import type { AdminStores, AdminUser, Me, SourceInfo } from "@closet/shared";
+import { schema } from "@skeleton/db";
+import type { AdminStores, AdminUser, Me, SourceInfo } from "@skeleton/shared";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { decryptSecret, encryptSecret } from "../src/admin/secrets.js";

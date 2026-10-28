@@ -1,4 +1,4 @@
-import { catalogCategorySchema, categoryGroupSchema, seenInputSchema, voteInputSchema } from "@closet/shared";
+import { catalogCategorySchema, categoryGroupSchema, seenInputSchema, voteInputSchema } from "@skeleton/shared";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { AuthedEnv } from "../env.js";

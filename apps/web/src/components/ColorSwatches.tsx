@@ -1,4 +1,4 @@
-import { type ColorName, colorNames, palette } from "@closet/shared";
+import { type ColorName, colorNames, palette } from "@skeleton/shared";
 
 export function Swatch({ color, size = 16 }: { color: ColorName; size?: number }) {
   return (

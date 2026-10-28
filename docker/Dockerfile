@@ -11,9 +11,9 @@ COPY packages/shared/package.json packages/shared/
 COPY packages/ui/package.json packages/ui/
 RUN pnpm install --frozen-lockfile
 COPY . .
-RUN pnpm --filter @closet/web build && pnpm --filter @closet/server build
+RUN pnpm --filter @skeleton/web build && pnpm --filter @skeleton/server build
 # Production-only node_modules for the server.
-RUN pnpm deploy --legacy --filter @closet/server --prod /out
+RUN pnpm deploy --legacy --filter @skeleton/server --prod /out
 
 FROM node:22-alpine AS runtime
 ENV NODE_ENV=production \

@@ -1,4 +1,4 @@
-import { BellIcon, CheckIcon, PackageIcon, SearchIcon, buttonClass, cn, focusRing } from "@closet/ui";
+import { BellIcon, CheckIcon, PackageIcon, SearchIcon, buttonClass, cn, focusRing } from "@skeleton/ui";
 import type { ReactNode } from "react";
 import { Link } from "react-router";
 

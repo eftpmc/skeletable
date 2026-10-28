@@ -1,4 +1,4 @@
-import { notifySettingsInputSchema, savedSearchInputSchema, watchInputSchema } from "@closet/shared";
+import { notifySettingsInputSchema, savedSearchInputSchema, watchInputSchema } from "@skeleton/shared";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { AuthedEnv } from "../env.js";

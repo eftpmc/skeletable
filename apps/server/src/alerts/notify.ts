@@ -1,7 +1,7 @@
-import { type Db, schema } from "@closet/db";
-import type { NotifySettings, NotifySettingsInput } from "@closet/shared";
+import { type Db, schema } from "@skeleton/db";
+import type { NotifySettings, NotifySettingsInput } from "@skeleton/shared";
 import { and, asc, eq, gte, inArray, isNull, or, sql } from "drizzle-orm";
-import { safeFetch } from "@closet/readers";
+import { safeFetch } from "@skeleton/readers";
 import type { Mailer } from "./mailer.js";
 
 const { alertEvent, brand, notifySettings, product, savedSearch, user } = schema;

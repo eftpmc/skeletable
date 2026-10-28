@@ -1,7 +1,7 @@
-import { type AccentName, Badge, Button, Chip, DownloadIcon, IconButton, SegmentedControl, Skeleton, TextField, XIcon, accents, buttonClass, cn, focusRing } from "@closet/ui";
+import { type AccentName, Badge, Button, Chip, DownloadIcon, IconButton, SegmentedControl, Skeleton, TextField, XIcon, accents, buttonClass, cn, focusRing } from "@skeleton/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
-import { type Me, type NotifySettings, type ShopFor, catalogCategories } from "@closet/shared";
+import { type Me, type NotifySettings, type ShopFor, catalogCategories } from "@skeleton/shared";
 import { ApiError, api } from "../../lib/api";
 import { useAccent } from "../../lib/accent";
 import { changePassword, signOut, updateUser } from "../../lib/auth-client";

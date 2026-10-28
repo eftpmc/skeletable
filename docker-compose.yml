@@ -6,7 +6,7 @@ services:
     ports:
       - "${PORT:-3000}:3000"
     environment:
-      DATABASE_URL: postgres://closet:${POSTGRES_PASSWORD:-closet}@db:5432/closet
+      DATABASE_URL: postgres://skeleton:${POSTGRES_PASSWORD:-skeleton}@db:5432/skeleton
       AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET (openssl rand -base64 32)}
       PUBLIC_URL: ${PUBLIC_URL:-http://localhost:3000}
       DEPLOYMENT: selfhost
@@ -50,13 +50,13 @@ services:
     image: pgvector/pgvector:pg16
     restart: unless-stopped
     environment:
-      POSTGRES_USER: closet
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-closet}
-      POSTGRES_DB: closet
+      POSTGRES_USER: skeleton
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-skeleton}
+      POSTGRES_DB: skeleton
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U closet -d closet"]
+      test: ["CMD-SHELL", "pg_isready -U skeleton -d skeleton"]
       interval: 5s
       timeout: 5s
       retries: 10

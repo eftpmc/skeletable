@@ -1,5 +1,5 @@
-import type { AdminKeyedSource, AdminStores, Me } from "@closet/shared";
-import { ArrowUpRightIcon, Badge, Button, IconButton, Skeleton, StatusMark, StoreIcon, TextField, XIcon, cn, focusRing } from "@closet/ui";
+import type { AdminKeyedSource, AdminStores, Me } from "@skeleton/shared";
+import { ArrowUpRightIcon, Badge, Button, IconButton, Skeleton, StatusMark, StoreIcon, TextField, XIcon, cn, focusRing } from "@skeleton/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, type ReactNode, useState } from "react";
 import { Link } from "react-router";

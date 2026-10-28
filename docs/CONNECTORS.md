@@ -16,7 +16,7 @@ The catalog foundation supports two connectors with the same `discover` and
   JSON-LD, then schema.org microdata, then OpenGraph and Shopify product JSON
   (`apps/server/src/catalog/connectors/sitemap.ts`).
 
-The sitemap connector honours `robots.txt` for `*` and `ClosetBot`: disallowed
+The sitemap connector honours `robots.txt` for `*` and `SkeletonBot`: disallowed
 sitemaps, feeds and product URLs are never requested or returned. Every request
 goes through the store-state check, so a password page, maintenance notice or
 rate limit on the front door, feed or any sitemap stops discovery immediately

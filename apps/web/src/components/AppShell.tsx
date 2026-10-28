@@ -1,4 +1,4 @@
-import { BellIcon, BookmarkIcon, CompassIcon, CountPill, IconButton, MenuIcon, NavDrawer, PackageIcon, SearchIcon, SideNav, XIcon, cn, focusRing } from "@closet/ui";
+import { BellIcon, BookmarkIcon, CompassIcon, CountPill, IconButton, MenuIcon, NavDrawer, PackageIcon, SearchIcon, SideNav, XIcon, cn, focusRing } from "@skeleton/ui";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router";
 import { useUnreadAlerts } from "../lib/alerts";

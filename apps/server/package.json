@@ -1,5 +1,5 @@
 {
-  "name": "@closet/server",
+  "name": "@skeleton/server",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -13,8 +13,8 @@
     "catalog:import": "tsx src/catalog/import-cli.ts"
   },
   "dependencies": {
-    "@closet/db": "workspace:*",
-    "@closet/shared": "workspace:*",
+    "@skeleton/db": "workspace:*",
+    "@skeleton/shared": "workspace:*",
     "@hono/node-server": "^2.1.5",
     "better-auth": "^1.7.13",
     "drizzle-orm": "^0.45.4",
@@ -25,7 +25,7 @@
     "nodemailer": "^7.0.13",
     "sharp": "^0.35.5",
     "zod": "^4.6.7",
-    "@closet/readers": "workspace:*"
+    "@skeleton/readers": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",

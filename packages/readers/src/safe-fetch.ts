@@ -41,7 +41,7 @@ export type SafeResponse = {
   body: Buffer;
 };
 
-export const USER_AGENT = "Mozilla/5.0 (compatible; ClosetBot/0.1; +https://github.com/eftpmc/skeleton)";
+export const USER_AGENT = "Mozilla/5.0 (compatible; SkeletonBot/0.1; +https://github.com/eftpmc/skeleton)";
 
 export async function safeFetch(input: string, options: SafeFetchOptions = {}): Promise<SafeResponse> {
   const { maxRedirects = 5 } = options;

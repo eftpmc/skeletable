@@ -1,10 +1,10 @@
-import { searchQuerySchema, intentFromParam } from "@closet/shared";
+import { searchQuerySchema, intentFromParam } from "@skeleton/shared";
 import { Hono } from "hono";
 import { z } from "zod";
-import { FetchError } from "@closet/readers";
-import { StoreUnavailableError } from "@closet/readers";
+import { FetchError } from "@skeleton/readers";
+import { StoreUnavailableError } from "@skeleton/readers";
 import type { AppEnv } from "../env.js";
-import type { SourceInfo } from "@closet/shared";
+import type { SourceInfo } from "@skeleton/shared";
 import { NotFoundError, type SearchService } from "./service.js";
 import type { StoreIcons } from "./store-icons.js";
 

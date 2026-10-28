@@ -1,4 +1,4 @@
-import type { Me, ServerInfo } from "@closet/shared";
+import type { Me, ServerInfo } from "@skeleton/shared";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { sql } from "drizzle-orm";
 import { Hono } from "hono";

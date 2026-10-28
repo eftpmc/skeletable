@@ -1,7 +1,7 @@
 import http from "node:http";
 import type { AddressInfo } from "node:net";
-import type { ProductDetail, SearchResponse } from "@closet/shared";
-import { keywordIntent } from "@closet/shared";
+import type { ProductDetail, SearchResponse } from "@skeleton/shared";
+import { keywordIntent } from "@skeleton/shared";
 import sharp from "sharp";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { bestBuySource } from "../src/search/sources/bestbuy.js";

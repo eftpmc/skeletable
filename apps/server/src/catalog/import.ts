@@ -1,5 +1,5 @@
-import { type Db, schema } from "@closet/db";
-import { catalogCategorySchema, departments } from "@closet/shared";
+import { type Db, schema } from "@skeleton/db";
+import { catalogCategorySchema, departments } from "@skeleton/shared";
 import { and, eq, isNull, notInArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { slugify } from "../closet/service.js";

@@ -1,4 +1,4 @@
-import type { Verdict } from "@closet/shared";
+import type { Verdict } from "@skeleton/shared";
 
 const money = (cents: number) => `$${Math.round(cents / 100).toLocaleString("en-US")}`;
 

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { type SearchIntent } from "@closet/shared";
+import { type SearchIntent } from "@skeleton/shared";
 import { openAIIntentProvider, SearchInterpreter } from "../src/search/interpreter.js";
 
 const cases: { query: string; check: (intent: SearchIntent) => void }[] = [

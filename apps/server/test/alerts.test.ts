@@ -1,5 +1,5 @@
-import type { AlertsResponse, SavedSearchSummary, SearchResponse, WatchSummary } from "@closet/shared";
-import { keywordIntent } from "@closet/shared";
+import type { AlertsResponse, SavedSearchSummary, SearchResponse, WatchSummary } from "@skeleton/shared";
+import { keywordIntent } from "@skeleton/shared";
 import { beforeEach, describe, expect, it } from "vitest";
 import type { RawOffer, Source } from "../src/search/sources/index.js";
 import { signUp, useTestApp } from "./helpers/setup.js";

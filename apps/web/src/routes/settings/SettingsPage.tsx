@@ -1,4 +1,4 @@
-import { type Me, isAdmin } from "@closet/shared";
+import { type Me, isAdmin } from "@skeleton/shared";
 import {
   BellIcon,
   ChevronLeftIcon,
@@ -14,7 +14,7 @@ import {
   UsersIcon,
   cn,
   focusRing,
-} from "@closet/ui";
+} from "@skeleton/ui";
 import type { ComponentType, ReactNode } from "react";
 import { Link, Navigate, useParams } from "react-router";
 import { useMe } from "../../lib/me";

@@ -1,4 +1,4 @@
-import { catalogCategorySchema, departments } from "@closet/shared";
+import { catalogCategorySchema, departments } from "@skeleton/shared";
 import { z } from "zod";
 
 /**

@@ -1,4 +1,4 @@
-import { budgetLabel, intentKey, type Condition, type SavedSearchSummary, type SearchIntent } from "@closet/shared";
+import { budgetLabel, intentKey, type Condition, type SavedSearchSummary, type SearchIntent } from "@skeleton/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
 import { useSignUpPrompt, useSignedIn } from "./viewer";

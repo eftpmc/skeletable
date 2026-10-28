@@ -1,5 +1,5 @@
 {
-  "name": "@closet/readers",
+  "name": "@skeleton/readers",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -12,7 +12,7 @@
     "recipes": "tsx src/recipe-cli.ts"
   },
   "dependencies": {
-    "@closet/formats": "workspace:*",
+    "@skeleton/formats": "workspace:*",
     "node-html-parser": "^9.0.5",
     "zod": "^4.6.7"
   },

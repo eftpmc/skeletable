@@ -1,5 +1,5 @@
-import { type Category, categories, categoryLabels } from "@closet/shared";
-import { Button, Chip, ChipRow, EmptyState, PlusIcon, ScreenTitle, Skeleton, TextField } from "@closet/ui";
+import { type Category, categories, categoryLabels } from "@skeleton/shared";
+import { Button, Chip, ChipRow, EmptyState, PlusIcon, ScreenTitle, Skeleton, TextField } from "@skeleton/ui";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useDeferredValue, useState } from "react";
 import { useAddItem } from "../components/AddItem";

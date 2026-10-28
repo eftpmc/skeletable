@@ -1,4 +1,4 @@
-import { type ColorName, palette } from "@closet/shared";
+import { type ColorName, palette } from "@skeleton/shared";
 import sharp, { type Metadata, type Sharp } from "sharp";
 
 export const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;

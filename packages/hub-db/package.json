@@ -1,5 +1,5 @@
 {
-  "name": "@closet/hub-db",
+  "name": "@skeleton/hub-db",
   "version": "0.0.0",
   "private": true,
   "type": "module",

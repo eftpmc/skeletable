@@ -1,4 +1,4 @@
-import { ArrowUpRightIcon, Avatar, Badge, LogOutIcon, Menu, MenuHeader, MenuItem, MenuSeparator, SettingsIcon, cn, focusRing } from "@closet/ui";
+import { ArrowUpRightIcon, Avatar, Badge, LogOutIcon, Menu, MenuHeader, MenuItem, MenuSeparator, SettingsIcon, cn, focusRing } from "@skeleton/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "react-router";
 import { signOut } from "../lib/auth-client";
