@@ -15,8 +15,8 @@
   "dependencies": {
     "@hono/node-server": "^2.1.5",
     "@skeleton/db": "workspace:*",
-    "@skeleton/formats": "workspace:*",
     "@skeleton/engine": "workspace:*",
+    "@skeleton/formats": "workspace:*",
     "@skeleton/shared": "workspace:*",
     "better-auth": "^1.7.13",
     "drizzle-orm": "^0.45.4",

@@ -2,7 +2,7 @@ import type { ReadingInput } from "@skeleton/formats";
 import { type HubDb, schema } from "@skeleton/hub-db";
 import { and, count, desc, eq, inArray, max } from "drizzle-orm";
 import {
-  catalogRecipeSchema,
+  anyRecipeSchema,
   politeContext,
   RECIPE_FORMAT,
   readers,
@@ -46,7 +46,7 @@ function sample<T>(items: T[], n: number): T[] {
 /** A few of the site's products, read the way the proposal says the hub should read them. */
 async function trySite(origin: URL, ctx: ReadContext, how: { readerId: string; config: Record<string, unknown> | null }): Promise<SampleReport> {
   if (how.readerId === "recipe") {
-    const spec = catalogRecipeSchema.parse(how.config?.recipe);
+    const spec = anyRecipeSchema.parse(how.config?.recipe);
     const found = await recipePages(origin, spec, ctx, 200);
     const pages: RecipePage[] = [];
     for (const url of sample(found, SAMPLE_PAGES)) {
@@ -126,7 +126,7 @@ export async function proposeSite(
   const ctx = await politeContext(origin, options);
   let how: { readerId: string; config: Record<string, unknown> | null };
   if (input.recipe !== undefined) {
-    const spec = catalogRecipeSchema.safeParse(input.recipe);
+    const spec = anyRecipeSchema.safeParse(input.recipe);
     if (!spec.success) throw new ProposalError(422, `the recipe doesn't fit format ${RECIPE_FORMAT}: ${spec.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")}`);
     how = { readerId: "recipe", config: { recipe: spec.data } };
   } else {

@@ -1,9 +1,10 @@
-import type { ReadingInput } from "@skeleton/formats";
+import { toMinorUnits, type ReadingInput } from "@skeleton/formats";
 import { looksLikeProduct } from "../sitemap.js";
 import { parse, type HTMLElement } from "node-html-parser";
-import { parsePrice } from "./recipe.js";
+import { pageDoc, parsePrice, pick, type Picked, type Rule } from "./fields.js";
 import { linkPages } from "./link-pages.js";
 import { sitemapPages } from "./sitemap-pages.js";
+import type { CatalogRecipe } from "./recipe.js";
 import type { ReadContext, Reader } from "./types.js";
 
 // Product pages one crawl reads at most, at the engine's pace; candidates a detection or sample tries.
@@ -73,14 +74,27 @@ function offerOf(node: Json): Offer {
   return {};
 }
 
+/** What a page's structured data says about the product, each field on its own. */
+type Found = {
+  title?: string;
+  description?: string;
+  maker?: string;
+  productType?: string;
+  price?: number;
+  currency?: string;
+  image?: string;
+  available?: boolean;
+  sku?: string;
+  gtin?: string;
+  mpn?: string;
+  variants: NonNullable<ReadingInput["variants"]>;
+};
+
 /**
- * A product page read from the data it publishes for search engines: schema.org Product (or a
- * ProductGroup and its variants) in JSON-LD, then Open Graph and product meta tags for what's missing.
- * Null when the page isn't a product or lacks a title, price, currency or photo.
+ * The data a product page publishes for search engines: schema.org Product (or a ProductGroup and its
+ * variants) in JSON-LD, then Open Graph and product meta tags for what's missing.
  */
-export function readStructured(html: string, pageUrl: string): ReadingInput | null {
-  const root = parse(html);
-  const url = new URL(pageUrl);
+function structured(root: HTMLElement): Found {
   const nodes = jsonLd(root);
   const group = nodes.find((n) => types(n).includes("ProductGroup"));
   const product = group ?? nodes.find((n) => types(n).includes("Product"));
@@ -93,36 +107,18 @@ export function readStructured(html: string, pageUrl: string): ReadingInput | nu
 
   const currency = cheapest?.currency ?? meta("product:price:currency")?.toUpperCase() ?? meta("og:price:currency")?.toUpperCase();
   const rawPrice = meta("product:price:amount") ?? meta("og:price:amount");
-  const price = cheapest?.price ?? (rawPrice && currency ? parsePrice(rawPrice, currency) : undefined);
-  const title = str(product?.name) ?? meta("og:title");
-  const image = imageUrl(product?.image) ?? imageUrl(variants[0]?.image) ?? meta("og:image");
-  if (!title || price === undefined || !currency || !/^[A-Z]{3}$/.test(currency) || !image) return null;
-
-  let photo: string;
-  try {
-    photo = new URL(image, url).toString();
-  } catch {
-    return null;
-  }
-  const canonical = root.querySelector('link[rel="canonical"]')?.getAttribute("href");
-  let path = url.pathname;
-  try {
-    if (canonical && new URL(canonical, url).host === url.host) path = new URL(canonical, url).pathname;
-  } catch {
-    // A canonical link that isn't a URL is ignored.
-  }
-  const available = offered.some((o) => o.offer.available === true) ? true : offered.every((o) => o.offer.available === false) && offered.length ? false : undefined;
-  const description = str(product?.description) ?? meta("og:description");
   return {
-    externalId: path,
-    url: `${url.origin}${path}`,
-    title: title.slice(0, 500),
-    description: description?.slice(0, 20_000),
-    maker: name(product?.brand)?.slice(0, 200) ?? name(product?.manufacturer)?.slice(0, 200),
-    productType: str(product?.category)?.slice(0, 200),
-    price: { amount: price, currency },
-    available,
-    images: [{ url: photo }],
+    title: str(product?.name) ?? meta("og:title"),
+    description: str(product?.description) ?? meta("og:description"),
+    maker: name(product?.brand) ?? name(product?.manufacturer),
+    productType: str(product?.category),
+    price: cheapest?.price ?? (rawPrice && currency ? parsePrice(rawPrice, currency) : undefined),
+    currency,
+    image: imageUrl(product?.image) ?? imageUrl(variants[0]?.image) ?? meta("og:image"),
+    available: offered.some((o) => o.offer.available === true) ? true : offered.every((o) => o.offer.available === false) && offered.length ? false : undefined,
+    sku: str(product?.sku),
+    gtin: product ? gtinOf(product) : undefined,
+    mpn: str(product?.mpn),
     variants: variants.slice(0, 500).flatMap((v) => {
       const title = str(v.name) ?? str(v.sku);
       if (!title) return [];
@@ -138,8 +134,139 @@ export function readStructured(html: string, pageUrl: string): ReadingInput | nu
         },
       ];
     }),
-    identifiers: product ? { gtin: gtinOf(product), mpn: str(product.mpn)?.slice(0, 100), sku: str(product.sku)?.slice(0, 200) } : undefined,
   };
+}
+
+const IN_STOCK = /InStock|LimitedAvailability|OnlineOnly|PreOrder|BackOrder/i;
+const OUT_OF_STOCK = /OutOfStock|SoldOut|Discontinued/i;
+const text = (value: Picked) => (typeof value === "string" ? value : typeof value === "number" ? String(value) : undefined);
+const barcode = (value: Picked) => {
+  const digits = text(value)?.replace(/\D/g, "");
+  return digits && /^\d{8}$|^\d{12,14}$/.test(digits) ? digits : undefined;
+};
+
+/** A price picked from a page: shown text in the currency's format, or a number in major or minor units. */
+function priceOf(value: Picked, currency: string | undefined, unit: "major" | "minor" = "major"): number | undefined {
+  if (!currency || typeof value === "boolean") return undefined;
+  if (typeof value === "number") {
+    if (unit === "minor") return Number.isSafeInteger(value) && value >= 0 ? value : undefined;
+    return toMinorUnits(String(value), currency);
+  }
+  return parsePrice(value, currency);
+}
+
+/**
+ * One product page read field by field. For each field, the recipe's places come first (when there is a
+ * recipe and it names the field), then the page's structured data; the first usable value wins. A
+ * reading needs a title, price, currency and photo; `issues` says what went wrong where.
+ */
+export function readProductPage(html: string, pageUrl: string, recipe?: CatalogRecipe): { reading: ReadingInput | null; issues: string[] } {
+  const { fields, issues } = readFields(html, pageUrl, recipe);
+  const { title, price, currency, image } = fields;
+  for (const [field, value] of [["title", title], ["price", price], ["currency", currency], ["image", image]] as const) {
+    if (value === undefined) issues.push(`${field}: not found`);
+  }
+  if (!title || price === undefined || !currency || !image) return { reading: null, issues };
+  return {
+    reading: {
+      externalId: fields.path,
+      url: fields.url,
+      title: title.slice(0, 500),
+      description: fields.description?.slice(0, 20_000),
+      maker: fields.maker?.slice(0, 200),
+      productType: fields.productType?.slice(0, 200),
+      price: { amount: price, currency },
+      available: fields.available,
+      images: [{ url: image }],
+      variants: fields.variants,
+      identifiers:
+        fields.gtin || fields.sku || fields.mpn ? { gtin: fields.gtin, mpn: fields.mpn?.slice(0, 100), sku: fields.sku?.slice(0, 200) } : undefined,
+    },
+    issues,
+  };
+}
+
+/**
+ * Every field a product page gives, whether or not they make a whole reading: for callers that can use
+ * part of a product, like a link preview with no photo. Same order of places as readProductPage.
+ */
+export function readFields(html: string, pageUrl: string, recipe?: CatalogRecipe): { fields: Found & { path: string; url: string }; issues: string[] } {
+  const url = new URL(pageUrl);
+  const doc = pageDoc(parse(html));
+  const found = structured(doc.root);
+  const issues: string[] = [];
+  const take = <T>(field: string, rule: Rule | undefined, accept: (value: Picked) => T | undefined, fallback: T | undefined): T | undefined => {
+    if (!rule) return fallback;
+    const { value, issues: problems } = pick(doc, rule, accept);
+    if (value === undefined) issues.push(...problems.map((p) => `${field}: ${p}`));
+    return value ?? fallback;
+  };
+
+  const stated = recipe?.currency;
+  const currency =
+    stated && "constant" in stated
+      ? stated.constant
+      : take("currency", stated, (v) => (typeof v === "string" && /^[A-Za-z]{3}$/.test(v) ? v.toUpperCase() : undefined), found.currency);
+  const price = take("price", recipe?.price, (v) => priceOf(v, currency, recipe?.priceUnit), found.price);
+  const title = take("title", recipe?.title, text, found.title);
+  const photo = take("image", recipe?.image, (v) => (typeof v === "string" ? v : undefined), found.image);
+  const available = take(
+    "available",
+    recipe?.available?.from,
+    (v) => {
+      if (typeof v === "boolean") return v;
+      const said = String(v);
+      const { inStock, outOfStock } = recipe?.available ?? {};
+      if (inStock?.includes(said)) return true;
+      if (outOfStock?.includes(said)) return false;
+      if (!inStock && !outOfStock) return IN_STOCK.test(said) ? true : OUT_OF_STOCK.test(said) ? false : undefined;
+      return undefined;
+    },
+    found.available,
+  );
+  const description = take("description", recipe?.description, text, found.description);
+  const maker = take("maker", recipe?.maker, text, found.maker);
+  const sku = take("sku", recipe?.sku, text, found.sku);
+  const gtin = take("gtin", recipe?.gtin, barcode, found.gtin);
+
+  let image: string | undefined;
+  try {
+    image = photo ? new URL(photo, url).toString() : undefined;
+  } catch {
+    issues.push("image: not a link");
+  }
+  const canonical = doc.root.querySelector('link[rel="canonical"]')?.getAttribute("href");
+  let path = url.pathname;
+  try {
+    if (canonical && new URL(canonical, url).host === url.host) path = new URL(canonical, url).pathname;
+  } catch {
+    // A canonical link that isn't a URL is ignored.
+  }
+  return {
+    fields: {
+      ...found,
+      title,
+      description,
+      maker,
+      price,
+      currency: currency && /^[A-Z]{3}$/.test(currency) ? currency : undefined,
+      image,
+      available,
+      sku,
+      gtin,
+      path,
+      url: `${url.origin}${path}`,
+    },
+    issues,
+  };
+}
+
+/**
+ * A product page read from the data it publishes for search engines alone. Null when the page isn't a
+ * product or lacks a title, price, currency or photo.
+ */
+export function readStructured(html: string, pageUrl: string): ReadingInput | null {
+  return readProductPage(html, pageUrl).reading;
 }
 
 // Fewer product pages than this in the sitemaps, and the shop's own links are followed as well.

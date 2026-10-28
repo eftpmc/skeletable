@@ -1,9 +1,0 @@
-{
-  "id": "palace-us",
-  "version": 1,
-  "origin": "https://usa.palaceskateboards.com",
-  "pathPrefix": "/products/",
-  "title": { "selector": "#product-title" },
-  "price": { "selector": "#product-price" },
-  "currency": { "constant": "USD" }
-}

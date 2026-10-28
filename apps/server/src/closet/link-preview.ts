@@ -1,11 +1,8 @@
 import type { LinkPreview } from "@skeleton/shared";
 import { type HTMLElement, parse } from "node-html-parser";
-import { type SafeFetchOptions, safeFetch } from "@skeleton/engine";
+import { readFields, readStorefront, reviewedRecipeFor, type SafeFetchOptions, safeFetch, StoreUnavailableError } from "@skeleton/engine";
 import { normalizeGtin } from "../search/normalize.js";
 import { guessCategory, parseColorNames } from "./guess.js";
-import { readStorefront, StoreUnavailableError } from "@skeleton/engine";
-import { extractRecipe } from "@skeleton/engine";
-import { reviewedRecipeFor } from "@skeleton/engine";
 
 type PageData = Omit<LinkPreview, "category" | "colors" | "url"> & { color: string | null; category: string | null };
 
@@ -17,11 +14,11 @@ export async function fetchLinkPreview(url: string, fetchOptions: SafeFetchOptio
   const preview = parseProductPage(html, page.url);
   const recipe = reviewedRecipeFor(page.url);
   if (recipe && preview.priceCents === null) {
-    const recovered = extractRecipe(html, page.url, recipe).product;
-    if (recovered) {
-      preview.title = recovered.title;
-      preview.priceCents = recovered.priceCents;
-      preview.currency = recovered.currency;
+    const { title, price, currency } = readFields(html, page.url, recipe).fields;
+    if (title && price !== undefined && currency) {
+      preview.title = title;
+      preview.priceCents = price;
+      preview.currency = currency;
     }
   }
 

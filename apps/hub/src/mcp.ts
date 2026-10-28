@@ -73,8 +73,10 @@ export function hubMcpServer(db: HubDb, contributorId: string, options: { crawl?
         "Propose a shop for the catalog: any real shop selling its products on its own site, from a one-person studio to a large brand. " +
         "The catalog is honest about each (who makes what, how big, how it prices) rather than leaving shops out. " +
         "Say why it belongs. If no platform reader recognises the site (the reply says so), send it again with a recipe: where its product pages are " +
-        "(its sitemap, under pathPrefix) and the CSS selector of the one element holding each field (attribute: read that attribute, e.g. content or src, " +
-        "instead of the text). Prefer stable selectors such as meta[property='og:title'] with attribute content. " +
+        "(its sitemap, under pathPrefix) and, only for the fields the page's structured data misses or gets wrong, where to find them. A place is " +
+        "a CSS selector of one element (attribute: read that attribute, e.g. content or src, instead of the text) or a dot path into JSON the page " +
+        "embeds (json, e.g. props.pageProps.product.price in __NEXT_DATA__); give a list to try several in order. Prefer embedded JSON and stable " +
+        "selectors such as meta[property='og:title'] over layout classes. " +
         `The hub tries the site on ${SAMPLE_PAGES} of its own products before anyone sees it: a proposal that doesn't read comes back with each page's ` +
         "problems to fix. One that reads goes in on its own, unless something needs a curator's eye (a contributor's first proposal, a shop selling " +
         "many brands, products naming no maker); then it waits, and sending it again replaces it. Marketplaces aren't proposable: propose the shops themselves.",

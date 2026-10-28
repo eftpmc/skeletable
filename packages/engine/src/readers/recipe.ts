@@ -1,127 +1,95 @@
-import { currencyDigits, toMinorUnits } from "@skeleton/formats";
-import { parse, type HTMLElement } from "node-html-parser";
 import { z } from "zod";
+import { ruleSchema, type Rule } from "./fields.js";
 import { sitemapPages } from "./sitemap-pages.js";
+import { readProductPage } from "./standard.js";
 import type { ReadContext, Reader, SamplePage } from "./types.js";
 
 // The recipe format; a recipe states the version it was written for.
-export const RECIPE_FORMAT = 1;
+export const RECIPE_FORMAT = 2;
 // Product pages one crawl reads at most, at the engine's pace (about 2 seconds a page).
 const MAX_PAGES = 1000;
 
-const field = z
-  .object({
-    selector: z.string().min(1).max(240).describe("CSS selector matching exactly one element on a product page"),
-    attribute: z.string().min(1).max(80).optional().describe("Read this attribute instead of the element's text, e.g. content or src"),
-  })
-  .strict();
+const rule = (what: string) => ruleSchema.describe(what);
 
 /**
- * How to read one site that no platform reader covers: data only, never code. Product pages are
- * found in the site's sitemap under `pathPrefix`; each field is read from one element on the page.
+ * What's special about reading one site: data only, never code. Product pages are found in the site's
+ * sitemap under `pathPrefix`. Every field is optional: a field the recipe leaves out, or whose places
+ * all come up empty on a page, is read from the page's structured data as for any site. So a recipe
+ * says only what the standard reading gets wrong or misses.
  */
 export const catalogRecipeSchema = z
   .object({
     format: z.literal(RECIPE_FORMAT),
     pathPrefix: z.string().startsWith("/").min(2).max(160).describe("Product pages' paths start with this, e.g. /shop/"),
     sitemap: z.string().startsWith("/").max(300).optional().describe("Path of the sitemap listing product pages (default: the sitemaps robots.txt names, else /sitemap.xml)"),
-    title: field,
-    price: field,
-    currency: z.union([field, z.object({ constant: z.string().regex(/^[A-Z]{3}$/) }).strict()]),
-    image: field,
-    description: field.optional(),
-    maker: field.optional(),
+    title: rule("The product's name").optional(),
+    price: rule("Its current price, as shown or as a number").optional(),
+    priceUnit: z.enum(["major", "minor"]).optional().describe('"minor" when the price is a whole number of cents (as Shopify\'s product JSON has it); default "major"'),
+    currency: z.union([rule("Its currency code"), z.object({ constant: z.string().regex(/^[A-Z]{3}$/) }).strict()]).optional(),
+    image: rule("Its main photo's URL").optional(),
+    description: rule("Its description").optional(),
+    maker: rule("Who made it, when the shop names a brand").optional(),
+    sku: rule("The shop's stock-keeping code").optional(),
+    gtin: rule("Its barcode (GTIN, UPC or EAN)").optional(),
     available: z
-      .object({ field, inStock: z.array(z.string().max(80)).min(1).max(10), outOfStock: z.array(z.string().max(80)).min(1).max(10) })
+      .object({
+        from: rule("Where the page says whether it's in stock"),
+        inStock: z.array(z.string().max(80)).max(10).optional(),
+        outOfStock: z.array(z.string().max(80)).max(10).optional(),
+      })
       .strict()
-      .optional(),
+      .optional()
+      .describe("true/false values are read as they are; text must be in one of the two lists"),
   })
   .strict();
 export type CatalogRecipe = z.infer<typeof catalogRecipeSchema>;
 
+// Format 1 (October 2026): one CSS selector per field, title, price, currency and image required.
+const v1Field = z.object({ selector: z.string().min(1).max(240), attribute: z.string().min(1).max(80).optional() }).strict();
+const v1Schema = z
+  .object({
+    format: z.literal(1),
+    pathPrefix: z.string().startsWith("/").min(2).max(160),
+    sitemap: z.string().startsWith("/").max(300).optional(),
+    title: v1Field,
+    price: v1Field,
+    currency: z.union([v1Field, z.object({ constant: z.string().regex(/^[A-Z]{3}$/) }).strict()]),
+    image: v1Field,
+    description: v1Field.optional(),
+    maker: v1Field.optional(),
+    available: z.object({ field: v1Field, inStock: z.array(z.string().max(80)).min(1).max(10), outOfStock: z.array(z.string().max(80)).min(1).max(10) }).strict().optional(),
+  })
+  .strict();
+
+const fromV1 = (field: z.infer<typeof v1Field>): Rule => ({ select: field.selector, ...(field.attribute ? { attribute: field.attribute } : {}) });
+
+/** A format 1 recipe in today's format: the same places, and structured data for anything they miss. */
+function upgrade(v1: z.infer<typeof v1Schema>): CatalogRecipe {
+  return {
+    format: RECIPE_FORMAT,
+    pathPrefix: v1.pathPrefix,
+    ...(v1.sitemap ? { sitemap: v1.sitemap } : {}),
+    title: fromV1(v1.title),
+    price: fromV1(v1.price),
+    currency: "constant" in v1.currency ? v1.currency : fromV1(v1.currency),
+    image: fromV1(v1.image),
+    ...(v1.description ? { description: fromV1(v1.description) } : {}),
+    ...(v1.maker ? { maker: fromV1(v1.maker) } : {}),
+    ...(v1.available ? { available: { from: fromV1(v1.available.field), inStock: v1.available.inStock, outOfStock: v1.available.outOfStock } } : {}),
+  };
+}
+
+/** A recipe in any format this engine has used, as today's format: what stored recipes are read with. */
+export const anyRecipeSchema = z.union([catalogRecipeSchema, v1Schema.transform(upgrade)]);
+
 export type RecipePage = SamplePage;
-
-/**
- * A price as a page shows it ("€1.234,50", "$ 98", "12 500 ¥") in the currency's minor units: the
- * last separator is the decimal point only when the right number of digits follows it.
- */
-export function parsePrice(raw: string, currency: string): number | undefined {
-  const number = raw.replace(/[\s'\u00a0\u202f]/g, "").match(/\d[\d.,]*/)?.[0];
-  if (!number) return undefined;
-  const digits = currencyDigits(currency);
-  const last = Math.max(number.lastIndexOf("."), number.lastIndexOf(","));
-  const after = last >= 0 ? number.length - last - 1 : 0;
-  const decimal = last >= 0 && digits > 0 && after >= 1 && after <= digits;
-  const whole = (decimal ? number.slice(0, last) : number).replace(/[.,]/g, "");
-  return toMinorUnits(decimal ? `${whole}.${number.slice(last + 1)}` : whole, currency);
-}
-
-function read(root: HTMLElement, rule: z.infer<typeof field>, name: string, issues: string[]): string | undefined {
-  let nodes: HTMLElement[];
-  try {
-    nodes = root.querySelectorAll(rule.selector);
-  } catch {
-    issues.push(`${name}: the selector isn't valid`);
-    return undefined;
-  }
-  if (nodes.length !== 1) {
-    issues.push(`${name}: expected one element, found ${nodes.length}`);
-    return undefined;
-  }
-  const raw = rule.attribute ? nodes[0]!.getAttribute(rule.attribute) : nodes[0]!.text;
-  const value = raw?.replace(/\s+/g, " ").trim();
-  if (!value) issues.push(`${name}: empty`);
-  return value || undefined;
-}
 
 /** One product page read with a recipe: a reading when the essentials came out, and every problem found. */
 export function readWithRecipe(html: string, pageUrl: string, recipe: CatalogRecipe): RecipePage {
-  const issues: string[] = [];
   const url = new URL(pageUrl);
   if (!url.pathname.startsWith(recipe.pathPrefix)) return { url: pageUrl, reading: null, issues: ["the page isn't under the recipe's pathPrefix"] };
-  const root = parse(html);
-  root.querySelectorAll("script, style, template, noscript").forEach((el) => el.remove());
-  const title = read(root, recipe.title, "title", issues);
-  const rawPrice = read(root, recipe.price, "price", issues);
-  const currency = "constant" in recipe.currency ? recipe.currency.constant : read(root, recipe.currency, "currency", issues)?.toUpperCase();
-  if (currency && !/^[A-Z]{3}$/.test(currency)) issues.push(`currency: "${currency}" isn't a currency code`);
-  const validCurrency = currency && /^[A-Z]{3}$/.test(currency) ? currency : undefined;
-  const amount = rawPrice && validCurrency ? parsePrice(rawPrice, validCurrency) : undefined;
-  if (rawPrice && validCurrency && amount === undefined) issues.push(`price: "${rawPrice}" isn't a price`);
-  const image = read(root, recipe.image, "image", issues);
-  let imageUrl: string | undefined;
-  try {
-    imageUrl = image ? new URL(image, url).toString() : undefined;
-  } catch {
-    issues.push("image: not a link");
-  }
-  const description = recipe.description ? read(root, recipe.description, "description", issues) : undefined;
-  const maker = recipe.maker ? read(root, recipe.maker, "maker", issues) : undefined;
-  let available: boolean | undefined;
-  if (recipe.available) {
-    const value = read(root, recipe.available.field, "available", issues);
-    if (value !== undefined) {
-      if (recipe.available.inStock.includes(value)) available = true;
-      else if (recipe.available.outOfStock.includes(value)) available = false;
-      else issues.push(`available: "${value}" is in neither list`);
-    }
-  }
-  if (!title || amount === undefined || !validCurrency || !imageUrl) return { url: pageUrl, reading: null, issues };
-  return {
-    url: pageUrl,
-    reading: {
-      // The page's own path is the listing's id: recipe sites have no product ids we can rely on.
-      externalId: url.pathname,
-      url: `${url.origin}${url.pathname}`,
-      title: title.slice(0, 500),
-      description: description?.slice(0, 20_000),
-      maker: maker?.slice(0, 200),
-      price: { amount, currency: validCurrency },
-      available,
-      images: [{ url: imageUrl }],
-    },
-    issues,
-  };
+  const { reading, issues } = readProductPage(html, pageUrl, recipe);
+  return { url: pageUrl, reading, issues };
 }
 
 /** The site's product pages, from its sitemaps, under the recipe's pathPrefix. */
@@ -132,12 +100,12 @@ export function recipePages(origin: URL, recipe: CatalogRecipe, ctx: ReadContext
 /** Sites read with a recipe a contributor wrote and a curator approved. Never detected: only assigned. */
 export const recipeReader: Reader = {
   id: "recipe",
-  version: 1,
+  version: 2,
   async detect() {
     return null;
   },
   async *read(origin, config, ctx) {
-    const recipe = catalogRecipeSchema.parse(config?.recipe);
+    const recipe = anyRecipeSchema.parse(config?.recipe);
     for (const page of await recipePages(origin, recipe, ctx)) {
       let html: string;
       try {

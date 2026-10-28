@@ -13,9 +13,9 @@
   "dependencies": {
     "@hono/node-server": "^2.1.5",
     "@modelcontextprotocol/sdk": "^1.32.2",
+    "@skeleton/engine": "workspace:*",
     "@skeleton/formats": "workspace:*",
     "@skeleton/hub-db": "workspace:*",
-    "@skeleton/engine": "workspace:*",
     "@skeleton/shared": "workspace:*",
     "drizzle-orm": "^0.45.4",
     "fflate": "^0.8.3",

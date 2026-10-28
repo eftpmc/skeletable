@@ -6,5 +6,4 @@ export * from "./storefront.js";
 export * from "./sitemap.js";
 export * from "./polite.js";
 export * from "./readers/index.js";
-export * from "./recipes.js";
 export * from "./reviewed-recipes.js";

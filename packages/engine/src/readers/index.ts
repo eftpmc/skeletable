@@ -4,6 +4,7 @@ import { standardReader } from "./standard.js";
 import type { Reader } from "./types.js";
 
 export type { Detection, ReadContext, Reader, SamplePage } from "./types.js";
+export * from "./fields.js";
 export * from "./recipe.js";
 export * from "./shopify.js";
 export * from "./standard.js";
