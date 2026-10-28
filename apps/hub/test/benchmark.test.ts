@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { hubApi, issueToken } from "../src/api.js";
 import { annotateByRules } from "../src/annotate/rules.js";
-import { benchmarkItems, drawBenchmark, recordCheck, saveDrafts, scoreModel } from "../src/benchmark.js";
+import { benchmarkItems, drawBenchmark, recordCheck, saveDrafts, scoreModel, settleByAgreement } from "../src/benchmark.js";
 import { contributorId } from "../src/contributors.js";
 import { storeReadings } from "../src/engine/store.js";
 import { resolveListings } from "../src/resolve.js";
@@ -61,6 +61,20 @@ describe("benchmarks", () => {
     const values = await db.select({ field: listingValue.field, value: listingValue.value }).from(listingValue).where(eq(listingValue.listingId, towel.listingId));
     expect(Object.fromEntries(values.map((v) => [v.field, v.value]))).toMatchObject({ area: "home", category: "bath" });
     await expect(recordCheck(db, "b1", towel.listingId, zack, { ...coat, department: "women", area: "home" })).rejects.toThrow();
+  });
+
+  it("settles where two labellers agree, as the panel's answer, and returns the rest", async () => {
+    await catalog();
+    await drawBenchmark(db, "b1", { random: 4, unplaced: 0 });
+    const items = await benchmarkItems(db, "b1");
+    const panel = await contributorId(db, "teacher-panel", "agent");
+    const a = items.map((i) => ({ listingId: i.listingId, draft: coat }));
+    const b = items.map((i, n) => ({ listingId: i.listingId, draft: n === 0 ? { ...coat, category: "tailoring" } : coat }));
+    const result = await settleByAgreement(db, "b1", panel, a, b);
+    expect(result).toMatchObject({ agreed: 3, invalid: 0 });
+    expect(result.disagreements).toEqual([{ listingId: items[0]!.listingId, a: coat, b: { ...coat, category: "tailoring" } }]);
+    const notes = await db.select({ method: schema.listingAnnotation.method }).from(schema.listingAnnotation).where(eq(schema.listingAnnotation.contributorId, panel));
+    expect(new Set(notes.map((n) => n.method))).toEqual(new Set(["agent"]));
   });
 
   it("scores a model against the checked answers, field by field", async () => {

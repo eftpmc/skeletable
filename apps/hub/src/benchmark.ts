@@ -6,7 +6,7 @@ import { z } from "zod";
 import { resolveListings } from "./resolve.js";
 import { instructionsFor } from "./worker.js";
 
-const { benchmark, listingAnnotation } = schema;
+const { benchmark, contributor, listingAnnotation } = schema;
 
 /**
  * What a person checks for each listing: the facts that decide where it shows. null is an answer
@@ -22,6 +22,8 @@ export const checkSchema = z
   .refine((c) => c.category === null || (c.area !== null && areaOf(c.category) === c.area), "the category isn't in that area")
   .refine((c) => c.department === null || c.area === "clothing", "only clothing has a side");
 export type Check = z.infer<typeof checkSchema>;
+
+const CHECKED = ["area", "category", "department", "audience"] as const;
 
 // The fields a model's extract-facts answer is scored on.
 export const SCORED = ["area", "category", "department"] as const;
@@ -97,11 +99,14 @@ export async function saveDrafts(db: HubDb, name: string, drafts: { listingId: s
 }
 
 /**
- * A person's check of one listing: kept as the set's answer, and every stated fact added as that
- * person's annotation, which outranks every model, so the catalog is corrected at the same time.
+ * A check of one listing: kept as the set's answer, and every stated fact added as an annotation by
+ * whoever checked it (a person's outranks every model's; a panel of agents' outranks a single model's),
+ * so the catalog is corrected at the same time.
  */
 export async function recordCheck(db: HubDb, name: string, listingId: string, contributorId: string, check: unknown): Promise<Check> {
   const answer = checkSchema.parse(check);
+  const [who] = await db.select({ kind: contributor.kind }).from(contributor).where(eq(contributor.id, contributorId));
+  const method = who?.kind === "person" ? "person" : "agent";
   const updated = await db
     .update(benchmark)
     .set({ answer, checkedById: contributorId, checkedAt: new Date() })
@@ -116,7 +121,7 @@ export async function recordCheck(db: HubDb, name: string, listingId: string, co
         field,
         fieldVersion: fieldVersion("listing", field),
         value,
-        method: "person",
+        method,
         reason: `checked for benchmark ${name}`,
         contributorId,
       })),
@@ -168,4 +173,34 @@ export async function scoreModel(db: HubDb, name: string, options: { ollama: str
   }
   const accuracy = Object.fromEntries(SCORED.map((f) => [f, items.length ? Math.round((right[f]! / items.length) * 1000) / 1000 : 0]));
   return { model: options.model, checked: items.length, failed, accuracy, misses };
+}
+
+/**
+ * Settle a set from two independent labellers' answers: where they agree, that is the answer,
+ * recorded as the panel's; where they don't, both are returned for a judge to decide.
+ */
+export async function settleByAgreement(
+  db: HubDb,
+  name: string,
+  panelId: string,
+  first: { listingId: string; draft: unknown }[],
+  second: { listingId: string; draft: unknown }[],
+): Promise<{ agreed: number; disagreements: { listingId: string; a: Check; b: Check }[]; invalid: number }> {
+  const other = new Map(second.map((s) => [s.listingId, s.draft]));
+  const disagreements: { listingId: string; a: Check; b: Check }[] = [];
+  let agreed = 0;
+  let invalid = 0;
+  for (const f of first) {
+    const a = checkSchema.safeParse(f.draft);
+    const b = checkSchema.safeParse(other.get(f.listingId));
+    if (!a.success || !b.success) {
+      invalid++;
+      continue;
+    }
+    if (CHECKED.every((field) => a.data[field] === b.data[field])) {
+      await recordCheck(db, name, f.listingId, panelId, a.data);
+      agreed++;
+    } else disagreements.push({ listingId: f.listingId, a: a.data, b: b.data });
+  }
+  return { agreed, disagreements, invalid };
 }

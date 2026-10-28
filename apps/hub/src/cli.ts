@@ -4,7 +4,8 @@ import { and, asc, count, eq, isNull, lte, or } from "drizzle-orm";
 import { crawlSource } from "./engine/crawl.js";
 import { writeFile, readFile } from "node:fs/promises";
 import { annotateByRules } from "./annotate/rules.js";
-import { benchmarkItems, drawBenchmark, saveDrafts, scoreModel } from "./benchmark.js";
+import { benchmarkItems, drawBenchmark, recordCheck, saveDrafts, scoreModel, settleByAgreement } from "./benchmark.js";
+import { contributorId } from "./contributors.js";
 import { buildCatalog } from "./build.js";
 import { importLabBrands } from "./lab/brands.js";
 import { importLab } from "./lab/import.js";
@@ -31,6 +32,8 @@ const usage = `Usage: hub <command>
   benchmark draw <name> [random] [unplaced]   set aside listings to check (default 200 and 100)
   benchmark export <name> <file>        write a set's listings as JSON, for drafting
   benchmark drafts <name> <file>        load draft answers ([{ listingId, draft }]) into a set
+  benchmark agree <name> <a> <b> <out>  answer where two labellers agree; write the disagreements to <out>
+  benchmark answers <name> <file>       record a judge's answers ([{ listingId, answer }]) as the panel's
   benchmark score <name> [model]        score a local model against the checked answers
   status                                counts`;
 
@@ -106,6 +109,21 @@ try {
     console.log(`${items.length} listings written to ${args[2]}`);
   } else if (command === "benchmark" && args[0] === "drafts" && args[1] && args[2]) {
     console.log(await saveDrafts(db, args[1], JSON.parse(await readFile(args[2], "utf8"))));
+  } else if (command === "benchmark" && args[0] === "agree" && args[1] && args[2] && args[3] && args[4]) {
+    const panel = await contributorId(db, "teacher-panel", "agent");
+    const [a, b] = await Promise.all([readFile(args[2], "utf8"), readFile(args[3], "utf8")]).then((t) => t.map((x) => JSON.parse(x)));
+    const result = await settleByAgreement(db, args[1], panel, a, b);
+    await writeFile(args[4], JSON.stringify(result.disagreements, null, 1));
+    console.log({ agreed: result.agreed, disagreements: result.disagreements.length, invalid: result.invalid });
+  } else if (command === "benchmark" && args[0] === "answers" && args[1] && args[2]) {
+    const panel = await contributorId(db, "teacher-panel", "agent");
+    const answers = JSON.parse(await readFile(args[2], "utf8")) as { listingId: string; answer: unknown }[];
+    let recorded = 0;
+    for (const a of answers) {
+      await recordCheck(db, args[1], a.listingId, panel, a.answer);
+      recorded++;
+    }
+    console.log({ recorded });
   } else if (command === "benchmark" && args[0] === "score" && args[1]) {
     const score = await scoreModel(db, args[1], { ollama: process.env.OLLAMA_URL ?? "http://localhost:11434", model: args[2] ?? "qwen3:4b" });
     console.log({ ...score, misses: score.misses.slice(0, 40) });
