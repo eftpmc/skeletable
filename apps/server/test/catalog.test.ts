@@ -9,7 +9,7 @@ import type { BrandCard, BrandDetail, CategoryCount, ForYou, ItemDetail, ItemFee
 import { eq } from "drizzle-orm";
 import { describe, expect, it, vi } from "vitest";
 import { type CatalogRecord, importCatalog } from "../src/catalog/import.js";
-import { importPackIfNew } from "../src/catalog/pack.js";
+import { importPackIfNew, importPackWithRetries } from "../src/catalog/pack.js";
 import { html, startFixtureServer } from "./helpers/fixture-server.js";
 import { signUp, useTestApp } from "./helpers/setup.js";
 
@@ -365,6 +365,20 @@ describe("catalog", () => {
       expect(download).toHaveBeenCalledTimes(1);
       download.mockImplementation(async () => new Response("gone", { status: 404 }));
       await expect(importPackIfNew(db, "https://packs.example/pack.jsonl.gz")).rejects.toThrow(/404/);
+
+      // A sleeping hub refuses the first try; the app waits and tries again rather than giving up.
+      const waits: number[] = [];
+      let refused = 0;
+      download.mockImplementation(async (url) => {
+        if (refused++ < 2) throw new TypeError("fetch failed");
+        return String(url).endsWith(".sha256") ? new Response(`${sha}
+`) : new Response(bigger);
+      });
+      const tries = { delays: [10, 20, 30], sleep: async (ms: number) => void waits.push(ms) };
+      expect(await importPackWithRetries(db, "http://hub.internal/catalog/latest.jsonl.gz", undefined, tries)).toMatchObject({ imported: false });
+      expect(waits).toEqual([10]);
+      download.mockImplementation(async () => { throw new TypeError("fetch failed"); });
+      await expect(importPackWithRetries(db, "http://hub.internal/catalog/latest.jsonl.gz", undefined, tries)).rejects.toThrow("fetch failed");
     } finally {
       download.mockRestore();
     }
