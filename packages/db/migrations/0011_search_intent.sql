@@ -1,0 +1,1 @@
+ALTER TABLE "saved_search" ADD COLUMN "intent" jsonb;

@@ -1,10 +1,10 @@
-import { searchQuerySchema } from "@closet/shared";
+import { searchQuerySchema, intentFromParam } from "@skeleton/shared";
 import { Hono } from "hono";
 import { z } from "zod";
-import { FetchError } from "../net/safe-fetch.js";
-import { StoreUnavailableError } from "../catalog/connectors/storefront.js";
+import { FetchError } from "@skeleton/readers";
+import { StoreUnavailableError } from "@skeleton/readers";
 import type { AppEnv } from "../env.js";
-import type { SourceInfo } from "@closet/shared";
+import type { SourceInfo } from "@skeleton/shared";
 import { NotFoundError, type SearchService } from "./service.js";
 import type { StoreIcons } from "./store-icons.js";
 
@@ -14,8 +14,10 @@ export function searchRoutes(search: SearchService, sourceInfo: () => SourceInfo
   app.get("/search", async (c) => {
     const parsed = searchQuerySchema.safeParse(c.req.query());
     if (!parsed.success) return c.json({ error: "invalid_request", issues: parsed.error.issues }, 400);
-    const { q, condition, max } = parsed.data;
-    return c.json(await search.search(q, { condition, maxPriceCents: max ? max * 100 : undefined }));
+    const { q, condition, max, mode } = parsed.data;
+    const intent = intentFromParam(parsed.data.intent);
+    if (parsed.data.intent !== undefined && !intent) return c.json({ error: "invalid_request" }, 400);
+    return c.json(await search.search(q, { condition, maxPriceCents: max ? max * 100 : undefined, intent, mode }));
   });
 
   app.post("/search/link", async (c) => {

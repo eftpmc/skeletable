@@ -1,7 +1,7 @@
-import { type AccentName, Badge, Button, Chip, DownloadIcon, IconButton, SegmentedControl, Skeleton, TextField, XIcon, accents, buttonClass, cn, focusRing } from "@closet/ui";
+import { type AccentName, Badge, Button, Chip, DownloadIcon, IconButton, SegmentedControl, Skeleton, TextField, XIcon, accents, buttonClass, cn, focusRing } from "@skeleton/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
-import { type Me, type NotifySettings, type ShopFor, catalogCategories } from "@closet/shared";
+import { type Me, type NotifySettings, type ShopFor, catalogCategories } from "@skeleton/shared";
 import { ApiError, api } from "../../lib/api";
 import { useAccent } from "../../lib/accent";
 import { changePassword, signOut, updateUser } from "../../lib/auth-client";
@@ -147,23 +147,32 @@ const priceCaps = [null, 50, 100, 200, 300, 500, 1000] as const;
 export function DiscoverPreferences() {
   const { data: prefs } = usePreferences();
   const set = useSetPreferences();
+  const { data: counts = [] } = useQuery({ queryKey: ["catalog", "categories"], queryFn: api.catalogCategories, staleTime: 5 * 60 * 1000 });
   if (!prefs) return <Skeleton className="h-64 w-full" />;
   const hidden = new Set<string>(prefs.hiddenCategories);
+  // The categories the catalog has something in, plus any already turned off so they can come back on.
+  const stocked = new Set(counts.map((c) => c.id));
+  const offered = catalogCategories.filter((c) => stocked.has(c.id) || hidden.has(c.id));
 
   return (
     <div className="flex flex-col gap-8">
       <section>
         <h3 className="text-body font-semibold text-ink">Shop for</h3>
-        <p className="mt-1 text-callout font-normal text-muted">Unisex pieces show either way.</p>
+        <p className="mt-1 text-callout font-normal text-muted">
+          {prefs.shopFor === null
+            ? "Discover shows everything and leans toward the side you open and save."
+            : "Discover shows only this side. Unisex pieces show either way."}
+        </p>
         <SegmentedControl
           className="mt-4"
           label="Shop for"
-          value={prefs.shopFor ?? "all"}
-          onValueChange={(value) => set.mutate({ shopFor: value as ShopFor })}
+          value={prefs.shopFor ?? "learn"}
+          onValueChange={(value) => set.mutate({ shopFor: value === "learn" ? null : (value as ShopFor) })}
           segments={[
-            { value: "women", label: "Womenswear" },
-            { value: "men", label: "Menswear" },
-            { value: "all", label: "Everything" },
+            { value: "learn", label: "Learn it" },
+            { value: "women", label: "Women" },
+            { value: "men", label: "Men" },
+            { value: "all", label: "All" },
           ]}
         />
       </section>
@@ -186,7 +195,7 @@ export function DiscoverPreferences() {
           What the feed shows. Turn one off to leave it out; you can still open it on its own in Discover.
         </p>
         <div role="group" aria-label="Categories in the feed" className="mt-4 flex flex-wrap gap-2">
-          {catalogCategories.map((c) => (
+          {offered.map((c) => (
             <Chip
               key={c.id}
               selected={!hidden.has(c.id)}

@@ -1,5 +1,5 @@
-import { type Db, schema } from "@closet/db";
-import { catalogCategorySchema, departments } from "@closet/shared";
+import { type Db, schema } from "@skeleton/db";
+import { catalogCategorySchema, departments } from "@skeleton/shared";
 import { and, eq, isNull, notInArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { slugify } from "../closet/service.js";
@@ -49,9 +49,12 @@ export const catalogRecordSchema = z.object({
         category: catalogCategorySchema,
         department: z.enum(departments),
         look: packedVector,
+        // The photo's size in pixels, when the store says, so cards can hold its shape before it loads.
+        imageWidth: z.number().int().positive().max(20_000).optional(),
+        imageHeight: z.number().int().positive().max(20_000).optional(),
       }),
     )
-    .max(48),
+    .max(500),
 });
 export type CatalogRecord = z.infer<typeof catalogRecordSchema>;
 
@@ -134,6 +137,8 @@ export async function importCatalog(db: Db, records: CatalogRecord[]) {
             set: {
               position: sql`excluded.position`,
               imageUrl: sql`excluded.image_url`,
+              imageWidth: sql`excluded.image_width`,
+              imageHeight: sql`excluded.image_height`,
               title: sql`excluded.title`,
               priceUsd: sql`excluded.price_usd`,
               category: sql`excluded.category`,

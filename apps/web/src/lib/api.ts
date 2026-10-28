@@ -10,6 +10,7 @@ import {
   type BrandFitInput,
   type Category,
   type CategoryCount,
+  type CategoryGroupId,
   type CategoryId,
   type ColorName,
   type ForYou,
@@ -30,6 +31,7 @@ import {
   type SavedSearchInput,
   type SavedSearchSummary,
   type SearchResponse,
+  type SearchIntent,
   type Condition,
   type SourceInfo,
   type ServerInfo,
@@ -39,7 +41,7 @@ import {
   type WatchInput,
   type WatchSummary,
   serverInfoSchema,
-} from "@closet/shared";
+} from "@skeleton/shared";
 
 export class ApiError extends Error {
   constructor(
@@ -73,13 +75,15 @@ export async function getServerInfo(): Promise<ServerInfo> {
 
 export type ItemFilters = { category?: Category; color?: ColorName; q?: string };
 
-export type SearchParams = { q: string; condition?: Condition; max?: number };
+export type SearchParams = { q: string; condition?: Condition; max?: number; intent?: SearchIntent; mode?: "auto" | "assisted" | "keyword" };
 
 export const api = {
-  search: ({ q, condition, max }: SearchParams) => {
+  search: ({ q, condition, max, intent, mode }: SearchParams) => {
     const params = new URLSearchParams({ q });
     if (condition) params.set("condition", condition);
     if (max) params.set("max", String(max));
+    if (intent) params.set("intent", JSON.stringify(intent));
+    if (mode) params.set("mode", mode);
     return request<SearchResponse>("GET", `/api/search?${params}`);
   },
   resolveLink: (url: string) => request<{ productId: string }>("POST", "/api/search/link", { url }),
@@ -135,11 +139,15 @@ export const api = {
   voteBrand: (id: string, vote: VoteInput) => request<void>("PUT", `/api/catalog/brands/${id}/vote`, vote),
   forYou: () => request<ForYou>("GET", "/api/catalog/for-you"),
   starters: () => request<BrandCard[]>("GET", "/api/catalog/starters"),
-  feed: (page: number, seed: string, category?: CategoryId) =>
-    request<ItemFeed>("GET", `/api/catalog/feed?${new URLSearchParams({ page: String(page), seed, ...(category ? { category } : {}) })}`),
+  feed: (page: number, seed: string, category?: CategoryId, group?: CategoryGroupId) =>
+    request<ItemFeed>(
+      "GET",
+      `/api/catalog/feed?${new URLSearchParams({ page: String(page), seed, ...(category ? { category } : group ? { group } : {}) })}`,
+    ),
   catalogCategories: () => request<CategoryCount[]>("GET", "/api/catalog/categories"),
   preferences: () => request<Preferences>("GET", "/api/preferences"),
   setPreferences: (input: PreferencesInput) => request<Preferences>("PATCH", "/api/preferences", input),
+  catalogSearch: (q: string) => request<ItemFeed["items"]>("GET", `/api/catalog/search?${new URLSearchParams({ q })}`),
   catalogItem: (id: string) => request<ItemDetail>("GET", `/api/catalog/items/${encodeURIComponent(id)}`),
   saveItem: (id: string) => request<{ productId: string }>("POST", `/api/catalog/items/${encodeURIComponent(id)}/save`),
   brands: () => request<string[]>("GET", "/api/brands"),

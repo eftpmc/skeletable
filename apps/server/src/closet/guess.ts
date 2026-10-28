@@ -1,4 +1,4 @@
-import { type Category, type ColorName, colorNames } from "@closet/shared";
+import { type Category, type ColorName, colorNames } from "@skeleton/shared";
 
 // When a title names several things, the last one wins:
 // "Shirt Jacket" is clothing, "Sneaker Socks" are accessories, "Laptop Backpack" is a bag.

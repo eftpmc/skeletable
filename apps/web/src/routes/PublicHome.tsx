@@ -1,4 +1,4 @@
-import { Chip, ChipRow } from "@closet/ui";
+import { Chip, ChipRow } from "@skeleton/ui";
 import { Suspense, lazy } from "react";
 import { useNavigate } from "react-router";
 import { Landing } from "../components/Landing";

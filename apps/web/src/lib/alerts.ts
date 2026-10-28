@@ -1,4 +1,4 @@
-import type { Condition, SavedSearchSummary } from "@closet/shared";
+import { budgetLabel, intentKey, type Condition, type SavedSearchSummary, type SearchIntent } from "@skeleton/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
 import { useSignUpPrompt, useSignedIn } from "./viewer";
@@ -41,22 +41,22 @@ export function useSavedSearches() {
   return useQuery({ queryKey: alertKeys.searches, queryFn: api.savedSearches, enabled: useSignedIn() });
 }
 
-const sameSearch = (s: SavedSearchSummary, q: string, condition?: Condition, max?: number) =>
-  s.query.toLowerCase() === q.toLowerCase() && s.condition === (condition ?? null) && s.max === (max ?? null);
+const sameSearch = (s: SavedSearchSummary, q: string, condition?: Condition, max?: number, intent?: SearchIntent) =>
+  s.intent && intent ? intentKey(s.intent) === intentKey(intent) : s.query.toLowerCase() === q.toLowerCase() && s.condition === (condition ?? null) && s.max === (max ?? null);
 
 /**
  * Save or unsave the search on screen. Opening a saved search's results clears its "N new".
  * Signed out, saving asks you to create an account first.
  */
-export function useSavedSearch(q: string, condition?: Condition, max?: number) {
+export function useSavedSearch(q: string, condition?: Condition, max?: number, intent?: SearchIntent) {
   const queryClient = useQueryClient();
   const signedIn = useSignedIn();
   const signUp = useSignUpPrompt();
   const { data: searches = [] } = useSavedSearches();
-  const saved = searches.find((s) => sameSearch(s, q, condition, max)) ?? null;
+  const saved = searches.find((s) => sameSearch(s, q, condition, max, intent)) ?? null;
   const invalidate = () => Promise.all([queryClient.invalidateQueries({ queryKey: alertKeys.searches }), queryClient.invalidateQueries({ queryKey: alertKeys.feed })]);
   const mutation = useMutation({
-    mutationFn: () => (saved ? api.deleteSearch(saved.id) : api.saveSearch({ q, condition, max }).then(() => undefined)),
+    mutationFn: () => (saved ? api.deleteSearch(saved.id) : api.saveSearch({ q, condition, max, intent }).then(() => undefined)),
     onSettled: invalidate,
   });
   const viewed = useMutation({ mutationFn: (id: string) => api.searchViewed(id), onSettled: invalidate });
@@ -65,14 +65,20 @@ export function useSavedSearch(q: string, condition?: Condition, max?: number) {
 }
 
 /** Link to a saved search's results. */
-export function searchHref(s: { query: string; condition: Condition | null; max: number | null }) {
+export function searchHref(s: { query: string; condition: Condition | null; max: number | null; intent?: SearchIntent | null }) {
   const params = new URLSearchParams({ q: s.query });
   if (s.condition) params.set("condition", s.condition);
   if (s.max) params.set("max", String(s.max));
+  if (s.intent) params.set("intent", JSON.stringify(s.intent));
   return `/search?${params}`;
 }
 
 /** "under $250 · used" */
-export function searchDetail(s: { condition: Condition | null; max: number | null }) {
+export function searchDetail(s: { condition: Condition | null; max: number | null; intent?: SearchIntent | null }) {
+  if (s.intent) return [
+    s.intent.condition && `${s.intent.condition.strength === "preferred" ? "Prefer " : ""}${s.intent.condition.values.join(" or ")}`,
+    s.intent.budget && `${s.intent.budget.strength === "preferred" ? "Prefer " : ""}${budgetLabel(s.intent.budget)}`,
+    ...s.intent.attributes.map((a) => `${a.text} (unverified)`),
+  ].filter(Boolean).join(" · ");
   return [s.max ? `under $${s.max}` : null, s.condition ? { new: "new", refurb: "refurb", used: "used" }[s.condition] : null].filter(Boolean).join(" · ");
 }

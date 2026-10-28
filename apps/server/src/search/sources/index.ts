@@ -1,4 +1,4 @@
-import type { SourceInfo } from "@closet/shared";
+import type { SourceInfo } from "@skeleton/shared";
 import type { Config } from "../../config.js";
 import { bestBuySource } from "./bestbuy.js";
 import { ebaySource } from "./ebay.js";

@@ -1,22 +1,27 @@
 """Turn the catalog's brands into a catalog of products, sorted into departments and categories.
 
 Usage (run from a work directory; photos and vectors are cached there like embed.py's):
-  python3 -I items.py fetch <pack.jsonl.gz>                 # each Shopify store's products.json, once
+  python3 -I items.py fetch <pack.jsonl.gz>                 # each Shopify store's products.json, every page
   venv/bin/python -I items.py build <pack.jsonl.gz> <out.jsonl.gz>
 
-fetch reads every store's /products.json (one request per store, after checking its robots.txt),
-which has the tags and product types the export didn't keep. build picks up to ITEMS products per
+fetch reads every store's /products.json, page by page (250 products a page, up to PAGES, pausing
+between pages, after checking its robots.txt), which has the tags, product types and photo sizes the
+export didn't keep. build picks up to ITEMS products per
 brand, embeds their photos, sorts each into a category and a department (taxonomy.py), and writes
 the pack again with the products in it. Stores we can't read keep the products the pack already had.
 """
 import concurrent.futures as cf, gzip, hashlib, json, os, re, sys, time, urllib.parse, urllib.request, urllib.robotparser
 
-sys.path.insert(0, __file__.rsplit("/", 1)[0])
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-UA = "skeleton-lab/0.1 (research crawl; one request per store)"
+UA = "skeleton-lab/0.1 (research crawl; a few requests per store, paced)"
 CA = "/root/.ccr/ca-bundle.crt"
-# Products per brand in the pack. Shopify lists newest first, so these are the brand's current ones.
-ITEMS = 24
+# Products per brand in the pack, one per style. Shopify lists newest first, so a cap keeps the
+# brand's current ones; the feed spreads brands out, so a big store doesn't crowd out small ones.
+ITEMS = 400
+# Pages of products.json read per store (250 each), and the pause between them.
+PAGES = 20
+PAGE_PAUSE = 2.0
 
 
 def opener():
@@ -29,7 +34,7 @@ def opener():
 
 
 def read_pack(path):
-    return [json.loads(line) for line in gzip.open(path, "rt") if line.strip()]
+    return [json.loads(line) for line in gzip.open(path, "rt", encoding="utf-8") if line.strip()]
 
 
 def photos_of(r):
@@ -65,19 +70,31 @@ def allowed(http, host, path):
     return rp.can_fetch(UA, f"https://{host}{path}")
 
 
-def fetch_store(http, r):
+def fetch_store(http, r, pause=PAGE_PAUSE):
+    """Every page of a store's products.json, until a short page or PAGES. A store that stops answering
+    partway keeps the pages it gave."""
     path = "/products.json?limit=250"
+    last = "no host"
     for host in hosts_of(r):
         if not allowed(http, host, path):
             return {"status": "robots", "host": host}
+        products, final = [], host
         try:
-            req = urllib.request.Request(f"https://{host}{path}", headers={"User-Agent": UA, "Accept": "application/json"})
-            with http.open(req, timeout=20) as res:
-                data = json.loads(res.read(20_000_000))
-            return {"status": "ok", "host": urllib.parse.urlsplit(res.geturl()).hostname, "products": data.get("products") or []}
+            for page in range(1, PAGES + 1):
+                req = urllib.request.Request(f"https://{host}{path}&page={page}", headers={"User-Agent": UA, "Accept": "application/json"})
+                with http.open(req, timeout=20) as res:
+                    batch = json.loads(res.read(20_000_000)).get("products") or []
+                    final = urllib.parse.urlsplit(res.geturl()).hostname
+                products += batch
+                if len(batch) < 250:
+                    break
+                time.sleep(pause)
+            return {"status": "ok", "host": final, "pages": page, "products": products}
         except Exception as e:  # noqa: BLE001 - a store that refuses is skipped, never retried harder
+            if products:
+                return {"status": "ok", "host": final, "partial": str(e)[:120], "products": products}
             last = str(e)[:120]
-    return {"status": "failed", "error": last if hosts_of(r) else "no host"}
+    return {"status": "failed", "error": last}
 
 
 def fetch(pack_path, workers=1, pause=5.0):

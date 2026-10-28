@@ -1,4 +1,4 @@
-import { safeFetch } from "../../net/safe-fetch.js";
+import { safeFetch } from "@skeleton/readers";
 import { dollarsToCents, normalizeGtin, parseCondition, tokens } from "../normalize.js";
 import type { RawOffer, Source } from "./types.js";
 

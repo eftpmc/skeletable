@@ -1,4 +1,4 @@
-import { isAdmin } from "@closet/shared";
+import { isAdmin } from "@skeleton/shared";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "./api";
 

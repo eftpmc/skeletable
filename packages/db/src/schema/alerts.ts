@@ -1,4 +1,4 @@
-import { boolean, index, integer, pgTable, primaryKey, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import { boolean, index, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 import { user } from "./auth.js";
 import { product } from "./search.js";
 
@@ -36,6 +36,7 @@ export const savedSearch = pgTable(
     condition: text("condition"),
     // Whole dollars, like the search filter.
     maxPrice: integer("max_price"),
+    intent: jsonb("intent"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     lastRunAt: timestamp("last_run_at", { withTimezone: true }),
     // Products first seen after this are new to the person.

@@ -4,13 +4,13 @@ import {
   colorSchema,
   itemInputSchema,
   itemPatchSchema,
-} from "@closet/shared";
+} from "@skeleton/shared";
 import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { z } from "zod";
 import type { AuthedEnv, Deps } from "../env.js";
-import { FetchError, safeFetch } from "../net/safe-fetch.js";
-import { StoreUnavailableError } from "../catalog/connectors/storefront.js";
+import { FetchError, safeFetch } from "@skeleton/readers";
+import { StoreUnavailableError } from "@skeleton/readers";
 import { exportUserData } from "./export.js";
 import { InvalidImageError, MAX_UPLOAD_BYTES } from "./images.js";
 import { fetchLinkPreview } from "./link-preview.js";

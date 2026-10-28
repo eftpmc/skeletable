@@ -1,4 +1,4 @@
-import { serverInfoSchema } from "@closet/shared";
+import { serverInfoSchema } from "@skeleton/shared";
 import { describe, expect, it } from "vitest";
 import { loadConfig } from "../src/config.js";
 import { post, signUp, useTestApp } from "./helpers/setup.js";

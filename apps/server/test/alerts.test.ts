@@ -1,4 +1,5 @@
-import type { AlertsResponse, SavedSearchSummary, SearchResponse, WatchSummary } from "@closet/shared";
+import type { AlertsResponse, SavedSearchSummary, SearchResponse, WatchSummary } from "@skeleton/shared";
+import { keywordIntent } from "@skeleton/shared";
 import { beforeEach, describe, expect, it } from "vitest";
 import type { RawOffer, Source } from "../src/search/sources/index.js";
 import { signUp, useTestApp } from "./helpers/setup.js";
@@ -47,6 +48,18 @@ beforeEach(() => {
 });
 
 describe("alerts", () => {
+  it("saves interpreted constraints and deduplicates the equivalent explicit search", async () => {
+    const { app } = start();
+    const user = await signUp(app);
+    const intent = keywordIntent("tree runner");
+    intent.condition = { values: ["new"], strength: "required", evidence: "new" };
+    intent.budget = { amountCents: 20000, currency: "USD", comparison: "lte", strength: "required", evidence: "up to $200" };
+    const first = await (await user.post("/api/saved-searches", { q: "new tree runner up to $200", intent })).json() as SavedSearchSummary;
+    expect(first).toMatchObject({ query: "new tree runner up to $200", intent });
+    const second = await (await user.post("/api/saved-searches", { q: "tree runner", condition: "new", max: 200 })).json() as SavedSearchSummary;
+    expect(second.id).toBe(first.id);
+  });
+
   it("requires a session", async () => {
     const app = setup({}, { sources });
     expect((await app.request("/api/watches")).status).toBe(401);

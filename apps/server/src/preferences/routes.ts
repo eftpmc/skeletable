@@ -1,5 +1,5 @@
-import type { Db } from "@closet/db";
-import { preferencesInputSchema } from "@closet/shared";
+import type { Db } from "@skeleton/db";
+import { preferencesInputSchema } from "@skeleton/shared";
 import { Hono } from "hono";
 import type { AuthedEnv } from "../env.js";
 import { readPreferences, updatePreferences } from "./service.js";

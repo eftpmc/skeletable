@@ -2,7 +2,7 @@
 
 Usage: venv/bin/python -I export.py <lab.json> <brands_in.json> <catalog.jsonl[.gz]>
 Then either import it into one database:
-  DATABASE_URL=… pnpm --filter @closet/server catalog:import <catalog.jsonl>
+  DATABASE_URL=… pnpm --filter @skeleton/server catalog:import <catalog.jsonl>
 or ship it with the app as the catalog pack (gzipped), which the server imports on start when new:
   venv/bin/python -I export.py lab.json brands_in.json apps/server/catalog/pack.jsonl.gz
 Reads <lab>.npy and <lab>.starts.npy from rank.py. Photo URLs come from brands_in.json (the

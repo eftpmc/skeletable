@@ -1,4 +1,4 @@
-import type { Preferences, PreferencesInput } from "@closet/shared";
+import type { Preferences, PreferencesInput } from "@skeleton/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
 

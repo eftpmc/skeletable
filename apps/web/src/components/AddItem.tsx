@@ -1,5 +1,5 @@
-import type { Item } from "@closet/shared";
-import { Button, Sheet } from "@closet/ui";
+import type { Item } from "@skeleton/shared";
+import { Button, Sheet } from "@skeleton/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, type ReactNode, createContext, useCallback, useContext, useRef, useState } from "react";
 import { useNavigate } from "react-router";

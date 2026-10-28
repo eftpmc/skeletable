@@ -7,5 +7,5 @@ export default defineConfig({
   target: "node22",
   clean: true,
   // Bundle workspace packages; they ship as TypeScript source.
-  noExternal: [/^@closet\//],
+  noExternal: [/^@skeleton\//],
 });

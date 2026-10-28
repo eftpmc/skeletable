@@ -1,4 +1,4 @@
-import { type Condition, conditionLabels } from "@closet/shared";
+import { type Condition, conditionLabels } from "@skeleton/shared";
 import {
   ArrowUpRightIcon,
   BookmarkIcon,
@@ -14,7 +14,7 @@ import {
   buttonClass,
   cn,
   focusRing,
-} from "@closet/ui";
+} from "@skeleton/ui";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "react-router";

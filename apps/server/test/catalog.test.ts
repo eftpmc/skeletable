@@ -1,17 +1,19 @@
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { createHash, randomUUID } from "node:crypto";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { gzipSync } from "node:zlib";
-import { schema } from "@closet/db";
-import type { BrandCard, BrandDetail, CategoryCount, ForYou, ItemDetail, ItemFeed, Preferences } from "@closet/shared";
+import { schema } from "@skeleton/db";
+import { packVector } from "@skeleton/formats";
+import type { BrandCard, BrandDetail, CategoryCount, ForYou, ItemDetail, ItemFeed, Preferences } from "@skeleton/shared";
 import { eq } from "drizzle-orm";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { type CatalogRecord, importCatalog } from "../src/catalog/import.js";
 import { importPackIfNew } from "../src/catalog/pack.js";
 import { html, startFixtureServer } from "./helpers/fixture-server.js";
 import { signUp, useTestApp } from "./helpers/setup.js";
 
-const { db, setup } = useTestApp();
+const { db, setup, setupWithServices } = useTestApp();
 
 /** A unit vector pointing mostly along one axis, so brands near the same axis look alike. */
 function look(axis: number, lean = 0, toward = (axis + 1) % 512) {
@@ -232,6 +234,42 @@ describe("catalog", () => {
     expect(top.filter((n) => /Loud|Neon|Acid/.test(n)).length).toBeGreaterThanOrEqual(5);
   });
 
+  it("searches products by brand, title and category, on the viewer's side of the catalog", async () => {
+    const suus = store("Suus", 0, 0, { department: "women" }, [
+      { title: "Linen Shirt Dress", category: "dresses", department: "women" },
+      { title: "Wool Overshirt", category: "shirts", department: "women" },
+    ]);
+    const winfield = store("Winfield", 10, 0, { department: "men" }, [
+      { title: "Steel Grey Linen Shirt", category: "shirts", department: "men" },
+      { title: "Heavy Tee", category: "tops", department: "unisex" },
+    ]);
+    await importCatalog(db, [suus, winfield, lowQuality]);
+    const { app, services } = setupWithServices();
+    // The index is rebuilt after an import, and left alone while it matches the database.
+    expect(await services.catalog.reindex()).toBe(4);
+    expect(await services.catalog.ensureIndexed()).toBeNull();
+    const user = await signUp(app);
+    const search = async (q: string) =>
+      ((await (await user.get(`/api/catalog/search?q=${encodeURIComponent(q)}`)).json()) as ItemFeed["items"]).map((i) => i.title);
+
+    // Every word must appear, each at the start of a word: "tee" doesn't find "Steel".
+    expect((await search("linen shirt")).sort()).toEqual(["Linen Shirt Dress", "Steel Grey Linen Shirt"]);
+    expect(await search("tee")).toEqual(["Heavy Tee"]);
+    expect(await search("overshirt")).toEqual(["Wool Overshirt"]);
+    // Typos in longer words are forgiven, and a category's name finds what's filed under it.
+    expect((await search("winfeld")).sort()).toEqual(["Heavy Tee", "Steel Grey Linen Shirt"]);
+    expect(await search("jumpsuits")).toEqual(["Linen Shirt Dress"]);
+    // A brand's name finds its products; brands under the quality bar never show.
+    expect((await search("winfield")).sort()).toEqual(["Heavy Tee", "Steel Grey Linen Shirt"]);
+    expect(await search("wholesale")).toEqual([]);
+    expect(await search("   ")).toEqual([]);
+
+    await user.patch("/api/preferences", { shopFor: "men" });
+    expect(await search("linen shirt")).toEqual(["Steel Grey Linen Shirt"]);
+    await user.patch("/api/preferences", { shopFor: "all", hiddenCategories: ["shirts"] });
+    expect(await search("linen shirt")).toEqual(["Linen Shirt Dress"]);
+  });
+
   it("opens an item with more from its brand and more like it", async () => {
     await importCatalog(db, [...quiet, ...loud, far]);
     const user = await signUp(setup());
@@ -282,23 +320,54 @@ describe("catalog", () => {
   it("imports a catalog pack once, and again only when it changes", async () => {
     await db.delete(schema.catalogPack);
     const dir = mkdtempSync(path.join(tmpdir(), "closet-pack-"));
-    // The pack stores product vectors as 512 signed bytes in base64.
-    const packed = (v: number[]) => Buffer.from(Int8Array.from(v.map((x) => Math.round(x * 127)))).toString("base64");
+    // The hub's catalog file: a header, then each source followed by its listings.
     const write = (records: CatalogRecord[]) => {
       const file = path.join(dir, `pack-${records.length}.jsonl.gz`);
-      const lines = records.map((r) => JSON.stringify({ ...r, items: r.items.map((i) => ({ ...i, look: packed(i.look) })) }));
-      writeFileSync(file, gzipSync(lines.join("\n") + "\n"));
+      const lines: unknown[] = [{ type: "header", format: 2, licence: "ODbL-1.0", buildId: randomUUID(), builtAt: new Date().toISOString(), resolverVersion: 1, embeddings: [] }];
+      for (const r of records.filter((r) => r.kind === "store")) {
+        const sourceId = randomUUID();
+        lines.push({ type: "source", id: sourceId, domain: new URL(r.site!).hostname, values: { name: r.name, quality: r.quality } });
+        for (const i of r.items) {
+          lines.push({
+            type: "listing", id: randomUUID(), sourceId, url: i.productUrl, title: i.title ?? "Untitled",
+            price: { amount: Math.round((i.priceUsd ?? 0) * 100), currency: "USD" }, images: [{ url: i.imageUrl }],
+            values: { category: i.category, department: i.department }, embeddings: { "clip-vit-b-32": packVector(i.look) },
+          });
+        }
+      }
+      writeFileSync(file, gzipSync(lines.map((l) => JSON.stringify(l)).join("\n") + "\n"));
       return file;
     };
+    // Only stores travel in the hub's file; a brand known only by name (Uniqlo) isn't a source.
     const first = write([...quiet, uniqlo]);
-    expect(await importPackIfNew(db, first)).toMatchObject({ imported: true, added: 4 });
+    expect(await importPackIfNew(db, first)).toMatchObject({ imported: true, added: 3 });
     expect(await importPackIfNew(db, first)).toMatchObject({ imported: false });
-    expect(await importPackIfNew(db, write([...quiet, uniqlo, ...loud]))).toMatchObject({ imported: true, added: 2, updated: 4 });
+    expect(await importPackIfNew(db, write([...quiet, uniqlo, ...loud]))).toMatchObject({ imported: true, added: 2, updated: 3 });
     const user = await signUp(setup());
     expect(((await (await user.get("/api/catalog/brands?q=acid")).json()) as BrandCard[])[0]?.name).toBe("Acid Club");
     // Product vectors come through the bytes intact, normalized.
     const [item] = await db.select().from(schema.catalogItem).limit(1);
     expect(Math.hypot(...item!.look)).toBeCloseTo(1, 3);
+
+    // A pack too big for the image is downloaded instead, and checked against its hash when one is given.
+    const bigger = readFileSync(write([...quiet, uniqlo, ...loud, far]));
+    const sha = createHash("sha256").update(bigger).digest("hex");
+    const download = vi.spyOn(globalThis, "fetch").mockImplementation(async () => new Response(bigger));
+    try {
+      await expect(importPackIfNew(db, "https://packs.example/pack.jsonl.gz", "0".repeat(64))).rejects.toThrow(/doesn't match/);
+      expect(await importPackIfNew(db, "https://packs.example/pack.jsonl.gz", sha)).toMatchObject({ imported: true, added: 1 });
+      expect(download).toHaveBeenCalledWith("https://packs.example/pack.jsonl.gz", expect.anything());
+      // A hub publishes its build's hash beside it: an unchanged build isn't downloaded again.
+      download.mockClear();
+      download.mockImplementation(async (url) => (String(url).endsWith(".sha256") ? new Response(`${sha}
+`) : new Response(bigger)));
+      expect(await importPackIfNew(db, "http://hub.internal/catalog/latest.jsonl.gz")).toMatchObject({ imported: false, hash: sha });
+      expect(download).toHaveBeenCalledTimes(1);
+      download.mockImplementation(async () => new Response("gone", { status: 404 }));
+      await expect(importPackIfNew(db, "https://packs.example/pack.jsonl.gz")).rejects.toThrow(/404/);
+    } finally {
+      download.mockRestore();
+    }
   });
 
   it("imports onto brands people already added, and keeps same-named stores apart", async () => {
@@ -382,6 +451,10 @@ describe("catalog", () => {
     expect((await feed("&category=dresses")).map((i) => i.category)).toEqual(["dresses", "dresses"]);
     expect((await feed("&category=swimwear")).map((i) => i.category)).toEqual(["swimwear"]);
     expect(await feed("&category=gadgets")).toHaveLength(4);
+    // A group shows its categories, still without the hidden ones; an unknown group is ignored.
+    expect((await feed("&group=clothing")).map((i) => i.category).sort()).toEqual(["dresses", "dresses", "tops", "tops"]);
+    expect(await feed("&group=accessories")).toEqual([]);
+    expect(await feed("&group=gadgets")).toHaveLength(4);
 
     // Brands that only make the other side don't come up as neighbors either.
     const detail = (await (await user.get(`/api/catalog/brands/${await idOf(user, "Suus")}`)).json()) as BrandDetail;
@@ -421,5 +494,40 @@ describe("catalog", () => {
     const forYou = (await res.json()) as ForYou;
     expect(forYou.interested).toBeGreaterThanOrEqual(5);
     expect(forYou.brands.every((b) => b.because === null)).toBe(true);
+  });
+
+  it("imports whole stores, with each photo's size when the store gave it", async () => {
+    // More products than a brand used to be allowed (48), one with its photo's size.
+    const big = store("Winfield", 0, 0, {}, [{ title: "Sized", imageWidth: 800, imageHeight: 1200 }, ...Array.from({ length: 59 }, () => ({}))]);
+    await importCatalog(db, [big]);
+    const user = await signUp(setup());
+    const all: ItemFeed["items"] = [];
+    for (let page = 0; page < 3; page++) all.push(...((await (await user.get(`/api/catalog/feed?seed=x&page=${page}`)).json()) as ItemFeed).items);
+    expect(all).toHaveLength(60);
+    expect(all.find((i) => i.title === "Sized")).toMatchObject({ imageWidth: 800, imageHeight: 1200 });
+    expect(all.find((i) => i.title !== "Sized")).toMatchObject({ imageWidth: null, imageHeight: null });
+  });
+
+  it("leans toward the side someone opens until they pick one in Settings", async () => {
+    // Four brands on each side, all looking alike, so only the side they open can separate them.
+    const side = (department: "women" | "men", k: number) =>
+      store(`${department} ${k}`, 0, 0, { department }, [1, 2, 3].map(() => ({ department, category: "tops" as const })));
+    await importCatalog(db, [1, 2, 3, 4].flatMap((k) => [side("women", k), side("men", k)]));
+    const user = await signUp(setup());
+    const feed = async () => ((await (await user.get("/api/catalog/feed?seed=x")).json()) as ItemFeed).items;
+
+    const first = await feed();
+    expect(new Set(first.map((i) => i.department))).toEqual(new Set(["women", "men"]));
+    for (const item of first.filter((i) => i.department === "women").slice(0, 3)) {
+      expect((await user.post(`/api/catalog/items/${item.id}/seen`, { dwellMs: 30_000 })).status).toBe(204);
+    }
+    const leaning = (await feed()).slice(0, 6);
+    expect(leaning.filter((i) => i.department === "women").length).toBeGreaterThanOrEqual(5);
+
+    // Picking a side in Settings filters instead; picking "everything" stops the lean.
+    await user.patch("/api/preferences", { shopFor: "men" });
+    expect((await feed()).every((i) => i.department === "men")).toBe(true);
+    await user.patch("/api/preferences", { shopFor: "all" });
+    expect((await feed()).slice(0, 6).filter((i) => i.department === "women").length).toBeLessThan(6);
   });
 });

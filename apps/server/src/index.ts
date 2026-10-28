@@ -1,4 +1,4 @@
-import { createDb, runMigrations } from "@closet/db";
+import { createDb, runMigrations } from "@skeleton/db";
 import { serve } from "@hono/node-server";
 import { startAlertsScheduler } from "./alerts/scheduler.js";
 import { createApp, createServices } from "./app.js";
@@ -25,17 +25,33 @@ const server = serve({ fetch: app.fetch, port: config.PORT }, (info) => {
   console.log(`${config.SERVER_NAME} listening on http://localhost:${info.port} (${config.DEPLOYMENT})`);
 });
 
-// In the background: the app serves while a new catalog pack loads.
-if (config.CATALOG_PACK) {
-  importPackIfNew(db, config.CATALOG_PACK).then(
-    (result) => console.log("catalog pack", result.imported ? "imported" : "already imported", result),
-    (error) => console.error("catalog pack import failed:", error),
-  );
+// In the background: the app serves while a new catalog pack loads, then the search index catches up
+// (rebuilt after an import, or when it's missing or out of step with the database). A served catalog
+// is checked again every CATALOG_REFRESH_HOURS.
+async function loadCatalog() {
+  if (config.CATALOG_PACK) {
+    try {
+      const result = await importPackIfNew(db, config.CATALOG_PACK, config.CATALOG_PACK_SHA256);
+      console.log("catalog pack", result.imported ? "imported" : "already imported", result);
+      if (result.imported) return console.log("catalog search index rebuilt:", await services.catalog.reindex(), "products");
+    } catch (error) {
+      console.error("catalog pack import failed:", error);
+    }
+  }
+  const rebuilt = await services.catalog.ensureIndexed();
+  console.log("catalog search index", rebuilt === null ? "up to date" : `rebuilt: ${rebuilt} products`);
 }
+const catalogFailed = (error: unknown) => console.error("catalog search index failed:", error);
+void loadCatalog().catch(catalogFailed);
+const refresh =
+  config.CATALOG_PACK && /^https?:\/\//.test(config.CATALOG_PACK) && config.CATALOG_REFRESH_HOURS > 0
+    ? setInterval(() => void loadCatalog().catch(catalogFailed), config.CATALOG_REFRESH_HOURS * 3_600_000)
+    : undefined;
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.on(signal, () => {
     stopAlerts();
+    clearInterval(refresh);
     server.close();
     void close().finally(() => process.exit(0));
   });

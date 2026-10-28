@@ -1,5 +1,5 @@
 {
-  "name": "closet",
+  "name": "skeleton",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.28.0",
@@ -12,8 +12,8 @@
     "lint": "eslint .",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
-    "db:generate": "pnpm --filter @closet/db generate",
-    "db:migrate": "pnpm --filter @closet/db migrate"
+    "db:generate": "pnpm --filter @skeleton/db generate",
+    "db:migrate": "pnpm --filter @skeleton/db migrate"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

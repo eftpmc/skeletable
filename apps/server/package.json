@@ -1,5 +1,5 @@
 {
-  "name": "@closet/server",
+  "name": "@skeleton/server",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -9,17 +9,20 @@
     "start": "node dist/index.js",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "catalog:import": "tsx src/catalog/import-cli.ts",
-    "catalog:recipes": "tsx src/catalog/connectors/recipe-cli.ts"
+    "search:eval": "tsx --env-file-if-exists=../../.env scripts/search-eval.ts",
+    "catalog:import": "tsx src/catalog/import-cli.ts"
   },
   "dependencies": {
-    "@closet/db": "workspace:*",
-    "@closet/shared": "workspace:*",
     "@hono/node-server": "^2.1.5",
+    "@skeleton/db": "workspace:*",
+    "@skeleton/formats": "workspace:*",
+    "@skeleton/readers": "workspace:*",
+    "@skeleton/shared": "workspace:*",
     "better-auth": "^1.7.13",
     "drizzle-orm": "^0.45.4",
     "fflate": "^0.8.3",
     "hono": "^4.13.14",
+    "meilisearch": "0.62.0",
     "node-html-parser": "^9.0.5",
     "nodemailer": "^7.0.13",
     "sharp": "^0.35.5",

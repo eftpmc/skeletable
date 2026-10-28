@@ -60,6 +60,9 @@ export const catalogItem = pgTable(
     position: integer("position").notNull(),
     productUrl: text("product_url").notNull(),
     imageUrl: text("image_url").notNull(),
+    // The photo's size in pixels when the store gave it: cards hold its shape before it loads.
+    imageWidth: integer("image_width"),
+    imageHeight: integer("image_height"),
     title: text("title"),
     priceUsd: real("price_usd"),
     category: text("category").notNull(),
@@ -73,6 +76,8 @@ export const catalogItem = pgTable(
   (table) => [
     uniqueIndex("catalog_item_brand_url_idx").on(table.brandId, table.productUrl),
     index("catalog_item_category_idx").on(table.category, table.department),
+    // Discover's shortlists and "more like this": the products nearest a look.
+    index("catalog_item_look_idx").using("hnsw", table.look.op("vector_cosine_ops")),
   ],
 );
 

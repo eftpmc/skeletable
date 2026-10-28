@@ -1,6 +1,6 @@
 import http from "node:http";
 import type { AddressInfo } from "node:net";
-import type { NotifySettings, SearchResponse } from "@closet/shared";
+import type { NotifySettings, SearchResponse } from "@skeleton/shared";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Email } from "../src/alerts/mailer.js";
 import { digestDue } from "../src/alerts/notify.js";

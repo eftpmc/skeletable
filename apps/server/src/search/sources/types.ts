@@ -1,5 +1,5 @@
-import type { Condition } from "@closet/shared";
-import type { SafeFetchOptions } from "../../net/safe-fetch.js";
+import type { Condition } from "@skeleton/shared";
+import type { SafeFetchOptions } from "@skeleton/readers";
 
 /** An offer as a source reports it, before we store or group it. */
 export type RawOffer = {

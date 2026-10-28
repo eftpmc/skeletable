@@ -1,4 +1,4 @@
-import { type Db, schema } from "@closet/db";
+import { type Db, schema } from "@skeleton/db";
 import type {
   AdminStores,
   BestBuyKeyInput,
@@ -6,11 +6,11 @@ import type {
   SettingOrigin,
   ShopifyStoreInput,
   SourceInfo,
-} from "@closet/shared";
-import { bestBuyKeyInputSchema, ebayKeysInputSchema, shopifyStoreInputSchema } from "@closet/shared";
+} from "@skeleton/shared";
+import { bestBuyKeyInputSchema, ebayKeysInputSchema, shopifyStoreInputSchema } from "@skeleton/shared";
 import { eq } from "drizzle-orm";
 import type { Config } from "../config.js";
-import { type SafeFetchOptions, safeFetch } from "../net/safe-fetch.js";
+import { type SafeFetchOptions, safeFetch } from "@skeleton/readers";
 import type { SearchService } from "../search/service.js";
 import { type Source, type StoreSetup, buildSources, setupFromConfig } from "../search/sources/index.js";
 import type { ShopifyStore } from "../search/sources/shopify.js";

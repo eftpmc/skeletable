@@ -1,4 +1,4 @@
-import type { BrandFit, Item, LinkPreview, MediaRef } from "@closet/shared";
+import type { BrandFit, Item, LinkPreview, MediaRef } from "@skeleton/shared";
 import { strFromU8, unzipSync } from "fflate";
 import sharp from "sharp";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";

@@ -1,4 +1,4 @@
-import type { BrandVerdict } from "@closet/shared";
+import type { BrandVerdict } from "@skeleton/shared";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { api } from "./api";

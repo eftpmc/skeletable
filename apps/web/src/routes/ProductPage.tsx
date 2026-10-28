@@ -1,4 +1,4 @@
-import { type Condition, type OfferSummary, conditionLabels } from "@closet/shared";
+import { type Condition, type OfferSummary, conditionLabels } from "@skeleton/shared";
 import {
   ArrowUpRightIcon,
   BookmarkIcon,
@@ -17,7 +17,7 @@ import {
   StoreIcon,
   StoreStack,
   Verdict,
-} from "@closet/ui";
+} from "@skeleton/ui";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";

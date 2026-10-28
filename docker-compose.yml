@@ -6,7 +6,7 @@ services:
     ports:
       - "${PORT:-3000}:3000"
     environment:
-      DATABASE_URL: postgres://closet:${POSTGRES_PASSWORD:-closet}@db:5432/closet
+      DATABASE_URL: postgres://skeleton:${POSTGRES_PASSWORD:-skeleton}@db:5432/skeleton
       AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET (openssl rand -base64 32)}
       PUBLIC_URL: ${PUBLIC_URL:-http://localhost:3000}
       DEPLOYMENT: selfhost
@@ -21,6 +21,10 @@ services:
       EBAY_CLIENT_ID: ${EBAY_CLIENT_ID:-}
       EBAY_CLIENT_SECRET: ${EBAY_CLIENT_SECRET:-}
       BESTBUY_API_KEY: ${BESTBUY_API_KEY:-}
+      SEARCH_INTENT_ENABLED: ${SEARCH_INTENT_ENABLED:-false}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      SEARCH_INTENT_MODEL: ${SEARCH_INTENT_MODEL:-gpt-5.6-luna}
+      SEARCH_INTENT_DAILY_LIMIT: ${SEARCH_INTENT_DAILY_LIMIT:-1000}
       STORE_ICON_FALLBACK: ${STORE_ICON_FALLBACK:-google}
       # Alerts: how often to check (minutes), and email for the morning digest. See README.
       ALERTS_INTERVAL_MINUTES: ${ALERTS_INTERVAL_MINUTES:-360}
@@ -30,10 +34,15 @@ services:
       DIGEST_HOUR: ${DIGEST_HOUR:-8}
       # Lets alerts reach an ntfy server on your own network (and link import reach private addresses).
       ALLOW_PRIVATE_FETCH: ${ALLOW_PRIVATE_FETCH:-false}
+      # The catalog's text search. Rebuilt from the database when needed, so its data can be lost safely.
+      MEILI_URL: http://search:7700
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:?Set MEILI_MASTER_KEY (openssl rand -base64 32)}
     volumes:
       - ./data/files:/data
     depends_on:
       db:
+        condition: service_healthy
+      search:
         condition: service_healthy
 
   db:
@@ -41,13 +50,29 @@ services:
     image: pgvector/pgvector:pg16
     restart: unless-stopped
     environment:
-      POSTGRES_USER: closet
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-closet}
-      POSTGRES_DB: closet
+      POSTGRES_USER: skeleton
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-skeleton}
+      POSTGRES_DB: skeleton
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U closet -d closet"]
+      test: ["CMD-SHELL", "pg_isready -U skeleton -d skeleton"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  search:
+    # Meilisearch Community Edition (MIT): the catalog's text search.
+    image: getmeili/meilisearch:v1.56.0
+    restart: unless-stopped
+    environment:
+      MEILI_ENV: production
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:?Set MEILI_MASTER_KEY (openssl rand -base64 32)}
+      MEILI_NO_ANALYTICS: "true"
+    volumes:
+      - ./data/meili:/meili_data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:7700/health"]
       interval: 5s
       timeout: 5s
       retries: 10

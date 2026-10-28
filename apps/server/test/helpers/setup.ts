@@ -1,18 +1,23 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { createDb, runMigrations } from "@closet/db";
+import { createDb, runMigrations } from "@skeleton/db";
 import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach } from "vitest";
 import { createApp, createServices } from "../../src/app.js";
 import { createAuth } from "../../src/auth.js";
 import { type Config, loadConfig } from "../../src/config.js";
 import type { Deps } from "../../src/env.js";
+import { CatalogIndex } from "../../src/catalog/search-index.js";
 import { DiskStorage } from "../../src/storage.js";
 
 export const DATABASE_URL =
-  process.env.TEST_DATABASE_URL ?? "postgres://postgres:postgres@localhost:5432/closet_test";
+  process.env.TEST_DATABASE_URL ?? "postgres://postgres:postgres@localhost:5432/skeleton_test";
 export const PUBLIC_URL = "http://localhost:3000";
+export const MEILI_URL = process.env.TEST_MEILI_URL ?? "http://localhost:7700";
+export const MEILI_MASTER_KEY = process.env.TEST_MEILI_MASTER_KEY ?? "test-master-key-0123456789";
+// Each test process gets its own search index, removed when it's done.
+const MEILI_INDEX = `test_catalog_${process.pid}`;
 
 /** A real app on the test database, with a fresh temp folder for files. Resets tables before each test. */
 export function useTestApp() {
@@ -29,6 +34,7 @@ export function useTestApp() {
   });
 
   afterAll(async () => {
+    await new CatalogIndex(MEILI_URL, MEILI_MASTER_KEY, MEILI_INDEX).drop();
     await close();
     rmSync(dataDir, { recursive: true, force: true });
   });
@@ -46,6 +52,9 @@ export function useTestApp() {
       DATA_DIR: dataDir,
       // Most tests sign up more than one person; the closed-by-default behavior has its own tests.
       SIGNUPS_ENABLED: "true",
+      MEILI_URL,
+      MEILI_MASTER_KEY,
+      MEILI_INDEX,
       ...overrides,
     });
     const deps: Deps = { config, db, auth: createAuth(config, db), storage, ...extra };

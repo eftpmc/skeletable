@@ -23,7 +23,7 @@ embed what's new.
 | Learn from use | `feedback.py` | the page's votes, `labels.json` | merged grades for `quality.py train` |
 | Brand name index | `names.py add` / `index` | brand mentions from `sources/wdc.py` | `names.db`, brands known by name |
 | All of it, in rounds | `grow.py` | everything above | the page, `grow.log` |
-| Each store's products | `items.py fetch` | the catalog pack | `products/` (one `products.json` per Shopify store) |
+| Each store's products | `items.py fetch` | the catalog pack | `products/` (each Shopify store's `products.json`, every page) |
 | Products, sorted | `items.py build` | the pack, `products/` | the pack again, with products, `items_report.json` |
 
 A candidate is one website that sells products, before we know it's a clothing brand (fields in
@@ -143,17 +143,23 @@ resumes from `grow_state.json`; `grow.log` has one line of counts per round.
 
 ## Crawling rules
 
-Identify ourselves in the User-Agent, one request per store for catalogs, follow robots.txt, never
+Identify ourselves in the User-Agent, read catalogs slowly (`items.py` reads a store's
+`products.json` a page of 250 at a time, at most 20 pages, two seconds apart, one store at a time with
+a pause between stores), follow robots.txt, never
 route around bot protection (no residential proxies, fingerprint spoofing or CAPTCHA solving). A
 store that refuses is skipped. See docs/CATALOG.md.
 
-Gap: the Shopify crawl doesn't read each store's robots.txt yet. Shopify's default file doesn't
-disallow `/products.json`, but stores can edit theirs, so add the check before any larger crawl.
+`items.py fetch` checks each store's robots.txt before reading its catalog. Gap: the discovery crawl
+(`sources/shopify.py`) doesn't yet.
 
 ## Setup
 
 ```sh
 python3 -m venv venv && venv/bin/pip install fastembed==0.7.4 pillow numpy scikit-learn
 ```
+
+Run the scripts from a work directory outside the repository (they write `products/`, `img/` and
+vector caches there). On Windows the venv's Python is `venv\Scripts\python.exe`; fastembed needs
+a Python that onnxruntime ships wheels for (3.13 works).
 
 The CLIP models (`Qdrant/clip-ViT-B-32-vision`, `Qdrant/clip-ViT-B-32-text`) download on first use.

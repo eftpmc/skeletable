@@ -1,5 +1,5 @@
-import { type Db, schema } from "@closet/db";
-import { type CategoryId, type Preferences, type PreferencesInput, type ShopFor, categoryIds } from "@closet/shared";
+import { type Db, schema } from "@skeleton/db";
+import { type CategoryId, type Preferences, type PreferencesInput, type ShopFor, categoryIds } from "@skeleton/shared";
 import { eq } from "drizzle-orm";
 
 const { userPreference } = schema;

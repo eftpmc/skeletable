@@ -1,7 +1,7 @@
-import { type Db, schema } from "@closet/db";
-import type { NotifySettings, NotifySettingsInput } from "@closet/shared";
+import { type Db, schema } from "@skeleton/db";
+import type { NotifySettings, NotifySettingsInput } from "@skeleton/shared";
 import { and, asc, eq, gte, inArray, isNull, or, sql } from "drizzle-orm";
-import { safeFetch } from "../net/safe-fetch.js";
+import { safeFetch } from "@skeleton/readers";
 import type { Mailer } from "./mailer.js";
 
 const { alertEvent, brand, notifySettings, product, savedSearch, user } = schema;
@@ -178,6 +178,7 @@ export class NotifyService {
     return rows.flatMap(({ event: e, search: s, title, imageUrl, brandName }): AlertMessage[] => {
       if (e.kind === "new_matches" && s) {
         const params = new URLSearchParams({ q: s.query });
+        if (s.intent) params.set("intent", JSON.stringify(s.intent));
         if (s.condition) params.set("condition", s.condition);
         if (s.maxPrice) params.set("max", String(s.maxPrice));
         const count = e.count ?? 0;

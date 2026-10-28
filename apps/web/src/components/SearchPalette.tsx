@@ -1,4 +1,4 @@
-import { ArrowUpRightIcon, BellIcon, BookmarkIcon, ClockIcon, CompassIcon, PaletteDialog, SearchIcon, cn, focusRing } from "@closet/ui";
+import { ArrowUpRightIcon, BellIcon, BookmarkIcon, ClockIcon, CompassIcon, PaletteDialog, SearchIcon, cn, focusRing } from "@skeleton/ui";
 import { type ReactNode, createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { searchDetail, searchHref, useSavedSearches, useWatches } from "../lib/alerts";

@@ -72,6 +72,9 @@ export type CatalogItem = {
   brandId: string;
   brandName: string;
   imageUrl: string;
+  /** The photo's size in pixels, when known: enough to hold its shape before it loads. */
+  imageWidth: number | null;
+  imageHeight: number | null;
   title: string | null;
   priceUsd: number | null;
   productUrl: string;

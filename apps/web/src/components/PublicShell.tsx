@@ -1,4 +1,4 @@
-import { cn, focusRing } from "@closet/ui";
+import { cn, focusRing } from "@skeleton/ui";
 import { Link, Outlet, useLocation } from "react-router";
 import { useNextParam } from "../lib/viewer";
 import { Wordmark } from "./AppShell";

@@ -1,4 +1,4 @@
-import { catalogCategorySchema, seenInputSchema, voteInputSchema } from "@closet/shared";
+import { catalogCategorySchema, categoryGroupSchema, seenInputSchema, voteInputSchema } from "@skeleton/shared";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { AuthedEnv } from "../env.js";
@@ -13,6 +13,7 @@ export type SaveItem = { readLink: (url: string) => Promise<string>; track: (use
 const pageSchema = z.coerce.number().int().min(0).max(1000).catch(0);
 const seedSchema = z.string().trim().max(40).catch("");
 const categoryParam = catalogCategorySchema.optional().catch(undefined);
+const groupParam = categoryGroupSchema.optional().catch(undefined);
 
 export function catalogRoutes(catalog: CatalogService, save: SaveItem) {
   const app = new Hono<AuthedEnv>();
@@ -53,7 +54,7 @@ export function catalogRoutes(catalog: CatalogService, save: SaveItem) {
     return c.body(null, 204);
   });
 
-  // Discover: a feed of catalog products, ranked by your taste, all of them or one category. The seed
+  // Discover: a feed of catalog products, ranked by your taste: all of them, one group or one category. The seed
   // keeps one session's order stable.
   app.get("/catalog/feed", async (c) =>
     c.json(
@@ -62,11 +63,18 @@ export function catalogRoutes(catalog: CatalogService, save: SaveItem) {
         pageSchema.parse(c.req.query("page")),
         seedSchema.parse(c.req.query("seed")),
         categoryParam.parse(c.req.query("category")),
+        groupParam.parse(c.req.query("group")),
       ),
     ),
   );
 
-  app.get("/catalog/categories", async (c) => c.json(await catalog.categories(c.get("user").id)));
+  app.get("/catalog/search", async (c) => {
+    const q = searchSchema.safeParse(c.req.query("q"));
+    if (!q.success) return c.json([]);
+    return c.json(await catalog.searchItems(c.get("user").id, q.data));
+  });
+
+  app.get("/catalog/categories",async (c) => c.json(await catalog.categories(c.get("user").id)));
 
   app.get("/catalog/items/:id", async (c) => c.json(await catalog.item(c.get("user").id, c.req.param("id"))));
 

@@ -1,4 +1,4 @@
-import { Button, TextField } from "@closet/ui";
+import { Button, TextField } from "@skeleton/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 import { Link, Navigate, useLocation } from "react-router";

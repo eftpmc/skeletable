@@ -1,4 +1,4 @@
-import { type Db, schema } from "@closet/db";
+import { type Db, schema } from "@skeleton/db";
 import { betterAuth } from "better-auth";
 import { APIError } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";

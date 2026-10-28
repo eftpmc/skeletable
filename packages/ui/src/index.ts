@@ -8,7 +8,7 @@ export { Field, TextArea, TextField } from "./Field";
 export * from "./icons";
 export { Avatar, EmptyState, ScreenTitle, SectionHeader, type SectionHeaderProps, Skeleton } from "./Layout";
 export { ListGroup, type ListGroupProps, ListRow, type ListRowProps, Thumb } from "./List";
-export { NavDrawer, type NavItem, NavPills, SideNav, TabBar } from "./Navigation";
+export { CountPill, NavDrawer, type NavItem, NavPills, SideNav, TabBar } from "./Navigation";
 export { ProductTile, type ProductTileProps, TileGrid } from "./ProductTile";
 export { DragSheet } from "./DragSheet";
 export { Halftone } from "./Halftone";

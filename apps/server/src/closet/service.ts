@@ -1,5 +1,5 @@
-import { type Db, schema } from "@closet/db";
-import type { BrandFit, Category, ColorName, Item, ItemPatch, MediaRef, ParsedItemInput } from "@closet/shared";
+import { type Db, schema } from "@skeleton/db";
+import type { BrandFit, Category, ColorName, Item, ItemPatch, MediaRef, ParsedItemInput } from "@skeleton/shared";
 import { and, asc, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import type { Storage } from "../storage.js";
 import { processImage } from "./images.js";
