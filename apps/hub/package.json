@@ -6,7 +6,9 @@
   "scripts": {
     "hub": "tsx --env-file-if-exists=../../.env src/cli.ts",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build": "tsup",
+    "start": "node dist/cli.js"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.5",
@@ -23,6 +25,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.19.0",
+    "tsup": "^8.5.1",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "vitest": "^4.0.0"

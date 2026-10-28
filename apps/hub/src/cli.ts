@@ -2,7 +2,9 @@
 import { createHubDb, runHubMigrations, schema } from "@skeleton/hub-db";
 import { and, asc, count, eq, isNull, lte, or } from "drizzle-orm";
 import { crawlSource } from "./engine/crawl.js";
-import { writeFile, readFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { annotateByRules } from "./annotate/rules.js";
 import { benchmarkItems, drawBenchmark, recordCheck, saveDrafts, scoreModel, settleByAgreement } from "./benchmark.js";
 import { contributorId } from "./contributors.js";
@@ -24,13 +26,14 @@ const usage = `Usage: hub <command>
   add <url>                             add a site and detect its reader
   crawl <domain>                        crawl one site now
   crawl --due [count]                   crawl approved sites that are due (default 10)
+  cycle [count]                         the scheduled job: crawl what's due (default 1000), annotate, build and publish
   import-lab <products dir> [vectors]   import the brand lab's store files and photo vectors
   import-lab-brands <old pack.jsonl.gz> carry over the lab's names, places, descriptions and quality
   annotate                              annotate listings with the hub's rules, then resolve final values
   build <file.jsonl.gz> [--publish]     write the catalog file from the final values; --publish serves it at /catalog/latest.jsonl.gz
   token <handle> <person|worker|agent>  issue a contributor a token for the API (shown once)
   queue [count]                         queue extract-facts jobs for listings with no category (default 1000)
-  serve [port]                          run the contributor API (default 4100)
+  serve [port]                          run the contributor API and catalog downloads (PORT, else 4100)
   work <hub url> [model] [count]        answer jobs with a local Ollama model (HUB_TOKEN, OLLAMA_URL)
   benchmark draw <name> [random] [unplaced]   set aside listings to check (default 200 and 100)
   benchmark export <name> <file>        write a set's listings as JSON, for drafting
@@ -69,22 +72,40 @@ if (!command || !url) {
   process.exit(1);
 }
 
-await runHubMigrations(url);
+// In the image, the migrations sit beside the bundle (HUB_MIGRATIONS_DIR); in the repo, in hub-db.
+await runHubMigrations(url, process.env.HUB_MIGRATIONS_DIR);
 const { db, close } = createHubDb(url);
 const { listing, reading, source, embedding } = schema;
+/** Crawl approved sites that are due, the longest-waiting first. */
+async function crawlDue(count: number) {
+  const due = await db
+    .select({ id: source.id, domain: source.domain })
+    .from(source)
+    .where(and(eq(source.status, "approved"), or(isNull(source.nextCrawlAt), lte(source.nextCrawlAt, new Date()))))
+    .orderBy(asc(source.nextCrawlAt))
+    .limit(count);
+  for (const site of due) console.log(site.domain, await crawlSource(db, site.id));
+}
+
 try {
   if (command === "migrate") {
     console.log("migrations applied");
   } else if (command === "add" && args[0]) {
     console.log(await addSource(db, args[0]));
   } else if (command === "crawl" && args[0] === "--due") {
-    const due = await db
-      .select({ id: source.id, domain: source.domain })
-      .from(source)
-      .where(and(eq(source.status, "approved"), or(isNull(source.nextCrawlAt), lte(source.nextCrawlAt, new Date()))))
-      .orderBy(asc(source.nextCrawlAt))
-      .limit(Number(args[1] ?? 10));
-    for (const site of due) console.log(site.domain, await crawlSource(db, site.id));
+    await crawlDue(Number(args[1] ?? 10));
+  } else if (command === "cycle") {
+    // The scheduled job: crawl what's due, annotate, then build and publish the catalog.
+    await crawlDue(Number(args[0] ?? 1000));
+    console.log("annotations added:", await annotateByRules(db));
+    console.log("final values updated:", await resolveListings(db), "listing,", await resolveSources(db), "source");
+    const dir = await mkdtemp(join(tmpdir(), "hub-cycle-"));
+    try {
+      const built = await buildCatalog(db, join(dir, "catalog.jsonl.gz"));
+      console.log(built, "published", await publishBuild(db, built.buildId, built.file));
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   } else if (command === "crawl" && args[0]) {
     const [site] = await db.select({ id: source.id }).from(source).where(eq(source.domain, domainOf(args[0])));
     if (!site) throw new Error(`${args[0]} isn't a source yet; add it first`);
@@ -106,7 +127,7 @@ try {
   } else if (command === "queue") {
     console.log("jobs queued:", await queueExtractFacts(db, Number(args[0] ?? 1000)));
   } else if (command === "serve") {
-    const port = Number(args[0] ?? 4100);
+    const port = Number(args[0] ?? process.env.PORT ?? 4100);
     serve({ fetch: hubApi(db).fetch, port });
     console.log(`hub API on http://localhost:${port}`);
     await new Promise(() => {});
