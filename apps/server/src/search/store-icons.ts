@@ -2,7 +2,7 @@ import { type Db, schema } from "@closet/db";
 import { eq } from "drizzle-orm";
 import { parse } from "node-html-parser";
 import sharp from "sharp";
-import { type SafeFetchOptions, safeFetch } from "../net/safe-fetch.js";
+import { type SafeFetchOptions, safeFetch } from "@closet/readers";
 import type { Storage } from "../storage.js";
 
 const SIZE = 64;

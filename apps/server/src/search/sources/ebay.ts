@@ -1,5 +1,5 @@
 import type { Condition } from "@closet/shared";
-import { safeFetch } from "../../net/safe-fetch.js";
+import { safeFetch } from "@closet/readers";
 import { dollarsToCents, normalizeGtin } from "../normalize.js";
 import type { RawOffer, Source } from "./types.js";
 

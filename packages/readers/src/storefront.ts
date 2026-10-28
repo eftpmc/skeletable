@@ -1,5 +1,5 @@
 import { parse } from "node-html-parser";
-import { FetchError, safeFetch, type SafeFetchOptions, type SafeResponse } from "../../net/safe-fetch.js";
+import { FetchError, safeFetch, type SafeFetchOptions, type SafeResponse } from "./safe-fetch.js";
 
 export type StoreState = "open" | "locked" | "maintenance" | "restricted" | "unavailable" | "unknown";
 export type StoreObservation = {

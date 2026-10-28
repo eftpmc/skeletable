@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { safeFetch, type SafeFetchOptions } from "../../net/safe-fetch.js";
+import { safeFetch, type SafeFetchOptions } from "./safe-fetch.js";
 import type { Transport } from "./acquisition.js";
 
 // This code is shipped by us, never produced by a recipe, page, or repair agent.

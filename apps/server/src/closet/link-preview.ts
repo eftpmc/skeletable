@@ -1,11 +1,11 @@
 import type { LinkPreview } from "@closet/shared";
 import { type HTMLElement, parse } from "node-html-parser";
-import { type SafeFetchOptions, safeFetch } from "../net/safe-fetch.js";
+import { type SafeFetchOptions, safeFetch } from "@closet/readers";
 import { normalizeGtin } from "../search/normalize.js";
 import { guessCategory, parseColorNames } from "./guess.js";
-import { readStorefront, StoreUnavailableError } from "../catalog/connectors/storefront.js";
-import { extractRecipe } from "../catalog/connectors/recipes.js";
-import { reviewedRecipeFor } from "../catalog/connectors/reviewed-recipes.js";
+import { readStorefront, StoreUnavailableError } from "@closet/readers";
+import { extractRecipe } from "@closet/readers";
+import { reviewedRecipeFor } from "@closet/readers";
 
 type PageData = Omit<LinkPreview, "category" | "colors" | "url"> & { color: string | null; category: string | null };
 

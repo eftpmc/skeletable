@@ -1,6 +1,6 @@
 import { gzipSync } from "node:zlib";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { isPrivateAddress, safeFetch } from "../src/net/safe-fetch.js";
+import { isPrivateAddress, safeFetch } from "../src/safe-fetch.js";
 import { html, redirect, startFixtureServer } from "./helpers/fixture-server.js";
 
 let server: Awaited<ReturnType<typeof startFixtureServer>>;

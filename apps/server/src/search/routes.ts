@@ -1,8 +1,8 @@
 import { searchQuerySchema, intentFromParam } from "@closet/shared";
 import { Hono } from "hono";
 import { z } from "zod";
-import { FetchError } from "../net/safe-fetch.js";
-import { StoreUnavailableError } from "../catalog/connectors/storefront.js";
+import { FetchError } from "@closet/readers";
+import { StoreUnavailableError } from "@closet/readers";
 import type { AppEnv } from "../env.js";
 import type { SourceInfo } from "@closet/shared";
 import { NotFoundError, type SearchService } from "./service.js";

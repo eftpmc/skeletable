@@ -10,7 +10,7 @@ import type {
 import { bestBuyKeyInputSchema, ebayKeysInputSchema, shopifyStoreInputSchema } from "@closet/shared";
 import { eq } from "drizzle-orm";
 import type { Config } from "../config.js";
-import { type SafeFetchOptions, safeFetch } from "../net/safe-fetch.js";
+import { type SafeFetchOptions, safeFetch } from "@closet/readers";
 import type { SearchService } from "../search/service.js";
 import { type Source, type StoreSetup, buildSources, setupFromConfig } from "../search/sources/index.js";
 import type { ShopifyStore } from "../search/sources/shopify.js";

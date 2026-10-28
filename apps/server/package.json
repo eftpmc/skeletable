@@ -10,8 +10,7 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "search:eval": "tsx --env-file-if-exists=../../.env scripts/search-eval.ts",
-    "catalog:import": "tsx src/catalog/import-cli.ts",
-    "catalog:recipes": "tsx src/catalog/connectors/recipe-cli.ts"
+    "catalog:import": "tsx src/catalog/import-cli.ts"
   },
   "dependencies": {
     "@closet/db": "workspace:*",
@@ -25,7 +24,8 @@
     "node-html-parser": "^9.0.5",
     "nodemailer": "^7.0.13",
     "sharp": "^0.35.5",
-    "zod": "^4.6.7"
+    "zod": "^4.6.7",
+    "@closet/readers": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",

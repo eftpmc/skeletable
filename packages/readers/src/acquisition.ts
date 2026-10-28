@@ -1,4 +1,4 @@
-import { safeFetch, type SafeFetchOptions } from "../../net/safe-fetch.js";
+import { safeFetch, type SafeFetchOptions } from "./safe-fetch.js";
 import { classifyStorefront, type StoreObservation } from "./storefront.js";
 import { extractRecipe, type Recipe, type Extraction, type ExtractedProduct } from "./recipes.js";
 

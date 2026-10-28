@@ -1,7 +1,7 @@
 import { type Db, schema } from "@closet/db";
 import type { NotifySettings, NotifySettingsInput } from "@closet/shared";
 import { and, asc, eq, gte, inArray, isNull, or, sql } from "drizzle-orm";
-import { safeFetch } from "../net/safe-fetch.js";
+import { safeFetch } from "@closet/readers";
 import type { Mailer } from "./mailer.js";
 
 const { alertEvent, brand, notifySettings, product, savedSearch, user } = schema;

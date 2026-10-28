@@ -2,12 +2,12 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { acquireProduct } from "../src/catalog/connectors/acquisition.js";
-import { browserlessTransport } from "../src/catalog/connectors/browserless.js";
-import { demoFixture, demoFixtures, demoRecipe, documentTransport, runRepairDemo } from "../src/catalog/connectors/repair-demo.js";
-import { RecipeStore } from "../src/catalog/connectors/recipe-store.js";
-import { extractRecipe, parseAmount, recipeSchema } from "../src/catalog/connectors/recipes.js";
-import { suggestRepairs, validateRecipe } from "../src/catalog/connectors/repair.js";
+import { acquireProduct } from "../src/acquisition.js";
+import { browserlessTransport } from "../src/browserless.js";
+import { demoFixture, demoFixtures, demoRecipe, documentTransport, runRepairDemo } from "../src/repair-demo.js";
+import { RecipeStore } from "../src/recipe-store.js";
+import { extractRecipe, parseAmount, recipeSchema } from "../src/recipes.js";
+import { suggestRepairs, validateRecipe } from "../src/repair.js";
 import { startFixtureServer } from "./helpers/fixture-server.js";
 
 const directories: string[] = [];

@@ -13,7 +13,7 @@ import { conditions, searchIntentSchema } from "@closet/shared";
 import { and, eq, gte, inArray, sql } from "drizzle-orm";
 import { upsertBrand } from "../closet/service.js";
 import { fetchLinkPreview } from "../closet/link-preview.js";
-import type { SafeFetchOptions } from "../net/safe-fetch.js";
+import type { SafeFetchOptions } from "@closet/readers";
 import { isAccessoryFor, matchKey, modelCode, modelWord, relevance } from "./normalize.js";
 import type { RawOffer, Source, SourceQuery } from "./sources/index.js";
 import { verdictFor } from "./verdict.js";

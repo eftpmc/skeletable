@@ -1,6 +1,6 @@
 import zlib from "node:zlib";
 import { parse } from "node-html-parser";
-import type { SafeFetchOptions } from "../../net/safe-fetch.js";
+import type { SafeFetchOptions } from "./safe-fetch.js";
 import { readStorefront, type StoreObservation } from "./storefront.js";
 
 export type DiscoverySource = "shopify-feed" | "sitemap" | "links";
