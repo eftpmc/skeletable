@@ -7,7 +7,9 @@ const { listing, reading } = schema;
 
 export type StoreCounts = { seen: number; added: number; changed: number; invalid: number };
 
-const hashOf = (value: Reading) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
+// A shop's own "updated" time moves with every stock change, so it alone never makes a new reading;
+// it is kept with the next reading that differs in something a person would see.
+const hashOf = ({ updatedAt: _, ...seen }: Reading) => createHash("sha256").update(JSON.stringify(seen)).digest("hex");
 
 /**
  * Record what a site showed: each listing is found by the site's own id (created the first time),

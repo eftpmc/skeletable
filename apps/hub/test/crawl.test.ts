@@ -112,6 +112,9 @@ describe("crawling", () => {
     expect(first).toMatchObject({ status: "done", seen: 2, added: 2, changed: 0, gone: 0, paused: false });
     const again = await crawlSource(db, site.id, shop.options);
     expect(again).toMatchObject({ seen: 2, added: 0, changed: 0 });
+    // A stock movement only touches the shop's own updated time: no new reading.
+    shop.state.products = [product(1, undefined, { updated_at: "2026-10-28T09:00:00Z" }), product(2)];
+    expect(await crawlSource(db, site.id, shop.options)).toMatchObject({ changed: 0 });
 
     shop.state.products = [product(1, "99.00"), product(2)];
     expect(await crawlSource(db, site.id, shop.options)).toMatchObject({ changed: 1 });
