@@ -1,11 +1,14 @@
 import { toMinorUnits, type ReadingInput } from "@skeleton/formats";
+import { FetchError } from "@skeleton/readers";
 import { parse } from "node-html-parser";
 import { z } from "zod";
 import type { Reader } from "./types.js";
 
-const PAGE_SIZE = 250;
+// Pages of 250; a store whose page is too large to fetch is read in smaller pages instead. Each size
+// divides the one before, so the listings already read line up with the smaller pages.
+const PAGE_SIZES = [250, 50, 10];
 // Shopify stops paging its public feed somewhere past this; 5,000 listings covers nearly every store.
-const MAX_PAGES = 20;
+const MAX_LISTINGS = 5000;
 
 const variantSchema = z.object({
   id: z.union([z.number(), z.string()]).optional(),
@@ -88,7 +91,7 @@ export function shopifyReading(product: ShopifyProduct, origin: URL, currency: s
   };
 }
 
-/** Shopify stores, read through their public products feed, a page of 250 at a time. */
+/** Shopify stores, read through their public products feed, a page of 250 at a time (smaller when a page is too large). */
 export const shopifyReader: Reader = {
   id: "shopify",
   version: 1,
@@ -107,14 +110,26 @@ export const shopifyReader: Reader = {
 
   async *read(origin, config, ctx) {
     const currency = typeof config?.currency === "string" ? config.currency : await storeCurrency(origin, ctx);
-    for (let page = 1; page <= MAX_PAGES; page++) {
-      const feed = await ctx.fetch(new URL(`/products.json?limit=${PAGE_SIZE}&page=${page}`, origin).toString(), "application/json");
+    let size = 0;
+    let read = 0;
+    while (read < MAX_LISTINGS) {
+      let feed;
+      try {
+        feed = await ctx.fetch(new URL(`/products.json?limit=${PAGE_SIZES[size]}&page=${read / PAGE_SIZES[size]! + 1}`, origin).toString(), "application/json");
+      } catch (error) {
+        if (error instanceof FetchError && error.code === "too_large" && size < PAGE_SIZES.length - 1) {
+          size++;
+          continue;
+        }
+        throw error;
+      }
       const products = (JSON.parse(feed.body.toString("utf8")) as { products?: unknown[] }).products ?? [];
       for (const raw of products) {
         const product = shopifyProductSchema.safeParse(raw);
         if (product.success) yield shopifyReading(product.data, origin, currency);
       }
-      if (products.length < PAGE_SIZE) return;
+      read += products.length;
+      if (products.length < PAGE_SIZES[size]!) return;
     }
   },
 };

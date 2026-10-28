@@ -174,6 +174,14 @@ describe("crawling", () => {
     expect(waits).toContain(10_000);
   });
 
+  it("reads a store in smaller pages when a page of 250 is too large", async () => {
+    const shop = await store(Array.from({ length: 300 }, (_, i) => product(i + 1)));
+    const site = await approved(shop);
+    const pageBytes = JSON.stringify({ products: shop.state.products.slice(0, 50) }).length;
+    const options: CrawlOptions = { ...shop.options, fetch: { ...shop.options.fetch, maxBytes: pageBytes * 2 } };
+    expect(await crawlSource(db, site.id, options)).toMatchObject({ status: "done", seen: 300 });
+  });
+
   it("honours robots.txt", async () => {
     const shop = await store([product(1)], {
       "/robots.txt": (_req, res) => res.writeHead(200, { "content-type": "text/plain" }).end("User-agent: *\nDisallow: /products.json"),
