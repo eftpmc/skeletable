@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  customType,
   bigint,
   bigserial,
   boolean,
@@ -443,4 +444,24 @@ export const catalogBuild = pgTable("catalog_build", {
   url: text("url"),
   counts: jsonb("counts").notNull(),
   builtAt: timestamp("built_at", { withTimezone: true }).notNull().defaultNow(),
+  // Set once the file's bytes are stored (catalog_chunk) for the hub to serve.
+  publishedAt: timestamp("published_at", { withTimezone: true }),
 });
+
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => "bytea" });
+
+/**
+ * A published build's file, in pieces of a few MB so it can be served without holding it whole.
+ * Only the latest builds keep theirs.
+ */
+export const catalogChunk = pgTable(
+  "catalog_chunk",
+  {
+    buildId: uuid("build_id")
+      .notNull()
+      .references(() => catalogBuild.id, { onDelete: "cascade" }),
+    n: integer("n").notNull(),
+    bytes: bytea("bytes").notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.buildId, table.n] })],
+);

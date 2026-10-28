@@ -14,6 +14,7 @@ import { serve } from "@hono/node-server";
 import { hubApi, issueToken } from "./api.js";
 import { queueExtractFacts } from "./jobs.js";
 import { loadPhotoVectors, photosToEmbed } from "./photos.js";
+import { publishBuild } from "./publish.js";
 import { pendingApplications, setRole, type Role } from "./roles.js";
 import { runWorker } from "./worker.js";
 import { addSource, domainOf } from "./sources.js";
@@ -26,7 +27,7 @@ const usage = `Usage: hub <command>
   import-lab <products dir> [vectors]   import the brand lab's store files and photo vectors
   import-lab-brands <old pack.jsonl.gz> carry over the lab's names, places, descriptions and quality
   annotate                              annotate listings with the hub's rules, then resolve final values
-  build <file.jsonl.gz>                 write the catalog file from the final values
+  build <file.jsonl.gz> [--publish]     write the catalog file from the final values; --publish serves it at /catalog/latest.jsonl.gz
   token <handle> <person|worker|agent>  issue a contributor a token for the API (shown once)
   queue [count]                         queue extract-facts jobs for listings with no category (default 1000)
   serve [port]                          run the contributor API (default 4100)
@@ -97,7 +98,9 @@ try {
     console.log("annotations added:", await annotateByRules(db, (line) => console.log(line)));
     console.log("final values updated:", await resolveListings(db), "listing,", await resolveSources(db), "source");
   } else if (command === "build" && args[0]) {
-    console.log(await buildCatalog(db, args[0], (line) => console.log(line)));
+    const built = await buildCatalog(db, args[0], (line) => console.log(line));
+    console.log(built);
+    if (args[1] === "--publish") console.log("published", await publishBuild(db, built.buildId, built.file));
   } else if (command === "token" && args[0] && ["person", "worker", "agent"].includes(args[1] ?? "")) {
     console.log(await issueToken(db, args[0], args[1] as "person" | "worker" | "agent"));
   } else if (command === "queue") {

@@ -3,11 +3,13 @@ import { type HubDb, schema } from "@skeleton/hub-db";
 import { eq } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import { z } from "zod";
+import { CATALOG_LICENCE } from "@skeleton/formats";
 import { contributorId } from "./contributors.js";
 import { benchmarkItems, recordCheck } from "./benchmark.js";
 import { claimJob, JobError, submitAnswer } from "./jobs.js";
 import type { CrawlOptions } from "./engine/crawl.js";
 import { handleMcp } from "./mcp.js";
+import { buildStream, latestPublished } from "./publish.js";
 import { reviewPage } from "./review-page.js";
 import { applyForRole, canCurate, decideApplication, pendingApplications, RoleError, whoIs } from "./roles.js";
 
@@ -34,6 +36,23 @@ export function hubApi(db: HubDb, options: { crawl?: CrawlOptions } = {}) {
   const app = new Hono<{ Variables: { contributorId: string } }>();
   // The checking page itself holds nothing private; it asks for the person's token to call the API.
   app.get("/review/:name", (c) => c.html(reviewPage(c.req.param("name"))));
+  // The catalog is open data (ODbL): its latest build, and the hash an app checks before downloading.
+  app.get("/catalog/latest.json", async (c) => {
+    const build = await latestPublished(db);
+    return build ? c.json({ ...build, file: "/catalog/latest.jsonl.gz", licence: CATALOG_LICENCE }) : c.json({ error: "no catalog published yet" }, 404);
+  });
+  app.get("/catalog/latest.jsonl.gz.sha256", async (c) => {
+    const build = await latestPublished(db);
+    return build ? c.text(`${build.sha256}
+`) : c.text("no catalog published yet", 404);
+  });
+  app.get("/catalog/latest.jsonl.gz", async (c) => {
+    const build = await latestPublished(db);
+    if (!build) return c.text("no catalog published yet", 404);
+    return new Response(buildStream(db, build.id), {
+      headers: { "content-type": "application/gzip", "content-disposition": `attachment; filename="skeleton-catalog-${build.id}.jsonl.gz"`, etag: `"${build.sha256}"` },
+    });
+  });
   const auth = async (c: Context<{ Variables: { contributorId: string } }>, next: () => Promise<void>) => {
     const token = c.req.header("authorization")?.match(/^Bearer (.+)$/)?.[1];
     const [found] = token ? await db.select({ id: contributor.id }).from(contributor).where(eq(contributor.tokenHash, hashToken(token))) : [];
