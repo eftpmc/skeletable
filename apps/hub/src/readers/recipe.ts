@@ -1,14 +1,13 @@
-import { currencyDigits, toMinorUnits, type ReadingInput } from "@skeleton/formats";
-import { parseSitemap } from "@skeleton/readers";
+import { currencyDigits, toMinorUnits } from "@skeleton/formats";
 import { parse, type HTMLElement } from "node-html-parser";
 import { z } from "zod";
-import type { ReadContext, Reader } from "./types.js";
+import { sitemapPages } from "./sitemap-pages.js";
+import type { ReadContext, Reader, SamplePage } from "./types.js";
 
 // The recipe format; a recipe states the version it was written for.
 export const RECIPE_FORMAT = 1;
 // Product pages one crawl reads at most, at the engine's pace (about 2 seconds a page).
 const MAX_PAGES = 1000;
-const MAX_SITEMAPS = 8;
 
 const field = z
   .object({
@@ -25,7 +24,7 @@ export const catalogRecipeSchema = z
   .object({
     format: z.literal(RECIPE_FORMAT),
     pathPrefix: z.string().startsWith("/").min(2).max(160).describe("Product pages' paths start with this, e.g. /shop/"),
-    sitemap: z.string().startsWith("/").max(300).optional().describe("Path of the sitemap listing product pages (default /sitemap.xml)"),
+    sitemap: z.string().startsWith("/").max(300).optional().describe("Path of the sitemap listing product pages (default: the sitemaps robots.txt names, else /sitemap.xml)"),
     title: field,
     price: field,
     currency: z.union([field, z.object({ constant: z.string().regex(/^[A-Z]{3}$/) }).strict()]),
@@ -40,7 +39,7 @@ export const catalogRecipeSchema = z
   .strict();
 export type CatalogRecipe = z.infer<typeof catalogRecipeSchema>;
 
-export type RecipePage = { url: string; reading: ReadingInput | null; issues: string[] };
+export type RecipePage = SamplePage;
 
 /**
  * A price as a page shows it ("€1.234,50", "$ 98", "12 500 ¥") in the currency's minor units: the
@@ -125,30 +124,9 @@ export function readWithRecipe(html: string, pageUrl: string, recipe: CatalogRec
   };
 }
 
-/** The site's product pages, from its sitemap (and the sitemaps it points to), under the recipe's pathPrefix. */
-export async function recipePages(origin: URL, recipe: CatalogRecipe, ctx: ReadContext, max = MAX_PAGES): Promise<string[]> {
-  const found = new Set<string>();
-  const queue = [new URL(recipe.sitemap ?? "/sitemap.xml", origin).toString()];
-  const seen = new Set<string>();
-  while (queue.length && seen.size < MAX_SITEMAPS && found.size < max) {
-    const next = queue.shift()!;
-    seen.add(next);
-    let sitemap;
-    try {
-      sitemap = parseSitemap((await ctx.fetch(next, "application/xml")).body.toString("utf8"));
-    } catch {
-      continue;
-    }
-    // Product sitemaps first: a big site's index lists pages, posts and collections too.
-    const children = sitemap.sitemaps.filter((s) => new URL(s).host === origin.host && !seen.has(s));
-    queue.push(...children.filter((s) => /product/i.test(s)), ...children.filter((s) => !/product/i.test(s)));
-    for (const entry of sitemap.urls) {
-      const url = new URL(entry.url);
-      if (url.host === origin.host && url.pathname.startsWith(recipe.pathPrefix) && url.pathname !== recipe.pathPrefix) found.add(url.toString());
-      if (found.size >= max) break;
-    }
-  }
-  return [...found];
+/** The site's product pages, from its sitemaps, under the recipe's pathPrefix. */
+export function recipePages(origin: URL, recipe: CatalogRecipe, ctx: ReadContext, max = MAX_PAGES): Promise<string[]> {
+  return sitemapPages(origin, ctx, (url) => url.pathname.startsWith(recipe.pathPrefix) && url.pathname !== recipe.pathPrefix, { max, start: recipe.sitemap });
 }
 
 /** Sites read with a recipe a contributor wrote and a curator approved. Never detected: only assigned. */

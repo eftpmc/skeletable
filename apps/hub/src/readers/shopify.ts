@@ -17,6 +17,7 @@ const variantSchema = z.object({
   option2: z.string().nullish(),
   option3: z.string().nullish(),
   sku: z.string().nullish(),
+  barcode: z.string().nullish(),
   price: z.union([z.string(), z.number()]).nullish(),
   compare_at_price: z.union([z.string(), z.number()]).nullish(),
   available: z.boolean().nullish(),
@@ -41,6 +42,8 @@ export type ShopifyProduct = z.infer<typeof shopifyProductSchema>;
 
 const https = (src: string) => (src.startsWith("//") ? `https:${src}` : src);
 const present = (value: string | null | undefined) => (value && value.trim() ? value.trim() : undefined);
+// Shopify's barcode field holds whatever the shop typed; only a real GTIN is kept.
+const barcode = (value: string | null | undefined) => (value && /^\d{8}$|^\d{12,14}$/.test(value.trim()) ? value.trim() : undefined);
 const iso = (value: string | null | undefined) => (value && !Number.isNaN(Date.parse(value)) ? value : undefined);
 
 /** A Shopify product as a reading. Without the store's currency, prices are left out rather than guessed. */
@@ -84,6 +87,7 @@ export function shopifyReading(product: ShopifyProduct, origin: URL, currency: s
         price: money(minor(v.price)),
         available: v.available ?? undefined,
         sku: present(v.sku),
+        gtin: barcode(v.barcode),
       };
     }),
     publishedAt: iso(product.published_at),

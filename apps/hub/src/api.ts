@@ -8,13 +8,13 @@ import { CATALOG_LICENCE } from "@skeleton/formats";
 import { contributorId } from "./contributors.js";
 import { benchmarkItems, recordCheck } from "./benchmark.js";
 import { claimJob, JobError, submitAnswer } from "./jobs.js";
-import { decideRecipe, pendingRecipes } from "./recipes.js";
-import { candidateSources, decideSource } from "./sources.js";
+import { decideProposal, pendingProposals } from "./proposals.js";
 import type { CrawlOptions } from "./engine/crawl.js";
 import { clientAddress, rateLimit } from "./limits.js";
 import { handleMcp } from "./mcp.js";
 import { loadPhotoVectors, photosToEmbed } from "./photos.js";
 import { buildStream, latestPublished } from "./publish.js";
+import { curatePage } from "./curate-page.js";
 import { reviewPage } from "./review-page.js";
 import { applyForRole, canCurate, decideApplication, pendingApplications, RoleError, whoIs } from "./roles.js";
 
@@ -48,6 +48,7 @@ export function hubApi(db: HubDb, options: { crawl?: CrawlOptions } = {}) {
     app.use(path, rateLimit({ windowMs: 60_000, max: 600, key: clientAddress }));
   }
   app.get("/review/:name", (c) => c.html(reviewPage(c.req.param("name"))));
+  app.get("/curate", (c) => c.html(curatePage()));
   // The catalog is open data (ODbL): its latest build, and the hash an app checks before downloading.
   app.get("/catalog/latest.json", async (c) => {
     const build = await latestPublished(db);
@@ -123,42 +124,24 @@ export function hubApi(db: HubDb, options: { crawl?: CrawlOptions } = {}) {
       return loadPhotoVectors(db, body.data.lines);
     }),
   );
-  // Candidate sites wait for a curator: listed, then approved (crawled from the next cycle) or rejected.
+  // Proposals wait for a curator: listed with what the hub read, then approved or rejected in one call.
   const curator = async (c: Context<{ Variables: { contributorId: string } }>) => {
-    if (!canCurate((await whoIs(db, c.get("contributorId")))?.role)) throw new RoleError(403, "deciding on sites takes a curator's role");
+    if (!canCurate((await whoIs(db, c.get("contributorId")))?.role)) throw new RoleError(403, "deciding on proposals takes a curator's role");
   };
-  app.get("/api/sources/candidates", (c) =>
+  app.get("/api/proposals", (c) =>
     roleCall(c, async () => {
       await curator(c);
-      return candidateSources(db);
+      return pendingProposals(db);
     }),
   );
-  app.post("/api/sources/:id/decision", (c) =>
+  app.post("/api/proposals/:id/decision", (c) =>
     roleCall(c, async () => {
       await curator(c);
       const body = z.object({ approve: z.boolean() }).safeParse(await c.req.json().catch(() => null));
       if (!body.success) throw new RoleError(422, "send { approve: true } or { approve: false }");
       const id = z.uuid().safeParse(c.req.param("id"));
-      const decided = id.success ? await decideSource(db, id.data, body.data.approve) : null;
-      if (!decided) throw new RoleError(404, "no candidate site with that id");
-      return decided;
-    }),
-  );
-  // Recipes contributors sent for sites no reader covers; a curator approves one after seeing its sample.
-  app.get("/api/recipes/pending", (c) =>
-    roleCall(c, async () => {
-      await curator(c);
-      return pendingRecipes(db);
-    }),
-  );
-  app.post("/api/recipes/:id/decision", (c) =>
-    roleCall(c, async () => {
-      await curator(c);
-      const body = z.object({ approve: z.boolean() }).safeParse(await c.req.json().catch(() => null));
-      if (!body.success) throw new RoleError(422, "send { approve: true } or { approve: false }");
-      const id = z.uuid().safeParse(c.req.param("id"));
-      const decided = id.success ? await decideRecipe(db, id.data, body.data.approve) : null;
-      if (!decided) throw new RoleError(404, "no draft recipe ready for a decision with that id");
+      const decided = id.success ? await decideProposal(db, c.get("contributorId"), id.data, body.data.approve) : null;
+      if (!decided) throw new RoleError(404, "no proposal with that id is waiting");
       return decided;
     }),
   );

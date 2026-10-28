@@ -34,6 +34,18 @@ export const readingImageSchema = z.object({
   alt: text(500).optional(),
 });
 
+// A barcode as shops publish it (GTIN-8, -12/UPC, -13/EAN or -14): the same item's number in every store.
+const gtin = z.string().regex(/^\d{8}$|^\d{12,14}$/);
+
+/** What identifies a product beyond one site, for matching the same item across stores. */
+export const readingIdentifiersSchema = z.object({
+  gtin: gtin.optional(),
+  // The maker's own part number, which stays the same whoever sells it.
+  mpn: text(100).optional(),
+  // The site's stock-keeping code: only unique within the site.
+  sku: text(200).optional(),
+});
+
 export const readingVariantSchema = z.object({
   externalId: text(200).optional(),
   title: text(300),
@@ -42,6 +54,7 @@ export const readingVariantSchema = z.object({
   price: money.optional(),
   available: z.boolean().optional(),
   sku: text(200).optional(),
+  gtin: gtin.optional(),
 });
 
 export const readingSchema = z.object({
@@ -61,6 +74,7 @@ export const readingSchema = z.object({
   available: z.boolean().optional(),
   images: z.array(readingImageSchema).max(50).default([]),
   variants: z.array(readingVariantSchema).max(500).default([]),
+  identifiers: readingIdentifiersSchema.optional(),
   // When the site says it published or last changed the listing.
   publishedAt: z.string().datetime({ offset: true }).optional(),
   updatedAt: z.string().datetime({ offset: true }).optional(),

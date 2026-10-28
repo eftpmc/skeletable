@@ -40,6 +40,7 @@ export const CONTRIBUTOR_KINDS = ["person", "worker", "agent", "system"] as cons
 // agree; curators, who applied and were approved, check and correct directly; the owner approves them.
 export const ROLES = ["contributor", "curator", "owner"] as const;
 export const APPLICATION_STATUSES = ["pending", "approved", "declined"] as const;
+export const PROPOSAL_STATUSES = ["pending", "approved", "rejected"] as const;
 export const SOURCE_STATUSES = ["candidate", "approved", "paused", "rejected"] as const;
 export const READERS = ["shopify", "woocommerce", "bigcommerce", "squarespace", "standard", "recipe"] as const;
 export const RECIPE_STATUSES = ["draft", "live", "retired"] as const;
@@ -166,6 +167,44 @@ export const recipe = pgTable(
     uniqueIndex("recipe_source_version_idx").on(table.sourceId, table.version),
     uniqueIndex("recipe_one_live_idx").on(table.sourceId).where(sql`${table.status} = 'live'`),
     check("recipe_status_check", oneOf("status", RECIPE_STATUSES)),
+  ],
+);
+
+/**
+ * A contributor's proposal of a site for the catalog: why it belongs, how the hub will read it (a
+ * platform reader, or the recipe sent with it), and the sample products that came out when the hub
+ * tried. One proposal is one thing for a curator to decide; a resubmission replaces it while it waits.
+ */
+export const proposal = pgTable(
+  "proposal",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sourceId: uuid("source_id")
+      .notNull()
+      .references(() => source.id, { onDelete: "cascade" }),
+    proposerId: uuid("proposer_id")
+      .notNull()
+      .references(() => contributor.id, { onDelete: "cascade" }),
+    note: text("note").notNull(),
+    readerId: text("reader_id")
+      .notNull()
+      .references(() => reader.id),
+    readerConfig: jsonb("reader_config"),
+    recipeId: uuid("recipe_id").references(() => recipe.id, { onDelete: "set null" }),
+    // The hub's own try: sample pages, what each read, and any problems.
+    report: jsonb("report").notNull(),
+    // Why a curator should look at it rather than it going in on its own, e.g. "sells many brands".
+    flags: text("flags").array().notNull().default([]),
+    status: text("status").notNull().default("pending"),
+    decidedById: uuid("decided_by_id").references(() => contributor.id, { onDelete: "set null" }),
+    decidedAt: timestamp("decided_at", { withTimezone: true }),
+    createdAt,
+    updatedAt,
+  },
+  (table) => [
+    check("proposal_status_check", oneOf("status", PROPOSAL_STATUSES)),
+    // One proposal waits per site at a time.
+    uniqueIndex("proposal_one_pending").on(table.sourceId).where(sql`status = 'pending'`),
   ],
 );
 

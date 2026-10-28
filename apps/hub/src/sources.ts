@@ -1,5 +1,5 @@
 import { type HubDb, schema } from "@skeleton/hub-db";
-import { and, desc, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { contributorId, HUB } from "./contributors.js";
 import { httpsOrigin, type CrawlOptions } from "./engine/crawl.js";
 import { politeContext } from "./engine/polite.js";
@@ -64,27 +64,4 @@ export async function assignReader(
     .update(source)
     .set({ readerId, readerConfig: how.config, readerEvidence: how.evidence, readerAssignedById: how.by, readerAssignedAt: new Date() })
     .where(eq(source.id, sourceId));
-}
-
-/** Sites waiting for a curator, newest first, with how a reader recognised each and who proposed it. */
-export async function candidateSources(db: HubDb, limit = 100) {
-  return db
-    .select({ id: source.id, domain: source.domain, readerId: source.readerId, readerEvidence: source.readerEvidence, addedById: source.addedById, createdAt: source.createdAt })
-    .from(source)
-    .where(eq(source.status, "candidate"))
-    .orderBy(desc(source.createdAt))
-    .limit(limit);
-}
-
-/**
- * A curator's call on a candidate site: approved, it joins the crawl (due at once); rejected, it stays
- * known so it isn't proposed again. Returns null when no candidate has that id.
- */
-export async function decideSource(db: HubDb, sourceId: string, approve: boolean) {
-  const [decided] = await db
-    .update(source)
-    .set(approve ? { status: "approved", nextCrawlAt: new Date() } : { status: "rejected" })
-    .where(and(eq(source.id, sourceId), eq(source.status, "candidate")))
-    .returning({ id: source.id, domain: source.domain, status: source.status });
-  return decided ?? null;
 }

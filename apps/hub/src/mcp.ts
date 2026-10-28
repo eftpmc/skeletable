@@ -1,21 +1,14 @@
 import { jobKinds, type JobKind } from "@skeleton/formats";
-import { type HubDb, schema } from "@skeleton/hub-db";
+import type { HubDb } from "@skeleton/hub-db";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
-import { and, count, eq } from "drizzle-orm";
 import { z } from "zod";
 import { claimJob, JobError, submitAnswer } from "./jobs.js";
-import { whoIs } from "./roles.js";
+import { canCurate, whoIs } from "./roles.js";
 import { catalogRecipeSchema } from "./readers/recipe.js";
-import { RecipeError, SAMPLE_PAGES, submitRecipe } from "./recipes.js";
-import { addSource, domainOf } from "./sources.js";
+import { decideProposal, pendingProposals, ProposalError, proposalsBy, proposeSite, type SampleReport, SAMPLE_PAGES } from "./proposals.js";
 import type { CrawlOptions } from "./engine/crawl.js";
 import { instructionsFor } from "./worker.js";
-
-const { source } = schema;
-
-// Sites one contributor may have waiting for review at once, so a runaway agent can't flood the list.
-export const MAX_PROPOSED = 25;
 
 const text = (value: unknown) => ({ content: [{ type: "text" as const, text: typeof value === "string" ? value : JSON.stringify(value, null, 2) }] });
 const refuse = (message: string) => ({ ...text(message), isError: true });
@@ -25,7 +18,7 @@ const refuse = (message: string) => ({ ...text(message), isError: true });
  * format, send the answer, propose a site. The agent calls in with the contributor's hub token, so
  * every answer is theirs, counted and ranked like any other.
  */
-export function hubMcpServer(db: HubDb, contributorId: string, options: { crawl?: CrawlOptions } = {}) {
+export function hubMcpServer(db: HubDb, contributorId: string, options: { crawl?: CrawlOptions; curator?: boolean } = {}) {
   const server = new McpServer({ name: "skeleton-hub", version: "1.0.0" });
 
   server.registerTool(
@@ -77,63 +70,86 @@ export function hubMcpServer(db: HubDb, contributorId: string, options: { crawl?
     "propose_site",
     {
       description:
-        "Propose an independent shop for the catalog: a maker or small seller with its own site, not a marketplace or a reseller. " +
-        "The hub checks whether it can read the site; it then waits for a curator to approve it.",
-      inputSchema: { url: z.string().max(500).describe("The shop's address") },
-    },
-    async ({ url }) => {
-      let domain: string;
-      try {
-        domain = domainOf(url);
-      } catch {
-        return refuse("That isn't a web address.");
-      }
-      const [waiting] = await db
-        .select({ n: count() })
-        .from(source)
-        .where(and(eq(source.addedById, contributorId), eq(source.status, "candidate")));
-      if (waiting!.n >= MAX_PROPOSED) return refuse(`You have ${MAX_PROPOSED} sites waiting for review already.`);
-      const added = await addSource(db, domain, contributorId, options.crawl);
-      if (!added.created) return text({ domain, note: "The hub already knows this site." });
-      return text({
-        domain,
-        reader: added.readerId,
-        note: added.readerId ? "Added; it waits for a curator." : "Added, but no platform reader recognises it: send a recipe with submit_recipe so the hub can read it.",
-      });
-    },
-  );
-
-  server.registerTool(
-    "submit_recipe",
-    {
-      description:
-        "For a site no platform reader covers (propose_site says so): send a recipe saying how to read its product pages. " +
-        "The hub finds product pages in the site's sitemap under pathPrefix and reads each field from the one element its CSS selector matches " +
-        "(attribute: read that attribute, e.g. content or src, instead of the text). It tries the recipe on " +
-        `${SAMPLE_PAGES} real pages and returns what came out of each, so you can fix selectors and send it again. ` +
-        "A recipe that reads enough pages waits for a curator. Prefer stable selectors: meta tags (meta[property='og:title'], content) and itemprop attributes.",
+        "Propose a shop for the catalog: any real shop selling its products on its own site, from a one-person studio to a large brand. " +
+        "The catalog is honest about each (who makes what, how big, how it prices) rather than leaving shops out. " +
+        "Say why it belongs. If no platform reader recognises the site (the reply says so), send it again with a recipe: where its product pages are " +
+        "(its sitemap, under pathPrefix) and the CSS selector of the one element holding each field (attribute: read that attribute, e.g. content or src, " +
+        "instead of the text). Prefer stable selectors such as meta[property='og:title'] with attribute content. " +
+        `The hub tries the site on ${SAMPLE_PAGES} of its own products before anyone sees it: a proposal that doesn't read comes back with each page's ` +
+        "problems to fix. One that reads goes in on its own, unless something needs a curator's eye (a contributor's first proposal, a shop selling " +
+        "many brands, products naming no maker); then it waits, and sending it again replaces it. Marketplaces aren't proposable: propose the shops themselves.",
       inputSchema: {
-        domain: z.string().max(253).describe("The site, as propose_site returned it"),
-        recipe: z.record(z.string(), z.unknown()).describe(`The recipe: ${JSON.stringify(z.toJSONSchema(catalogRecipeSchema))}`),
+        url: z.string().max(500).describe("The shop's address"),
+        why: z.string().trim().min(20).max(1000).describe("Why it belongs: who makes what, and why it is independent"),
+        recipe: z.record(z.string(), z.unknown()).optional().describe(`Only for a site no platform reader covers: ${JSON.stringify(z.toJSONSchema(catalogRecipeSchema))}`),
       },
     },
-    async ({ domain, recipe }) => {
+    async ({ url, why, recipe }) => {
       try {
-        return text(await submitRecipe(db, contributorId, domainOf(domain), recipe, options.crawl));
+        const made = await proposeSite(db, contributorId, { url, note: why, recipe }, options.crawl);
+        const note =
+          made.status === "approved"
+            ? "Approved: the site is read from the next weekly crawl."
+            : `${made.replaced ? "Your waiting proposal was replaced. " : ""}It waits for a curator, because: ${made.flags.join("; ")}.`;
+        return text({ ...made, report: summary(made.report), note });
       } catch (error) {
-        if (error instanceof RecipeError) return refuse(error.message);
+        if (error instanceof ProposalError) return refuse(JSON.stringify({ error: error.message, ...(error.report ? { report: error.report } : {}) }, null, 2));
         throw error;
       }
     },
   );
 
+  server.registerTool(
+    "my_proposals",
+    { description: "Your proposals and how each went: pending, approved or rejected." },
+    async () => text(await proposalsBy(db, contributorId)),
+  );
+
+  if (options.curator) curatorTools(server, db, contributorId);
   return server;
+}
+
+/** The sample as an agent or curator reads it: each page's product, or what went wrong. */
+const summary = (report: SampleReport) => ({
+  read: report.read,
+  of: report.pages.length,
+  pages: report.pages.map((p) => (p.reading ? { url: p.url, title: p.reading.title, price: p.reading.price, image: p.reading.images?.[0]?.url } : { url: p.url, problems: p.issues })),
+});
+
+/**
+ * What a curator decides on, as tools: the proposals waiting, and the one call on each. Only offered to
+ * curators and the owner; everyone else's agents never see them.
+ */
+function curatorTools(server: McpServer, db: HubDb, curatorId: string) {
+  server.registerTool(
+    "review_queue",
+    {
+      description:
+        "Proposals waiting for a curator: each site with who proposed it and why, how the hub will read it, why it needs a look (flags), and the sample products it read. " +
+        "Every real shop belongs: check it is one (not a scam, a parked domain or a marketplace), that its samples are real products with the right title, " +
+        "price and photo, and what its flags point at.",
+    },
+    async () =>
+      text((await pendingProposals(db)).map((p) => ({ proposalId: p.id, domain: p.domain, proposer: p.proposer, why: p.note, reader: p.reader, flags: p.flags, samples: summary(p.report as SampleReport) }))),
+  );
+
+  server.registerTool(
+    "decide_proposal",
+    {
+      description: "Approve a proposal (its site is read the way it proposed from the next weekly crawl) or reject it (the site stays declined).",
+      inputSchema: { proposalId: z.uuid().describe("From review_queue"), approve: z.boolean() },
+    },
+    async ({ proposalId, approve }) => {
+      const decided = await decideProposal(db, curatorId, proposalId, approve);
+      return decided ? text(decided) : refuse("No proposal with that id is waiting.");
+    },
+  );
 }
 
 /** Answer one MCP request statelessly: a fresh server and transport per request, as the hub keeps no sessions. */
 export async function handleMcp(db: HubDb, contributorId: string, request: Request, options: { crawl?: CrawlOptions } = {}): Promise<Response> {
   const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
-  const server = hubMcpServer(db, contributorId, options);
+  const server = hubMcpServer(db, contributorId, { ...options, curator: canCurate((await whoIs(db, contributorId))?.role) });
   await server.connect(transport);
   return transport.handleRequest(request);
 }
