@@ -2,7 +2,7 @@ import { createDb, runMigrations } from "@skeleton/db";
 import { serve } from "@hono/node-server";
 import { startAlertsScheduler } from "./alerts/scheduler.js";
 import { createApp, createServices } from "./app.js";
-import { importPackIfNew } from "./catalog/pack.js";
+import { importPackWithRetries } from "./catalog/pack.js";
 import { createAuth } from "./auth.js";
 import { loadConfig } from "./config.js";
 import { DiskStorage } from "./storage.js";
@@ -31,7 +31,7 @@ const server = serve({ fetch: app.fetch, port: config.PORT }, (info) => {
 async function loadCatalog() {
   if (config.CATALOG_PACK) {
     try {
-      const result = await importPackIfNew(db, config.CATALOG_PACK, config.CATALOG_PACK_SHA256);
+      const result = await importPackWithRetries(db, config.CATALOG_PACK, config.CATALOG_PACK_SHA256, { log: (line) => console.warn(line) });
       console.log("catalog pack", result.imported ? "imported" : "already imported", result);
       if (result.imported) return console.log("catalog search index rebuilt:", await services.catalog.reindex(), "products");
     } catch (error) {

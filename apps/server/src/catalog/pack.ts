@@ -59,3 +59,27 @@ async function publishedHash(source: string): Promise<string | null> {
     return null;
   }
 }
+
+// A hub that sleeps when idle can refuse the first request while it wakes, so a failed load is tried
+// again soon rather than at the next refresh.
+export const RETRY_DELAYS_MS = [30_000, 60_000, 120_000, 240_000];
+
+/** importPackIfNew, tried again after each delay while it fails; the last failure is thrown. */
+export async function importPackWithRetries(
+  db: Db,
+  source: string,
+  sha256?: string,
+  options: { delays?: number[]; sleep?: (ms: number) => Promise<void>; log?: (line: string) => void } = {},
+) {
+  const { delays = RETRY_DELAYS_MS, sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)), log = () => {} } = options;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await importPackIfNew(db, source, sha256);
+    } catch (error) {
+      const wait = delays[attempt];
+      if (wait === undefined) throw error;
+      log(`catalog pack import failed (${error instanceof Error ? error.message : error}); trying again in ${wait / 1000}s`);
+      await sleep(wait);
+    }
+  }
+}
