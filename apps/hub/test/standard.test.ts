@@ -4,7 +4,8 @@ import { eq } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
 import { crawlSource, type CrawlOptions } from "../src/engine/crawl.js";
 import { decideProposal, proposeSite } from "../src/proposals.js";
-import { readStructured } from "../src/readers/standard.js";
+import { sameSite } from "../src/readers/sitemap-pages.js";
+import { readStructured, standardReader } from "../src/readers/standard.js";
 import { shopifyProductSchema, shopifyReading } from "../src/readers/shopify.js";
 import { useHubDb } from "./helpers/db.js";
 import { html, startFixtureServer, type Route } from "./helpers/fixture-server.js";
@@ -132,5 +133,33 @@ describe("reading any shop from its structured data", () => {
     const [site] = await db.select().from(source).where(eq(source.domain, "kiln.example"));
     expect(site).toMatchObject({ status: "approved", readerId: "standard" });
     expect(await crawlSource(db, site!.id, crawl)).toMatchObject({ status: "done", seen: 5, added: 5 });
+  });
+
+  it("finds products in a plain-text sitemap, and by following links when there is no sitemap", async () => {
+    const product = (slug: string) => html(page({ "@type": "Product", name: slug, image: `/img/${slug}.jpg`, offers: { price: 10, priceCurrency: "EUR" } }));
+    const listed: Awaited<ReturnType<typeof startFixtureServer>> = await startFixtureServer({
+      "/robots.txt": (_req, res) => res.writeHead(200, { "content-type": "text/plain" }).end(`Sitemap: ${listed.url("/sitemap.txt")}`),
+      "/sitemap.txt": (_req, res) => res.writeHead(200, { "content-type": "text/plain" }).end(["alpha", "bravo", "charlie", "delta", "echo"].map((p) => listed.url(`/products/${p}`)).join("\n")),
+      ...Object.fromEntries(["alpha", "bravo", "charlie", "delta", "echo"].map((p) => [`/products/${p}`, product(p)])),
+    });
+    const linked: Awaited<ReturnType<typeof startFixtureServer>> = await startFixtureServer({
+      "/": html(`<a href="/collections/all">Shop</a><a href="/account">Account</a><a href="https://elsewhere.example/products/x">Other</a>`),
+      "/collections/all": html(`<a href="/products/f?colour=red">F</a><a href="/products/g#top">G</a><a href="/products/f">F again</a>`),
+      "/products/f": product("f"),
+      "/products/g": product("g"),
+    });
+    closers.push(listed.close, linked.close);
+    const ctxFor = async (server: typeof listed) => (await import("../src/engine/polite.js")).politeContext(new URL(server.url("/")), { pauseMs: 0, fetch: { allowPrivate: true } });
+    const fromSitemap = await standardReader.sample!(new URL(listed.url("/")), null, await ctxFor(listed), 5);
+    expect(fromSitemap).toMatchObject({ pagesFound: 5 });
+    expect(fromSitemap.pages.filter((p) => p.reading)).toHaveLength(5);
+    const fromLinks = await standardReader.sample!(new URL(linked.url("/")), null, await ctxFor(linked), 5);
+    expect(fromLinks.pages.map((p) => new URL(p.url).pathname).sort()).toEqual(["/products/f", "/products/g"]);
+  });
+
+  it("counts a shop's www and bare addresses as one site", () => {
+    expect(sameSite("https://www.muuto.com/sitemap-products.xml", new URL("https://muuto.com"))).toBe(true);
+    expect(sameSite("https://muuto.com/x", new URL("https://www.muuto.com"))).toBe(true);
+    expect(sameSite("https://cdn.muuto.com/x", new URL("https://muuto.com"))).toBe(false);
   });
 });

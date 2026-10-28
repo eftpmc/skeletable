@@ -1,4 +1,4 @@
-import { parseRobots, parseSitemap } from "@skeleton/readers";
+import { parseRobots, parseSitemap, type ParsedSitemap } from "@skeleton/readers";
 import type { ReadContext } from "./types.js";
 
 // Sitemap files one walk reads at most: a big shop's index points to dozens.
@@ -27,13 +27,7 @@ export async function sitemapPages(
     }
     queue = named.length ? named : ["/sitemap.xml", "/sitemap_index.xml"].map((p) => new URL(p, origin).toString());
   }
-  const sameHost = (u: string) => {
-    try {
-      return new URL(u).host === origin.host;
-    } catch {
-      return false;
-    }
-  };
+  const sameHost = (u: string) => sameSite(u, origin);
   queue = queue.filter(sameHost);
   const found = new Set<string>();
   const seen = new Set<string>();
@@ -45,7 +39,7 @@ export async function sitemapPages(
     seen.add(next);
     let sitemap;
     try {
-      sitemap = parseSitemap((await ctx.fetch(next, "application/xml")).body.toString("utf8"));
+      sitemap = sitemapOf((await ctx.fetch(next, "application/xml")).body.toString("utf8"));
     } catch {
       continue;
     }
@@ -59,4 +53,21 @@ export async function sitemapPages(
     }
   }
   return [...found];
+}
+
+/** The shop's own site, with or without "www.": most shops send one to the other. */
+export function sameSite(u: string | URL, origin: URL): boolean {
+  try {
+    const bare = (host: string) => host.toLowerCase().replace(/^www\./, "");
+    return bare(new URL(u).host) === bare(origin.host);
+  } catch {
+    return false;
+  }
+}
+
+/** An XML sitemap, or the plain-text kind (one URL a line) the protocol also allows. */
+function sitemapOf(body: string): ParsedSitemap {
+  if (/^\s*</.test(body)) return parseSitemap(body);
+  const urls = body.split(/\r?\n/).map((l) => l.trim()).filter((l) => /^https?:\/\//.test(l));
+  return { sitemaps: [], urls: urls.map((url) => ({ url, lastmod: null })) };
 }

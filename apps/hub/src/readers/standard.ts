@@ -2,6 +2,7 @@ import type { ReadingInput } from "@skeleton/formats";
 import { looksLikeProduct } from "@skeleton/readers";
 import { parse, type HTMLElement } from "node-html-parser";
 import { parsePrice } from "./recipe.js";
+import { linkPages } from "./link-pages.js";
 import { sitemapPages } from "./sitemap-pages.js";
 import type { ReadContext, Reader } from "./types.js";
 
@@ -141,8 +142,15 @@ export function readStructured(html: string, pageUrl: string): ReadingInput | nu
   };
 }
 
-/** Pages the site's sitemaps list that look like product pages. */
-const productPages = (origin: URL, ctx: ReadContext, max: number) => sitemapPages(origin, ctx, (url, fromProducts) => looksLikeProduct(url.toString(), fromProducts), { max });
+// Fewer product pages than this in the sitemaps, and the shop's own links are followed as well.
+const ENOUGH_FROM_SITEMAPS = 5;
+
+/** Product pages: the ones the site's sitemaps list, else the ones its own links lead to. */
+async function productPages(origin: URL, ctx: ReadContext, max: number): Promise<string[]> {
+  const listed = await sitemapPages(origin, ctx, (url, fromProducts) => looksLikeProduct(url.toString(), fromProducts), { max });
+  if (listed.length >= ENOUGH_FROM_SITEMAPS) return listed;
+  return [...new Set([...listed, ...(await linkPages(origin, ctx, max))])].slice(0, max);
+}
 
 async function readPage(url: string, ctx: ReadContext) {
   try {
@@ -154,7 +162,8 @@ async function readPage(url: string, ctx: ReadContext) {
 
 /**
  * Any shop that publishes structured product data for search engines, which most do whatever they're
- * built on: product pages found in its sitemaps, each read from its own schema.org data.
+ * built on: product pages found in its sitemaps (or by following its own links), each read from its
+ * own schema.org data.
  */
 export const standardReader: Reader = {
   id: "standard",
