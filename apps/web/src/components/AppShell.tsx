@@ -3,6 +3,7 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router";
 import { useUnreadAlerts } from "../lib/alerts";
 import { AccountMenu } from "./AccountMenu";
+import { HeaderSlotContext } from "./HeaderSlot";
 import { SearchTrigger, useSearchPalette } from "./SearchPalette";
 
 const tabs = [
@@ -81,6 +82,7 @@ function BottomSearch() {
 export function AppShell({ user }: { user: User }) {
   const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
   const { data: unread = 0 } = useUnreadAlerts();
 
   // Navigating closes the drawer.
@@ -134,15 +136,19 @@ export function AppShell({ user }: { user: User }) {
       </NavDrawer>
 
       <div className="min-w-0 flex-1 lg:my-2 lg:mr-2 lg:overflow-y-auto lg:rounded-2xl lg:border lg:border-line lg:bg-canvas">
-        {/* Wide screens: search on every page, in a bar above it. Alerts and the account are in the sidebar. */}
+        {/* Wide screens: search on every page, in a bar above it, and the page's own controls (a
+            HeaderSlot, such as the results' filters) at its end. Alerts and the account are in the sidebar. */}
         <div className="sticky top-0 z-20 hidden border-b border-line bg-canvas/90 px-10 backdrop-blur lg:block">
           <div className="mx-auto flex h-[72px] max-w-6xl items-center gap-6">
             <SearchTrigger className="max-w-[640px]" />
+            <div ref={setHeaderSlot} className="ml-auto flex min-w-0 shrink-0 items-center gap-2 empty:hidden" />
           </div>
         </div>
         <main className="px-4 pt-4 pb-28 lg:px-10 lg:pt-8 lg:pb-16">
           <div className="mx-auto w-full max-w-6xl">
-            <Outlet context={{ user }} />
+            <HeaderSlotContext.Provider value={headerSlot}>
+              <Outlet context={{ user }} />
+            </HeaderSlotContext.Provider>
           </div>
         </main>
       </div>
