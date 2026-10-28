@@ -46,7 +46,7 @@ describe("the hub over MCP", () => {
     await queueExtractFacts(db);
     const agent = await connect(await issueToken(db, "claude-of-ana", "agent"));
 
-    expect((await agent.listTools()).tools.map((t) => t.name).sort()).toEqual(["claim_job", "propose_site", "submit_answer", "whoami"]);
+    expect((await agent.listTools()).tools.map((t) => t.name).sort()).toEqual(["claim_job", "propose_site", "submit_answer", "submit_recipe", "whoami"]);
     expect(body(await agent.callTool({ name: "whoami", arguments: {} }))).toMatchObject({ handle: "claude-of-ana", kind: "agent", role: "contributor" });
 
     const job = body(await agent.callTool({ name: "claim_job", arguments: {} }));

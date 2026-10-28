@@ -6,6 +6,8 @@ import { and, count, eq } from "drizzle-orm";
 import { z } from "zod";
 import { claimJob, JobError, submitAnswer } from "./jobs.js";
 import { whoIs } from "./roles.js";
+import { catalogRecipeSchema } from "./readers/recipe.js";
+import { RecipeError, SAMPLE_PAGES, submitRecipe } from "./recipes.js";
 import { addSource, domainOf } from "./sources.js";
 import type { CrawlOptions } from "./engine/crawl.js";
 import { instructionsFor } from "./worker.js";
@@ -93,7 +95,35 @@ export function hubMcpServer(db: HubDb, contributorId: string, options: { crawl?
       if (waiting!.n >= MAX_PROPOSED) return refuse(`You have ${MAX_PROPOSED} sites waiting for review already.`);
       const added = await addSource(db, domain, contributorId, options.crawl);
       if (!added.created) return text({ domain, note: "The hub already knows this site." });
-      return text({ domain, reader: added.readerId, note: added.readerId ? "Added; it waits for a curator." : "Added, but no reader recognises it yet; it waits for a curator." });
+      return text({
+        domain,
+        reader: added.readerId,
+        note: added.readerId ? "Added; it waits for a curator." : "Added, but no platform reader recognises it: send a recipe with submit_recipe so the hub can read it.",
+      });
+    },
+  );
+
+  server.registerTool(
+    "submit_recipe",
+    {
+      description:
+        "For a site no platform reader covers (propose_site says so): send a recipe saying how to read its product pages. " +
+        "The hub finds product pages in the site's sitemap under pathPrefix and reads each field from the one element its CSS selector matches " +
+        "(attribute: read that attribute, e.g. content or src, instead of the text). It tries the recipe on " +
+        `${SAMPLE_PAGES} real pages and returns what came out of each, so you can fix selectors and send it again. ` +
+        "A recipe that reads enough pages waits for a curator. Prefer stable selectors: meta tags (meta[property='og:title'], content) and itemprop attributes.",
+      inputSchema: {
+        domain: z.string().max(253).describe("The site, as propose_site returned it"),
+        recipe: z.record(z.string(), z.unknown()).describe(`The recipe: ${JSON.stringify(z.toJSONSchema(catalogRecipeSchema))}`),
+      },
+    },
+    async ({ domain, recipe }) => {
+      try {
+        return text(await submitRecipe(db, contributorId, domainOf(domain), recipe, options.crawl));
+      } catch (error) {
+        if (error instanceof RecipeError) return refuse(error.message);
+        throw error;
+      }
     },
   );
 

@@ -8,6 +8,7 @@ import { CATALOG_LICENCE } from "@skeleton/formats";
 import { contributorId } from "./contributors.js";
 import { benchmarkItems, recordCheck } from "./benchmark.js";
 import { claimJob, JobError, submitAnswer } from "./jobs.js";
+import { decideRecipe, pendingRecipes } from "./recipes.js";
 import { candidateSources, decideSource } from "./sources.js";
 import type { CrawlOptions } from "./engine/crawl.js";
 import { clientAddress, rateLimit } from "./limits.js";
@@ -140,6 +141,24 @@ export function hubApi(db: HubDb, options: { crawl?: CrawlOptions } = {}) {
       const id = z.uuid().safeParse(c.req.param("id"));
       const decided = id.success ? await decideSource(db, id.data, body.data.approve) : null;
       if (!decided) throw new RoleError(404, "no candidate site with that id");
+      return decided;
+    }),
+  );
+  // Recipes contributors sent for sites no reader covers; a curator approves one after seeing its sample.
+  app.get("/api/recipes/pending", (c) =>
+    roleCall(c, async () => {
+      await curator(c);
+      return pendingRecipes(db);
+    }),
+  );
+  app.post("/api/recipes/:id/decision", (c) =>
+    roleCall(c, async () => {
+      await curator(c);
+      const body = z.object({ approve: z.boolean() }).safeParse(await c.req.json().catch(() => null));
+      if (!body.success) throw new RoleError(422, "send { approve: true } or { approve: false }");
+      const id = z.uuid().safeParse(c.req.param("id"));
+      const decided = id.success ? await decideRecipe(db, id.data, body.data.approve) : null;
+      if (!decided) throw new RoleError(404, "no draft recipe ready for a decision with that id");
       return decided;
     }),
   );
