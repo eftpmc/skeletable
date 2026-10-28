@@ -6,6 +6,8 @@ import { z } from "zod";
 import { contributorId } from "./contributors.js";
 import { benchmarkItems, recordCheck } from "./benchmark.js";
 import { claimJob, JobError, submitAnswer } from "./jobs.js";
+import type { CrawlOptions } from "./engine/crawl.js";
+import { handleMcp } from "./mcp.js";
 import { reviewPage } from "./review-page.js";
 import { applyForRole, canCurate, decideApplication, pendingApplications, RoleError, whoIs } from "./roles.js";
 
@@ -28,17 +30,21 @@ const answerSchema = z.object({ answer: z.unknown(), model: z.string().max(200).
  * The hub's API for contributors: claim a job, send its answer. Every call carries the
  * contributor's token as a bearer token; nothing here reads or returns anyone's personal data.
  */
-export function hubApi(db: HubDb) {
+export function hubApi(db: HubDb, options: { crawl?: CrawlOptions } = {}) {
   const app = new Hono<{ Variables: { contributorId: string } }>();
   // The checking page itself holds nothing private; it asks for the person's token to call the API.
   app.get("/review/:name", (c) => c.html(reviewPage(c.req.param("name"))));
-  app.use("/api/*", async (c, next) => {
+  const auth = async (c: Context<{ Variables: { contributorId: string } }>, next: () => Promise<void>) => {
     const token = c.req.header("authorization")?.match(/^Bearer (.+)$/)?.[1];
     const [found] = token ? await db.select({ id: contributor.id }).from(contributor).where(eq(contributor.tokenHash, hashToken(token))) : [];
     if (!found) return c.json({ error: "unauthorized" }, 401);
     c.set("contributorId", found.id);
     await next();
-  });
+  };
+  app.use("/api/*", auth);
+  app.use("/mcp", auth);
+  // Contributors' own agents, over MCP's Streamable HTTP with the same bearer token.
+  app.all("/mcp", (c) => handleMcp(db, c.get("contributorId"), c.req.raw, options));
   app.post("/api/jobs/claim", async (c) => {
     const can = claimSchema.safeParse(await c.req.json().catch(() => ({})));
     if (!can.success) return c.json({ error: "invalid request" }, 400);
