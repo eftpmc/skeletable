@@ -69,12 +69,25 @@ describe("the job queue", () => {
     expect(await queueExtractFacts(db)).toBe(0);
   });
 
-  it("ignores a category on something the answer says isn't clothing", async () => {
+  it("keeps a home category for a home thing, but no clothing category or department on it", async () => {
+    await listings("Hana Towel", "Linen Sheet");
+    await queueExtractFacts(db);
+    const worker = await contributorId(db, "gpu-1", "worker");
+    for (const category of ["bath", "dresses"]) {
+      const claimed = (await claimJob(db, worker))!;
+      await submitAnswer(db, claimed.assignmentId, worker, { answer: { ...answer, area: "home", category, department: "women" } });
+    }
+    const fields = (await db.select({ field: listingAnnotation.field }).from(listingAnnotation)).map((n) => n.field);
+    expect(fields.filter((f) => f === "category")).toHaveLength(1);
+    expect(fields).not.toContain("department");
+  });
+
+  it("trusts neither when an answer's area and category disagree", async () => {
     await listings("Hana Towel");
     await queueExtractFacts(db);
     const worker = await contributorId(db, "gpu-1", "worker");
     const claimed = (await claimJob(db, worker))!;
-    await submitAnswer(db, claimed.assignmentId, worker, { answer: { ...answer, area: "home", category: "dresses", department: "women" } });
+    await submitAnswer(db, claimed.assignmentId, worker, { answer: { ...answer, area: "tech", category: "dresses", department: "women" } });
     const fields = (await db.select({ field: listingAnnotation.field }).from(listingAnnotation)).map((n) => n.field).sort();
     expect(fields).toEqual(["area", "condition", "materials", "origin"]);
   });

@@ -1,5 +1,5 @@
 import { jobKinds, type JobKind } from "@skeleton/formats";
-import { catalogCategories } from "@skeleton/shared";
+import { areas, catalogCategories, categoryGroups } from "@skeleton/shared";
 import { z } from "zod";
 
 /**
@@ -7,17 +7,20 @@ import { z } from "zod";
  * and sends the answers back. The model is held to each job kind's answer format (Ollama's
  * structured outputs), and the hub checks every answer again before it counts.
  */
-export const WORKER_PROMPT_VERSION = "extract-facts-2";
+export const WORKER_PROMPT_VERSION = "extract-facts-3";
 
-const categoryGuide = catalogCategories.map((c) => `${c.id} (${c.label})`).join(", ");
+// Each area's categories with their names, so the model knows what every id means.
+const categoryGuide = areas
+  .map((a) => `${a.id}: ${catalogCategories.filter((c) => categoryGroups.find((g) => g.id === c.group)!.area === a.id).map((c) => `${c.id} (${c.label})`).join(", ")}`)
+  .join("; ");
 
 const INSTRUCTIONS: Partial<Record<JobKind, string>> = {
   "extract-facts": [
     "You read one product listing from an online shop, in any language, and state plain facts about the product.",
     "Use only what the listing says or plainly shows. Use null, or an empty list, for anything it doesn't say. Never guess.",
-    "area: clothing for anything worn (clothes, shoes, bags, accessories, jewelry); home for homeware, decor, towels and furniture;",
-    "tech for electronics; null for anything else (art, beauty, toys, tools, food, gift cards, samples).",
-    `category: only when area is clothing, one of: ${categoryGuide}. Otherwise null.`,
+    "area: clothing for anything worn (clothes, shoes, bags, accessories, jewelry); home for kitchen, decor, art, bed and bath,",
+    "and furniture; tech for electronics; null for anything else (beauty, toys, tools, food, gift cards, samples).",
+    `category: one of the area's categories, by area: ${categoryGuide}. null when none fits.`,
     "department: women, men or unisex, only when the listing says who it is for.",
     "materials and colours: lowercase English words the listing states, such as \"wool\" or \"navy\".",
     "condition: new unless the listing says used, vintage or refurbished.",

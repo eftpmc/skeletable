@@ -147,8 +147,12 @@ const priceCaps = [null, 50, 100, 200, 300, 500, 1000] as const;
 export function DiscoverPreferences() {
   const { data: prefs } = usePreferences();
   const set = useSetPreferences();
+  const { data: counts = [] } = useQuery({ queryKey: ["catalog", "categories"], queryFn: api.catalogCategories, staleTime: 5 * 60 * 1000 });
   if (!prefs) return <Skeleton className="h-64 w-full" />;
   const hidden = new Set<string>(prefs.hiddenCategories);
+  // The categories the catalog has something in, plus any already turned off so they can come back on.
+  const stocked = new Set(counts.map((c) => c.id));
+  const offered = catalogCategories.filter((c) => stocked.has(c.id) || hidden.has(c.id));
 
   return (
     <div className="flex flex-col gap-8">
@@ -191,7 +195,7 @@ export function DiscoverPreferences() {
           What the feed shows. Turn one off to leave it out; you can still open it on its own in Discover.
         </p>
         <div role="group" aria-label="Categories in the feed" className="mt-4 flex flex-wrap gap-2">
-          {catalogCategories.map((c) => (
+          {offered.map((c) => (
             <Chip
               key={c.id}
               selected={!hidden.has(c.id)}

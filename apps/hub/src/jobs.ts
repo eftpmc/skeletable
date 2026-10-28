@@ -1,6 +1,7 @@
 import { extractFacts, fieldVersion, jobKinds, parseAnswer, type JobKind, type Reading } from "@skeleton/formats";
 import { type HubDb, schema } from "@skeleton/hub-db";
 import { and, eq, sql } from "drizzle-orm";
+import { areaOf, catalogCategorySchema } from "@skeleton/shared";
 import { resolveListings } from "./resolve.js";
 
 const { assignment, contributor, job, listingAnnotation } = schema;
@@ -131,10 +132,15 @@ export async function submitAnswer(db: HubDb, assignmentId: string, contributorI
  */
 function annotationsFrom(kind: JobKind, answer: Record<string, unknown>): { field: string; value: unknown }[] {
   if (kind === "judge-source") return [];
-  const clothing = !("area" in answer) || answer.area === "clothing";
+  // A category from another area than the answer's own is a contradiction; trust neither.
+  const area = typeof answer.area === "string" ? answer.area : null;
+  const category = catalogCategorySchema.safeParse(answer.category);
+  const consistent = !category.success || area === null || areaOf(category.data) === area;
+  const clothing = area === null || area === "clothing";
   return Object.entries(answer).flatMap(([field, value]) => {
     if (field === "confidence" || field === "reason" || value === null) return [];
-    if (!clothing && (field === "category" || field === "department")) return [];
+    if (field === "category" && !consistent) return [];
+    if (field === "department" && !clothing) return [];
     if (Array.isArray(value) && !value.length) return [];
     return [{ field, value }];
   });

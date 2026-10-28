@@ -1,6 +1,7 @@
 import { fieldVersion, type Reading } from "@skeleton/formats";
 import { type HubDb, schema } from "@skeleton/hub-db";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { areaOf } from "@skeleton/shared";
 import { contributorId, HUB } from "../contributors.js";
 import { category, departmentWords, isKids, womenByGarment } from "./taxonomy.js";
 
@@ -21,7 +22,7 @@ export function ruleDrafts(listingId: string, readingId: number, r: Reading): Dr
   const add = (field: string, value: unknown, confidence: number) => drafts.push({ listingId, readingId, field, value, confidence });
   if (!found.category || found.category === "other") return drafts;
   add("category", found.category, found.how === "type" ? 0.8 : found.how === "title" ? 0.7 : 0.5);
-  add("area", "clothing", 0.9);
+  add("area", areaOf(found.category), 0.9);
   add("audience", isKids(r.title, r.productType, r.tags) ? "kids" : "adults", 0.7);
   const side = departmentWords(r.title, r.productType, r.tags);
   if (side) add("department", side, 0.7);

@@ -1,4 +1,4 @@
-import { catalogCategorySchema, departments } from "@skeleton/shared";
+import { areaSchema, catalogCategorySchema, departments } from "@skeleton/shared";
 import { z } from "zod";
 
 /**
@@ -6,8 +6,7 @@ import { z } from "zod";
  * the field and version it follows; when a field's format changes, its version goes up and older
  * annotations stay valid for the version they used. New fields are new jobs over readings we have.
  */
-export const areas = ["clothing", "home", "tech"] as const;
-export const areaSchema = z.enum(areas);
+export { areaSchema } from "@skeleton/shared";
 export type Area = z.infer<typeof areaSchema>;
 
 const word = z.string().trim().toLowerCase().min(1).max(60);

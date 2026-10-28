@@ -1,7 +1,8 @@
 // Mirrors lab/brands/taxonomy.py. The regexes are the same source strings, so a change there needs the same change here.
 import type { CategoryId } from "@skeleton/shared";
 
-export const CATEGORY_WORDS: Record<CategoryId, string> = {
+// Clothing only, as the lab sorted it; other areas are left to models and people.
+export const CATEGORY_WORDS: Partial<Record<CategoryId, string>> = {
   dresses: String.raw`dress(es)?|gowns?|jumpsuits?|playsuits?|rompers?|kaftans?|caftans?|sundress(es)?|boiler ?suits?|overalls?|dungarees`,
   skirts: String.raw`skirts?|skorts?|sarongs?|mini skirts?|midi skirts?`,
   tops:
