@@ -15,6 +15,7 @@ import { clientAddress, rateLimit } from "./limits.js";
 import { handleMcp } from "./mcp.js";
 import { loadPhotoVectors, photosToEmbed } from "./photos.js";
 import { buildStream, latestPublished } from "./publish.js";
+import { curatePage } from "./curate-page.js";
 import { reviewPage } from "./review-page.js";
 import { applyForRole, canCurate, decideApplication, pendingApplications, RoleError, whoIs } from "./roles.js";
 
@@ -48,6 +49,7 @@ export function hubApi(db: HubDb, options: { crawl?: CrawlOptions } = {}) {
     app.use(path, rateLimit({ windowMs: 60_000, max: 600, key: clientAddress }));
   }
   app.get("/review/:name", (c) => c.html(reviewPage(c.req.param("name"))));
+  app.get("/curate", (c) => c.html(curatePage()));
   // The catalog is open data (ODbL): its latest build, and the hash an app checks before downloading.
   app.get("/catalog/latest.json", async (c) => {
     const build = await latestPublished(db);

@@ -33,4 +33,10 @@ describe("deciding on candidate sites", () => {
     expect(approved!.nextCrawlAt).not.toBeNull();
     expect(await (await call("GET", "/api/sources/candidates")).json()).toEqual([]);
   });
+
+  it("serves the curators' page, which builds what contributors wrote as text", async () => {
+    const page = await (await hubApi(db).request("/curate")).text();
+    expect(page).toContain("<title>Curate</title>");
+    expect(page).not.toContain("innerHTML");
+  });
 });

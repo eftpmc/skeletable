@@ -5,10 +5,10 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 import { and, count, eq } from "drizzle-orm";
 import { z } from "zod";
 import { claimJob, JobError, submitAnswer } from "./jobs.js";
-import { whoIs } from "./roles.js";
+import { canCurate, whoIs } from "./roles.js";
 import { catalogRecipeSchema } from "./readers/recipe.js";
-import { RecipeError, SAMPLE_PAGES, submitRecipe } from "./recipes.js";
-import { addSource, domainOf } from "./sources.js";
+import { decideRecipe, pendingRecipes, RecipeError, type RecipeReport, SAMPLE_PAGES, submitRecipe } from "./recipes.js";
+import { addSource, candidateSources, decideSource, domainOf } from "./sources.js";
 import type { CrawlOptions } from "./engine/crawl.js";
 import { instructionsFor } from "./worker.js";
 
@@ -25,7 +25,7 @@ const refuse = (message: string) => ({ ...text(message), isError: true });
  * format, send the answer, propose a site. The agent calls in with the contributor's hub token, so
  * every answer is theirs, counted and ranked like any other.
  */
-export function hubMcpServer(db: HubDb, contributorId: string, options: { crawl?: CrawlOptions } = {}) {
+export function hubMcpServer(db: HubDb, contributorId: string, options: { crawl?: CrawlOptions; curator?: boolean } = {}) {
   const server = new McpServer({ name: "skeleton-hub", version: "1.0.0" });
 
   server.registerTool(
@@ -127,13 +127,64 @@ export function hubMcpServer(db: HubDb, contributorId: string, options: { crawl?
     },
   );
 
+  if (options.curator) curatorTools(server, db);
   return server;
+}
+
+/**
+ * What a curator decides on, as tools: the sites and recipes waiting for review, and the call on each.
+ * Only offered to curators and the owner; everyone else's agents never see them.
+ */
+function curatorTools(server: McpServer, db: HubDb) {
+  server.registerTool(
+    "review_queue",
+    {
+      description:
+        "Sites proposed for the catalog and recipes sent for sites no platform reader covers, waiting for a curator. " +
+        "Each recipe comes with the sample products it read: check they are real products with the right title, price and photo. " +
+        "Approve only independent makers and small sellers with their own shop, not marketplaces, resellers or drop-shippers.",
+    },
+    async () => {
+      const recipes = (await pendingRecipes(db)).map((r) => ({
+        recipeId: r.id,
+        domain: r.domain,
+        version: r.version,
+        samples: (r.report as RecipeReport).pages.flatMap((p) => (p.reading ? [{ url: p.url, title: p.reading.title, price: p.reading.price, image: p.reading.images?.[0]?.url }] : [])),
+      }));
+      const sites = (await candidateSources(db)).map((s) => ({ siteId: s.id, domain: s.domain, reader: s.readerId, proposed: s.createdAt }));
+      return text({ sites, recipes });
+    },
+  );
+
+  server.registerTool(
+    "decide_site",
+    {
+      description: "Approve a candidate site (it is crawled from the next weekly cycle) or reject it (it stays known, so it isn't proposed again).",
+      inputSchema: { siteId: z.uuid().describe("From review_queue"), approve: z.boolean() },
+    },
+    async ({ siteId, approve }) => {
+      const decided = await decideSource(db, siteId, approve);
+      return decided ? text(decided) : refuse("No candidate site with that id.");
+    },
+  );
+
+  server.registerTool(
+    "decide_recipe",
+    {
+      description: "Approve a recipe (it becomes the site's live recipe, and its site is approved) or decline it.",
+      inputSchema: { recipeId: z.uuid().describe("From review_queue"), approve: z.boolean() },
+    },
+    async ({ recipeId, approve }) => {
+      const decided = await decideRecipe(db, recipeId, approve);
+      return decided ? text(decided) : refuse("No draft recipe ready for a decision with that id.");
+    },
+  );
 }
 
 /** Answer one MCP request statelessly: a fresh server and transport per request, as the hub keeps no sessions. */
 export async function handleMcp(db: HubDb, contributorId: string, request: Request, options: { crawl?: CrawlOptions } = {}): Promise<Response> {
   const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
-  const server = hubMcpServer(db, contributorId, options);
+  const server = hubMcpServer(db, contributorId, { ...options, curator: canCurate((await whoIs(db, contributorId))?.role) });
   await server.connect(transport);
   return transport.handleRequest(request);
 }

@@ -8,6 +8,7 @@ import { hubApi, issueToken } from "../src/api.js";
 import { storeReadings } from "../src/engine/store.js";
 import { queueExtractFacts } from "../src/jobs.js";
 import { MAX_PROPOSED } from "../src/mcp.js";
+import { setRole } from "../src/roles.js";
 import { useHubDb } from "./helpers/db.js";
 import { json, startFixtureServer } from "./helpers/fixture-server.js";
 
@@ -76,5 +77,20 @@ describe("the hub over MCP", () => {
 
     await db.insert(source).values(Array.from({ length: MAX_PROPOSED }, (_, i) => ({ domain: `filler-${i}.example`, addedById: added!.addedById })));
     expect((await agent.callTool({ name: "propose_site", arguments: { url: "one-more.example" } })).isError).toBe(true);
+  });
+
+  it("offers curators the review queue and the calls on it, and no one else", async () => {
+    await db.insert(source).values({ domain: "maker.example" });
+    const contributor = await connect(await issueToken(db, "claude-of-ana", "agent"));
+    expect((await contributor.listTools()).tools.map((t) => t.name)).not.toContain("review_queue");
+
+    const token = await issueToken(db, "zack", "person");
+    await setRole(db, "zack", "owner");
+    const curator = await connect(token);
+    expect((await curator.listTools()).tools.map((t) => t.name)).toEqual(expect.arrayContaining(["review_queue", "decide_site", "decide_recipe"]));
+    const queue = body(await curator.callTool({ name: "review_queue", arguments: {} }));
+    expect(queue).toMatchObject({ sites: [{ domain: "maker.example" }], recipes: [] });
+    expect(body(await curator.callTool({ name: "decide_site", arguments: { siteId: queue.sites[0].siteId, approve: true } }))).toMatchObject({ status: "approved" });
+    expect((await curator.callTool({ name: "decide_site", arguments: { siteId: queue.sites[0].siteId, approve: true } })).isError).toBe(true);
   });
 });
