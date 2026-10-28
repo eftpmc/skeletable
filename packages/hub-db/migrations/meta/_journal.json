@@ -43,6 +43,13 @@
       "when": 1793167153880,
       "tag": "0005_catalog_chunks",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793194463049,
+      "tag": "0006_proposals",
+      "breakpoints": true
     }
   ]
 }

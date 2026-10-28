@@ -1,6 +1,6 @@
 /**
- * The page a curator works through what waits for them: recipes (with the sample products each read),
- * proposed sites and, for the owner, requests for the curator's role. Every value on it comes from
+ * The page a curator works through what waits for them: proposals (each site with who proposed it and
+ * why, and the sample products the hub read) and, for the owner, requests for the curator's role. Every value on it comes from
  * contributors, so it is set as text on elements it builds, never as HTML. It talks to the hub's API
  * with the curator's token, which it keeps in this browser only.
  */
@@ -96,27 +96,25 @@ async function load() {
   let me;
   try { me = await api("GET", "/api/me"); } catch (e) { if (e.message !== "unauthorized") app.replaceChildren(el("p", { class: "error" }, e.message)); return; }
   if (me.role !== "curator" && me.role !== "owner") { localStorage.removeItem("hub-token"); return askToken("This page is for curators."); }
-  const [recipes, sites, applications] = await Promise.all([
-    api("GET", "/api/recipes/pending"),
-    api("GET", "/api/sources/candidates"),
+  const [proposals, applications] = await Promise.all([
+    api("GET", "/api/proposals"),
     me.role === "owner" ? api("GET", "/api/applications") : Promise.resolve(null),
   ]);
   const site = (domain) => { const url = safeUrl("https://" + domain); return url ? el("a", { href: url, target: "_blank", rel: "noopener noreferrer" }, domain) : domain; };
 
-  const recipeCards = recipes.map((r) => el("div", { class: "card" },
-    el("div", { class: "row" }, el("div", { class: "grow" }, el("strong", {}, site(r.domain)), el("span", { class: "muted" }, " · recipe v" + r.version + " · read " + r.report.read + " of " + r.report.pages.length + " sample pages")),
-      actions("/api/recipes/" + r.id + "/decision", "Approved: crawled from the next cycle.", "Declined.", "Approve", "Decline")),
-    el("div", { class: "samples" }, r.report.pages.filter((p) => p.reading).map((p) => {
-      const img = safeUrl(p.reading.images?.[0]?.url);
-      const link = safeUrl(p.url);
+  const proposalCards = proposals.map((p) => el("div", { class: "card" },
+    el("div", { class: "row" },
+      el("div", { class: "grow" }, el("strong", {}, site(p.domain)),
+        el("span", { class: "muted" }, " · from " + p.proposer + " · read " + (p.reader === "recipe" ? "with their recipe" : "by the " + p.reader + " reader") + " · " + p.report.read + " of " + p.report.pages.length + " samples read")),
+      actions("/api/proposals/" + p.id + "/decision", "Approved: crawled from the next cycle.", "Rejected.")),
+    el("p", { style: "margin:8px 0 0;white-space:pre-wrap" }, p.note),
+    el("div", { class: "samples" }, p.report.pages.filter((page) => page.reading).map((page) => {
+      const img = safeUrl(page.reading.images?.[0]?.url);
+      const link = safeUrl(page.url);
       return el("a", { href: link || undefined, target: "_blank", rel: "noopener noreferrer" },
         img ? el("img", { src: img, alt: "", loading: "lazy", referrerpolicy: "no-referrer" }) : el("div", { style: "aspect-ratio:4/5;background:var(--line);border-radius:8px" }),
-        el("div", {}, p.reading.title), el("div", { class: "muted" }, money(p.reading.price)));
+        el("div", {}, page.reading.title), el("div", { class: "muted" }, money(page.reading.price)));
     }))));
-
-  const siteCards = sites.map((s) => el("div", { class: "card row" },
-    el("div", { class: "grow" }, el("strong", {}, site(s.domain)), el("span", { class: "muted" }, s.readerId ? " · read by the " + s.readerId + " reader" : " · no reader yet: needs a recipe")),
-    actions("/api/sources/" + s.id + "/decision", "Approved: crawled from the next cycle.", "Rejected.")));
 
   const applicationCards = (applications || []).map((a) => el("div", { class: "card" },
     el("div", { class: "row" }, el("div", { class: "grow" }, el("strong", {}, a.handle), el("span", { class: "muted" }, " asks to curate")),
@@ -125,8 +123,7 @@ async function load() {
 
   const section = (title, cards, empty) => [el("h2", {}, title + " (" + cards.length + ")"), ...(cards.length ? cards : [el("p", { class: "muted" }, empty)])];
   app.replaceChildren(
-    ...section("Recipes", recipeCards, "No recipes waiting."),
-    ...section("Sites", siteCards, "No sites waiting."),
+    ...section("Proposals", proposalCards, "No proposals waiting."),
     ...(applications ? section("Requests to curate", applicationCards, "No requests waiting.") : []),
   );
 }

@@ -7,7 +7,6 @@ import { afterEach, describe, expect, it } from "vitest";
 import { hubApi, issueToken } from "../src/api.js";
 import { storeReadings } from "../src/engine/store.js";
 import { queueExtractFacts } from "../src/jobs.js";
-import { MAX_PROPOSED } from "../src/mcp.js";
 import { setRole } from "../src/roles.js";
 import { useHubDb } from "./helpers/db.js";
 import { json, startFixtureServer } from "./helpers/fixture-server.js";
@@ -47,7 +46,7 @@ describe("the hub over MCP", () => {
     await queueExtractFacts(db);
     const agent = await connect(await issueToken(db, "claude-of-ana", "agent"));
 
-    expect((await agent.listTools()).tools.map((t) => t.name).sort()).toEqual(["claim_job", "propose_site", "submit_answer", "submit_recipe", "whoami"]);
+    expect((await agent.listTools()).tools.map((t) => t.name).sort()).toEqual(["claim_job", "my_proposals", "propose_site", "submit_answer", "whoami"]);
     expect(body(await agent.callTool({ name: "whoami", arguments: {} }))).toMatchObject({ handle: "claude-of-ana", kind: "agent", role: "contributor" });
 
     const job = body(await agent.callTool({ name: "claim_job", arguments: {} }));
@@ -62,35 +61,40 @@ describe("the hub over MCP", () => {
     expect((await agent.callTool({ name: "claim_job", arguments: {} })).content).toEqual([{ type: "text", text: "No open jobs right now." }]);
   });
 
-  it("takes a proposed site as a candidate, and caps how many wait", async () => {
-    const shop = await startFixtureServer({ "/products.json": json({ products: [] }), "/robots.txt": (_req, res) => res.writeHead(404).end() });
+  it("takes one proposal, reads it first, and offers only curators the queue and the call on it", async () => {
+    const products = [1, 2, 3].map((id) => ({
+      id,
+      title: `Linen shirt ${id}`,
+      handle: `shirt-${id}`,
+      variants: [{ id: id * 10, price: "90.00", available: true }],
+      images: [{ src: `https://cdn.example/${id}.jpg` }],
+    }));
+    const shop = await startFixtureServer({
+      "/products.json": json({ products }),
+      "/": (_req, res) => res.writeHead(200, { "content-type": "text/html" }).end('<script>Shopify.currency = {"active":"EUR"};</script>'),
+      "/robots.txt": (_req, res) => res.writeHead(404).end(),
+    });
     closers.push(shop.close);
     const crawl = { pauseMs: 0, fetch: { allowPrivate: true }, originOf: () => new URL(shop.url("/")) };
-    const token = await issueToken(db, "claude-of-ana", "agent");
-    const agent = await connect(token, hubApi(db, { crawl }));
+    const agent = await connect(await issueToken(db, "claude-of-ana", "agent"), hubApi(db, { crawl }));
+    expect((await agent.listTools()).tools.map((t) => t.name)).not.toContain("review_queue");
 
-    expect(body(await agent.callTool({ name: "propose_site", arguments: { url: "https://new-maker.example/about" } }))).toMatchObject({ domain: "new-maker.example", reader: "shopify" });
-    const [added] = await db.select().from(source).where(eq(source.domain, "new-maker.example"));
-    expect(added).toMatchObject({ status: "candidate", readerId: "shopify" });
-    expect(body(await agent.callTool({ name: "propose_site", arguments: { url: "new-maker.example" } }))).toMatchObject({ note: "The hub already knows this site." });
-    expect((await agent.callTool({ name: "propose_site", arguments: { url: "not a url" } })).isError).toBe(true);
-
-    await db.insert(source).values(Array.from({ length: MAX_PROPOSED }, (_, i) => ({ domain: `filler-${i}.example`, addedById: added!.addedById })));
-    expect((await agent.callTool({ name: "propose_site", arguments: { url: "one-more.example" } })).isError).toBe(true);
-  });
-
-  it("offers curators the review queue and the calls on it, and no one else", async () => {
-    await db.insert(source).values({ domain: "maker.example" });
-    const contributor = await connect(await issueToken(db, "claude-of-ana", "agent"));
-    expect((await contributor.listTools()).tools.map((t) => t.name)).not.toContain("review_queue");
+    const why = "A small linen workshop in Vilnius that sews everything in house.";
+    expect((await agent.callTool({ name: "propose_site", arguments: { url: "not a url", why } })).isError).toBe(true);
+    const made = body(await agent.callTool({ name: "propose_site", arguments: { url: "https://linen.example/about", why } }));
+    expect(made).toMatchObject({ domain: "linen.example", reader: "shopify", report: { read: 3, of: 3 } });
+    expect(made.report.pages[0]).toMatchObject({ title: "Linen shirt 1", price: { amount: 9000, currency: "EUR" } });
+    expect(body(await agent.callTool({ name: "my_proposals", arguments: {} }))).toMatchObject([{ domain: "linen.example", status: "pending" }]);
 
     const token = await issueToken(db, "zack", "person");
     await setRole(db, "zack", "owner");
     const curator = await connect(token);
-    expect((await curator.listTools()).tools.map((t) => t.name)).toEqual(expect.arrayContaining(["review_queue", "decide_site", "decide_recipe"]));
-    const queue = body(await curator.callTool({ name: "review_queue", arguments: {} }));
-    expect(queue).toMatchObject({ sites: [{ domain: "maker.example" }], recipes: [] });
-    expect(body(await curator.callTool({ name: "decide_site", arguments: { siteId: queue.sites[0].siteId, approve: true } }))).toMatchObject({ status: "approved" });
-    expect((await curator.callTool({ name: "decide_site", arguments: { siteId: queue.sites[0].siteId, approve: true } })).isError).toBe(true);
+    expect((await curator.listTools()).tools.map((t) => t.name)).toEqual(expect.arrayContaining(["review_queue", "decide_proposal"]));
+    const [waiting] = body(await curator.callTool({ name: "review_queue", arguments: {} }));
+    expect(waiting).toMatchObject({ domain: "linen.example", proposer: "claude-of-ana", why, reader: "shopify", samples: { read: 3 } });
+    expect(body(await curator.callTool({ name: "decide_proposal", arguments: { proposalId: waiting.proposalId, approve: true } }))).toMatchObject({ status: "approved" });
+    expect((await curator.callTool({ name: "decide_proposal", arguments: { proposalId: waiting.proposalId, approve: true } })).isError).toBe(true);
+    const [site] = await db.select().from(source).where(eq(source.domain, "linen.example"));
+    expect(site).toMatchObject({ status: "approved", readerId: "shopify", readerConfig: { currency: "EUR" } });
   });
 });
