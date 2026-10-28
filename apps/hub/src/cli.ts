@@ -7,6 +7,10 @@ import { buildCatalog } from "./build.js";
 import { importLabBrands } from "./lab/brands.js";
 import { importLab } from "./lab/import.js";
 import { resolveListings, resolveSources } from "./resolve.js";
+import { serve } from "@hono/node-server";
+import { hubApi, issueToken } from "./api.js";
+import { queueExtractFacts } from "./jobs.js";
+import { runWorker } from "./worker.js";
 import { addSource, domainOf } from "./sources.js";
 
 const usage = `Usage: hub <command>
@@ -18,9 +22,31 @@ const usage = `Usage: hub <command>
   import-lab-brands <old pack.jsonl.gz> carry over the lab's names, places, descriptions and quality
   annotate                              annotate listings with the hub's rules, then resolve final values
   build <file.jsonl.gz>                 write the catalog file from the final values
+  token <handle> <person|worker|agent>  issue a contributor a token for the API (shown once)
+  queue [count]                         queue extract-facts jobs for listings with no category (default 1000)
+  serve [port]                          run the contributor API (default 4100)
+  work <hub url> [model] [count]        answer jobs with a local Ollama model (HUB_TOKEN, OLLAMA_URL)
   status                                counts`;
 
 const [command, ...args] = process.argv.slice(2);
+
+// A worker only talks to a hub over its API; it needs no database.
+if (command === "work" && args[0]) {
+  const token = process.env.HUB_TOKEN;
+  if (!token) throw new Error("set HUB_TOKEN to the token the hub issued you");
+  console.log(
+    await runWorker({
+      hub: args[0],
+      token,
+      ollama: process.env.OLLAMA_URL ?? "http://localhost:11434",
+      model: args[1] ?? "qwen3:4b",
+      limit: args[2] ? Number(args[2]) : undefined,
+      log: (line) => console.log(line),
+    }),
+  );
+  process.exit(0);
+}
+
 const url = process.env.HUB_DATABASE_URL;
 if (!command || !url) {
   console.error(usage);
@@ -57,6 +83,15 @@ try {
     console.log("final values updated:", await resolveListings(db), "listing,", await resolveSources(db), "source");
   } else if (command === "build" && args[0]) {
     console.log(await buildCatalog(db, args[0], (line) => console.log(line)));
+  } else if (command === "token" && args[0] && ["person", "worker", "agent"].includes(args[1] ?? "")) {
+    console.log(await issueToken(db, args[0], args[1] as "person" | "worker" | "agent"));
+  } else if (command === "queue") {
+    console.log("jobs queued:", await queueExtractFacts(db, Number(args[0] ?? 1000)));
+  } else if (command === "serve") {
+    const port = Number(args[0] ?? 4100);
+    serve({ fetch: hubApi(db).fetch, port });
+    console.log(`hub API on http://localhost:${port}`);
+    await new Promise(() => {});
   } else if (command === "status") {
     const total = async (table: typeof source | typeof listing | typeof reading | typeof embedding) =>
       (await db.select({ n: count() }).from(table))[0]!.n;

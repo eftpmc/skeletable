@@ -26,6 +26,9 @@ importers:
 
   apps/hub:
     dependencies:
+      '@hono/node-server':
+        specifier: ^2.1.5
+        version: 2.1.5(hono@4.13.14)
       '@skeleton/formats':
         specifier: workspace:*
         version: link:../../packages/formats
@@ -44,6 +47,9 @@ importers:
       fflate:
         specifier: ^0.8.3
         version: 0.8.3
+      hono:
+        specifier: ^4.13.14
+        version: 4.13.14
       node-html-parser:
         specifier: ^9.0.5
         version: 9.0.5

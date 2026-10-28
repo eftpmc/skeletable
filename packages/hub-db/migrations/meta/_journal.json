@@ -15,6 +15,13 @@
       "when": 1793155563876,
       "tag": "0001_seed_readers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793157646991,
+      "tag": "0002_contributor_token",
+      "breakpoints": true
     }
   ]
 }

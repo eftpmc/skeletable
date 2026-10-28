@@ -54,6 +54,8 @@ export const contributor = pgTable(
     handle: text("handle").notNull().unique(),
     kind: text("kind").notNull(),
     trust: real("trust").notNull().default(0.5),
+    // SHA-256 of the token a worker or agent sends with its answers; null for those that never call in.
+    tokenHash: text("token_hash").unique(),
     createdAt,
   },
   () => [check("contributor_kind_check", oneOf("kind", CONTRIBUTOR_KINDS))],
