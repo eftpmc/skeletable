@@ -16,6 +16,7 @@ import {
   focusRing,
 } from "@skeleton/ui";
 import { useNavigate, useParams } from "react-router";
+import { HeaderBack } from "../components/HeaderSlot";
 import { BrandCard, BrandGrid, brandMeta } from "../components/BrandCard";
 import { useBrand, useDwell, useVote } from "../lib/catalog";
 
@@ -53,7 +54,8 @@ export function BrandPage() {
 
   return (
     <article className="pt-2 lg:pt-0">
-      <IconButton label="Back" onClick={back} className="-ml-2">
+      <HeaderBack onBack={back} title={brand.name} />
+      <IconButton label="Back" onClick={back} className="-ml-2 lg:hidden">
         <ChevronLeftIcon size={24} />
       </IconButton>
 

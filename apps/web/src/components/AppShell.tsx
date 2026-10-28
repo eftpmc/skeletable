@@ -82,7 +82,8 @@ function BottomSearch() {
 export function AppShell({ user }: { user: User }) {
   const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
+  const [headerStart, setHeaderStart] = useState<HTMLElement | null>(null);
+  const [headerEnd, setHeaderEnd] = useState<HTMLElement | null>(null);
   const { data: unread = 0 } = useUnreadAlerts();
 
   // Navigating closes the drawer.
@@ -136,17 +137,18 @@ export function AppShell({ user }: { user: User }) {
       </NavDrawer>
 
       <div className="min-w-0 flex-1 lg:my-2 lg:mr-2 lg:overflow-y-auto lg:rounded-2xl lg:border lg:border-line lg:bg-canvas">
-        {/* Wide screens: search on every page, in a bar above it, and the page's own controls (a
-            HeaderSlot, such as the results' filters) at its end. Alerts and the account are in the sidebar. */}
+        {/* Wide screens: search on every page, in a bar above it, with the page's own controls around it
+            (HeaderSlot): back and a title before, the results' filters after. Alerts and the account are in the sidebar. */}
         <div className="sticky top-0 z-20 hidden border-b border-line bg-canvas/90 px-10 backdrop-blur lg:block">
           <div className="mx-auto flex h-[72px] max-w-6xl items-center gap-6">
+            <div ref={setHeaderStart} className="flex min-w-0 shrink-0 items-center gap-1 empty:hidden" />
             <SearchTrigger className="max-w-[640px]" />
-            <div ref={setHeaderSlot} className="ml-auto flex min-w-0 shrink-0 items-center gap-2 empty:hidden" />
+            <div ref={setHeaderEnd} className="ml-auto flex min-w-0 shrink-0 items-center gap-2 empty:hidden" />
           </div>
         </div>
         <main className="px-4 pt-4 pb-28 lg:px-10 lg:pt-8 lg:pb-16">
           <div className="mx-auto w-full max-w-6xl">
-            <HeaderSlotContext.Provider value={headerSlot}>
+            <HeaderSlotContext.Provider value={{ start: headerStart, end: headerEnd }}>
               <Outlet context={{ user }} />
             </HeaderSlotContext.Provider>
           </div>

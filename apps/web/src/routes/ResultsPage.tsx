@@ -221,14 +221,6 @@ export function ResultsPage() {
     <section>
       <header className="px-1">
         <h1 className="truncate text-title-1 text-ink lg:text-[34px] lg:leading-[38px]">{q}</h1>
-        <p className="mt-1 h-5 text-callout font-normal text-muted">
-          {data && results.length > 0 && (
-            <>
-              {results.length.toLocaleString()} {results.length === 1 ? "result" : "results"} · {data.total.toLocaleString()}{" "}
-              {data.total === 1 ? "offer" : "offers"} from {data.storeCount} {data.storeCount === 1 ? "store" : "stores"}
-            </>
-          )}
-        </p>
       </header>
 
       {/* The filters: in the header beside search on wide screens; on phones, a bar of pills that stays in
