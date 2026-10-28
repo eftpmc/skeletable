@@ -1,4 +1,4 @@
-# The hub: its API and MCP (the default command), or, with the command `cycle`, the scheduled job
+# The hub: its API and MCP (the default command), or, run as `node dist/cli.js cycle`, the scheduled job
 # that crawls, annotates and publishes the catalog. Needs HUB_DATABASE_URL.
 FROM node:22-alpine AS base
 RUN corepack enable
@@ -31,5 +31,5 @@ COPY --from=build /repo/apps/hub/dist ./dist
 COPY --from=build /repo/packages/hub-db/migrations ./migrations
 USER node
 EXPOSE 4100
-ENTRYPOINT ["node", "dist/cli.js"]
-CMD ["serve"]
+# A plain command, so a platform's start command (node dist/cli.js cycle) replaces it whole.
+CMD ["node", "dist/cli.js", "serve"]
