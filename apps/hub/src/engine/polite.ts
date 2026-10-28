@@ -36,7 +36,9 @@ export async function politeContext(origin: URL, options: PoliteOptions = {}): P
       last = Date.now();
     }
   };
-  // A site that says "slow down" (429) or "busy" (503) is given what it asks for, then asked again.
+  // A site that says "slow down" (429) or "busy" (503) is asked again after a wait. Shopify answers
+  // a feed's first request with 429 and "Retry-After: 60" yet serves it seconds later, so the first
+  // retry waits at most the first backoff step; after that the site gets the full wait it asks for.
   const get = async (url: string, accept?: string) => {
     for (let attempt = 0; ; attempt++) {
       const response = await once(url, accept);
@@ -44,7 +46,9 @@ export async function politeContext(origin: URL, options: PoliteOptions = {}): P
       const busy = response.status === 429 || response.status === 503;
       if (!busy || attempt >= backoffMs.length) throw new FetchError(`Request failed with status ${response.status}`, "http_error", response.status);
       const asked = Number(response.retryAfter);
-      await sleep(Number.isFinite(asked) && asked > 0 ? Math.min(asked * 1000, 60_000) : backoffMs[attempt]!);
+      const fallback = backoffMs[attempt]!;
+      const wanted = Number.isFinite(asked) && asked > 0 ? Math.min(asked * 1000, 60_000) : fallback;
+      await sleep(attempt === 0 ? Math.min(wanted, fallback) : wanted);
     }
   };
 

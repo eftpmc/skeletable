@@ -2,16 +2,19 @@ import { createHash } from "node:crypto";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { gzipSync } from "node:zlib";
 import { schema } from "@skeleton/hub-db";
 import { eq } from "drizzle-orm";
 import { zipSync } from "fflate";
 import { afterEach, describe, expect, it } from "vitest";
+import { importLabBrands } from "../src/lab/brands.js";
 import { importLab, LAB_PHOTO_MODEL } from "../src/lab/import.js";
+import { resolveSources } from "../src/resolve.js";
 import { npyRow, npyStrings, readNpz } from "../src/lab/npz.js";
 import { useHubDb } from "./helpers/db.js";
 
 const db = useHubDb();
-const { embedding, listing, reading, source } = schema;
+const { embedding, listing, reading, source, sourceValue } = schema;
 
 /** An .npy file as NumPy writes it (format 1.0). */
 function npy(descr: string, shape: number[], data: Uint8Array): Uint8Array {
@@ -44,6 +47,23 @@ const photoKey = (url: string) => createHash("sha1").update(url).digest("hex").s
 const dirs: string[] = [];
 afterEach(async () => {
   await Promise.all(dirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })));
+});
+
+describe("the lab's brand details", () => {
+  it("become annotations on the matching sources, once", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "hub-brands-"));
+    dirs.push(dir);
+    const brand = { kind: "store", name: "Maker & Co", site: "https://www.maker.example", country: "PT", city: "Porto", description: "Wool coats.", quality: 0.7 };
+    const pack = join(dir, "pack.jsonl.gz");
+    await writeFile(pack, gzipSync([brand, { ...brand, site: "https://unknown.example" }, { ...brand, kind: "name", site: null }].map((b) => JSON.stringify(b)).join("\n")));
+    const [site] = await db.insert(source).values({ domain: "maker.example" }).returning({ id: source.id });
+
+    expect(await importLabBrands(db, pack)).toEqual({ matched: 1, unmatched: 1, annotations: 5 });
+    expect(await importLabBrands(db, pack)).toMatchObject({ annotations: 0 });
+    await resolveSources(db);
+    const values = Object.fromEntries((await db.select().from(sourceValue).where(eq(sourceValue.sourceId, site!.id))).map((v) => [v.field, v.value]));
+    expect(values).toEqual({ name: "Maker & Co", country: "PT", city: "Porto", summary: "Wool coats.", quality: 0.7 });
+  });
 });
 
 describe(".npz vectors", () => {

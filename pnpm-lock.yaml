@@ -35,6 +35,9 @@ importers:
       '@skeleton/readers':
         specifier: workspace:*
         version: link:../../packages/readers
+      '@skeleton/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       drizzle-orm:
         specifier: ^0.45.4
         version: 0.45.4(kysely@0.29.7)(postgres@3.4.9)
@@ -69,6 +72,9 @@ importers:
       '@skeleton/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@skeleton/formats':
+        specifier: workspace:*
+        version: link:../../packages/formats
       '@skeleton/readers':
         specifier: workspace:*
         version: link:../../packages/readers

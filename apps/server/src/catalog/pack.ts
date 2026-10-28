@@ -3,7 +3,8 @@ import { readFile } from "node:fs/promises";
 import { gunzipSync } from "node:zlib";
 import { type Db, schema } from "@skeleton/db";
 import { eq } from "drizzle-orm";
-import { catalogRecordSchema, importCatalog } from "./import.js";
+import { readHubCatalog } from "./hub-catalog.js";
+import { importCatalog } from "./import.js";
 
 const { catalogPack } = schema;
 
@@ -27,25 +28,17 @@ export async function readPack(source: string, sha256?: string): Promise<Buffer>
 }
 
 /**
- * Import a catalog pack (the lab's export, gzipped JSON lines) unless this exact file was imported
- * before. Every deploy and every self-hosted copy starts with the catalog; votes and Collection
- * links survive because brands are matched, not replaced.
+ * Import a catalog file (the hub's build, format 2: gzipped JSON lines) unless this exact file was
+ * imported before. Every deploy and every self-hosted copy starts with the catalog; votes and
+ * Collection links survive because brands are matched, not replaced.
  */
 export async function importPackIfNew(db: Db, source: string, sha256?: string) {
   const data = await readPack(source, sha256);
   const hash = createHash("sha256").update(data).digest("hex");
   const [done] = await db.select({ hash: catalogPack.hash }).from(catalogPack).where(eq(catalogPack.hash, hash));
   if (done) return { hash, imported: false as const };
-  const records = gunzipSync(data)
-    .toString("utf8")
-    .split("\n")
-    .filter(Boolean)
-    .map((line, i) => {
-      const parsed = catalogRecordSchema.safeParse(JSON.parse(line));
-      if (!parsed.success) throw new Error(`catalog pack line ${i + 1}: ${parsed.error.issues[0]?.path.join(".")} ${parsed.error.issues[0]?.message}`);
-      return parsed.data;
-    });
-  const counts = await importCatalog(db, records);
+  const catalog = readHubCatalog(gunzipSync(data).toString("utf8").split("\n"));
+  const counts = { ...(await importCatalog(db, catalog.records)), skipped: catalog.skipped };
   await db.insert(catalogPack).values({ hash, counts }).onConflictDoNothing();
-  return { hash, imported: true as const, ...counts };
+  return { hash, imported: true as const, buildId: catalog.buildId, ...counts };
 }

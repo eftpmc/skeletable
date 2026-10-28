@@ -1,9 +1,10 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { gzipSync } from "node:zlib";
 import { schema } from "@skeleton/db";
+import { packVector } from "@skeleton/formats";
 import type { BrandCard, BrandDetail, CategoryCount, ForYou, ItemDetail, ItemFeed, Preferences } from "@skeleton/shared";
 import { eq } from "drizzle-orm";
 import { describe, expect, it, vi } from "vitest";
@@ -319,18 +320,29 @@ describe("catalog", () => {
   it("imports a catalog pack once, and again only when it changes", async () => {
     await db.delete(schema.catalogPack);
     const dir = mkdtempSync(path.join(tmpdir(), "closet-pack-"));
-    // The pack stores product vectors as 512 signed bytes in base64.
-    const packed = (v: number[]) => Buffer.from(Int8Array.from(v.map((x) => Math.round(x * 127)))).toString("base64");
+    // The hub's catalog file: a header, then each source followed by its listings.
     const write = (records: CatalogRecord[]) => {
       const file = path.join(dir, `pack-${records.length}.jsonl.gz`);
-      const lines = records.map((r) => JSON.stringify({ ...r, items: r.items.map((i) => ({ ...i, look: packed(i.look) })) }));
-      writeFileSync(file, gzipSync(lines.join("\n") + "\n"));
+      const lines: unknown[] = [{ type: "header", format: 2, licence: "ODbL-1.0", buildId: randomUUID(), builtAt: new Date().toISOString(), resolverVersion: 1, embeddings: [] }];
+      for (const r of records.filter((r) => r.kind === "store")) {
+        const sourceId = randomUUID();
+        lines.push({ type: "source", id: sourceId, domain: new URL(r.site!).hostname, values: { name: r.name, quality: r.quality } });
+        for (const i of r.items) {
+          lines.push({
+            type: "listing", id: randomUUID(), sourceId, url: i.productUrl, title: i.title ?? "Untitled",
+            price: { amount: Math.round((i.priceUsd ?? 0) * 100), currency: "USD" }, images: [{ url: i.imageUrl }],
+            values: { category: i.category, department: i.department }, embeddings: { "clip-vit-b-32": packVector(i.look) },
+          });
+        }
+      }
+      writeFileSync(file, gzipSync(lines.map((l) => JSON.stringify(l)).join("\n") + "\n"));
       return file;
     };
+    // Only stores travel in the hub's file; a brand known only by name (Uniqlo) isn't a source.
     const first = write([...quiet, uniqlo]);
-    expect(await importPackIfNew(db, first)).toMatchObject({ imported: true, added: 4 });
+    expect(await importPackIfNew(db, first)).toMatchObject({ imported: true, added: 3 });
     expect(await importPackIfNew(db, first)).toMatchObject({ imported: false });
-    expect(await importPackIfNew(db, write([...quiet, uniqlo, ...loud]))).toMatchObject({ imported: true, added: 2, updated: 4 });
+    expect(await importPackIfNew(db, write([...quiet, uniqlo, ...loud]))).toMatchObject({ imported: true, added: 2, updated: 3 });
     const user = await signUp(setup());
     expect(((await (await user.get("/api/catalog/brands?q=acid")).json()) as BrandCard[])[0]?.name).toBe("Acid Club");
     // Product vectors come through the bytes intact, normalized.

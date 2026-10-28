@@ -153,12 +153,12 @@ describe("crawling", () => {
     expect(paused!.status).toBe("paused");
   });
 
-  it("waits as long as a busy store asks, then reads it", async () => {
+  it("asks a busy store again soon, then reads it", async () => {
     let refused = 0;
     const shop = await store([product(1)]);
     const busy = await startFixtureServer({
       "/products.json": (req, res) => {
-        if (refused++ === 0) return res.writeHead(429, { "retry-after": "3" }).end();
+        if (refused++ === 0) return res.writeHead(429, { "retry-after": "60" }).end();
         res.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify({ products: [product(1)] }));
       },
     });
@@ -170,7 +170,8 @@ describe("crawling", () => {
       .values({ domain: domainOf(busy.url("/")), status: "approved", readerId: "shopify", readerConfig: { currency: "EUR" } })
       .returning({ id: source.id });
     expect(await crawlSource(db, added!.id, options)).toMatchObject({ status: "done", seen: 1 });
-    expect(waits).toContain(3000);
+    // Shopify says 60 seconds on a first request it serves seconds later; the first retry waits 10.
+    expect(waits).toContain(10_000);
   });
 
   it("honours robots.txt", async () => {

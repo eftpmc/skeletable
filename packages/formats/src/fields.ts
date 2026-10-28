@@ -17,6 +17,8 @@ export const listingFields = {
   area: { version: 1, value: areaSchema },
   category: { version: 1, value: catalogCategorySchema },
   department: { version: 1, value: z.enum(departments) },
+  // Made for adults or for children; the catalog leaves children's things out for now.
+  audience: { version: 1, value: z.enum(["adults", "kids"]) },
   materials: { version: 1, value: z.array(word).max(10) },
   colours: { version: 1, value: z.array(word).max(10) },
   condition: { version: 1, value: z.enum(["new", "used", "vintage", "refurbished"]) },
@@ -30,13 +32,18 @@ export const listingFields = {
 } as const;
 
 export const sourceFields = {
+  // The name the seller goes by, as people would write it.
+  name: { version: 1, value: z.string().trim().min(1).max(200) },
+  // Where the seller is based: an ISO 3166 alpha-2 country code, and a city.
+  country: { version: 1, value: z.string().regex(/^[A-Z]{2}$/) },
+  city: { version: 1, value: z.string().trim().min(1).max(120) },
   // What kind of seller the site is.
   sellerKind: { version: 1, value: z.enum(["maker", "retailer", "reseller", "dropshipper", "marketplace"]) },
   areas: { version: 1, value: z.array(areaSchema).min(1) },
   quality: { version: 1, value: score },
   // Where it ships from, as an ISO 3166 alpha-2 country code.
   shipsFrom: { version: 1, value: z.string().regex(/^[A-Z]{2}$/) },
-  summary: { version: 1, value: z.string().trim().min(1).max(500) },
+  summary: { version: 1, value: z.string().trim().min(1).max(1000) },
 } as const;
 
 export type ListingField = keyof typeof listingFields;
