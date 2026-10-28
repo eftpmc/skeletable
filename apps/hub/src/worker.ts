@@ -7,21 +7,28 @@ import { z } from "zod";
  * and sends the answers back. The model is held to each job kind's answer format (Ollama's
  * structured outputs), and the hub checks every answer again before it counts.
  */
-export const WORKER_PROMPT_VERSION = "extract-facts-3";
+export const WORKER_PROMPT_VERSION = "extract-facts-4";
 
 // Each area's categories with their names, so the model knows what every id means.
 const categoryGuide = areas
   .map((a) => `${a.id}: ${catalogCategories.filter((c) => categoryGroups.find((g) => g.id === c.group)!.area === a.id).map((c) => `${c.id} (${c.label})`).join(", ")}`)
   .join("; ");
 
+// The same rules the benchmark's teachers and judge followed, so a worker is held to what it was told.
 const INSTRUCTIONS: Partial<Record<JobKind, string>> = {
   "extract-facts": [
     "You read one product listing from an online shop, in any language, and state plain facts about the product.",
     "Use only what the listing says or plainly shows. Use null, or an empty list, for anything it doesn't say. Never guess.",
-    "area: clothing for anything worn (clothes, shoes, bags, accessories, jewelry); home for kitchen, decor, art, bed and bath,",
-    "and furniture; tech for electronics; null for anything else (beauty, toys, tools, food, gift cards, samples).",
-    `category: one of the area's categories, by area: ${categoryGuide}. null when none fits.`,
-    "department: women, men or unisex, only when the listing says who it is for.",
+    "area: clothing for anything worn (clothes, shoes, bags, accessories, jewelry); home for kitchen, decor, art, candles and scent,",
+    "bed and bath, and furniture; tech for electronics; null for anything else (beauty, toys, tools, food, gift cards, samples,",
+    "fabric swatches, fees, services, pet items) and for listings with no usable words.",
+    `category: one of the area's categories, by area: ${categoryGuide}. null when none fits, and whenever area is null.`,
+    "Polos, kurtis and tunics are tops; jumpsuits, rompers and dress sets are dresses; gilets and vests are outerwear;",
+    "hijabs, hats, scarves and masks are accessories; a sweater is knitwear, a sweatshirt or hoodie is sweats.",
+    "department: only for clothing for adults. women, men or unisex only when the listing's own words say who it is for",
+    "(women's, Damen, femme, ladies; men's, Herren, homme; unisex), or when the garment is one only women wear",
+    "(dress, skirt, bra, bikini, saree, abaya). Children's clothing has no department, even when it says girl or boy.",
+    "Never infer it from the shop. Otherwise null.",
     "materials and colours: lowercase English words the listing states, such as \"wool\" or \"navy\".",
     "condition: new unless the listing says used, vintage or refurbished.",
     "origin: where it was made, as a two-letter country code, only when the listing says.",
