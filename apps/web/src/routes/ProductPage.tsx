@@ -61,7 +61,7 @@ export function ProductPage() {
 
   return (
     <article className="mx-auto max-w-6xl pb-24 lg:pb-0">
-      <HeaderBack onBack={back} title={product.brand ?? undefined} />
+      <HeaderBack onBack={back} />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-14">
         <div className="relative -mx-4 min-w-0 lg:mx-0">

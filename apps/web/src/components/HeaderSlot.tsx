@@ -17,20 +17,19 @@ export function HeaderSlot({ side = "end", children }: { side?: "start" | "end";
   return slot ? createPortal(children, slot) : null;
 }
 
-/** Back, and what this page is, at the start of the wide-screen header. */
-export function HeaderBack({ onBack, label = "Back", title }: { onBack: () => void; label?: string; title?: string }) {
+/** Back, at the start of the wide-screen header: a round button the size and colour of the search bar. */
+export function HeaderBack({ onBack, label = "Back" }: { onBack: () => void; label?: string }) {
   return (
     <HeaderSlot side="start">
       <button
         type="button"
         onClick={onBack}
         aria-label={label}
-        className={cn("-ml-2 inline-flex h-10 shrink-0 items-center gap-1 rounded-full pr-3 pl-1 text-callout font-normal text-muted hover:bg-surface hover:text-ink", focusRing)}
+        title={label}
+        className={cn("inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-surface text-ink hover:bg-line/60", focusRing)}
       >
-        <ChevronLeftIcon size={20} />
-        {title ? null : label}
+        <ChevronLeftIcon size={22} />
       </button>
-      {title && <span className="max-w-[240px] truncate text-body font-semibold text-ink">{title}</span>}
     </HeaderSlot>
   );
 }

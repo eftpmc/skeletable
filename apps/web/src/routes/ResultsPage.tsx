@@ -78,7 +78,7 @@ export function ResultsPage() {
       disabled={saved.pending || !q || !data}
       onClick={saved.toggle}
       className={cn(
-        "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-callout transition-colors disabled:opacity-60",
+        "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-callout transition-colors disabled:opacity-60 lg:h-11 lg:px-4.5 lg:text-body",
         saved.saved ? "bg-ink font-medium text-on-ink" : "bg-surface font-normal text-ink",
         focusRing,
         className,
@@ -487,7 +487,7 @@ function FilterPill({
           type="button"
           aria-label={`${label}: ${picked?.label ?? "Any"}`}
           className={cn(
-            "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full pr-3 pl-4 text-callout transition-colors",
+            "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full pr-3 pl-4 text-callout transition-colors lg:h-11 lg:pr-3.5 lg:pl-4.5 lg:text-body",
             active ? "bg-ink font-medium text-on-ink" : "bg-surface font-normal text-ink hover:bg-line",
             focusRing,
           )}

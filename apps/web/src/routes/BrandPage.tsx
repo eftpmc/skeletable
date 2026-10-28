@@ -54,7 +54,7 @@ export function BrandPage() {
 
   return (
     <article className="pt-2 lg:pt-0">
-      <HeaderBack onBack={back} title={brand.name} />
+      <HeaderBack onBack={back} />
       <IconButton label="Back" onClick={back} className="-ml-2 lg:hidden">
         <ChevronLeftIcon size={24} />
       </IconButton>
