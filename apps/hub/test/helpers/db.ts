@@ -11,7 +11,7 @@ export function useHubDb() {
     await runHubMigrations(HUB_TEST_URL);
   });
   beforeEach(async () => {
-    await handle.db.execute(sql`truncate source, contributor, job, catalog_build restart identity cascade`);
+    await handle.db.execute(sql`truncate source, contributor, job, catalog_build, benchmark restart identity cascade`);
   });
   afterAll(async () => {
     await handle.close();

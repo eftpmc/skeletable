@@ -385,6 +385,28 @@ export const assignment = pgTable(
   ],
 );
 
+/**
+ * Listings set aside to measure workers against: a draft answer (from an agent) that a person
+ * checks, and the checked answer, which is what a model's are compared with. Answers follow the
+ * extract-facts format, so "no category" is an answer too. A set is named, so a new one can be
+ * drawn without losing the old.
+ */
+export const benchmark = pgTable(
+  "benchmark",
+  {
+    name: text("name").notNull(),
+    listingId: uuid("listing_id")
+      .notNull()
+      .references(() => listing.id, { onDelete: "cascade" }),
+    draft: jsonb("draft"),
+    answer: jsonb("answer"),
+    checkedById: uuid("checked_by_id").references(() => contributor.id, { onDelete: "set null" }),
+    checkedAt: timestamp("checked_at", { withTimezone: true }),
+    addedAt: timestamp("added_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.name, table.listingId] })],
+);
+
 /** A published catalog file: its format, the rules that resolved it, its fingerprint and counts. */
 export const catalogBuild = pgTable("catalog_build", {
   id: uuid("id").primaryKey().defaultRandom(),

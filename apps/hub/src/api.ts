@@ -4,7 +4,9 @@ import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { contributorId } from "./contributors.js";
+import { benchmarkItems, recordCheck } from "./benchmark.js";
 import { claimJob, JobError, submitAnswer } from "./jobs.js";
+import { reviewPage } from "./review-page.js";
 
 const { contributor } = schema;
 
@@ -27,6 +29,8 @@ const answerSchema = z.object({ answer: z.unknown(), model: z.string().max(200).
  */
 export function hubApi(db: HubDb) {
   const app = new Hono<{ Variables: { contributorId: string } }>();
+  // The checking page itself holds nothing private; it asks for the person's token to call the API.
+  app.get("/review/:name", (c) => c.html(reviewPage(c.req.param("name"))));
   app.use("/api/*", async (c, next) => {
     const token = c.req.header("authorization")?.match(/^Bearer (.+)$/)?.[1];
     const [found] = token ? await db.select({ id: contributor.id }).from(contributor).where(eq(contributor.tokenHash, hashToken(token))) : [];
@@ -48,6 +52,16 @@ export function hubApi(db: HubDb) {
     } catch (error) {
       if (error instanceof JobError) return c.json({ error: error.message }, error.status);
       throw error;
+    }
+  });
+  app.get("/api/benchmark/:name", async (c) => c.json(await benchmarkItems(db, c.req.param("name"))));
+  app.put("/api/benchmark/:name/:listingId", async (c) => {
+    const [who] = await db.select({ kind: contributor.kind }).from(contributor).where(eq(contributor.id, c.get("contributorId")));
+    if (who?.kind !== "person") return c.json({ error: "only a person can check a benchmark" }, 403);
+    try {
+      return c.json(await recordCheck(db, c.req.param("name"), c.req.param("listingId"), c.get("contributorId"), await c.req.json()));
+    } catch (error) {
+      return c.json({ error: error instanceof z.ZodError ? error.issues[0]?.message : error instanceof Error ? error.message : "invalid" }, 422);
     }
   });
   return app;

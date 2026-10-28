@@ -2,7 +2,9 @@
 import { createHubDb, runHubMigrations, schema } from "@skeleton/hub-db";
 import { and, asc, count, eq, isNull, lte, or } from "drizzle-orm";
 import { crawlSource } from "./engine/crawl.js";
+import { writeFile, readFile } from "node:fs/promises";
 import { annotateByRules } from "./annotate/rules.js";
+import { benchmarkItems, drawBenchmark, saveDrafts, scoreModel } from "./benchmark.js";
 import { buildCatalog } from "./build.js";
 import { importLabBrands } from "./lab/brands.js";
 import { importLab } from "./lab/import.js";
@@ -26,6 +28,10 @@ const usage = `Usage: hub <command>
   queue [count]                         queue extract-facts jobs for listings with no category (default 1000)
   serve [port]                          run the contributor API (default 4100)
   work <hub url> [model] [count]        answer jobs with a local Ollama model (HUB_TOKEN, OLLAMA_URL)
+  benchmark draw <name> [random] [unplaced]   set aside listings to check (default 200 and 100)
+  benchmark export <name> <file>        write a set's listings as JSON, for drafting
+  benchmark drafts <name> <file>        load draft answers ([{ listingId, draft }]) into a set
+  benchmark score <name> [model]        score a local model against the checked answers
   status                                counts`;
 
 const [command, ...args] = process.argv.slice(2);
@@ -92,6 +98,17 @@ try {
     serve({ fetch: hubApi(db).fetch, port });
     console.log(`hub API on http://localhost:${port}`);
     await new Promise(() => {});
+  } else if (command === "benchmark" && args[0] === "draw" && args[1]) {
+    console.log("listings set aside:", await drawBenchmark(db, args[1], { random: Number(args[2] ?? 200), unplaced: Number(args[3] ?? 100) }));
+  } else if (command === "benchmark" && args[0] === "export" && args[1] && args[2]) {
+    const items = await benchmarkItems(db, args[1]);
+    await writeFile(args[2], JSON.stringify(items.map((i) => ({ listingId: i.listingId, ...i.input })), null, 1));
+    console.log(`${items.length} listings written to ${args[2]}`);
+  } else if (command === "benchmark" && args[0] === "drafts" && args[1] && args[2]) {
+    console.log(await saveDrafts(db, args[1], JSON.parse(await readFile(args[2], "utf8"))));
+  } else if (command === "benchmark" && args[0] === "score" && args[1]) {
+    const score = await scoreModel(db, args[1], { ollama: process.env.OLLAMA_URL ?? "http://localhost:11434", model: args[2] ?? "qwen3:4b" });
+    console.log({ ...score, misses: score.misses.slice(0, 40) });
   } else if (command === "status") {
     const total = async (table: typeof source | typeof listing | typeof reading | typeof embedding) =>
       (await db.select({ n: count() }).from(table))[0]!.n;
