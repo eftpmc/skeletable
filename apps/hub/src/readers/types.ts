@@ -25,4 +25,12 @@ export interface Reader {
   version: number;
   detect(origin: URL, ctx: ReadContext): Promise<Detection | null>;
   read(origin: URL, config: Record<string, unknown> | null, ctx: ReadContext): AsyncIterable<ReadingInput>;
+  /**
+   * A few products spread through the site, with what went wrong on pages that didn't read, for trying
+   * a proposal quickly. Readers without it are sampled from the start of `read`.
+   */
+  sample?(origin: URL, config: Record<string, unknown> | null, ctx: ReadContext, n: number): Promise<{ pagesFound: number; pages: SamplePage[] }>;
 }
+
+/** One page a sample tried: its reading when it came out, and every problem found. */
+export type SamplePage = { url: string; reading: ReadingInput | null; issues: string[] };

@@ -51,8 +51,12 @@ async function trySite(origin: URL, ctx: ReadContext, how: { readerId: string; c
     }
     return { pagesFound: found.length, read: pages.filter((p) => p.reading).length, pages };
   }
-  // A platform reader reads the whole site; its first few products are the sample.
   const platform = readers.find((r) => r.id === how.readerId)!;
+  if (platform.sample) {
+    const tried = await platform.sample(origin, how.config, ctx, SAMPLE_PAGES);
+    return { pagesFound: tried.pagesFound, read: tried.pages.filter((p) => p.reading).length, pages: tried.pages };
+  }
+  // A reader without its own sample reads the site from the start; its first few products are the sample.
   const pages: RecipePage[] = [];
   for await (const reading of platform.read(origin, how.config, ctx)) {
     pages.push({ url: reading.url, reading: reading as ReadingInput, issues: [] });
