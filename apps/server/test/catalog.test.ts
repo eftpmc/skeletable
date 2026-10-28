@@ -357,6 +357,12 @@ describe("catalog", () => {
       await expect(importPackIfNew(db, "https://packs.example/pack.jsonl.gz", "0".repeat(64))).rejects.toThrow(/doesn't match/);
       expect(await importPackIfNew(db, "https://packs.example/pack.jsonl.gz", sha)).toMatchObject({ imported: true, added: 1 });
       expect(download).toHaveBeenCalledWith("https://packs.example/pack.jsonl.gz", expect.anything());
+      // A hub publishes its build's hash beside it: an unchanged build isn't downloaded again.
+      download.mockClear();
+      download.mockImplementation(async (url) => (String(url).endsWith(".sha256") ? new Response(`${sha}
+`) : new Response(bigger)));
+      expect(await importPackIfNew(db, "http://hub.internal/catalog/latest.jsonl.gz")).toMatchObject({ imported: false, hash: sha });
+      expect(download).toHaveBeenCalledTimes(1);
       download.mockImplementation(async () => new Response("gone", { status: 404 }));
       await expect(importPackIfNew(db, "https://packs.example/pack.jsonl.gz")).rejects.toThrow(/404/);
     } finally {

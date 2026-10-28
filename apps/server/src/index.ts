@@ -26,8 +26,9 @@ const server = serve({ fetch: app.fetch, port: config.PORT }, (info) => {
 });
 
 // In the background: the app serves while a new catalog pack loads, then the search index catches up
-// (rebuilt after an import, or when it's missing or out of step with the database).
-void (async () => {
+// (rebuilt after an import, or when it's missing or out of step with the database). A served catalog
+// is checked again every CATALOG_REFRESH_HOURS.
+async function loadCatalog() {
   if (config.CATALOG_PACK) {
     try {
       const result = await importPackIfNew(db, config.CATALOG_PACK, config.CATALOG_PACK_SHA256);
@@ -39,11 +40,18 @@ void (async () => {
   }
   const rebuilt = await services.catalog.ensureIndexed();
   console.log("catalog search index", rebuilt === null ? "up to date" : `rebuilt: ${rebuilt} products`);
-})().catch((error) => console.error("catalog search index failed:", error));
+}
+const catalogFailed = (error: unknown) => console.error("catalog search index failed:", error);
+void loadCatalog().catch(catalogFailed);
+const refresh =
+  config.CATALOG_PACK && /^https?:\/\//.test(config.CATALOG_PACK) && config.CATALOG_REFRESH_HOURS > 0
+    ? setInterval(() => void loadCatalog().catch(catalogFailed), config.CATALOG_REFRESH_HOURS * 3_600_000)
+    : undefined;
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.on(signal, () => {
     stopAlerts();
+    clearInterval(refresh);
     server.close();
     void close().finally(() => process.exit(0));
   });

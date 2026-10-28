@@ -53,12 +53,13 @@ const configSchema = z.object({
   DIGEST_HOUR: z.coerce.number().int().min(0).max(23).default(8),
   // Override where migrations are read from (the Docker image sets this).
   MIGRATIONS_DIR: z.string().optional(),
-  // A catalog pack (gzipped JSON lines from lab/brands/export.py) to import on start when it's new.
-  // The Docker image sets this to the pack it ships.
-  // Or an https URL to download it from, for a catalog too big to ship in the image.
+  // The catalog to import when it's new: the hub's build (catalog format 2), as a local file or a
+  // URL, usually the hub's /catalog/latest.jsonl.gz.
   CATALOG_PACK: z.string().optional(),
   // The pack's SHA-256, to refuse a download that isn't the one expected.
   CATALOG_PACK_SHA256: z.string().regex(/^[0-9a-fA-F]{64}$/).optional(),
+  // How often a catalog served from a URL is checked for a new build (0: only at startup).
+  CATALOG_REFRESH_HOURS: z.coerce.number().min(0).default(6),
   // The Meilisearch server holding the catalog's text search (rebuilt from the database as needed).
   MEILI_URL: z.string().url().default("http://localhost:7700"),
   MEILI_MASTER_KEY: z.string().optional(),

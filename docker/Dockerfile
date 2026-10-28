@@ -7,6 +7,8 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
 COPY apps/server/package.json apps/server/
 COPY apps/web/package.json apps/web/
 COPY packages/db/package.json packages/db/
+COPY packages/formats/package.json packages/formats/
+COPY packages/readers/package.json packages/readers/
 COPY packages/shared/package.json packages/shared/
 COPY packages/ui/package.json packages/ui/
 RUN pnpm install --frozen-lockfile
@@ -20,15 +22,13 @@ ENV NODE_ENV=production \
     PORT=3000 \
     DATA_DIR=/data \
     WEB_DIST=/app/web \
-    MIGRATIONS_DIR=/app/migrations \
-    CATALOG_PACK=/app/catalog/pack.jsonl.gz
+    MIGRATIONS_DIR=/app/migrations
 WORKDIR /app
 COPY --from=build /out/node_modules ./node_modules
 COPY --from=build /out/package.json ./package.json
 COPY --from=build /repo/apps/server/dist ./dist
 COPY --from=build /repo/apps/web/dist ./web
 COPY --from=build /repo/packages/db/migrations ./migrations
-COPY --from=build /repo/apps/server/catalog ./catalog
 ARG APP_VERSION=0.0.0-dev
 ENV APP_VERSION=$APP_VERSION
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
