@@ -126,8 +126,8 @@ def embed(urls):
     os.makedirs("img", exist_ok=True)
     cache = {}
     if os.path.exists("item_vectors.npz"):
-        z = np.load("item_vectors.npz")
-        cache = dict(zip(z["keys"].tolist(), z["vecs"].astype(np.float32)))
+        with np.load("item_vectors.npz") as z:  # closed, so Windows lets it be replaced below
+            cache = dict(zip(z["keys"].tolist(), z["vecs"].astype(np.float32)))
     with cf.ThreadPoolExecutor(24) as pool:
         paths = {k: p for k, p in pool.map(fetch_image, sorted(set(urls))) if p}
     print("photos", len(paths), "of", len(set(urls)), flush=True)
