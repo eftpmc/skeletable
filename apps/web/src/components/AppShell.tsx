@@ -1,4 +1,4 @@
-import { BellIcon, BookmarkIcon, CompassIcon, CountPill, IconButton, MenuIcon, NavDrawer, PackageIcon, SearchIcon, SideNav, XIcon, cn, focusRing } from "@skeleton/ui";
+import { BellIcon, BookmarkIcon, CompassIcon, IconButton, MenuIcon, NavDrawer, PackageIcon, SearchIcon, SideNav, XIcon, cn, focusRing } from "@skeleton/ui";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router";
 import { useUnreadAlerts } from "../lib/alerts";
@@ -77,23 +77,6 @@ function BottomSearch() {
   );
 }
 
-/** The bell at the top right of the wide-screen header: Alerts, with how many are new. */
-function AlertsButton({ count }: { count: number }) {
-  const { pathname } = useLocation();
-  return (
-    <Link
-      to="/alerts"
-      aria-label={count ? `Alerts, ${count} new` : "Alerts"}
-      title="Alerts"
-      aria-current={pathname.startsWith("/alerts") ? "page" : undefined}
-      className={cn("relative inline-flex size-10 shrink-0 items-center justify-center rounded-full text-ink hover:bg-surface aria-[current=page]:bg-surface", focusRing)}
-    >
-      <BellIcon size={22} />
-      {count > 0 && <CountPill count={count} className="absolute -top-0.5 -right-1" />}
-    </Link>
-  );
-}
-
 /** The same sidebar everywhere: beside the page on wide screens, in a drawer behind the menu button on narrow ones. */
 export function AppShell({ user }: { user: User }) {
   const { pathname } = useLocation();
@@ -120,8 +103,7 @@ export function AppShell({ user }: { user: User }) {
         inDrawer={inDrawer}
         className={className}
         brand={inDrawer ? undefined : <Wordmark className="self-start px-3 py-2 text-title-2" />}
-        // Wide screens have the account at the top right instead.
-        footer={inDrawer ? <AccountMenu user={user} onNavigate={close} /> : undefined}
+        footer={<AccountMenu user={user} onNavigate={close} />}
       />
     );
   };
@@ -152,14 +134,10 @@ export function AppShell({ user }: { user: User }) {
       </NavDrawer>
 
       <div className="min-w-0 flex-1 lg:my-2 lg:mr-2 lg:overflow-y-auto lg:rounded-2xl lg:border lg:border-line lg:bg-canvas">
-        {/* Wide screens: search on every page, in a bar above it, with alerts and the account at its end. */}
+        {/* Wide screens: search on every page, in a bar above it. Alerts and the account are in the sidebar. */}
         <div className="sticky top-0 z-20 hidden border-b border-line bg-canvas/90 px-10 backdrop-blur lg:block">
           <div className="mx-auto flex h-[72px] max-w-6xl items-center gap-6">
             <SearchTrigger className="max-w-[640px]" />
-            <div className="ml-auto flex shrink-0 items-center gap-1">
-              <AlertsButton count={unread} />
-              <AccountMenu user={user} compact />
-            </div>
           </div>
         </div>
         <main className="px-4 pt-4 pb-28 lg:px-10 lg:pt-8 lg:pb-16">
