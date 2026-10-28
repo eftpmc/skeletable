@@ -13,6 +13,7 @@ import { resolveListings, resolveSources } from "./resolve.js";
 import { serve } from "@hono/node-server";
 import { hubApi, issueToken } from "./api.js";
 import { queueExtractFacts } from "./jobs.js";
+import { loadPhotoVectors, photosToEmbed } from "./photos.js";
 import { runWorker } from "./worker.js";
 import { addSource, domainOf } from "./sources.js";
 
@@ -35,6 +36,8 @@ const usage = `Usage: hub <command>
   benchmark agree <name> <a> <b> <out>  answer where two labellers agree; write the disagreements to <out>
   benchmark answers <name> <file>       record a judge's answers ([{ listingId, answer }]) as the panel's
   benchmark score <name> [model]        score a local model against the checked answers
+  photos todo <file> [count]            list listings that need a photo vector, for embed/photos.py (default all)
+  photos load <file>                    store the vectors embed/photos.py wrote
   status                                counts`;
 
 const [command, ...args] = process.argv.slice(2);
@@ -127,6 +130,12 @@ try {
   } else if (command === "benchmark" && args[0] === "score" && args[1]) {
     const score = await scoreModel(db, args[1], { ollama: process.env.OLLAMA_URL ?? "http://localhost:11434", model: args[2] ?? "qwen3:4b" });
     console.dir({ ...score, misses: score.misses.slice(0, 40) }, { depth: 4 });
+  } else if (command === "photos" && args[0] === "todo" && args[1]) {
+    const todo = await photosToEmbed(db, args[2] ? Number(args[2]) : 1_000_000);
+    await writeFile(args[1], todo.map((t) => JSON.stringify(t)).join("\n") + "\n");
+    console.log({ todo: todo.length });
+  } else if (command === "photos" && args[0] === "load" && args[1]) {
+    console.log(await loadPhotoVectors(db, (await readFile(args[1], "utf8")).split("\n")));
   } else if (command === "status") {
     const total = async (table: typeof source | typeof listing | typeof reading | typeof embedding) =>
       (await db.select({ n: count() }).from(table))[0]!.n;
