@@ -91,7 +91,11 @@ export function hubApi(db: HubDb, options: { crawl?: CrawlOptions } = {}) {
       throw error;
     }
   });
-  app.get("/api/benchmark/:name", async (c) => c.json(await benchmarkItems(db, c.req.param("name"))));
+  // A benchmark's answers are what everyone is scored against, so only curators see them.
+  app.get("/api/benchmark/:name", async (c) => {
+    if (!canCurate((await whoIs(db, c.get("contributorId")))?.role)) return c.json({ error: "checking a benchmark takes a curator's role" }, 403);
+    return c.json(await benchmarkItems(db, c.req.param("name")));
+  });
   app.put("/api/benchmark/:name/:listingId", async (c) => {
     const who = await whoIs(db, c.get("contributorId"));
     if (who?.kind !== "person" || !canCurate(who.role)) return c.json({ error: "checking a benchmark takes a curator's role" }, 403);

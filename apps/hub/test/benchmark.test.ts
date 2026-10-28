@@ -102,10 +102,15 @@ describe("benchmarks", () => {
     await drawBenchmark(db, "b1", { random: 4, unplaced: 0 });
     const api = hubApi(db);
     expect(await (await api.request("/review/b1")).text()).toContain("Check: b1");
+    // A name can't close the page's script and run its own.
+    const crafted = await (await api.request(`/review/${encodeURIComponent("</script><script>alert(1)</script>")}`)).text();
+    expect(crafted).not.toContain("<script>alert(1)");
     const [first] = await benchmarkItems(db, "b1");
     const put = (token: string) =>
       api.request(`/api/benchmark/b1/${first!.listingId}`, { method: "PUT", headers: { authorization: `Bearer ${token}`, "content-type": "application/json" }, body: JSON.stringify(coat) });
-    expect((await put(await issueToken(db, "gpu", "worker"))).status).toBe(403);
+    const gpu = await issueToken(db, "gpu", "worker");
+    expect((await put(gpu)).status).toBe(403);
+    expect((await api.request("/api/benchmark/b1", { headers: { authorization: `Bearer ${gpu}` } })).status).toBe(403);
     const person = await issueToken(db, "zack", "person");
     expect((await put(person)).status).toBe(403);
     await setRole(db, "zack", "curator");

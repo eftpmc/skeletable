@@ -6,7 +6,7 @@ import { areas, catalogCategories, categoryGroups, departments } from "@skeleton
  * to the hub's API with the person's token, which it keeps in this browser only.
  */
 export function reviewPage(name: string): string {
-  const taxonomy = JSON.stringify({ areas, groups: categoryGroups, categories: catalogCategories, departments });
+  const taxonomy = scriptJson({ areas, groups: categoryGroups, categories: catalogCategories, departments });
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -54,7 +54,7 @@ export function reviewPage(name: string): string {
   <div id="app"><p class="muted">Loading…</p></div>
 </main>
 <script>
-const NAME = ${JSON.stringify(name)};
+const NAME = ${scriptJson(name)};
 const TAX = ${taxonomy};
 const app = document.getElementById("app");
 let token = localStorage.getItem("hub-token") || "";
@@ -149,5 +149,8 @@ load();
 </body>
 </html>`;
 }
+
+// JSON inside a <script>: "<" escaped, so no value can close the script and start its own.
+const scriptJson = (value: unknown) => JSON.stringify(value).replace(/</g, "\\u003c");
 
 const escape = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
