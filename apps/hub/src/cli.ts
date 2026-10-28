@@ -126,7 +126,7 @@ try {
     console.log({ recorded });
   } else if (command === "benchmark" && args[0] === "score" && args[1]) {
     const score = await scoreModel(db, args[1], { ollama: process.env.OLLAMA_URL ?? "http://localhost:11434", model: args[2] ?? "qwen3:4b" });
-    console.log({ ...score, misses: score.misses.slice(0, 40) });
+    console.dir({ ...score, misses: score.misses.slice(0, 40) }, { depth: 4 });
   } else if (command === "status") {
     const total = async (table: typeof source | typeof listing | typeof reading | typeof embedding) =>
       (await db.select({ n: count() }).from(table))[0]!.n;

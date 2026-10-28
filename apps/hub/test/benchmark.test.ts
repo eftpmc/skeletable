@@ -91,6 +91,8 @@ describe("benchmarks", () => {
     const score = await scoreModel(db, "b1", { ollama: "http://localhost:11434", model: "everything-is-a-coat", fetch: fakeFetch });
     expect(score).toMatchObject({ checked: 4, failed: 0, accuracy: { area: 0.75, category: 0.75, department: 1 } });
     expect(score.misses.map((m) => m.field).sort()).toEqual(["area", "category"]);
+    expect(score.byConfidence.find((c) => c.at === 0.9)).toMatchObject({ kept: 1, accuracy: { category: 0.75 } });
+    expect(score.byConfidence.find((c) => c.at === 0.5)).toMatchObject({ kept: 1 });
   });
 
   it("serves the checking page and lets only people check", async () => {

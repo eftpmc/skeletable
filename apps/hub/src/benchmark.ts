@@ -131,16 +131,27 @@ export async function recordCheck(db: HubDb, name: string, listingId: string, co
   return answer;
 }
 
-export type Score = { model: string; checked: number; failed: number; accuracy: Record<string, number>; misses: { title: string; field: string; expected: unknown; got: unknown }[] };
+// The confidences a model's answers are cut at, to see whether its sure answers are the right ones.
+const CUTS = [0.5, 0.7, 0.8, 0.9];
+
+export type Score = {
+  model: string;
+  checked: number;
+  failed: number;
+  accuracy: Record<string, number>;
+  /** For answers at or above each confidence: the share of listings they cover, and their accuracy. */
+  byConfidence: { at: number; kept: number; accuracy: Record<string, number> }[];
+  misses: { title: string; field: string; expected: unknown; got: unknown; confidence: number }[];
+};
 
 /**
  * Run a local model over a set's checked listings with the worker's own instructions, and score it
- * field by field against the person's answers.
+ * field by field against the checked answers, overall and at each confidence it gave.
  */
 export async function scoreModel(db: HubDb, name: string, options: { ollama: string; model: string; fetch?: typeof fetch }): Promise<Score> {
   const http = options.fetch ?? fetch;
   const items = (await benchmarkItems(db, name)).filter((i) => i.answer);
-  const right: Record<string, number> = Object.fromEntries(SCORED.map((f) => [f, 0]));
+  const marks: { confidence: number; right: Record<string, boolean> }[] = [];
   const misses: Score["misses"] = [];
   let failed = 0;
   for (const item of items) {
@@ -165,14 +176,22 @@ export async function scoreModel(db: HubDb, name: string, options: { ollama: str
       failed++;
       continue;
     }
+    const right: Record<string, boolean> = {};
     for (const field of SCORED) {
       const expected = item.answer![field];
-      if (got.data[field] === expected) right[field]!++;
-      else misses.push({ title: item.input.title, field, expected, got: got.data[field] });
+      right[field] = got.data[field] === expected;
+      if (!right[field]) misses.push({ title: item.input.title, field, expected, got: got.data[field], confidence: got.data.confidence });
     }
+    marks.push({ confidence: got.data.confidence, right });
   }
-  const accuracy = Object.fromEntries(SCORED.map((f) => [f, items.length ? Math.round((right[f]! / items.length) * 1000) / 1000 : 0]));
-  return { model: options.model, checked: items.length, failed, accuracy, misses };
+  // A failed answer counts as wrong on every field, so accuracy is out of every checked listing.
+  const share = (n: number, of: number) => (of ? Math.round((n / of) * 1000) / 1000 : 0);
+  const accuracyOf = (kept: typeof marks, of: number) => Object.fromEntries(SCORED.map((f) => [f, share(kept.filter((m) => m.right[f]).length, of)]));
+  const byConfidence = CUTS.map((at) => {
+    const kept = marks.filter((m) => m.confidence >= at);
+    return { at, kept: share(kept.length, items.length), accuracy: accuracyOf(kept, kept.length) };
+  });
+  return { model: options.model, checked: items.length, failed, accuracy: accuracyOf(marks, items.length), byConfidence, misses };
 }
 
 /**
