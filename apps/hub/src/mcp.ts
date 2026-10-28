@@ -70,12 +70,14 @@ export function hubMcpServer(db: HubDb, contributorId: string, options: { crawl?
     "propose_site",
     {
       description:
-        "Propose an independent shop for the catalog: a maker or small seller with its own site, not a marketplace, reseller or drop-shipper. " +
+        "Propose a shop for the catalog: any real shop selling its products on its own site, from a one-person studio to a large brand. " +
+        "The catalog is honest about each (who makes what, how big, how it prices) rather than leaving shops out. " +
         "Say why it belongs. If no platform reader recognises the site (the reply says so), send it again with a recipe: where its product pages are " +
         "(its sitemap, under pathPrefix) and the CSS selector of the one element holding each field (attribute: read that attribute, e.g. content or src, " +
         "instead of the text). Prefer stable selectors such as meta[property='og:title'] with attribute content. " +
         `The hub tries the site on ${SAMPLE_PAGES} of its own products before anyone sees it: a proposal that doesn't read comes back with each page's ` +
-        "problems to fix. One that does waits for a curator; sending it again while it waits replaces it.",
+        "problems to fix. One that reads goes in on its own, unless something needs a curator's eye (a contributor's first proposal, a shop selling " +
+        "many brands, products naming no maker); then it waits, and sending it again replaces it. Marketplaces aren't proposable: propose the shops themselves.",
       inputSchema: {
         url: z.string().max(500).describe("The shop's address"),
         why: z.string().trim().min(20).max(1000).describe("Why it belongs: who makes what, and why it is independent"),
@@ -85,7 +87,11 @@ export function hubMcpServer(db: HubDb, contributorId: string, options: { crawl?
     async ({ url, why, recipe }) => {
       try {
         const made = await proposeSite(db, contributorId, { url, note: why, recipe }, options.crawl);
-        return text({ ...made, report: summary(made.report), note: made.replaced ? "Your waiting proposal was replaced." : "It waits for a curator." });
+        const note =
+          made.status === "approved"
+            ? "Approved: the site is read from the next weekly crawl."
+            : `${made.replaced ? "Your waiting proposal was replaced. " : ""}It waits for a curator, because: ${made.flags.join("; ")}.`;
+        return text({ ...made, report: summary(made.report), note });
       } catch (error) {
         if (error instanceof ProposalError) return refuse(JSON.stringify({ error: error.message, ...(error.report ? { report: error.report } : {}) }, null, 2));
         throw error;
@@ -119,10 +125,12 @@ function curatorTools(server: McpServer, db: HubDb, curatorId: string) {
     "review_queue",
     {
       description:
-        "Proposals waiting for a curator: each site with who proposed it and why, how the hub will read it, and the sample products it read. " +
-        "Check they are real products with the right title, price and photo. Approve only independent makers and small sellers with their own shop.",
+        "Proposals waiting for a curator: each site with who proposed it and why, how the hub will read it, why it needs a look (flags), and the sample products it read. " +
+        "Every real shop belongs: check it is one (not a scam, a parked domain or a marketplace), that its samples are real products with the right title, " +
+        "price and photo, and what its flags point at.",
     },
-    async () => text((await pendingProposals(db)).map((p) => ({ proposalId: p.id, domain: p.domain, proposer: p.proposer, why: p.note, reader: p.reader, samples: summary(p.report as SampleReport) }))),
+    async () =>
+      text((await pendingProposals(db)).map((p) => ({ proposalId: p.id, domain: p.domain, proposer: p.proposer, why: p.note, reader: p.reader, flags: p.flags, samples: summary(p.report as SampleReport) }))),
   );
 
   server.registerTool(

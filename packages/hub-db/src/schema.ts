@@ -193,6 +193,8 @@ export const proposal = pgTable(
     recipeId: uuid("recipe_id").references(() => recipe.id, { onDelete: "set null" }),
     // The hub's own try: sample pages, what each read, and any problems.
     report: jsonb("report").notNull(),
+    // Why a curator should look at it rather than it going in on its own, e.g. "sells many brands".
+    flags: text("flags").array().notNull().default([]),
     status: text("status").notNull().default("pending"),
     decidedById: uuid("decided_by_id").references(() => contributor.id, { onDelete: "set null" }),
     decidedAt: timestamp("decided_at", { withTimezone: true }),

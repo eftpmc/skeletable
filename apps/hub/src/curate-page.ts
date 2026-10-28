@@ -32,6 +32,7 @@ export function curatePage(): string {
   button.yes { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
   button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .done { color: var(--good); } .error { color: var(--bad); }
+  .flag { font-size: 13px; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
   form.token { display: flex; gap: 8px; flex-wrap: wrap; }
   form.token input { flex: 1 1 260px; font: inherit; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--ink); }
 </style>
@@ -39,7 +40,7 @@ export function curatePage(): string {
 <body>
 <main>
   <h1>Curate</h1>
-  <p class="muted">Approve independent makers and small sellers with their own shop; not marketplaces, resellers or drop-shippers.</p>
+  <p class="muted">Proposals that read cleanly go in on their own; these wait because something needs a look. Every real shop belongs; make sure it is one, and that its samples are real products.</p>
   <div id="app"><p class="muted">Loading…</p></div>
 </main>
 <script>
@@ -108,6 +109,7 @@ async function load() {
         el("span", { class: "muted" }, " · from " + p.proposer + " · read " + (p.reader === "recipe" ? "with their recipe" : "by the " + p.reader + " reader") + " · " + p.report.read + " of " + p.report.pages.length + " samples read")),
       actions("/api/proposals/" + p.id + "/decision", "Approved: crawled from the next cycle.", "Rejected.")),
     el("p", { style: "margin:8px 0 0;white-space:pre-wrap" }, p.note),
+    p.flags.length ? el("div", { class: "row", style: "margin-top:8px" }, p.flags.map((f) => el("span", { class: "flag" }, f))) : null,
     el("div", { class: "samples" }, p.report.pages.filter((page) => page.reading).map((page) => {
       const img = safeUrl(page.reading.images?.[0]?.url);
       const link = safeUrl(page.url);

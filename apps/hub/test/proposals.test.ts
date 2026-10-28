@@ -3,7 +3,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
 import { hubApi, issueToken } from "../src/api.js";
 import { crawlSource, type CrawlOptions } from "../src/engine/crawl.js";
-import { decideProposal, pendingProposals, proposeSite } from "../src/proposals.js";
+import { decideProposal, flagsFor, pendingProposals, proposeSite } from "../src/proposals.js";
 import { parsePrice } from "../src/readers/recipe.js";
 import { setRole } from "../src/roles.js";
 import { useHubDb } from "./helpers/db.js";
@@ -131,5 +131,40 @@ describe("proposals", () => {
     const page = await (await hubApi(db).request("/curate")).text();
     expect(page).toContain("<title>Curate</title>");
     expect(page).not.toContain("innerHTML");
+  });
+
+  it("lets a proposal go in on its own once its proposer has a track record, and flags what needs a look", async () => {
+    const crawl = await kiln();
+    const { ana, zack } = await people();
+    const first = await proposeSite(db, ana, { url: "kiln.example", note: why, recipe: good }, crawl);
+    expect(first).toMatchObject({ status: "pending", flags: ["first proposal from this contributor"] });
+    await decideProposal(db, zack, first.proposalId, true);
+
+    // The same shop under another name stands in for a second one: this time it goes straight in.
+    const second = await proposeSite(db, ana, { url: "kiln-two.example", note: why, recipe: good }, crawl);
+    expect(second).toMatchObject({ status: "approved", flags: [] });
+    const [site] = await db.select().from(source).where(eq(source.domain, "kiln-two.example"));
+    expect(site).toMatchObject({ status: "approved", readerId: "recipe" });
+    const [decided] = await db.select().from(proposal).where(eq(proposal.id, second.proposalId));
+    const [hub] = await db.select().from(schema.contributor).where(eq(schema.contributor.handle, "hub"));
+    expect(decided).toMatchObject({ status: "approved", decidedById: hub!.id });
+
+    // Products naming no maker need a look, whoever proposes them.
+    const anonymous = await proposeSite(db, ana, { url: "kiln-three.example", note: why, recipe: { ...good, maker: undefined } }, crawl);
+    expect(anonymous).toMatchObject({ status: "pending", flags: ["its products name no maker"] });
+  });
+
+  it("turns marketplaces away: they are thousands of sellers, not one shop", async () => {
+    const { ana } = await people();
+    for (const url of ["https://www.etsy.com/shop/somekiln", "amazon.co.uk", "https://www.vinted.fr"]) {
+      await expect(proposeSite(db, ana, { url, note: why })).rejects.toMatchObject({ status: 422, message: expect.stringContaining("marketplace") });
+    }
+  });
+
+  it("flags a shop whose samples come from many makers", async () => {
+    const { zack } = await people();
+    const page = (maker: string) => ({ url: `https://shop.example/p/${maker}`, issues: [], reading: { externalId: maker, url: `https://shop.example/p/${maker}`, title: "Tee", maker } });
+    const report = { pagesFound: 4, read: 4, pages: ["Acne", "Arket", "Toteme", "Acne"].map(page) };
+    expect(await flagsFor(db, zack, report)).toEqual(["first proposal from this contributor", "sells many brands (3 among 4 samples): a reseller or a multi-brand shop"]);
   });
 });
