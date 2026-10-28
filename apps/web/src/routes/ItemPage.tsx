@@ -3,6 +3,7 @@ import { ArrowUpRightIcon, Button, CheckIcon, ChevronLeftIcon, EmptyState, Sheet
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
+import { HeaderBack } from "../components/HeaderSlot";
 import { Swatch } from "../components/ColorSwatches";
 import { ItemForm, emptyValues } from "../components/ItemForm";
 import { api } from "../lib/api";
@@ -64,15 +65,12 @@ function ItemDetail({ item }: { item: Item }) {
   const image = item.media[activeImage] ?? item.media[0];
   const price = formatMoney(item.priceCents, item.currency);
   const costPerWear = formatMoney(item.wear.costPerWearCents, item.currency);
+  const back = () => (window.history.length > 1 ? navigate(-1) : navigate("/collection"));
 
   return (
     <article className="mx-auto max-w-5xl">
-      <Button
-        variant="quiet"
-        className="mb-4 -ml-3"
-        icon={<ChevronLeftIcon size={18} />}
-        onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/collection"))}
-      >
+      <HeaderBack onBack={back} label="Collection" />
+      <Button variant="quiet" className="mb-4 -ml-3 lg:hidden" icon={<ChevronLeftIcon size={18} />} onClick={back}>
         Collection
       </Button>
 

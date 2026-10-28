@@ -21,6 +21,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
+import { HeaderBack } from "../components/HeaderSlot";
 import { useAddItem } from "../components/AddItem";
 import { useToggleWatch } from "../lib/alerts";
 import { api } from "../lib/api";
@@ -60,14 +61,7 @@ export function ProductPage() {
 
   return (
     <article className="mx-auto max-w-6xl pb-24 lg:pb-0">
-      <button
-        type="button"
-        onClick={back}
-        className={cn("mb-3 hidden h-11 items-center gap-1.5 rounded-full pr-3 text-callout font-normal text-muted hover:text-ink lg:inline-flex", focusRing)}
-      >
-        <ChevronLeftIcon size={18} />
-        Back
-      </button>
+      <HeaderBack onBack={back} />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-14">
         <div className="relative -mx-4 min-w-0 lg:mx-0">

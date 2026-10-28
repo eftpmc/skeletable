@@ -3,6 +3,7 @@ import { BellIcon, CheckIcon, ChevronDownIcon, EmptyState, Menu, MenuChoices, Pr
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
+import { HeaderSlot } from "../components/HeaderSlot";
 import { ItemPeek, ItemSheet, usd } from "../components/ItemPeek";
 import { ProductPeek, ProductSheet } from "../components/ProductPeek";
 import { useWide } from "../lib/media";
@@ -77,7 +78,7 @@ export function ResultsPage() {
       disabled={saved.pending || !q || !data}
       onClick={saved.toggle}
       className={cn(
-        "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-callout transition-colors disabled:opacity-60",
+        "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-callout transition-colors disabled:opacity-60 lg:h-11 lg:px-4.5 lg:text-body",
         saved.saved ? "bg-ink font-medium text-on-ink" : "bg-surface font-normal text-ink",
         focusRing,
         className,
@@ -182,54 +183,51 @@ export function ResultsPage() {
   const noSources = data?.sources.length === 0;
   const allFailed = !!data?.sources.length && failed.length === data.sources.length;
   const filtered = Boolean(intent.condition || intent.budget);
+  const filters = (
+    <>
+      <FilterPill
+        label="Condition"
+        value={condition ?? ""}
+        onChange={(value) => set("condition", value || undefined)}
+        options={[{ value: "", label: "Any condition" }, ...conditions.map((c) => ({ value: c, label: conditionLabels[c] }))]}
+      />
+      <FilterPill
+        label="Price"
+        value={max ? String(max) : ""}
+        onChange={(value) => set("max", value || undefined)}
+        options={[{ value: "", label: "Any price" }, ...priceOptions.map((p) => ({ value: String(p), label: `Up to $${p}` }))]}
+      />
+      <FilterPill
+        label="Sort"
+        value={sort}
+        neutral
+        onChange={(value) => set("sort", value === "best" ? undefined : value)}
+        options={(Object.keys(sorts) as Sort[]).map((key) => ({ value: key, label: sorts[key] }))}
+      />
+      {filtered && (
+        <button
+          type="button"
+          onClick={() => editIntent({ ...intent, condition: null, budget: null })}
+          className={cn("h-9 shrink-0 rounded-full px-2 text-callout font-normal text-muted hover:text-ink", focusRing)}
+        >
+          Clear
+        </button>
+      )}
+      <div className="ml-auto shrink-0 pl-2 lg:ml-2">{saveButton()}</div>
+    </>
+  );
 
   return (
     <section>
       <header className="px-1">
         <h1 className="truncate text-title-1 text-ink lg:text-[34px] lg:leading-[38px]">{q}</h1>
-        <p className="mt-1 h-5 text-callout font-normal text-muted">
-          {data && results.length > 0 && (
-            <>
-              {results.length.toLocaleString()} {results.length === 1 ? "result" : "results"} · {data.total.toLocaleString()}{" "}
-              {data.total === 1 ? "offer" : "offers"} from {data.storeCount} {data.storeCount === 1 ? "store" : "stores"}
-            </>
-          )}
-        </p>
       </header>
 
-      {/* One filter bar on every screen: each filter is a pill that opens its choices. It stays in view while you scroll. */}
-      <div className="sticky top-[calc(56px+env(safe-area-inset-top))] z-10 -mx-4 mt-3 bg-canvas px-4 py-2 lg:top-[72px] lg:mx-0 lg:px-0">
-        <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 [scrollbar-width:none] lg:mx-0 lg:px-0">
-          <FilterPill
-            label="Condition"
-            value={condition ?? ""}
-            onChange={(value) => set("condition", value || undefined)}
-            options={[{ value: "", label: "Any condition" }, ...conditions.map((c) => ({ value: c, label: conditionLabels[c] }))]}
-          />
-          <FilterPill
-            label="Price"
-            value={max ? String(max) : ""}
-            onChange={(value) => set("max", value || undefined)}
-            options={[{ value: "", label: "Any price" }, ...priceOptions.map((p) => ({ value: String(p), label: `Up to $${p}` }))]}
-          />
-          <FilterPill
-            label="Sort"
-            value={sort}
-            neutral
-            onChange={(value) => set("sort", value === "best" ? undefined : value)}
-            options={(Object.keys(sorts) as Sort[]).map((key) => ({ value: key, label: sorts[key] }))}
-          />
-          {filtered && (
-            <button
-              type="button"
-              onClick={() => editIntent({ ...intent, condition: null, budget: null })}
-              className={cn("h-9 shrink-0 rounded-full px-2 text-callout font-normal text-muted hover:text-ink", focusRing)}
-            >
-              Clear
-            </button>
-          )}
-          <div className="ml-auto shrink-0 pl-2">{saveButton()}</div>
-        </div>
+      {/* The filters: in the header beside search on wide screens; on phones, a bar of pills that stays in
+          view while you scroll. Each pill opens its choices. */}
+      <HeaderSlot>{filters}</HeaderSlot>
+      <div className="sticky top-[calc(56px+env(safe-area-inset-top))] z-10 -mx-4 mt-3 bg-canvas px-4 py-2 lg:hidden">
+        <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 [scrollbar-width:none]">{filters}</div>
       </div>
       {data && <Interpretation intent={intent} q={q} set={set} editIntent={editIntent} />}
       {failed.length > 0 && <p className="mt-1 px-1 text-footnote text-muted">{failed.map((s) => s.label).join(", ")} didn't answer this time.</p>}
@@ -489,7 +487,7 @@ function FilterPill({
           type="button"
           aria-label={`${label}: ${picked?.label ?? "Any"}`}
           className={cn(
-            "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full pr-3 pl-4 text-callout transition-colors",
+            "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full pr-3 pl-4 text-callout transition-colors lg:h-11 lg:pr-3.5 lg:pl-4.5 lg:text-body",
             active ? "bg-ink font-medium text-on-ink" : "bg-surface font-normal text-ink hover:bg-line",
             focusRing,
           )}
