@@ -2,13 +2,16 @@ import { createHash, randomBytes } from "node:crypto";
 import { type HubDb, schema } from "@skeleton/hub-db";
 import { eq } from "drizzle-orm";
 import { type Context, Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { z } from "zod";
 import { CATALOG_LICENCE } from "@skeleton/formats";
 import { contributorId } from "./contributors.js";
 import { benchmarkItems, recordCheck } from "./benchmark.js";
 import { claimJob, JobError, submitAnswer } from "./jobs.js";
 import type { CrawlOptions } from "./engine/crawl.js";
+import { clientAddress, rateLimit } from "./limits.js";
 import { handleMcp } from "./mcp.js";
+import { loadPhotoVectors, photosToEmbed } from "./photos.js";
 import { buildStream, latestPublished } from "./publish.js";
 import { reviewPage } from "./review-page.js";
 import { applyForRole, canCurate, decideApplication, pendingApplications, RoleError, whoIs } from "./roles.js";
@@ -35,6 +38,13 @@ const answerSchema = z.object({ answer: z.unknown(), model: z.string().max(200).
 export function hubApi(db: HubDb, options: { crawl?: CrawlOptions } = {}) {
   const app = new Hono<{ Variables: { contributorId: string } }>();
   // The checking page itself holds nothing private; it asks for the person's token to call the API.
+  // Public downloads, per address; calls with a token, per address before the token is checked (so a
+  // bad token costs the caller) and per contributor after.
+  app.use("/catalog/*", rateLimit({ windowMs: 60_000, max: 30, key: clientAddress }));
+  for (const path of ["/api/*", "/mcp"]) {
+    app.use(path, bodyLimit({ maxSize: 8 * 1024 * 1024 }));
+    app.use(path, rateLimit({ windowMs: 60_000, max: 600, key: clientAddress }));
+  }
   app.get("/review/:name", (c) => c.html(reviewPage(c.req.param("name"))));
   // The catalog is open data (ODbL): its latest build, and the hash an app checks before downloading.
   app.get("/catalog/latest.json", async (c) => {
@@ -60,8 +70,9 @@ export function hubApi(db: HubDb, options: { crawl?: CrawlOptions } = {}) {
     c.set("contributorId", found.id);
     await next();
   };
-  app.use("/api/*", auth);
-  app.use("/mcp", auth);
+  const perContributor = rateLimit({ windowMs: 60_000, max: 300, key: (c) => c.get("contributorId") as string });
+  app.use("/api/*", auth, perContributor);
+  app.use("/mcp", auth, perContributor);
   // Contributors' own agents, over MCP's Streamable HTTP with the same bearer token.
   app.all("/mcp", (c) => handleMcp(db, c.get("contributorId"), c.req.raw, options));
   app.post("/api/jobs/claim", async (c) => {
@@ -90,6 +101,22 @@ export function hubApi(db: HubDb, options: { crawl?: CrawlOptions } = {}) {
       return c.json({ error: error instanceof z.ZodError ? error.issues[0]?.message : error instanceof Error ? error.message : "invalid" }, 422);
     }
   });
+  // Photo vectors are trusted as given, so only curators' and the owner's machines may send them.
+  app.get("/api/photos/todo", (c) =>
+    roleCall(c, async () => {
+      if (!canCurate((await whoIs(db, c.get("contributorId")))?.role)) throw new RoleError(403, "sending photo vectors takes a curator's role");
+      const limit = Math.min(Math.max(Number(c.req.query("limit")) || 500, 1), 2000);
+      return photosToEmbed(db, limit);
+    }),
+  );
+  app.post("/api/photos", (c) =>
+    roleCall(c, async () => {
+      if (!canCurate((await whoIs(db, c.get("contributorId")))?.role)) throw new RoleError(403, "sending photo vectors takes a curator's role");
+      const body = z.object({ lines: z.array(z.string().max(20_000)).max(2000) }).safeParse(await c.req.json().catch(() => null));
+      if (!body.success) throw new RoleError(422, "send { lines: [...] }, as embed/photos.py writes them");
+      return loadPhotoVectors(db, body.data.lines);
+    }),
+  );
   app.get("/api/me", async (c) => c.json(await whoIs(db, c.get("contributorId"))));
   app.post("/api/applications", (c) => roleCall(c, async () => applyForRole(db, c.get("contributorId"), await c.req.json().catch(() => null))));
   app.get("/api/applications", (c) =>

@@ -1,6 +1,8 @@
 import type { ReadingInput } from "@skeleton/formats";
 import { schema } from "@skeleton/hub-db";
 import { describe, expect, it } from "vitest";
+import { hubApi, issueToken } from "../src/api.js";
+import { setRole } from "../src/roles.js";
 import { storeReadings } from "../src/engine/store.js";
 import { decodeVector, loadPhotoVectors, PHOTO_DIMENSIONS, PHOTO_MODEL, photosToEmbed } from "../src/photos.js";
 import { useHubDb } from "./helpers/db.js";
@@ -43,5 +45,21 @@ describe("photo vectors", () => {
     const [row] = await db.select().from(embedding);
     expect(row).toMatchObject({ listingId: todo[0]!.listingId, model: PHOTO_MODEL, kind: "photo" });
     expect(await photosToEmbed(db, 10)).toHaveLength(1);
+  });
+
+  it("hands work to a curator's machine over the API, and takes its vectors", async () => {
+    const [site] = await db.insert(source).values({ domain: "maker.example", status: "approved", readerId: "shopify" }).returning({ id: source.id });
+    await storeReadings(db, site!.id, [item("1"), item("2")], { crawlId: null, readAt: new Date() });
+    const api = hubApi(db);
+    const token = await issueToken(db, "zack-desktop", "worker");
+    const call = (method: string, path: string, body?: unknown) =>
+      api.request(path, { method, headers: { authorization: `Bearer ${token}`, "content-type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
+    expect((await call("GET", "/api/photos/todo")).status).toBe(403);
+    await setRole(db, "zack-desktop", "curator");
+    const todo = (await (await call("GET", "/api/photos/todo?limit=1")).json()) as { listingId: string; readingId: number }[];
+    expect(todo).toHaveLength(1);
+    const vector = encode(Array.from({ length: PHOTO_DIMENSIONS }, () => 0.5));
+    expect(await (await call("POST", "/api/photos", { lines: [JSON.stringify({ ...todo[0], vector })] })).json()).toEqual({ stored: 1, skipped: 0 });
+    expect((await call("POST", "/api/photos", { nope: true })).status).toBe(422);
   });
 });
