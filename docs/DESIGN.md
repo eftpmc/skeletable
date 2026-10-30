@@ -111,6 +111,8 @@ Search quality depends on sources. Each source is an adapter with the same inter
 | Resale marketplaces | eBay, Depop, Grailed, Poshmark, Back Market, Swappa, StockX/GOAT | Use official APIs or partner feeds where they exist, and respect terms where they don't. |
 | User links | Any product page | The Phase 1 importer. Each link also adds to our catalog. |
 
+**Go upstream, not to aggregators.** The more valuable a site's data, the harder it guards it, so nothing here depends on sites that block bots. Marketplaces and aggregators (Zillow-style sites, Depop, Grailed, Vinted) are reached through an official API or not at all. We read the original sources that want to be found: brands' own stores. Coverage is less than 100%, and that is the accepted trade.
+
 - **Cloud:** we hold the keys, cache results aggressively and earn affiliate revenue.
 - **Self-host:** a **Sources** settings page where users plug in their own keys (eBay and Best Buy are free). Shopify and link import work with no keys at all.
 - **Matching the same product:** identifiers first (GTIN/UPC/EAN, then MPN plus brand). Fall back to brand plus normalized model name, then image embedding similarity. Low-confidence matches show as "similar", never as the same product.

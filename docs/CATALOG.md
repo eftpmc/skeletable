@@ -16,6 +16,8 @@ The catalog is the product. The feed, search, alerts, recommendations and the MC
 - **Honest**: no paid placement, and deals verified against our own history.
 - **The index itself**, strongest in the independent and resale long tail. Assistants can query it over MCP, so they become a channel, not a competitor.
 
+**Direction, October 2026.** The engine, its algorithms and the data they produce are the crown jewel. [Shopify's Global Catalog](https://shopify.dev/docs/agents/catalog) answers live searches across its merchants for free, but it is not a data source. Its docs prohibit caching results and storing images, and the [API terms](https://www.shopify.com/legal/api-terms), which cover its MCP servers, bar automated data collection, building a product index, and storing or redistributing merchant data. So nothing from it enters the catalog, the archive or price history, and the hub doesn't call it. Stored, open data over time is exactly what it can't give, so effort goes there: stores off Shopify, price history, and verdicts on who is a real maker. Whether the app ever offers it as a live search is a separate decision, because accepting those terms also brings a clause against scraping merchant stores (section 2.3(8)), which needs a lawyer's reading first.
+
 ## 2. Principles
 
 1. **Index broadly, surface selectively.** Search reaches everything we know. The feed shows only what passes the quality bar and fits your taste.
@@ -79,6 +81,8 @@ Cheapest first; a store uses the first rung that works.
 | 3 | **Site adapter**: per-site parser for embedded state (e.g. Uniqlo's `__PRELOADED_STATE__`) | Low per page, maintenance per site | High-value custom sites |
 | 4 | **Headless browser** (Playwright, ours or hosted) | 10–100× rung 2 | Sites that only render products with JavaScript |
 | — | **APIs and affiliate feeds** | Varies | Marketplaces, large retailers |
+
+The readers live in `packages/engine`, shared by the hub and the app. **Recipes (format 2)** say only what's special about a site. A recipe may name, for any field, one or more places to look: a CSS selector, or a dot path into JSON the page embeds for its own scripts. The engine tries those first, then the page's structured data, field by field, and keeps the first usable value, so a recipe survives a redesign of anything it doesn't name and reports what stopped working. Recipes stay data, never code. Format 1 recipes are upgraded when read. Every engine change is scored against saved real pages with hand-checked answers (`packages/engine/benchmark/`), and one that loses a previously correct field fails the tests.
 
 Each connector returns the same `RawListing` shape (store, URL, title, brand, variants with size, color, price, compare-at price, stock, images, identifiers), so everything downstream is shared. This is the same pattern as today's search sources, extended from "answer a query" to "list a store".
 

@@ -14,7 +14,7 @@ The catalog foundation supports two connectors with the same `discover` and
   locale-matching sitemaps are read first, gzipped sitemaps are supported, and
   recently modified entries come first. Products are read from schema.org
   JSON-LD, then schema.org microdata, then OpenGraph and Shopify product JSON
-  (`apps/server/src/catalog/connectors/sitemap.ts`).
+  (`packages/engine/src/sitemap.ts`).
 
 The sitemap connector honours `robots.txt` for `*` and `SkeletonBot`: disallowed
 sitemaps, feeds and product URLs are never requested or returned. Every request

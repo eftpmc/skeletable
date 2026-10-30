@@ -91,7 +91,11 @@ Build the Docker image locally with `docker build -f docker/Dockerfile -t skelet
 ```
 apps/server     Hono API, auth, (later) MCP and jobs. Serves the web build in production.
 apps/web        React + Vite + Tailwind
+apps/hub        The shared catalog: sources, crawls, annotations, jobs, curators, catalog builds
+packages/engine Reading sites: safe fetch, robots.txt, polite pace, platform readers, recipes, benchmark
+packages/formats Versioned contracts between the hub and the app
 packages/db     Drizzle schema and migrations (applied automatically on server start)
+packages/hub-db The hub's schema and migrations
 packages/shared Types and zod schemas shared by server and clients
 docker/         Dockerfile and entrypoint
 ```
