@@ -1,0 +1,1011 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "adafruit",
+      "site": "adafruit",
+      "platform": "non-shopify",
+      "platformEvidence": "Custom Adafruit storefront with Zen Cart-style product_info.php links and first-party product schema.",
+      "split": "development",
+      "file": "pages/adafruit.html.gz",
+      "url": "https://www.adafruit.com/product/6536",
+      "capturedAt": "2026-10-29T02:33:16.949Z",
+      "sha256": "f7d40cb9d215b0ebc778ad6fee4da4c1143fc8bf17929fc502b5af5f1407192d",
+      "kind": "product",
+      "notes": "JSON-LD price 34.9500 agrees with visible $34.95 and product price metadata; four decimal places must not inflate price.",
+      "labels": {
+        "title": {
+          "value": "Adafruit Metro ESP32-P4 Hydra - with 16 MB PSRAM",
+          "evidence": "Inspected saved Product JSON-LD: name. Values transcribed independently of engine output."
+        },
+        "price": {
+          "value": 3495,
+          "evidence": "Inspected saved Product JSON-LD: offers.price converted to minor units. Values transcribed independently of engine output."
+        },
+        "currency": {
+          "value": "USD",
+          "evidence": "Inspected saved Product JSON-LD: offers.priceCurrency. Values transcribed independently of engine output."
+        },
+        "available": {
+          "value": false,
+          "evidence": "Inspected saved Product JSON-LD: offers.availability = OutOfStock. Values transcribed independently of engine output."
+        },
+        "sku": {
+          "value": "6536",
+          "evidence": "Inspected saved Product JSON-LD: sku. Values transcribed independently of engine output."
+        },
+        "images": {
+          "value": [
+            "https://cdn-shop.adafruit.com//970x728/6536-06.jpg",
+            "https://cdn-shop.adafruit.com//970x728/6536-10.jpg",
+            "https://cdn-shop.adafruit.com//970x728/6536-09.jpg",
+            "https://cdn-shop.adafruit.com//970x728/6536-07.jpg",
+            "https://cdn-shop.adafruit.com//970x728/6536-08.jpg",
+            "https://cdn-shop.adafruit.com//970x728/6536-05.jpg"
+          ],
+          "evidence": "Inspected saved Product JSON-LD: complete image array, six entries. Values transcribed independently of engine output."
+        }
+      }
+    },
+    {
+      "id": "adafruit-second",
+      "site": "adafruit",
+      "platform": "non-shopify",
+      "platformEvidence": "Custom Adafruit storefront with Zen Cart-style product_info.php links and first-party product schema.",
+      "split": "development",
+      "file": "pages-extra/adafruit-second.html.gz",
+      "url": "https://www.adafruit.com/product/6538",
+      "capturedAt": "2026-10-29T02:34:49.011Z",
+      "sha256": "ac86ec83155411807ecc817b0576adb106c54b6a60b2bbdaeed28f67979e69ab",
+      "kind": "product",
+      "notes": "Second product from existing readable brand. JSON-LD 10.9500 agrees with visible $10.95.",
+      "labels": {
+        "title": {
+          "value": "Adafruit RV-8803 High Accuracy Real Time Clock Breakout Board",
+          "evidence": "Inspected saved Product JSON-LD: name. Values transcribed independently of engine output."
+        },
+        "price": {
+          "value": 1095,
+          "evidence": "Inspected saved Product JSON-LD: offers.price converted to minor units. Values transcribed independently of engine output."
+        },
+        "currency": {
+          "value": "USD",
+          "evidence": "Inspected saved Product JSON-LD: offers.priceCurrency. Values transcribed independently of engine output."
+        },
+        "available": {
+          "value": true,
+          "evidence": "Inspected saved Product JSON-LD: offers.availability = InStock. Values transcribed independently of engine output."
+        },
+        "sku": {
+          "value": "6538",
+          "evidence": "Inspected saved Product JSON-LD: sku. Values transcribed independently of engine output."
+        },
+        "images": {
+          "value": [
+            "https://cdn-shop.adafruit.com//970x728/6538-00.jpg",
+            "https://cdn-shop.adafruit.com//970x728/6538-06.jpg",
+            "https://cdn-shop.adafruit.com//970x728/6538-01.jpg",
+            "https://cdn-shop.adafruit.com//970x728/6538-03.jpg",
+            "https://cdn-shop.adafruit.com//970x728/6538-02.jpg"
+          ],
+          "evidence": "Inspected saved Product JSON-LD: complete image array, five entries. Values transcribed independently of engine output."
+        }
+      }
+    },
+    {
+      "id": "ikea",
+      "site": "ikea",
+      "platform": "non-shopify",
+      "platformEvidence": "IKEA proprietary page and web-api.ikea.com services; IKEA product schema.",
+      "split": "development",
+      "file": "pages/ikea.html.gz",
+      "url": "https://www.ikea.com/us/en/p/konstrunda-stool-pine-80623716/",
+      "capturedAt": "2026-10-29T02:33:19.137Z",
+      "sha256": "3ac64477c6cffd6f002c483ae65061e3d1d3ed8d0a576be410162f39db951df8",
+      "kind": "product",
+      "notes": "Stock means the page-level published assertion, not postcode-specific delivery availability.",
+      "labels": {
+        "title": {
+          "value": "KONSTRUNDA Stool - pine",
+          "evidence": "Inspected saved Product JSON-LD: name. Values transcribed independently of engine output."
+        },
+        "price": {
+          "value": 5999,
+          "evidence": "Inspected saved Product JSON-LD: offers.price converted to minor units. Values transcribed independently of engine output."
+        },
+        "currency": {
+          "value": "USD",
+          "evidence": "Inspected saved Product JSON-LD: offers.priceCurrency. Values transcribed independently of engine output."
+        },
+        "maker": {
+          "value": "IKEA",
+          "evidence": "Inspected saved Product JSON-LD: brand.name. Values transcribed independently of engine output."
+        },
+        "sku": {
+          "value": "806.237.16",
+          "evidence": "Inspected saved Product JSON-LD: sku. Values transcribed independently of engine output."
+        },
+        "mpn": {
+          "value": "806.237.16",
+          "evidence": "Inspected saved Product JSON-LD: mpn. Values transcribed independently of engine output."
+        },
+        "available": {
+          "value": true,
+          "evidence": "Inspected saved Product JSON-LD: offers.availability = InStock. Values transcribed independently of engine output."
+        },
+        "images": {
+          "value": [
+            "https://www.ikea.com/us/en/images/products/konstrunda-stool-pine__1479802_pe1000090_s5.jpg",
+            "https://www.ikea.com/us/en/images/products/konstrunda-stool-pine__1531425_ph207102_s5.jpg",
+            "https://www.ikea.com/us/en/images/products/konstrunda-stool-pine__1531426_ph207226_s5.jpg",
+            "https://www.ikea.com/us/en/images/products/konstrunda-stool-pine__1439507_pe985347_s5.jpg"
+          ],
+          "evidence": "Inspected saved Product JSON-LD: complete image array, contentUrl. Values transcribed independently of engine output."
+        }
+      }
+    },
+    {
+      "id": "ikea-second",
+      "site": "ikea",
+      "platform": "non-shopify",
+      "platformEvidence": "IKEA proprietary page and web-api.ikea.com services; IKEA product schema.",
+      "split": "development",
+      "file": "pages-extra/ikea-second.html.gz",
+      "url": "https://www.ikea.com/us/en/p/kramphult-armrest-tray-white-metal-70630331/",
+      "capturedAt": "2026-10-29T02:34:51.245Z",
+      "sha256": "355f0ee76c75a804b954dd71a23ec7472606e30d3b1cd165955a3d1519f5312c",
+      "kind": "product",
+      "notes": "Second saved product from an existing readable brand.",
+      "labels": {
+        "title": {
+          "value": "KRAMPHULT Armrest tray - white/metal",
+          "evidence": "Inspected saved Product JSON-LD: name. Values transcribed independently of engine output."
+        },
+        "price": {
+          "value": 999,
+          "evidence": "Inspected saved Product JSON-LD: offers.price converted to minor units. Values transcribed independently of engine output."
+        },
+        "currency": {
+          "value": "USD",
+          "evidence": "Inspected saved Product JSON-LD: offers.priceCurrency. Values transcribed independently of engine output."
+        },
+        "maker": {
+          "value": "IKEA",
+          "evidence": "Inspected saved Product JSON-LD: brand.name. Values transcribed independently of engine output."
+        },
+        "sku": {
+          "value": "706.303.31",
+          "evidence": "Inspected saved Product JSON-LD: sku. Values transcribed independently of engine output."
+        },
+        "mpn": {
+          "value": "706.303.31",
+          "evidence": "Inspected saved Product JSON-LD: mpn. Values transcribed independently of engine output."
+        },
+        "available": {
+          "value": true,
+          "evidence": "Inspected saved Product JSON-LD: offers.availability = InStock. Values transcribed independently of engine output."
+        }
+      }
+    },
+    {
+      "id": "palace",
+      "site": "palace",
+      "platform": "shopify",
+      "platformEvidence": "Embedded gid://shopify/Product and ProductVariant identifiers, Shopify CDN and Hydrogen state.",
+      "split": "development",
+      "file": "pages/palace.html.gz",
+      "url": "https://usa.palaceskateboards.com/products/z2p9r5lpfqwv",
+      "capturedAt": "2026-10-29T02:33:14.298Z",
+      "sha256": "0c83efc950701a115f495a018d3a3f48481056a01bb4861effc3e4078e0fe070",
+      "kind": "product",
+      "notes": "Existing shipped recipe. Shopify Hydrogen flattened script data is not ordinary application/json. Size chart must not create variants.",
+      "labels": {
+        "title": {
+          "value": "SHEEPSKIN FLYING JACKET BROWN",
+          "evidence": "#product-title text; omit site-name suffix in Open Graph."
+        },
+        "price": {
+          "value": 189800,
+          "evidence": "#product-price displays $1,898; embedded Shopify price amount 1898.0."
+        },
+        "currency": {
+          "value": "USD",
+          "evidence": "Embedded Shopify price currencyCode USD; US storefront."
+        },
+        "variantTitles": {
+          "value": [
+            "Large",
+            "Medium",
+            "Small",
+            "X-Large"
+          ],
+          "evidence": "Four product-select variant buttons; size chart has an extra 2X-Large which is not a purchasable variant."
+        }
+      }
+    },
+    {
+      "id": "palace-second",
+      "site": "palace",
+      "platform": "shopify",
+      "platformEvidence": "Embedded gid://shopify/Product and ProductVariant identifiers, Shopify CDN and Hydrogen state.",
+      "split": "development",
+      "file": "pages-extra/palace-second.html.gz",
+      "url": "https://usa.palaceskateboards.com/products/av1bal6eijz1",
+      "capturedAt": "2026-10-29T02:34:54.179Z",
+      "sha256": "c0b470227efcc6ad63d27245a9ef703699ff84d0cbb774ee93dabd1384aa2316",
+      "kind": "product",
+      "notes": "Second product exercising existing shipped Palace recipe.",
+      "labels": {
+        "title": {
+          "value": "PALACE AVIREX JACKET BLACK",
+          "evidence": "#product-title text in saved page."
+        },
+        "price": {
+          "value": 157000,
+          "evidence": "#product-price displays $1,570 in saved US storefront."
+        },
+        "currency": {
+          "value": "USD",
+          "evidence": "US storefront embedded Shopify currencyCode USD."
+        }
+      }
+    },
+    {
+      "id": "apple",
+      "site": "apple",
+      "platform": "non-shopify",
+      "platformEvidence": "Apple Store proprietary as-images/apple.com and buy-mac configurator.",
+      "split": "holdout",
+      "file": "pages/apple.html.gz",
+      "url": "https://www.apple.com/shop/buy-mac/mac-mini",
+      "capturedAt": "2026-10-29T02:33:21.613Z",
+      "sha256": "f12e5980de1d245b2c7ebb28be2f68c7a02e6eae278a037fb5cf28dd57f81bd4",
+      "kind": "product",
+      "notes": "Aggregate price range 899–6799 USD. Score lower bound only; does not establish accurate configured price.",
+      "labels": {
+        "title": {
+          "value": "Mac mini",
+          "evidence": "Inspected saved Product JSON-LD: name. Values transcribed independently of engine output."
+        },
+        "price": {
+          "value": 89900,
+          "evidence": "Inspected saved Product JSON-LD: offers[0].lowPrice = 899; explicitly a from-price, not a selected configuration. Values transcribed independently of engine output."
+        },
+        "currency": {
+          "value": "USD",
+          "evidence": "Inspected saved Product JSON-LD: offers.priceCurrency. Values transcribed independently of engine output."
+        },
+        "available": {
+          "value": null,
+          "evidence": "AggregateOffer has no availability; shipping text is not an inventory assertion."
+        }
+      }
+    },
+    {
+      "id": "sparkfun",
+      "site": "sparkfun",
+      "platform": "non-shopify",
+      "platformEvidence": "Magento storefront assets and catalog product URLs in saved HTML.",
+      "split": "development",
+      "file": "pages/sparkfun.html.gz",
+      "url": "https://www.sparkfun.com/sparkfun-redboard-plus.html",
+      "capturedAt": "2026-10-29T02:33:27.811Z",
+      "sha256": "01c1e86e91a0562ea76a13f7ade2fd5f788033aca48a4d7d1bf6a75b6fa60383",
+      "kind": "product",
+      "notes": "Magento storefront; offer price is numeric 29.5. Availability left unlabelled pending full DOM inventory review.",
+      "labels": {
+        "title": {
+          "value": "SparkFun RedBoard Plus",
+          "evidence": "Inspected saved Product JSON-LD: name. Values transcribed independently of engine output."
+        },
+        "price": {
+          "value": 2950,
+          "evidence": "Inspected saved Product JSON-LD: offers.price converted to minor units. Values transcribed independently of engine output."
+        },
+        "currency": {
+          "value": "USD",
+          "evidence": "Inspected saved Product JSON-LD: offers.priceCurrency. Values transcribed independently of engine output."
+        },
+        "sku": {
+          "value": "DEV-18158",
+          "evidence": "Inspected saved Product JSON-LD: sku. Values transcribed independently of engine output."
+        },
+        "mpn": {
+          "value": "DEV-18158",
+          "evidence": "Inspected saved Product JSON-LD: mpn. Values transcribed independently of engine output."
+        },
+        "images": {
+          "value": [
+            "https://www.sparkfun.com/media/catalog/product/cache/f8158826193ba5faa8b862a9bd1eb9e9/1/8/18158-SparkFun_RedBoard_Plus-01.jpg"
+          ],
+          "evidence": "Inspected saved Product JSON-LD: image. Values transcribed independently of engine output."
+        }
+      }
+    },
+    {
+      "id": "dell",
+      "site": "dell",
+      "platform": "non-shopify",
+      "platformEvidence": "Dell proprietary purchase configurator data, usa_market and configurable offer attributes.",
+      "split": "holdout",
+      "file": "pages/dell.html.gz",
+      "url": "https://www.dell.com/en-us/shop/monitors/apd/dell-ultrasharp-24-monitor-u2424h/u2424h_monitor/-",
+      "capturedAt": "2026-10-29T02:33:41.497Z",
+      "sha256": "bd8ee1a976d16fcea6029b19aff250af4bd56e34ffa1de14c0470312ee9cf8ef",
+      "kind": "product",
+      "notes": "Requested old product URL redirects to U2424H. Label final captured product, not requested URL slug.",
+      "labels": {
+        "title": {
+          "value": "Dell UltraSharp 24 Monitor - U2424H",
+          "evidence": "Inspected saved Product JSON-LD: name, also both h1 elements. Values transcribed independently of engine output."
+        },
+        "price": {
+          "value": 27999,
+          "evidence": "Product purchase configuration data-total-price=\"279.99\" and Dell Price $279.99."
+        },
+        "currency": {
+          "value": "USD",
+          "evidence": "US market purchase context usa_market and displayed dollar price."
+        },
+        "mpn": {
+          "value": "376nxf",
+          "evidence": "Inspected saved Product JSON-LD: mpn. Values transcribed independently of engine output."
+        }
+      }
+    },
+    {
+      "id": "nintendo",
+      "site": "nintendo",
+      "platform": "non-shopify",
+      "platformEvidence": "Nintendo Next.js product page, first-party assets and Nintendo graph schema.",
+      "split": "holdout",
+      "file": "pages/nintendo.html.gz",
+      "url": "https://www.nintendo.com/us/store/products/the-legend-of-zelda-tears-of-the-kingdom-switch/",
+      "capturedAt": "2026-10-29T02:33:49.514Z",
+      "sha256": "b930eb234670fa7f6fcd8a22f34266326e334c8111cce6dea5b56b66283bc28d",
+      "kind": "product",
+      "notes": "JSON-LD graph product has multiple @type values: VideoGame and Product.",
+      "labels": {
+        "title": {
+          "value": "The Legend of Zelda™: Tears of the Kingdom",
+          "evidence": "Inspected saved Product JSON-LD: name. Values transcribed independently of engine output."
+        },
+        "price": {
+          "value": 6999,
+          "evidence": "Inspected saved Product JSON-LD: offers.price converted to minor units. Values transcribed independently of engine output."
+        },
+        "currency": {
+          "value": "USD",
+          "evidence": "Inspected saved Product JSON-LD: offers.priceCurrency. Values transcribed independently of engine output."
+        },
+        "sku": {
+          "value": "7100063714",
+          "evidence": "Inspected saved Product JSON-LD: sku. Values transcribed independently of engine output."
+        },
+        "available": {
+          "value": true,
+          "evidence": "Inspected saved Product JSON-LD: offers.availability = InStock. Values transcribed independently of engine output."
+        }
+      }
+    },
+    {
+      "id": "penguin",
+      "site": "penguin",
+      "platform": "non-shopify",
+      "platformEvidence": "Publisher WordPress-style page and first-party ISBN metadata, not a Shopify storefront.",
+      "split": "development",
+      "file": "pages-extra/penguin.html.gz",
+      "url": "https://www.penguinrandomhouse.com/books/717356/the-creative-act-by-rick-rubin/",
+      "capturedAt": "2026-10-29T02:34:25.213Z",
+      "sha256": "d80bd1b112856d4952624126f3e503c79e7711d7638078fb356338a8bf2bc47f",
+      "kind": "product",
+      "notes": "Hardcover edition only; other editions must not supply its price. Corpus recipe intentionally only overrides title/price/currency.",
+      "labels": {
+        "title": {
+          "value": "The Creative Act",
+          "evidence": "Product h1; Open Graph includes author, ISBN and site suffix."
+        },
+        "price": {
+          "value": 3200,
+          "evidence": "meta[itemprop=price] content 32 for hardcover ISBN 9780593652886."
+        },
+        "currency": {
+          "value": "USD",
+          "evidence": "meta[itemprop=priceCurrency] content USD."
+        },
+        "gtin": {
+          "value": "9780593652886",
+          "evidence": "Hardcover ISBN-13 in title and image URL; ISBN-13 is the book EAN."
+        },
+        "available": {
+          "value": true,
+          "evidence": "meta[property=\"og:availability\"] content instock."
+        }
+      },
+      "recipe": {
+        "format": 2,
+        "pathPrefix": "/books/",
+        "title": {
+          "select": "h1"
+        },
+        "price": {
+          "select": "meta[itemprop=\"price\"]",
+          "attribute": "content"
+        },
+        "currency": {
+          "select": "meta[itemprop=\"priceCurrency\"]",
+          "attribute": "content"
+        }
+      }
+    },
+    {
+      "id": "oxo",
+      "site": "oxo",
+      "platform": "non-shopify",
+      "platformEvidence": "WordPress wp-content assets and Yoast article schema in source.",
+      "split": "holdout",
+      "file": "pages-extra/oxo.html.gz",
+      "url": "https://www.oxouk.com/products/kitchenware/tools-and-gadgets/peelers-choppers/swivel-peeler/",
+      "capturedAt": "2026-10-29T02:34:29.454Z",
+      "sha256": "b02685e736b4748a9dad5a78641cc05b38b2b6f9a8579672fadca41d837c6156",
+      "kind": "product",
+      "notes": "WordPress product-information page without a priced offer. Null price is correct, and does not mean the product is free.",
+      "labels": {
+        "title": {
+          "value": "Swivel Peeler",
+          "evidence": "Product h1 text; Open Graph title appends OXO UK."
+        },
+        "price": {
+          "value": null,
+          "evidence": "Product information page has no price, offer or currency; inspected full saved source."
+        },
+        "currency": {
+          "value": null,
+          "evidence": "No priced offer in saved manufacturer page; UK domain does not supply a currency."
+        },
+        "images": {
+          "value": [
+            "https://www.oxouk.com/wp-content/uploads/gg_20081v5_solo_1_-3-scaled.jpg"
+          ],
+          "evidence": "Primary image in Open Graph and Yoast ImageObject."
+        }
+      }
+    },
+    {
+      "id": "thomann",
+      "site": "thomann",
+      "platform": "non-shopify",
+      "platformEvidence": "Proprietary tho.bootstrapModule storefront with product microdata.",
+      "split": "development",
+      "file": "pages-extra/thomann.html.gz",
+      "url": "https://www.thomannmusic.com/beyerdynamic_dt770_pro80_ohm.htm",
+      "capturedAt": "2026-10-29T02:34:33.012Z",
+      "sha256": "de751c627ef64eaabe0cc83d0224040460adedf9849d97bb20275f076a477720",
+      "kind": "product",
+      "notes": "Microdata page: overrides exercise fields missing from default metadata handling.",
+      "labels": {
+        "title": {
+          "value": "beyerdynamic DT-770 Pro 80 Ohm",
+          "evidence": "Product h1; Open Graph has a decorative headphone emoji."
+        },
+        "price": {
+          "value": 13900,
+          "evidence": "Offer microdata meta[itemprop=price] content 139."
+        },
+        "currency": {
+          "value": "USD",
+          "evidence": "Offer microdata meta[itemprop=priceCurrency] content USD."
+        },
+        "sku": {
+          "value": "174334",
+          "evidence": "Product microdata meta[itemprop=sku] content 174334."
+        },
+        "maker": {
+          "value": "beyerdynamic",
+          "evidence": "Brand microdata child meta[itemprop=name]."
+        },
+        "available": {
+          "value": true,
+          "evidence": "link[itemprop=availability] href https://schema.org/InStock."
+        }
+      },
+      "recipe": {
+        "format": 2,
+        "pathPrefix": "/beyerdynamic",
+        "title": {
+          "select": "h1"
+        },
+        "price": {
+          "select": "meta[itemprop=\"price\"]",
+          "attribute": "content"
+        },
+        "currency": {
+          "select": "meta[itemprop=\"priceCurrency\"]",
+          "attribute": "content"
+        }
+      }
+    },
+    {
+      "id": "sweetwater",
+      "site": "sweetwater",
+      "platform": "non-shopify",
+      "platformEvidence": "Custom Sweetwater store product page and dataLayer product tracking.",
+      "split": "development",
+      "file": "pages-extra/sweetwater.html.gz",
+      "url": "https://www.sweetwater.com/store/detail/DT770pro80--beyerdynamic-dt-770-pro-80-ohm-closed-back-studio-mixing-headphones",
+      "capturedAt": "2026-10-29T02:34:35.612Z",
+      "sha256": "c080d4ad166799334cb05d3bebe6bcd055f310a88c045862328824a632c30ce9",
+      "kind": "product",
+      "notes": "Capitalized Offers key requires recipe. This is a data-path recipe, not a selector for the misleading cheaper open-box offer.",
+      "labels": {
+        "title": {
+          "value": "DT 770 Pro Closed-back Studio Headphones - 80 ohms",
+          "evidence": "Inspected saved Product JSON-LD: name. Values transcribed independently of engine output."
+        },
+        "price": {
+          "value": 19999,
+          "evidence": "Saved Product JSON-LD uses capitalized Offers[0].price = 199.99. $143.99 is explicitly Certified Open Box, not the new item."
+        },
+        "currency": {
+          "value": "USD",
+          "evidence": "Product JSON-LD Offers[0].priceCurrency USD."
+        },
+        "maker": {
+          "value": "Beyerdynamic",
+          "evidence": "Inspected saved Product JSON-LD: brand.name. Values transcribed independently of engine output."
+        },
+        "mpn": {
+          "value": "474746",
+          "evidence": "Inspected saved Product JSON-LD: mpn. Values transcribed independently of engine output."
+        },
+        "available": {
+          "value": true,
+          "evidence": "Product JSON-LD Offers[0].availability InStock; og:availability also instock."
+        }
+      },
+      "recipe": {
+        "format": 2,
+        "pathPrefix": "/store/detail/",
+        "price": {
+          "json": "Offers.0.price"
+        },
+        "currency": {
+          "json": "Offers.0.priceCurrency"
+        },
+        "available": {
+          "from": {
+            "json": "Offers.0.availability"
+          }
+        }
+      }
+    },
+    {
+      "id": "everythingkitchens",
+      "site": "everythingkitchens",
+      "platform": "non-shopify",
+      "platformEvidence": "Magento catalog/media paths and Magento storefront scripts.",
+      "split": "development",
+      "file": "pages-extra/everythingkitchens.html.gz",
+      "url": "https://www.everythingkitchens.com/oxo-good-grips-swivel-peeler-20081.html",
+      "capturedAt": "2026-10-29T02:34:38.213Z",
+      "sha256": "f0d8beadfb4f1728e24acce2d8875208227e4996bfd5bcd1fd3c5fc7c0ec76c9",
+      "kind": "product",
+      "notes": "Magento page with HTML-entity-encoded Open Graph title.",
+      "labels": {
+        "title": {
+          "value": "OXO Good Grips Swivel Peeler",
+          "evidence": "Product h1; encoded Open Graph title agrees."
+        },
+        "price": {
+          "value": 1395,
+          "evidence": "meta[property=\"product:price:amount\"] content 13.95."
+        },
+        "currency": {
+          "value": "USD",
+          "evidence": "meta[property=\"product:price:currency\"] content USD."
+        }
+      }
+    },
+    {
+      "id": "worldmarket",
+      "site": "worldmarket",
+      "platform": "non-shopify",
+      "platformEvidence": "Salesforce Commerce Cloud demandware.static and dw image paths.",
+      "split": "holdout",
+      "file": "pages-extra/worldmarket.html.gz",
+      "url": "https://www.worldmarket.com/p/oxo-good-grips-stainless-steel-swivel-peeler-602712.html",
+      "capturedAt": "2026-10-29T02:34:40.469Z",
+      "sha256": "e8e5891f5e16bbdcab99c7aee6ada28a9c79922f48c2c86feb5639e0e745e0f5",
+      "kind": "product",
+      "notes": "Two Product JSON-LD blocks, second has only name/reviews. Manufacturer label omitted: structured brand says World Market while product name says OXO.",
+      "labels": {
+        "title": {
+          "value": "OXO Good Grips Stainless Steel Swivel Peeler",
+          "evidence": "Inspected saved Product JSON-LD: name. Values transcribed independently of engine output."
+        },
+        "price": {
+          "value": 798,
+          "evidence": "Inspected saved Product JSON-LD: offers.price converted to minor units. Values transcribed independently of engine output."
+        },
+        "currency": {
+          "value": "USD",
+          "evidence": "Inspected saved Product JSON-LD: offers.priceCurrency. Values transcribed independently of engine output."
+        },
+        "sku": {
+          "value": "602712",
+          "evidence": "Inspected saved Product JSON-LD: sku. Values transcribed independently of engine output."
+        },
+        "mpn": {
+          "value": "602712",
+          "evidence": "Inspected saved Product JSON-LD: mpn. Values transcribed independently of engine output."
+        },
+        "available": {
+          "value": false,
+          "evidence": "Inspected saved Product JSON-LD: offers.availability = OutOfStock. Values transcribed independently of engine output."
+        }
+      }
+    },
+    {
+      "id": "beyerdynamic",
+      "site": "beyerdynamic",
+      "platform": "non-shopify",
+      "platformEvidence": "Next.js page backed by api.beyerdynamic.de Magento media/catalog paths.",
+      "split": "holdout",
+      "file": "pages-extra/beyerdynamic.html.gz",
+      "url": "https://www.beyerdynamic.de/p/dt-770-pro-80-ohm",
+      "capturedAt": "2026-10-29T02:34:43.851Z",
+      "sha256": "2200937abc7bd2f9cd725ec8242a5ddd5512fa721c85c8b37e78fbce58ee8880",
+      "kind": "product",
+      "notes": "German EUR sale page, distinct from same headphones at US/UK merchants. Tests current sale versus regular price.",
+      "labels": {
+        "title": {
+          "value": "DT 770 PRO, 80 Ohm",
+          "evidence": "Inspected saved Product JSON-LD: name. Values transcribed independently of engine output."
+        },
+        "price": {
+          "value": 14900,
+          "evidence": "Product AggregateOffer lowPrice 149 agrees with product:sale_price:amount 149; regular product:price:amount is 159."
+        },
+        "currency": {
+          "value": "EUR",
+          "evidence": "Inspected saved Product JSON-LD: offers.priceCurrency. Values transcribed independently of engine output."
+        },
+        "maker": {
+          "value": "beyerdynamic",
+          "evidence": "Inspected saved Product JSON-LD: brand.name. Values transcribed independently of engine output."
+        },
+        "sku": {
+          "value": "474746",
+          "evidence": "Inspected saved Product JSON-LD: sku. Values transcribed independently of engine output."
+        },
+        "gtin": {
+          "value": "4010118474743",
+          "evidence": "Inspected saved Product JSON-LD: gtin13. Values transcribed independently of engine output."
+        },
+        "available": {
+          "value": true,
+          "evidence": "Inspected saved Product JSON-LD: offers.availability = InStock. Values transcribed independently of engine output."
+        }
+      }
+    },
+    {
+      "id": "patagonia",
+      "site": "patagonia",
+      "platform": "unknown",
+      "platformEvidence": "Maintenance page only; platform cannot be established from this capture.",
+      "split": "holdout",
+      "file": "pages/patagonia.html.gz",
+      "url": "https://www.patagonia.com/product/mens-better-sweater-fleece-jacket/25528.html",
+      "capturedAt": "2026-10-29T02:33:39.219Z",
+      "sha256": "29fa8dcff45d5cf0e303a8f9999d407abacde5047074fb0754f36c94c43b83dd",
+      "kind": "negative",
+      "notes": "HTTP 200 page says System maintenance is in progress. Must not produce a product reading.",
+      "labels": {
+        "price": {
+          "value": null,
+          "evidence": "Captured HTTP 200 is a system-maintenance placeholder, without any product offer."
+        },
+        "currency": {
+          "value": null,
+          "evidence": "Maintenance placeholder contains no product currency."
+        },
+        "available": {
+          "value": null,
+          "evidence": "Maintenance is unknown inventory, never out of stock."
+        }
+      }
+    },
+    {
+      "id": "buckmason-white",
+      "site": "buckmason",
+      "platform": "shopify",
+      "platformEvidence": "Shopify CDN and checkout store; Product offers contain six size SKUs.",
+      "split": "development",
+      "file": "pages-expanded/buckmason-white.html.gz",
+      "url": "https://www.buckmason.com/products/white-field-spec-cotton-vintage-surplus-heavy-tee",
+      "capturedAt": "2026-10-29T03:21:17.791Z",
+      "sha256": "22145ed6137af7d5e74e37e60a816b47f9b840687ca4c5470d34fdf78e6ef442",
+      "kind": "product",
+      "notes": "Six itemOffered size variants in Product offers; aggregate offer is not a seventh variant. No barcode published in these offers. Used for development of variant-offer support.",
+      "labels": {
+        "title": {
+          "value": "White Field-Spec Cotton Heavy Tee",
+          "evidence": "Inspected saved Product JSON-LD name; independently transcribed."
+        },
+        "price": {
+          "value": 6200,
+          "evidence": "Inspected saved Product offer amount converted to minor units."
+        },
+        "currency": {
+          "value": "USD",
+          "evidence": "Inspected saved Product offer priceCurrency."
+        },
+        "available": {
+          "value": true,
+          "evidence": "Product AggregateOffer availability InStock."
+        },
+        "variantFacts": {
+          "value": [
+            {
+              "title": "L",
+              "price": 6200,
+              "currency": "USD",
+              "available": true,
+              "sku": "BM11049.549WHTL",
+              "gtin": null
+            },
+            {
+              "title": "M",
+              "price": 6200,
+              "currency": "USD",
+              "available": true,
+              "sku": "BM11049.549WHTM",
+              "gtin": null
+            },
+            {
+              "title": "S",
+              "price": 6200,
+              "currency": "USD",
+              "available": true,
+              "sku": "BM11049.549WHTS",
+              "gtin": null
+            },
+            {
+              "title": "XL",
+              "price": 6200,
+              "currency": "USD",
+              "available": true,
+              "sku": "BM11049.549WHTXL",
+              "gtin": null
+            },
+            {
+              "title": "XS",
+              "price": 6200,
+              "currency": "USD",
+              "available": true,
+              "sku": "BM11049.549WHTXS",
+              "gtin": null
+            },
+            {
+              "title": "XXL",
+              "price": 6200,
+              "currency": "USD",
+              "available": true,
+              "sku": "BM11049.549WHTXXL",
+              "gtin": null
+            }
+          ],
+          "evidence": "Manually reviewed all six Offer rows: size, price 62 USD, availability InStock, BM11049.549 size SKU. No GTIN on these rows."
+        }
+      }
+    },
+    {
+      "id": "buckmason-black",
+      "site": "buckmason",
+      "platform": "shopify",
+      "platformEvidence": "Shopify CDN and checkout store; Product offers contain six size SKUs.",
+      "split": "development",
+      "file": "pages-expanded/buckmason-black.html.gz",
+      "url": "https://www.buckmason.com/products/black-field-spec-cotton-vintage-surplus-heavy-tee",
+      "capturedAt": "2026-10-29T03:21:19.999Z",
+      "sha256": "7c4e341382549e6f6f1b9e945043b6320b6f49a8c90d8b89a1f09532b18aeb01",
+      "kind": "product",
+      "notes": "Six itemOffered size variants in Product offers; aggregate offer is not a seventh variant. No barcode published in these offers. Used for development of variant-offer support.",
+      "labels": {
+        "title": {
+          "value": "Black Field-Spec Cotton Heavy Tee",
+          "evidence": "Inspected saved Product JSON-LD name; independently transcribed."
+        },
+        "price": {
+          "value": 6200,
+          "evidence": "Inspected saved Product offer amount converted to minor units."
+        },
+        "currency": {
+          "value": "USD",
+          "evidence": "Inspected saved Product offer priceCurrency."
+        },
+        "available": {
+          "value": true,
+          "evidence": "Product AggregateOffer availability InStock."
+        },
+        "variantFacts": {
+          "value": [
+            {
+              "title": "L",
+              "price": 6200,
+              "currency": "USD",
+              "available": true,
+              "sku": "BM11049.549BLKL",
+              "gtin": null
+            },
+            {
+              "title": "M",
+              "price": 6200,
+              "currency": "USD",
+              "available": true,
+              "sku": "BM11049.549BLKM",
+              "gtin": null
+            },
+            {
+              "title": "S",
+              "price": 6200,
+              "currency": "USD",
+              "available": true,
+              "sku": "BM11049.549BLKS",
+              "gtin": null
+            },
+            {
+              "title": "XL",
+              "price": 6200,
+              "currency": "USD",
+              "available": true,
+              "sku": "BM11049.549BLKXL",
+              "gtin": null
+            },
+            {
+              "title": "XS",
+              "price": 6200,
+              "currency": "USD",
+              "available": true,
+              "sku": "BM11049.549BLKXS",
+              "gtin": null
+            },
+            {
+              "title": "XXL",
+              "price": 6200,
+              "currency": "USD",
+              "available": true,
+              "sku": "BM11049.549BLKXXL",
+              "gtin": null
+            }
+          ],
+          "evidence": "Manually reviewed all six Offer rows: size, price 62 USD, availability InStock, BM11049.549 size SKU. No GTIN on these rows."
+        }
+      }
+    },
+    {
+      "id": "sparkfun-second",
+      "site": "sparkfun",
+      "platform": "non-shopify",
+      "platformEvidence": "Magento storefront assets and catalog product URLs in saved HTML.",
+      "split": "development",
+      "file": "pages-expanded/sparkfun-second.html.gz",
+      "url": "https://www.sparkfun.com/arduino-uno-r3.html",
+      "capturedAt": "2026-10-29T03:21:22.066Z",
+      "sha256": "79f7b5d1bd84dc4f06937eb37340861940996b226d868ca6cca4c9054fe63bef",
+      "kind": "product",
+      "notes": "Numeric JSON-LD price 27.6; unrelated recommendation prices must not be used.",
+      "labels": {
+        "title": {
+          "value": "Arduino Uno - R3",
+          "evidence": "Inspected saved Product JSON-LD name; independently transcribed."
+        },
+        "price": {
+          "value": 2760,
+          "evidence": "Inspected saved Product offer amount converted to minor units."
+        },
+        "currency": {
+          "value": "USD",
+          "evidence": "Inspected saved Product offer priceCurrency."
+        }
+      }
+    },
+    {
+      "id": "nintendo-second",
+      "site": "nintendo",
+      "platform": "non-shopify",
+      "platformEvidence": "Nintendo Next.js product page, first-party assets and Nintendo graph schema.",
+      "split": "holdout",
+      "file": "pages-expanded/nintendo-second.html.gz",
+      "url": "https://www.nintendo.com/us/store/products/super-mario-bros-wonder-switch/",
+      "capturedAt": "2026-10-29T03:21:24.145Z",
+      "sha256": "4f4c9af789f85a632f6e471343ad104769a01ac17938572fba15d7e811ff8e02",
+      "kind": "product",
+      "notes": "Second untouched holdout product on Nintendo.",
+      "labels": {
+        "title": {
+          "value": "Super Mario Bros.™ Wonder",
+          "evidence": "Inspected saved Product JSON-LD name; independently transcribed."
+        },
+        "price": {
+          "value": 5999,
+          "evidence": "Inspected saved Product offer amount converted to minor units."
+        },
+        "currency": {
+          "value": "USD",
+          "evidence": "Inspected saved Product offer priceCurrency."
+        },
+        "available": {
+          "value": true,
+          "evidence": "Product offers.availability InStock."
+        },
+        "sku": {
+          "value": "7100068688",
+          "evidence": "Product JSON-LD sku."
+        }
+      }
+    },
+    {
+      "id": "apple-second",
+      "site": "apple",
+      "platform": "non-shopify",
+      "platformEvidence": "Apple Store proprietary as-images/apple.com and buy-mac configurator.",
+      "split": "holdout",
+      "file": "pages-expanded/apple-second.html.gz",
+      "url": "https://www.apple.com/shop/buy-mac/macbook-air",
+      "capturedAt": "2026-10-29T03:21:26.402Z",
+      "sha256": "da141b6f7a74ad75a36631f6d73f4c67689995a0bf1a448680962932ba7615cd",
+      "kind": "product",
+      "notes": "Second untouched holdout page; price label is explicitly the aggregate lower bound.",
+      "labels": {
+        "title": {
+          "value": "MacBook Air",
+          "evidence": "Inspected saved Product JSON-LD name; independently transcribed."
+        },
+        "price": {
+          "value": 129900,
+          "evidence": "Inspected saved Product offer amount converted to minor units."
+        },
+        "currency": {
+          "value": "USD",
+          "evidence": "Inspected saved Product offer priceCurrency."
+        },
+        "available": {
+          "value": null,
+          "evidence": "AggregateOffer states range 1299–3719 USD, without availability."
+        }
+      }
+    },
+    {
+      "id": "adafruit-third",
+      "site": "adafruit",
+      "platform": "non-shopify",
+      "platformEvidence": "Custom Adafruit storefront with Zen Cart-style product_info.php links and first-party product schema.",
+      "split": "development",
+      "file": "pages-expanded/adafruit-third.html.gz",
+      "url": "https://www.adafruit.com/product/6065",
+      "capturedAt": "2026-10-29T03:21:28.763Z",
+      "sha256": "0ca4a83d91e11ec10aa83b5025ed8a7ca89a3b47964a1ea314615a1fec961dea",
+      "kind": "product",
+      "notes": "JSON-LD malformed; title and price labels verified from Open Graph and visible product price, currency from product metadata.",
+      "labels": {
+        "title": {
+          "value": "Adafruit CP2105 Friend - USB to Dual UART Serial Converters",
+          "evidence": "Inspected saved Product JSON-LD name; independently transcribed."
+        },
+        "price": {
+          "value": 695,
+          "evidence": "Inspected saved Product offer amount converted to minor units."
+        },
+        "currency": {
+          "value": "USD",
+          "evidence": "Inspected saved Product offer priceCurrency."
+        },
+        "available": {
+          "value": true,
+          "evidence": "Unique unscoped itemprop=availability says in stock; metadata price agrees with $6.95."
+        }
+      }
+    }
+  ]
+}

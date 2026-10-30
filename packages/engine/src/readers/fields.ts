@@ -1,5 +1,5 @@
 import { currencyDigits, toMinorUnits } from "@skeleton/formats";
-import { type HTMLElement, type Node, NodeType } from "node-html-parser";
+import { parse, type HTMLElement, type Node, NodeType } from "node-html-parser";
 import { z } from "zod";
 
 /**
@@ -26,6 +26,7 @@ const jsonSource = z
   .strict();
 export const sourceSchema = z.union([selectSource, jsonSource]);
 export type Source = z.infer<typeof sourceSchema>;
+export const collectionSchema = z.union([z.object({ select: z.string().min(1).max(240) }).strict(), jsonSource]);
 
 /** One place, or several to try in order: the first that gives a usable value wins. */
 export const ruleSchema = z.union([sourceSchema, z.array(sourceSchema).min(1).max(5)]);
@@ -63,11 +64,27 @@ export type Picked = string | number | boolean;
 function walk(data: unknown, path: string): unknown {
   let value = data;
   for (const key of path.split(".")) {
+    if (["__proto__", "prototype", "constructor"].includes(key)) return undefined;
     if (Array.isArray(value) && /^\d+$/.test(key)) value = value[Number(key)];
     else if (value && typeof value === "object" && !Array.isArray(value)) value = (value as Record<string, unknown>)[key];
     else return undefined;
   }
   return value;
+}
+
+/** Bounded variant rows, from scoped DOM elements or an explicit JSON array path. */
+export function collectionDocs(doc: PageDoc, source: z.infer<typeof collectionSchema>): PageDoc[] {
+  if ("select" in source) return doc.root.querySelectorAll(source.select).slice(0, 500).map(pageDoc);
+  const selected = source.script ? new Set(doc.root.querySelectorAll(source.script)) : undefined;
+  for (const script of doc.scripts) {
+    if (selected && !selected.has(script.element)) continue;
+    const values = walk(script.data, source.json);
+    if (!Array.isArray(values)) continue;
+    return values.slice(0, 500).filter((value) => value && typeof value === "object" && !Array.isArray(value)).map((item) => ({
+      root: parse("<div></div>"), scripts: [{ element: script.element, data: { item } }],
+    }));
+  }
+  return [];
 }
 
 function pickOne(doc: PageDoc, source: Source): { value?: Picked; issue?: string } {
@@ -90,7 +107,7 @@ function pickOne(doc: PageDoc, source: Source): { value?: Picked; issue?: string
   }
   let nodes: HTMLElement[];
   try {
-    nodes = doc.root.querySelectorAll(source.select);
+    nodes = source.select === ":scope" ? [doc.root] : doc.root.querySelectorAll(source.select);
   } catch {
     return { issue: "the selector isn't valid" };
   }
@@ -104,7 +121,7 @@ function pickOne(doc: PageDoc, source: Source): { value?: Picked; issue?: string
  * The first value a rule's places give that `accept` keeps. Every place that came up empty, or gave a
  * value `accept` refused, is reported, so a recipe that no longer fits its site says where.
  */
-export function pick<T>(doc: PageDoc, rule: Rule, accept: (value: Picked) => T | undefined): { value?: T; issues: string[] } {
+export function pick<T>(doc: PageDoc, rule: Rule, accept: (value: Picked, source: Source) => T | undefined): { value?: T; issues: string[] } {
   const issues: string[] = [];
   for (const source of Array.isArray(rule) ? rule : [rule]) {
     const { value, issue } = pickOne(doc, source);
@@ -112,7 +129,7 @@ export function pick<T>(doc: PageDoc, rule: Rule, accept: (value: Picked) => T |
       issues.push(issue!);
       continue;
     }
-    const kept = accept(value);
+    const kept = accept(value, source);
     if (kept !== undefined) return { value: kept, issues };
     issues.push(`"${String(value).slice(0, 80)}" isn't usable`);
   }
@@ -123,13 +140,20 @@ export function pick<T>(doc: PageDoc, rule: Rule, accept: (value: Picked) => T |
  * A price as a page shows it ("€1.234,50", "$ 98", "12 500 ¥") in the currency's minor units: the
  * last separator is the decimal point only when the right number of digits follows it.
  */
-export function parsePrice(raw: string, currency: string): number | undefined {
+export function parsePrice(raw: string, currency: string, notation: "display" | "decimal" = "display"): number | undefined {
+  // Machine-readable amounts use a decimal point irrespective of currency precision.
+  // 10.9500 USD is 1095 cents, not 10950000. Display strings still allow grouping.
+  if (notation === "decimal") return toMinorUnits(raw.trim(), currency);
+  if (/-\s*[$€£¥]?\s*\d|\b(?:per|month|monthly|week|weekly|installments?)\b|\/\s*(?:mo|wk)/i.test(raw)) return undefined;
+  const numbers = raw.replace(/[\s'\u00a0\u202f]/g, "").match(/\d[\d.,]*/g);
+  if (numbers?.length !== 1) return undefined;
   const number = raw.replace(/[\s'\u00a0\u202f]/g, "").match(/\d[\d.,]*/)?.[0];
   if (!number) return undefined;
   const digits = currencyDigits(currency);
   const last = Math.max(number.lastIndexOf("."), number.lastIndexOf(","));
   const after = last >= 0 ? number.length - last - 1 : 0;
-  const decimal = last >= 0 && digits > 0 && after >= 1 && after <= digits;
+  const padded = after > digits && after !== 3 && /^0+$/.test(number.slice(last + 1 + digits));
+  const decimal = last >= 0 && digits > 0 && after >= 1 && (after <= digits || padded);
   const whole = (decimal ? number.slice(0, last) : number).replace(/[.,]/g, "");
   return toMinorUnits(decimal ? `${whole}.${number.slice(last + 1)}` : whole, currency);
 }

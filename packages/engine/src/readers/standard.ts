@@ -1,9 +1,10 @@
 import { toMinorUnits, type ReadingInput } from "@skeleton/formats";
 import { looksLikeProduct } from "../sitemap.js";
 import { parse, type HTMLElement } from "node-html-parser";
-import { pageDoc, parsePrice, pick, type Picked, type Rule } from "./fields.js";
+import { collectionDocs, pageDoc, parsePrice, pick, type Picked, type Rule, type Source } from "./fields.js";
 import { linkPages } from "./link-pages.js";
 import { sitemapPages } from "./sitemap-pages.js";
+import { microdataProducts } from "./microdata.js";
 import type { CatalogRecipe } from "./recipe.js";
 import type { ReadContext, Reader } from "./types.js";
 
@@ -24,6 +25,16 @@ const name = (value: unknown) => (value && typeof value === "object" ? str((valu
 const imageUrl = (value: unknown): string | undefined => {
   const first = asArray(value as unknown[])[0];
   return first && typeof first === "object" ? str((first as Json).url ?? (first as Json).contentUrl) : str(first);
+};
+const imageUrls = (value: unknown): string[] => asArray(value).flatMap((entry) => {
+  const url = imageUrl(entry);
+  return url ? [url] : [];
+});
+const availabilityOf = (value: unknown): boolean | undefined => {
+  const state = str(value)?.replace(/^.*[/#]/, "").replace(/[\s_-]/g, "").toLowerCase();
+  if (["instock", "limitedavailability", "onlineonly", "preorder", "backorder"].includes(state ?? "")) return true;
+  if (["outofstock", "soldout", "discontinued"].includes(state ?? "")) return false;
+  return undefined;
 };
 const gtinOf = (node: Json) => {
   for (const key of ["gtin13", "gtin12", "gtin14", "gtin8", "gtin"]) {
@@ -56,18 +67,18 @@ function jsonLd(root: HTMLElement): Json[] {
 type Offer = { price?: number; currency?: string; available?: boolean; url?: string };
 
 function offerOf(node: Json): Offer {
-  const offers = asArray(node.offers as Json | Json[]).filter((o) => o && typeof o === "object");
+  const offers = asArray((node.offers ?? (node.price !== undefined || node.availability !== undefined ? node : undefined)) as Json | Json[]).filter((o) => o && typeof o === "object");
   for (const offer of offers) {
     const spec = asArray(offer.priceSpecification as Json | Json[])[0];
     const currency = str(offer.priceCurrency ?? spec?.priceCurrency)?.toUpperCase();
     const raw = str(offer.price ?? offer.lowPrice ?? spec?.price);
-    const price = currency && /^[A-Z]{3}$/.test(currency) && raw ? parsePrice(raw, currency) : undefined;
-    const availability = str(offer.availability)?.replace(/^.*[/#]/, "");
-    if (price !== undefined)
+    const price = currency && /^[A-Z]{3}$/.test(currency) && raw ? parsePrice(raw, currency, "decimal") : undefined;
+    const available = availabilityOf(offer.availability);
+    if (price !== undefined || available !== undefined)
       return {
         price,
         currency,
-        available: availability ? /InStock|LimitedAvailability|OnlineOnly|PreOrder|BackOrder/i.test(availability) : undefined,
+        available,
         url: str(offer.url),
       };
   }
@@ -83,6 +94,7 @@ type Found = {
   price?: number;
   currency?: string;
   image?: string;
+  images: string[];
   available?: boolean;
   sku?: string;
   gtin?: string;
@@ -97,30 +109,48 @@ type Found = {
 function structured(root: HTMLElement): Found {
   const nodes = jsonLd(root);
   const group = nodes.find((n) => types(n).includes("ProductGroup"));
-  const product = group ?? nodes.find((n) => types(n).includes("Product"));
+  const primary = group ?? nodes.find((n) => types(n).includes("Product"));
+  const micro = microdataProducts(root).find((node) => !primary ||
+    (str(primary.sku) && str(primary.sku) === str(node.sku)) ||
+    (str(primary.name) && str(primary.name) === str(node.name)));
+  const product = primary ? { ...micro, ...primary } : micro;
   const meta = (key: string) => str(root.querySelector(`meta[property="${key}"]`)?.getAttribute("content") ?? root.querySelector(`meta[name="${key}"]`)?.getAttribute("content"));
 
-  const variants = asArray(group?.hasVariant as Json | Json[]).filter((v) => v && typeof v === "object" && types(v).includes("Product"));
+  const nested = asArray(product?.hasVariant as Json | Json[]).filter((v) => v && typeof v === "object" && types(v).includes("Product"));
+  const variantOffers = asArray(product?.offers as Json | Json[]).flatMap((offer) => {
+    const item = offer?.itemOffered as Json | undefined;
+    if (!item || !types(item).includes("Product")) return [];
+    return [{ ...item, sku: item.sku ?? offer.sku, offers: offer }];
+  });
+  const variants: Json[] = nested.length ? nested : variantOffers;
   const offered = [product, ...variants].filter((n): n is Json => Boolean(n)).map((n) => ({ node: n, offer: offerOf(n) }));
   const priced = offered.filter((o) => o.offer.price !== undefined);
-  const cheapest = priced.sort((a, b) => a.offer.price! - b.offer.price!)[0]?.offer;
+  // Never compare numeric amounts across currencies. A parent offer wins; otherwise
+  // summarize variants in the first published currency without mixing markets.
+  const parentOffer = product ? offerOf(product) : {};
+  const selectedCurrency = parentOffer.currency ?? priced[0]?.offer.currency;
+  const cheapest = parentOffer.price !== undefined ? parentOffer : priced.filter((o) => o.offer.currency === selectedCurrency).sort((a, b) => a.offer.price! - b.offer.price!)[0]?.offer;
 
   const currency = cheapest?.currency ?? meta("product:price:currency")?.toUpperCase() ?? meta("og:price:currency")?.toUpperCase();
-  const rawPrice = meta("product:price:amount") ?? meta("og:price:amount");
+  const rawPrice = meta("product:sale_price:amount") ?? meta("product:price:amount") ?? meta("og:price:amount");
+  const images = [...new Set([...imageUrls(product?.image), ...variants.flatMap((v) => imageUrls(v.image))])];
+  if (!images.length && meta("og:image")) images.push(meta("og:image")!);
   return {
     title: str(product?.name) ?? meta("og:title"),
     description: str(product?.description) ?? meta("og:description"),
     maker: name(product?.brand) ?? name(product?.manufacturer),
     productType: str(product?.category),
-    price: cheapest?.price ?? (rawPrice && currency ? parsePrice(rawPrice, currency) : undefined),
+    price: cheapest?.price ?? (rawPrice && currency ? (parsePrice(rawPrice, currency, "decimal") ?? parsePrice(rawPrice, currency)) : undefined),
     currency,
-    image: imageUrl(product?.image) ?? imageUrl(variants[0]?.image) ?? meta("og:image"),
-    available: offered.some((o) => o.offer.available === true) ? true : offered.every((o) => o.offer.available === false) && offered.length ? false : undefined,
+    image: images[0],
+    images,
+    available: (offered.some((o) => o.offer.available === true) ? true : offered.every((o) => o.offer.available === false) && offered.length ? false : undefined)
+      ?? availabilityOf(meta("product:availability") ?? meta("og:availability")),
     sku: str(product?.sku),
     gtin: product ? gtinOf(product) : undefined,
     mpn: str(product?.mpn),
     variants: variants.slice(0, 500).flatMap((v) => {
-      const title = str(v.name) ?? str(v.sku);
+      const title = str(v.name) ?? str(v.size) ?? str(v.sku);
       if (!title) return [];
       const offer = offerOf(v);
       return [
@@ -137,8 +167,6 @@ function structured(root: HTMLElement): Found {
   };
 }
 
-const IN_STOCK = /InStock|LimitedAvailability|OnlineOnly|PreOrder|BackOrder/i;
-const OUT_OF_STOCK = /OutOfStock|SoldOut|Discontinued/i;
 const text = (value: Picked) => (typeof value === "string" ? value : typeof value === "number" ? String(value) : undefined);
 const barcode = (value: Picked) => {
   const digits = text(value)?.replace(/\D/g, "");
@@ -146,13 +174,14 @@ const barcode = (value: Picked) => {
 };
 
 /** A price picked from a page: shown text in the currency's format, or a number in major or minor units. */
-function priceOf(value: Picked, currency: string | undefined, unit: "major" | "minor" = "major"): number | undefined {
+function priceOf(value: Picked, currency: string | undefined, unit: "major" | "minor" = "major", notation: "display" | "decimal" = "display"): number | undefined {
   if (!currency || typeof value === "boolean") return undefined;
-  if (typeof value === "number") {
-    if (unit === "minor") return Number.isSafeInteger(value) && value >= 0 ? value : undefined;
-    return toMinorUnits(String(value), currency);
+  if (unit === "minor") {
+    const number = typeof value === "string" && /^\d+$/.test(value) ? Number(value) : value;
+    return typeof number === "number" && Number.isSafeInteger(number) && number >= 0 ? number : undefined;
   }
-  return parsePrice(value, currency);
+  if (typeof value === "number") return toMinorUnits(String(value), currency);
+  return parsePrice(value, currency, notation);
 }
 
 /**
@@ -177,7 +206,7 @@ export function readProductPage(html: string, pageUrl: string, recipe?: CatalogR
       productType: fields.productType?.slice(0, 200),
       price: { amount: price, currency },
       available: fields.available,
-      images: [{ url: image }],
+      images: fields.images.map((url) => ({ url })),
       variants: fields.variants,
       identifiers:
         fields.gtin || fields.sku || fields.mpn ? { gtin: fields.gtin, mpn: fields.mpn?.slice(0, 100), sku: fields.sku?.slice(0, 200) } : undefined,
@@ -195,7 +224,7 @@ export function readFields(html: string, pageUrl: string, recipe?: CatalogRecipe
   const doc = pageDoc(parse(html));
   const found = structured(doc.root);
   const issues: string[] = [];
-  const take = <T>(field: string, rule: Rule | undefined, accept: (value: Picked) => T | undefined, fallback: T | undefined): T | undefined => {
+  const take = <T>(field: string, rule: Rule | undefined, accept: (value: Picked, source: Source) => T | undefined, fallback: T | undefined): T | undefined => {
     if (!rule) return fallback;
     const { value, issues: problems } = pick(doc, rule, accept);
     if (value === undefined) issues.push(...problems.map((p) => `${field}: ${p}`));
@@ -207,7 +236,7 @@ export function readFields(html: string, pageUrl: string, recipe?: CatalogRecipe
     stated && "constant" in stated
       ? stated.constant
       : take("currency", stated, (v) => (typeof v === "string" && /^[A-Za-z]{3}$/.test(v) ? v.toUpperCase() : undefined), found.currency);
-  const price = take("price", recipe?.price, (v) => priceOf(v, currency, recipe?.priceUnit), found.price);
+  const price = take("price", recipe?.price, (v, source) => priceOf(v, currency, recipe?.priceUnit, "json" in source ? "decimal" : "display"), found.price);
   const title = take("title", recipe?.title, text, found.title);
   const photo = take("image", recipe?.image, (v) => (typeof v === "string" ? v : undefined), found.image);
   const available = take(
@@ -219,7 +248,7 @@ export function readFields(html: string, pageUrl: string, recipe?: CatalogRecipe
       const { inStock, outOfStock } = recipe?.available ?? {};
       if (inStock?.includes(said)) return true;
       if (outOfStock?.includes(said)) return false;
-      if (!inStock && !outOfStock) return IN_STOCK.test(said) ? true : OUT_OF_STOCK.test(said) ? false : undefined;
+      if (!inStock && !outOfStock) return availabilityOf(said);
       return undefined;
     },
     found.available,
@@ -228,13 +257,43 @@ export function readFields(html: string, pageUrl: string, recipe?: CatalogRecipe
   const maker = take("maker", recipe?.maker, text, found.maker);
   const sku = take("sku", recipe?.sku, text, found.sku);
   const gtin = take("gtin", recipe?.gtin, barcode, found.gtin);
-
-  let image: string | undefined;
-  try {
-    image = photo ? new URL(photo, url).toString() : undefined;
-  } catch {
-    issues.push("image: not a link");
+  const mpn = take("mpn", recipe?.mpn, text, found.mpn);
+  let variants = found.variants;
+  if (recipe?.variants) {
+    const spec = recipe.variants;
+    try {
+      const rows = collectionDocs(doc, spec.from);
+      const read = rows.flatMap((row) => {
+        const title = pick(row, spec.title, text).value;
+        if (!title) return [];
+        const c = spec.currency;
+        const variantCurrency = c && "constant" in c ? c.constant : c ? pick(row, c, (v) => typeof v === "string" && /^[A-Z]{3}$/.test(v) ? v : undefined).value : currency;
+        const amount = spec.price ? pick(row, spec.price, (v, source) => priceOf(v, variantCurrency, spec.priceUnit, "json" in source ? "decimal" : "display")).value : undefined;
+        const stock = spec.available;
+        return [{ title: title.slice(0, 300),
+          price: amount !== undefined && variantCurrency ? { amount, currency: variantCurrency } : undefined,
+          sku: spec.sku ? pick(row, spec.sku, text).value?.slice(0, 200) : undefined,
+          gtin: spec.gtin ? pick(row, spec.gtin, barcode).value : undefined,
+          available: stock ? pick(row, stock.from, (v) => typeof v === "boolean" ? v
+            : stock.inStock?.includes(String(v)) ? true : stock.outOfStock?.includes(String(v)) ? false
+            : !stock.inStock && !stock.outOfStock ? availabilityOf(v) : undefined).value : undefined,
+        }];
+      });
+      if (read.length) variants = read;
+      else issues.push("variants: no usable rows; keeping structured variants");
+    } catch { issues.push("variants: invalid collection selector; keeping structured variants"); }
   }
+
+  const images: string[] = [];
+  for (const candidate of [...(photo ? [photo] : []), ...found.images]) {
+    try {
+      const parsed = new URL(candidate, url);
+      if (!/^https?:$/.test(parsed.protocol)) throw new Error("Not a web image");
+      if (!images.includes(parsed.href)) images.push(parsed.href);
+    } catch { issues.push("image: not a link"); }
+    if (images.length === 50) break;
+  }
+  const image = images[0];
   const canonical = doc.root.querySelector('link[rel="canonical"]')?.getAttribute("href");
   let path = url.pathname;
   try {
@@ -251,9 +310,12 @@ export function readFields(html: string, pageUrl: string, recipe?: CatalogRecipe
       price,
       currency: currency && /^[A-Z]{3}$/.test(currency) ? currency : undefined,
       image,
+      images,
       available,
       sku,
       gtin,
+      mpn,
+      variants,
       path,
       url: `${url.origin}${path}`,
     },
@@ -294,7 +356,7 @@ async function readPage(url: string, ctx: ReadContext) {
  */
 export const standardReader: Reader = {
   id: "standard",
-  version: 1,
+  version: 2,
 
   async detect(origin, ctx) {
     const candidates = await productPages(origin, ctx, 200);

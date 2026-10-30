@@ -70,7 +70,7 @@ export function shopifyReading(product: ShopifyProduct, origin: URL, currency: s
     tags: tags.map((t) => t.trim()).filter(Boolean).slice(0, 200),
     price: money(lowest),
     compareAt: wasPrice !== undefined && lowest !== undefined && wasPrice > lowest ? money(wasPrice) : undefined,
-    available: variants.length ? variants.some((v) => v.available) : undefined,
+    available: variants.some((v) => v.available === true) ? true : variants.length && variants.every((v) => v.available === false) ? false : undefined,
     images: (product.images ?? []).slice(0, 50).map((image) => ({
       url: https(image.src),
       width: image.width ?? undefined,
@@ -98,7 +98,7 @@ export function shopifyReading(product: ShopifyProduct, origin: URL, currency: s
 /** Shopify stores, read through their public products feed, a page of 250 at a time (smaller when a page is too large). */
 export const shopifyReader: Reader = {
   id: "shopify",
-  version: 1,
+  version: 2,
 
   async detect(origin, ctx) {
     let feed;

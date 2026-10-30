@@ -1,0 +1,130 @@
+[
+  {
+    "id": "palace",
+    "url": "https://usa.palaceskateboards.com/products/z2p9r5lpfqwv",
+    "capturedAt": "2026-10-29T02:33:14.298Z",
+    "finalUrl": "https://usa.palaceskateboards.com/products/z2p9r5lpfqwv",
+    "status": 200,
+    "file": "palace.html.gz",
+    "bytes": 107399,
+    "sha256": "0c83efc950701a115f495a018d3a3f48481056a01bb4861effc3e4078e0fe070"
+  },
+  {
+    "id": "adafruit",
+    "url": "https://www.adafruit.com/product/6536",
+    "capturedAt": "2026-10-29T02:33:16.949Z",
+    "finalUrl": "https://www.adafruit.com/product/6536",
+    "status": 200,
+    "file": "adafruit.html.gz",
+    "bytes": 86854,
+    "sha256": "f7d40cb9d215b0ebc778ad6fee4da4c1143fc8bf17929fc502b5af5f1407192d"
+  },
+  {
+    "id": "ikea",
+    "url": "https://www.ikea.com/us/en/p/konstrunda-stool-pine-80623716/",
+    "capturedAt": "2026-10-29T02:33:19.137Z",
+    "finalUrl": "https://www.ikea.com/us/en/p/konstrunda-stool-pine-80623716/",
+    "status": 200,
+    "file": "ikea.html.gz",
+    "bytes": 1108890,
+    "sha256": "3ac64477c6cffd6f002c483ae65061e3d1d3ed8d0a576be410162f39db951df8"
+  },
+  {
+    "id": "apple",
+    "url": "https://www.apple.com/shop/buy-mac/mac-mini",
+    "capturedAt": "2026-10-29T02:33:21.613Z",
+    "finalUrl": "https://www.apple.com/shop/buy-mac/mac-mini",
+    "status": 200,
+    "file": "apple.html.gz",
+    "bytes": 544789,
+    "sha256": "f12e5980de1d245b2c7ebb28be2f68c7a02e6eae278a037fb5cf28dd57f81bd4"
+  },
+  {
+    "id": "raspberrypi",
+    "url": "https://www.raspberrypi.com/products/raspberry-pi-5/",
+    "capturedAt": "2026-10-29T02:33:23.685Z",
+    "error": "Error: Request failed with status 403"
+  },
+  {
+    "id": "lego",
+    "url": "https://www.lego.com/en-us/product/orchid-10311",
+    "capturedAt": "2026-10-29T02:33:25.754Z",
+    "error": "Error: Request failed with status 403"
+  },
+  {
+    "id": "sparkfun",
+    "url": "https://www.sparkfun.com/sparkfun-redboard-plus.html",
+    "capturedAt": "2026-10-29T02:33:27.811Z",
+    "finalUrl": "https://www.sparkfun.com/sparkfun-redboard-plus.html",
+    "status": 200,
+    "file": "sparkfun.html.gz",
+    "bytes": 570468,
+    "sha256": "01c1e86e91a0562ea76a13f7ade2fd5f788033aca48a4d7d1bf6a75b6fa60383"
+  },
+  {
+    "id": "pimoroni",
+    "url": "https://shop.pimoroni.com/products/raspberry-pi-pico",
+    "capturedAt": "2026-10-29T02:33:30.596Z",
+    "error": "Error: Request failed with status 429"
+  },
+  {
+    "id": "arduino",
+    "url": "https://store.arduino.cc/products/arduino-uno-rev3",
+    "capturedAt": "2026-10-29T02:33:32.765Z",
+    "error": "Error: Request failed with status 429"
+  },
+  {
+    "id": "framework",
+    "url": "https://frame.work/products/laptop13-diy-intel-ultra-1",
+    "capturedAt": "2026-10-29T02:33:34.967Z",
+    "error": "Error: Request failed with status 403"
+  },
+  {
+    "id": "rei",
+    "url": "https://www.rei.com/product/201703/nalgene-sustain-wide-mouth-water-bottle-32-fl-oz",
+    "capturedAt": "2026-10-29T02:33:37.081Z",
+    "error": "Error: Request failed with status 403"
+  },
+  {
+    "id": "patagonia",
+    "url": "https://www.patagonia.com/product/mens-better-sweater-fleece-jacket/25528.html",
+    "capturedAt": "2026-10-29T02:33:39.219Z",
+    "finalUrl": "https://www.patagonia.com/product/mens-better-sweater-fleece-jacket/25528.html",
+    "status": 200,
+    "file": "patagonia.html.gz",
+    "bytes": 3300,
+    "sha256": "29fa8dcff45d5cf0e303a8f9999d407abacde5047074fb0754f36c94c43b83dd"
+  },
+  {
+    "id": "dell",
+    "url": "https://www.dell.com/en-us/shop/dell-ultrasharp-27-monitor-u2724d/apd/210-bkrr/monitors-monitor-accessories",
+    "capturedAt": "2026-10-29T02:33:41.497Z",
+    "finalUrl": "https://www.dell.com/en-us/shop/monitors/apd/dell-ultrasharp-24-monitor-u2424h/u2424h_monitor/-",
+    "status": 200,
+    "file": "dell.html.gz",
+    "bytes": 1487712,
+    "sha256": "bd8ee1a976d16fcea6029b19aff250af4bd56e34ffa1de14c0470312ee9cf8ef"
+  },
+  {
+    "id": "canon",
+    "url": "https://www.usa.canon.com/shop/p/eos-r50",
+    "capturedAt": "2026-10-29T02:33:45.362Z",
+    "error": "Error: Request failed with status 403"
+  },
+  {
+    "id": "bhphoto",
+    "url": "https://www.bhphotovideo.com/c/product/1748812-REG/canon_5811c002_eos_r50_mirrorless_camera.html",
+    "capturedAt": "2026-10-29T02:33:47.448Z",
+    "error": "Error: Request failed with status 403"
+  },
+  {
+    "id": "nintendo",
+    "url": "https://www.nintendo.com/us/store/products/the-legend-of-zelda-tears-of-the-kingdom-switch/",
+    "capturedAt": "2026-10-29T02:33:49.514Z",
+    "finalUrl": "https://www.nintendo.com/us/store/products/the-legend-of-zelda-tears-of-the-kingdom-switch/",
+    "status": 200,
+    "file": "nintendo.html.gz",
+    "bytes": 626020,
+    "sha256": "b930eb234670fa7f6fcd8a22f34266326e334c8111cce6dea5b56b66283bc28d"
+  }
+]

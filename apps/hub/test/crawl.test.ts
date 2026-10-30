@@ -122,7 +122,7 @@ describe("crawling", () => {
     expect(prices.map((r) => (r.data as { price: { amount: number } }).price.amount).sort((a, b) => a - b)).toEqual([9900, 12000]);
 
     const [done] = await db.select().from(crawl).where(eq(crawl.id, first.crawlId));
-    expect(done).toMatchObject({ readerId: "shopify", readerVersion: 1, status: "done" });
+    expect(done).toMatchObject({ readerId: "shopify", readerVersion: 2, status: "done" });
   });
 
   it("reads every page of a big store", async () => {

@@ -14,6 +14,7 @@ const reviewed: { origin: string; recipe: CatalogRecipe }[] = [
       title: { select: "#product-title" },
       price: { select: "#product-price" },
       currency: { constant: "USD" },
+      variants: { from: { select: '[data-testid^="variant-select-"]' }, title: { select: "span" } },
     }),
   },
 ];

@@ -8,7 +8,9 @@
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "benchmark": "tsx benchmark/run.ts",
+    "benchmark:check": "tsx benchmark/run.ts --check"
   },
   "dependencies": {
     "@skeleton/formats": "workspace:*",

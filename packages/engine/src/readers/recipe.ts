@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ruleSchema, type Rule } from "./fields.js";
+import { collectionSchema, ruleSchema, type Rule } from "./fields.js";
 import { sitemapPages } from "./sitemap-pages.js";
 import { readProductPage } from "./standard.js";
 import type { ReadContext, Reader, SamplePage } from "./types.js";
@@ -10,6 +10,8 @@ export const RECIPE_FORMAT = 2;
 const MAX_PAGES = 1000;
 
 const rule = (what: string) => ruleSchema.describe(what);
+const currencyRule = z.union([rule("Currency code"), z.object({ constant: z.string().regex(/^[A-Z]{3}$/) }).strict()]);
+const stockRule = z.object({ from: rule("Stock assertion"), inStock: z.array(z.string().max(80)).max(10).optional(), outOfStock: z.array(z.string().max(80)).max(10).optional() }).strict();
 
 /**
  * What's special about reading one site: data only, never code. Product pages are found in the site's
@@ -31,6 +33,17 @@ export const catalogRecipeSchema = z
     maker: rule("Who made it, when the shop names a brand").optional(),
     sku: rule("The shop's stock-keeping code").optional(),
     gtin: rule("Its barcode (GTIN, UPC or EAN)").optional(),
+    mpn: rule("The maker's part number").optional(),
+    variants: z.object({
+      from: collectionSchema.describe("DOM row selector or JSON array path; at most 500 rows. JSON row fields use item.* paths."),
+      title: rule("Variant label, within the row"),
+      price: rule("Variant price, within the row").optional(),
+      priceUnit: z.enum(["major", "minor"]).optional(),
+      currency: currencyRule.optional(),
+      sku: rule("Variant SKU").optional(),
+      gtin: rule("Variant barcode").optional(),
+      available: stockRule.optional(),
+    }).strict().optional(),
     available: z
       .object({
         from: rule("Where the page says whether it's in stock"),
