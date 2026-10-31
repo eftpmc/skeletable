@@ -21,7 +21,7 @@ export class FetchError extends Error {
 }
 
 export type SafeFetchOptions = {
-  /** Let storefront readers inspect error pages; network/SSRF protections still apply. */
+  /** Hand back error pages instead of throwing; network/SSRF protections still apply. */
   allowHttpErrors?: boolean;
   maxBytes?: number;
   timeoutMs?: number;

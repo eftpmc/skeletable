@@ -2,7 +2,7 @@ type Rule = { allow: boolean; pattern: string };
 
 export type Robots = { sitemaps: string[]; rules: Rule[] };
 
-/** The groups for `*` and our own bot. A crawler that honours them never reads a disallowed path. */
+/** The groups for `*` and our own bot. A bot that honours them never reads a disallowed path. */
 export function parseRobots(text: string, agent = "skeletonbot"): Robots {
   const sitemaps: string[] = [];
   const groups: { agents: string[]; rules: Rule[] }[] = [];
