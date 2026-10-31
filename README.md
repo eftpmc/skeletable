@@ -7,6 +7,8 @@ The direction is being tested, not settled. The first test is 10 tables on diffe
 ## What's here
 
 ```
+tables/         The tables themselves, and how each is scored
+packages/tables The table format and its checks
 apps/hub        Sources, crawls, readings, annotations, jobs, curators, builds
 packages/engine Reading sites: safe fetch, robots.txt, polite pace, readers, recipes, benchmark
 packages/formats Versioned contracts for readings, field values and jobs
