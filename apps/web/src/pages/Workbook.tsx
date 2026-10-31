@@ -207,7 +207,12 @@ function AgentButton() {
   const command = `claude mcp add --transport http skeleton ${location.origin}/mcp`;
   const [copied, setCopied] = useState(false);
   const copy = async () => {
-    await navigator.clipboard.writeText(command);
+    try {
+      await navigator.clipboard.writeText(command);
+    } catch {
+      // The browser refused; the command is still on screen to select.
+      return;
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
