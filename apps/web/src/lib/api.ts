@@ -9,6 +9,7 @@ export type TableSummary = {
   columns: string[];
   filled: string;
   lastRead: string;
+  preview: { columns: string[]; rows: (string | number | boolean | null)[][] };
 };
 
 type Loaded<T> = { data?: T; status: "loading" | "ready" | "missing" | "failed"; retry: () => void };

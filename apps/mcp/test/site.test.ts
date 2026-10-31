@@ -15,6 +15,13 @@ it("lists every table", async () => {
   expect(list.map((t) => t.slug).sort()).toEqual(tables.map((t) => t.slug).sort());
 });
 
+it("gives each listed table a small preview, with null where no source stated a value", async () => {
+  const list = (await (await app.request("/api/tables?q=steam+deck")).json()) as { preview: { columns: string[]; rows: unknown[][] } }[];
+  const { columns, rows } = list[0]!.preview;
+  expect(columns).toHaveLength(3);
+  expect(rows[0]).toEqual(["Steam Deck OLED", 7.4, 90, 50]);
+});
+
 it("searches the tables", async () => {
   const list = (await (await app.request("/api/tables?q=steam+deck")).json()) as { slug: string }[];
   expect(list.map((t) => t.slug)).toEqual(["handheld-gaming-pcs"]);

@@ -43,6 +43,15 @@ export function summarize(table: Table) {
   };
 }
 
+/** The top corner of a table, for drawing it small. */
+export function tablePreview(table: Table) {
+  const columns = table.columns.slice(0, 3);
+  return {
+    columns: columns.map((column) => column.label),
+    rows: table.rows.slice(0, 8).map((row) => [row.key, ...columns.map((column) => cellValue(row.cells[column.id]!))]),
+  };
+}
+
 /** Tables with every word of the query somewhere in their text or rows. No query means all of them. */
 export function searchTables(tables: Table[], query = ""): Table[] {
   const words = normalize(query).split(" ").filter(Boolean);

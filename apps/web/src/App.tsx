@@ -1,10 +1,12 @@
 import { useRoute } from "wouter";
+import { Home } from "@/pages/Home";
 import { Message } from "@/pages/Message";
-import { Workbook } from "@/pages/Workbook";
+import { Sheet } from "@/pages/Sheet";
 
 export function App() {
   const [isHome] = useRoute("/");
   const [isTable, params] = useRoute("/:owner/:slug");
-  if (!isHome && !isTable) return <Message title="There's no page here" />;
-  return <Workbook address={params ? `${params.owner}/${params.slug}` : undefined} />;
+  if (isHome) return <Home />;
+  if (isTable) return <Sheet key={`${params.owner}/${params.slug}`} owner={params.owner} slug={params.slug} />;
+  return <Message title="There's no page here" />;
 }

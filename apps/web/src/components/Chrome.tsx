@@ -1,0 +1,57 @@
+import { Bot, Check, Copy, Moon, Sun } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useTheme } from "@/lib/theme";
+
+/** The product's mark: a green sheet with one cell left open. */
+export const Logo = ({ className = "size-8" }: { className?: string }) => (
+  <svg viewBox="0 0 32 32" className={className} aria-hidden="true">
+    <rect width="32" height="32" rx="8" fill="#16a34a" />
+    <rect x="7" y="7" width="8" height="8" rx="2" fill="#fff" />
+    <rect x="17" y="7" width="8" height="8" rx="2" fill="#fff" />
+    <rect x="7" y="17" width="8" height="8" rx="2" fill="#fff" />
+    <rect x="18" y="18" width="6" height="6" rx="1.5" fill="none" stroke="#fff" strokeWidth="2" />
+  </svg>
+);
+
+export function ThemeButton() {
+  const { dark, toggle } = useTheme();
+  return (
+    <Button variant="ghost" size="icon-sm" onClick={toggle} aria-label={dark ? "Use light theme" : "Use dark theme"}>
+      {dark ? <Sun /> : <Moon />}
+    </Button>
+  );
+}
+
+export function AgentButton() {
+  const command = `claude mcp add --transport http skeleton ${location.origin}/mcp`;
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(command);
+    } catch {
+      // The browser refused; the command is still on screen to select.
+      return;
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="icon-sm" aria-label="Use from an agent"><Bot /></Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-96 max-w-[calc(100vw-2rem)] gap-2 p-3">
+        <p className="font-medium">Use these from an agent</p>
+        <p className="text-muted-foreground">A read-only MCP server. No account needed.</p>
+        <div className="flex items-center gap-2">
+          <code className="min-w-0 flex-1 rounded-md bg-muted px-2 py-1.5 font-mono text-xs break-all">{command}</code>
+          <Button variant="outline" size="icon-sm" onClick={copy} aria-label={copied ? "Copied" : "Copy command"}>
+            {copied ? <Check /> : <Copy />}
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}

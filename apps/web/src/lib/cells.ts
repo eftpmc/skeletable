@@ -1,5 +1,8 @@
 const slugOf = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
+/** How an account's name reads in a sentence. */
+export const accountName = (owner: string) => owner.charAt(0).toUpperCase() + owner.slice(1);
+
 /** A cell's address within its table. */
 export const cellId = (rowKey: string, columnId: string) => `${slugOf(rowKey)}--${columnId}`;
 
