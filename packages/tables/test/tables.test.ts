@@ -4,6 +4,7 @@ import { coverage, normalize, pageText, pdfText, quoteStates, sampleCells, valid
 const read = "2026-10-31";
 const table: Table = {
   format: 1,
+  owner: "demo-owner",
   slug: "demo",
   title: "Demo",
   question: "What do these weigh?",

@@ -32,6 +32,7 @@ const lastRead = (table: Table) => cells(table).reduce((latest, cell) => (cell.r
 /** What a reader needs to choose a table, without its rows. */
 export function summarize(table: Table) {
   return {
+    owner: table.owner,
     slug: table.slug,
     title: table.title,
     question: table.question,
@@ -56,6 +57,7 @@ const cellValue = (cell: Cell) => (isFound(cell) ? cell.value : null);
 /** A table's values, with null where no acceptable source stated one. Evidence is one get_cell away. */
 export function tableValues(table: Table) {
   return {
+    owner: table.owner,
     slug: table.slug,
     title: table.title,
     question: table.question,
@@ -76,5 +78,5 @@ export function findCell(table: PublishedTable, rowKey: string, columnId: string
   const cell = column && row?.cells[column.id];
   if (!row || !column || !cell) return undefined;
   const watch = table.watch?.cells[watchKey(row.key, column.id)];
-  return { table: table.slug, row: row.key, column, cell, ...(watch && { watch: { ...watch, ran: table.watch!.ran } }) };
+  return { owner: table.owner, table: table.slug, row: row.key, column, cell, ...(watch && { watch: { ...watch, ran: table.watch!.ran } }) };
 }

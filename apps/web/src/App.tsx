@@ -4,7 +4,7 @@ import { Workbook } from "@/pages/Workbook";
 
 export function App() {
   const [isHome] = useRoute("/");
-  const [isTable, params] = useRoute("/tables/:slug");
+  const [isTable, params] = useRoute("/:owner/:slug");
   if (!isHome && !isTable) return <Message title="There's no page here" />;
-  return <Workbook slug={params?.slug} />;
+  return <Workbook address={params ? `${params.owner}/${params.slug}` : undefined} />;
 }

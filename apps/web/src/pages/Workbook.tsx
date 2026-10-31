@@ -176,8 +176,8 @@ function Grid({ table, selectedId, select }: { table: Table; selectedId: string 
   );
 }
 
-function Sheet({ slug }: { slug: string }) {
-  const { data, status, retry } = useJson<Table>(`/api/tables/${encodeURIComponent(slug)}`);
+function Sheet({ address }: { address: string }) {
+  const { data, status, retry } = useJson<Table>(`/api/tables/${address}`);
   const [path, navigate] = useLocation();
   const selectedId = new URLSearchParams(useSearch()).get("cell");
   if (status === "missing") return <div className="flex-1"><Message title="There's no table here" /></div>;
@@ -236,11 +236,11 @@ function AgentButton() {
 }
 
 /** The whole site: one workbook, with a sheet for each table. */
-export function Workbook({ slug }: { slug?: string }) {
+export function Workbook({ address }: { address?: string }) {
   const { dark, toggle } = useTheme();
   const [query, setQuery] = useState("");
   const { data, status, retry } = useJson<TableSummary[]>(`/api/tables?q=${encodeURIComponent(query)}`);
-  if (!slug && data?.[0]) return <Redirect to={`/tables/${data[0].slug}`} replace />;
+  if (!address && data?.[0]) return <Redirect to={`/${data[0].owner}/${data[0].slug}`} replace />;
   return (
     <div className="flex h-svh flex-col">
       <header className="flex shrink-0 items-center gap-2 border-b px-3 py-1.5">
@@ -261,7 +261,7 @@ export function Workbook({ slug }: { slug?: string }) {
           {dark ? <Sun /> : <Moon />}
         </Button>
       </header>
-      {slug ? <Sheet key={slug} slug={slug} /> : <div className="flex-1" />}
+      {address ? <Sheet key={address} address={address} /> : <div className="flex-1" />}
       <nav className="flex shrink-0 items-stretch overflow-x-auto border-t bg-muted text-sm" aria-label="Tables">
         {status === "failed" ? (
           <Button variant="ghost" size="sm" onClick={retry}>The tables didn't load. Try again</Button>
@@ -271,8 +271,8 @@ export function Workbook({ slug }: { slug?: string }) {
           data?.map((table) => (
             <Link
               key={table.slug}
-              href={`/tables/${table.slug}`}
-              aria-current={table.slug === slug ? "page" : undefined}
+              href={`/${table.owner}/${table.slug}`}
+              aria-current={`${table.owner}/${table.slug}` === address ? "page" : undefined}
               className="-mt-px border-t-2 border-r border-t-transparent px-3 py-1.5 whitespace-nowrap text-muted-foreground hover:text-foreground aria-[current=page]:border-t-blue-500 aria-[current=page]:bg-background aria-[current=page]:font-medium aria-[current=page]:text-foreground"
             >
               {table.title.split(":")[0]}

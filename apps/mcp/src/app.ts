@@ -11,8 +11,8 @@ export function createApp(tables: Table[], webDir?: string) {
   app.get("/health", (c) => c.json({ ok: true, tables: tables.length }));
   app.all("/mcp", (c) => handleMcp(tables, c.req.raw));
   app.get("/api/tables", (c) => c.json(searchTables(tables, c.req.query("q")).map(summarize)));
-  app.get("/api/tables/:slug", (c) => {
-    const table = tables.find((t) => t.slug === c.req.param("slug"));
+  app.get("/api/tables/:owner/:slug", (c) => {
+    const table = tables.find((t) => t.owner === c.req.param("owner") && t.slug === c.req.param("slug"));
     return table ? c.json(table) : c.json({ error: "No such table" }, 404);
   });
   app.all("/api/*", (c) => c.json({ error: "Not found" }, 404));

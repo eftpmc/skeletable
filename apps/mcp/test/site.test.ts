@@ -21,12 +21,12 @@ it("searches the tables", async () => {
 });
 
 it("gives a whole table, evidence included", async () => {
-  const table = (await (await app.request("/api/tables/ai-model-api-prices")).json()) as Table;
+  const table = (await (await app.request("/api/tables/skeletable/ai-model-api-prices")).json()) as Table;
   expect(table.rows.find((row) => row.key === "Grok 4.7")?.cells.output_usd).toMatchObject({ quote: expect.stringContaining("$6.00") });
 });
 
 it("answers wrong API addresses with a 404", async () => {
-  for (const path of ["/api/tables/nope", "/api/nope"]) expect((await app.request(path)).status).toBe(404);
+  for (const path of ["/api/tables/skeletable/nope", "/api/tables/nobody/e-readers", "/api/nope"]) expect((await app.request(path)).status).toBe(404);
 });
 
 it("serves the built site, and its page for any address it routes itself", async () => {
@@ -36,7 +36,7 @@ it("serves the built site, and its page for any address it routes itself", async
   const site = createApp(tables, dir);
   expect(await (await site.request("/")).text()).toContain("site");
   expect(await (await site.request("/app.js")).text()).toBe("ok");
-  expect(await (await site.request("/tables/e-readers")).text()).toContain("site");
+  expect(await (await site.request("/skeletable/e-readers")).text()).toContain("site");
   expect(((await (await site.request("/health")).json()) as { ok: boolean }).ok).toBe(true);
   expect((await site.request("/api/nope")).status).toBe(404);
   await rm(dir, { recursive: true });

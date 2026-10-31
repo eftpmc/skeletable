@@ -85,6 +85,8 @@ export const watchKey = (rowKey: string, columnId: string) => `${rowKey}/${colum
 
 export const tableSchema = z.object({
   format: z.literal(TABLE_FORMAT),
+  // The account the table belongs to. A table's address is its owner and slug.
+  owner: z.string().regex(/^[a-z0-9-]+$/),
   slug: z.string().regex(/^[a-z0-9-]+$/),
   title: text(120),
   question: text(300),

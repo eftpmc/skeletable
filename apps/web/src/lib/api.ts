@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 export type TableSummary = {
+  owner: string;
   slug: string;
   title: string;
   question: string;
