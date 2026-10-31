@@ -10,11 +10,11 @@ Every cell gives a value with its source and exact quote, or says it wasn't foun
 |---|---|---|
 | Valid | The file is well formed, and every number is in its quote | `tables validate <file>` |
 | Traceable | Every quote really is on its source page | `tables verify <file>` |
-| Correct | The value is right for that row and column | A person checks `tables sample <file>` by hand |
+| Correct | The value is right for that row and column | Blind check: a separate model reads each source without seeing our values, and every difference is settled against the source |
 | Filled | How much of the table has a value | `tables validate <file>` |
 | Complete | Every row that belongs is there | A person compares it with the scope |
 
-Only the hand check can say a value is correct. A quote can be real and still belong to a different model.
+Only the blind check can say a value is correct: a quote can be real and still belong to a different model, or say less than the value claims. Results are in [`checks/`](checks/). `tables sample <file>` draws cells for a person to spot-check the check itself.
 
 Rules: a value must be tied to that exact row, everything a value says must be in its quote, and we never get around a block. Every cell says what kind of source it used, and scores count the kinds separately:
 

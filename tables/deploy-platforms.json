@@ -3,7 +3,7 @@
   "slug": "deploy-platforms",
   "title": "Deploy platforms: free offers and first paid step",
   "question": "What does each deploy platform offer for free, and what does the first paid step cost?",
-  "scope": "Six platforms for deploying web apps: Railway, Render, Fly.io, Vercel, Netlify and Heroku. Values come only from each platform's own pricing page. Not a complete list of hosting platforms, and it doesn't compare what each plan includes.",
+  "scope": "Six platforms for deploying web apps: Railway, Render, Fly.io, Vercel, Netlify and Heroku. Values come only from each platform's own pricing page or docs. Not a complete list of hosting platforms, and it doesn't compare what each plan includes.",
   "columns": [
     { "id": "free_offer", "label": "Free offer", "type": "text", "rule": "What the pricing page says you get without paying, in its own terms. A trial stays described as a trial." },
     { "id": "first_paid", "label": "First paid step", "type": "text", "rule": "The cheapest named paid plan, or the smallest listed machine where the platform has no plans." },
@@ -13,7 +13,7 @@
     {
       "key": "Railway",
       "cells": {
-        "free_offer": { "value": "30-day free trial with $5 credits, then $1 per month", "source": "https://railway.com/pricing", "kind": "first-hand", "quote": "Start with a 30-day free trial with $5 credits, then $1 per month", "read": "2026-10-31" },
+        "free_offer": { "value": "A free trial, then a free plan with $1 of free credit per month", "source": "https://docs.railway.com/reference/pricing/free-trial", "kind": "first-hand", "quote": "the free trial reverts to the free plan, which provides $1 of free credit per month", "read": "2026-10-31" },
         "first_paid": { "value": "Hobby", "source": "https://railway.com/pricing", "kind": "first-hand", "quote": "Hobby $5 minimum usage", "read": "2026-10-31" },
         "first_paid_usd": { "value": 5, "source": "https://railway.com/pricing", "kind": "first-hand", "quote": "Hobby $5 minimum usage", "read": "2026-10-31" }
       }
@@ -29,7 +29,7 @@
     {
       "key": "Fly.io",
       "cells": {
-        "free_offer": { "value": "\"Start for free, pay as you grow\"", "source": "https://fly.io/pricing/", "kind": "first-hand", "quote": "Start for free, pay as you grow", "read": "2026-10-31" },
+        "free_offer": { "missing": true, "checked": ["https://fly.io/pricing/"], "read": "2026-10-31" },
         "first_paid": { "value": "shared-cpu-1x, 256MB (no plans; pay for what you run)", "source": "https://fly.io/pricing/", "kind": "first-hand", "quote": "shared-cpu-1x · 256MB $0.0030 $2.19", "read": "2026-10-31" },
         "first_paid_usd": { "value": 2.19, "source": "https://fly.io/pricing/", "kind": "first-hand", "quote": "shared-cpu-1x · 256MB $0.0030 $2.19", "read": "2026-10-31" }
       }
