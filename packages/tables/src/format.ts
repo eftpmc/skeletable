@@ -20,9 +20,16 @@ export const columnSchema = z.object({
   rule: text(500),
 });
 
+/**
+ * How close a value is to its origin: the owner's own live page, a dated public copy of that page
+ * (for facts that don't change), or someone else's account of it. Readers and scores see the difference.
+ */
+export const sourceKinds = ["first-hand", "archived", "second-hand"] as const;
+
 export const foundCellSchema = z.object({
   value: z.union([z.string().trim().min(1).max(300), z.number(), z.boolean()]),
   source: url,
+  kind: z.enum(sourceKinds),
   // Copied word for word from the source, short enough to read at a glance.
   quote: text(400),
   read: day,
@@ -52,6 +59,7 @@ export const tableSchema = z.object({
   rows: z.array(rowSchema).min(1),
 });
 
+export type SourceKind = (typeof sourceKinds)[number];
 export type Column = z.infer<typeof columnSchema>;
 export type FoundCell = z.infer<typeof foundCellSchema>;
 export type MissingCell = z.infer<typeof missingCellSchema>;

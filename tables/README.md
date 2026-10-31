@@ -16,7 +16,15 @@ Every cell gives a value with its source and exact quote, or says it wasn't foun
 
 Only the hand check can say a value is correct. A quote can be real and still belong to a different model.
 
-Rules: sources come first-hand where possible, a value must be tied to that exact row, and a site that blocks our bot stays blocked. A blocked cell is left missing and counts against the table.
+Rules: a value must be tied to that exact row, and we never get around a block. Every cell says what kind of source it used, and scores count the kinds separately:
+
+| Kind | Meaning | Use it for |
+|---|---|---|
+| `first-hand` | The owner's own live page or file | Anything |
+| `archived` | A dated public copy of the owner's page, for when the live page can't be read | Facts that don't change, never prices |
+| `second-hand` | Someone else's account | Only when nothing closer exists |
+
+A cell with no acceptable source stays missing and counts against the table.
 
 ## The ten
 

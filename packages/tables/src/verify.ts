@@ -1,5 +1,6 @@
 import { parse } from "node-html-parser";
 import { parseRobots, robotsAllows, safeFetch } from "@skeleton/engine";
+import { extractText } from "unpdf";
 import { isFound, normalize, type Table } from "./format.js";
 
 export type Page = { status: number; contentType: string; body: string };
@@ -15,6 +16,8 @@ export type CellCheck = { row: string; column: string; source: string; status: C
 
 // Page statuses here stand for "we didn't get to look", which is different from an HTTP failure.
 const ROBOTS_REFUSED = 451;
+// Spec sheets run larger than web pages.
+const MAX_PAGE_BYTES = 20 * 1024 * 1024;
 
 /** What a reader sees on a page: its text without scripts and styles. */
 export function pageText(html: string): string {
@@ -75,7 +78,16 @@ export function liveFetcher(): Fetcher {
       robots.set(origin, response?.status === 200 ? parseRobots(response.body.toString("utf8")) : { sitemaps: [], rules: [] });
     }
     if (!robotsAllows(robots.get(origin)!, url)) return { status: ROBOTS_REFUSED, contentType: "", body: "" };
-    const response = await safeFetch(url, { allowHttpErrors: true, timeoutMs: 20_000 });
+    const response = await safeFetch(url, { allowHttpErrors: true, timeoutMs: 30_000, maxBytes: MAX_PAGE_BYTES });
+    if (response.status < 400 && isPdf(response)) return { status: response.status, contentType: "text/plain", body: await pdfText(response.body) };
     return { status: response.status, contentType: response.contentType, body: response.body.toString("utf8") };
   };
+}
+
+const isPdf = (response: { contentType: string; url: string }) => /pdf/.test(response.contentType) || /\.pdf$/i.test(new URL(response.url).pathname);
+
+/** The words in a PDF. Spec sheets are often the only place a maker states a number. */
+export async function pdfText(data: Uint8Array): Promise<string> {
+  const { text } = await extractText(new Uint8Array(data), { mergePages: true });
+  return text;
 }

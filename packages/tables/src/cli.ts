@@ -22,8 +22,9 @@ if (!table || problems.length) {
 }
 
 if (command === "validate") {
-  const { filled, missing, share } = coverage(table);
-  console.log(`${table.slug}: ${table.rows.length} rows, ${filled} cells filled, ${missing} missing (${(share * 100).toFixed(0)}%)`);
+  const { filled, missing, share, kinds } = coverage(table);
+  const sources = Object.entries(kinds).map(([kind, cells]) => `${cells} ${kind}`).join(", ");
+  console.log(`${table.slug}: ${table.rows.length} rows, ${filled} cells filled, ${missing} missing (${(share * 100).toFixed(0)}%); ${sources}`);
 } else if (command === "verify") {
   const checks = await verifyTable(table, liveFetcher());
   const count = (status: string) => checks.filter((c) => c.status === status).length;

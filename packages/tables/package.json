@@ -14,6 +14,7 @@
   "dependencies": {
     "@skeleton/engine": "workspace:*",
     "node-html-parser": "^9.0.5",
+    "unpdf": "^1.4.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { coverage, normalize, pageText, quoteStates, sampleCells, validateTable, verifyTable, type Fetcher, type Table } from "../src/index.js";
+import { coverage, normalize, pageText, pdfText, quoteStates, sampleCells, validateTable, verifyTable, type Fetcher, type Table } from "../src/index.js";
 
 const read = "2026-10-31";
 const table: Table = {
@@ -16,15 +16,15 @@ const table: Table = {
     {
       key: "One",
       cells: {
-        weight: { value: 1200, source: "https://a.example/one", quote: "Weighs 1,200 g", read },
+        weight: { value: 1200, source: "https://a.example/one", kind: "first-hand", quote: "Weighs 1,200 g", read },
         colour: { missing: true, checked: ["https://a.example/one"], read },
       },
     },
     {
       key: "Two",
       cells: {
-        weight: { value: 300, source: "https://b.example/two.pdf", quote: "300 g", read },
-        colour: { value: "Red", source: "https://a.example/gone", quote: "Comes in red", read },
+        weight: { value: 300, source: "https://b.example/two.pdf", kind: "first-hand", quote: "300 g", read },
+        colour: { value: "Red", source: "https://a.example/gone", kind: "first-hand", quote: "Comes in red", read },
       },
     },
   ],
@@ -43,7 +43,7 @@ describe("validateTable", () => {
 
   it("refuses a number its quote doesn't state", () => {
     const bad = structuredClone(table);
-    bad.rows[0]!.cells.weight = { value: 1300, source: "https://a.example/one", quote: "Weighs 1,200 g", read };
+    bad.rows[0]!.cells.weight = { value: 1300, source: "https://a.example/one", kind: "first-hand", quote: "Weighs 1,200 g", read };
     expect(validateTable(bad).problems).toEqual(["One.weight: 1300 isn't in its quote"]);
   });
 
@@ -56,7 +56,7 @@ describe("validateTable", () => {
   it("refuses a value of the wrong type and a repeated row", () => {
     const bad = structuredClone(table);
     bad.rows[1]!.key = "One";
-    bad.rows[1]!.cells.colour = { value: 3, source: "https://a.example/x", quote: "3", read };
+    bad.rows[1]!.cells.colour = { value: 3, source: "https://a.example/x", kind: "first-hand", quote: "3", read };
     expect(validateTable(bad).problems).toEqual(["One: appears twice", "One.colour: should be text"]);
   });
 });
@@ -87,7 +87,7 @@ describe("verifyTable", () => {
 
   it("reports a quote that isn't on the page", async () => {
     const bad = structuredClone(table);
-    bad.rows[0]!.cells.weight = { value: 1200, source: "https://a.example/one", quote: "1200 g exactly", read };
+    bad.rows[0]!.cells.weight = { value: 1200, source: "https://a.example/one", kind: "first-hand", quote: "1200 g exactly", read };
     expect((await verifyTable(bad, fetcher, 0))[0]!.status).toBe("not-on-page");
   });
 
@@ -107,5 +107,28 @@ it("sampleCells repeats for a seed and skips gaps", () => {
 });
 
 it("coverage counts gaps", () => {
-  expect(coverage(table)).toEqual({ filled: 3, missing: 1, share: 0.75 });
+  expect(coverage(table)).toEqual({ filled: 3, missing: 1, share: 0.75, kinds: { "first-hand": 3, archived: 0, "second-hand": 0 } });
+});
+
+it("refuses a cell that doesn't say what kind of source it used", () => {
+  const bad = structuredClone(table) as unknown as { rows: { cells: { weight: { kind?: string } } }[] };
+  delete bad.rows[0]!.cells.weight.kind;
+  expect(validateTable(bad).problems.length).toBeGreaterThan(0);
+});
+
+it("pdfText reads the words in a PDF", async () => {
+  // The smallest PDF with a line of text: PDF.js rebuilds the missing cross-reference table.
+  const pdf = [
+    "%PDF-1.4",
+    "1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj",
+    "2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj",
+    "3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 300 100]/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>endobj",
+    "4 0 obj<</Length 44>>stream",
+    "BT /F1 12 Tf 10 50 Td (Weight 920 g) Tj ET",
+    "endstream endobj",
+    "5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj",
+    "trailer<</Root 1 0 R>>",
+    "%%EOF",
+  ].join("\n");
+  expect(await pdfText(new TextEncoder().encode(pdf))).toContain("Weight 920 g");
 });
