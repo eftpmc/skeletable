@@ -1,22 +1,25 @@
+import { join, resolve } from "node:path";
+import { serveStatic } from "@hono/node-server/serve-static";
 import type { Table } from "@skeleton/tables/format";
 import { Hono } from "hono";
+import { searchTables, summarize } from "./library.js";
 import { handleMcp } from "./mcp.js";
-import { homePage, notFoundPage, tablePage } from "./site.js";
 
-/** The server: the site, the MCP endpoint, and a health check that says how much it's serving. */
-export function createApp(tables: Table[]) {
+/** The server: the MCP endpoint, the JSON the site reads, a health check, and the built site when there is one. */
+export function createApp(tables: Table[], webDir?: string) {
   const app = new Hono();
   app.get("/health", (c) => c.json({ ok: true, tables: tables.length }));
   app.all("/mcp", (c) => handleMcp(tables, c.req.raw));
-  app.get("/", (c) => {
-    const url = new URL(c.req.url);
-    const protocol = c.req.header("x-forwarded-proto") ?? url.protocol.replace(":", "");
-    return c.html(homePage(tables, c.req.query("q") ?? "", `${protocol}://${url.host}`));
-  });
-  app.get("/tables/:slug", (c) => {
+  app.get("/api/tables", (c) => c.json(searchTables(tables, c.req.query("q")).map(summarize)));
+  app.get("/api/tables/:slug", (c) => {
     const table = tables.find((t) => t.slug === c.req.param("slug"));
-    return table ? c.html(tablePage(table)) : c.notFound();
+    return table ? c.json(table) : c.json({ error: "No such table" }, 404);
   });
-  app.notFound((c) => c.html(notFoundPage(), 404));
+  app.all("/api/*", (c) => c.json({ error: "Not found" }, 404));
+  if (webDir) {
+    const root = resolve(webDir);
+    app.use("/*", serveStatic({ root }));
+    app.get("*", serveStatic({ path: join(root, "index.html") }));
+  }
   return app;
 }

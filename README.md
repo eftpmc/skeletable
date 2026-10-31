@@ -21,7 +21,8 @@ claude mcp add --transport http skeleton https://mcp-production-7f68.up.railway.
 ```
 tables/          The tables, how they're scored, and their check results
 packages/tables  The table format and its checks
-apps/mcp         The server: the site and the MCP endpoint
+apps/mcp         The server: the MCP endpoint and the JSON the site reads
+apps/web         The site, built with shadcn/ui and served by the server
 docker/          The server's image, which Railway builds
 ```
 
@@ -37,6 +38,7 @@ pnpm dev
 | Command | What it does |
 |---|---|
 | `pnpm dev` | Run the server on port 4200 |
+| `pnpm dev:web` | Run the site on port 5173, reading from that server |
 | `pnpm test` | Run tests |
 | `pnpm lint` | Lint |
 | `pnpm typecheck` | Type-check every package |

@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "pnpm --filter @skeleton/mcp dev",
+    "dev:web": "pnpm --filter @skeleton/web dev",
     "build": "pnpm -r build",
     "lint": "eslint .",
     "typecheck": "pnpm -r typecheck",

@@ -1,67 +1,43 @@
 import { expect, it } from "vitest";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { Table } from "@skeleton/tables/format";
 import { createApp } from "../src/app.js";
 import { loadTables } from "../src/library.js";
 
 const tables = await loadTables(fileURLToPath(new URL("../../../tables", import.meta.url)));
 const app = createApp(tables);
 
-const get = async (path: string, headers?: Record<string, string>) => {
-  const response = await app.request(path, { headers });
-  return { status: response.status, text: await response.text() };
-};
-
 it("lists every table", async () => {
-  const { text } = await get("/");
-  for (const table of tables) expect(text).toContain(`/tables/${table.slug}`);
+  const list = (await (await app.request("/api/tables")).json()) as { slug: string }[];
+  expect(list.map((t) => t.slug).sort()).toEqual(tables.map((t) => t.slug).sort());
 });
 
 it("searches the tables", async () => {
-  const { text } = await get("/?q=steam+deck");
-  expect(text).toContain("/tables/handheld-gaming-pcs");
-  expect(text).not.toContain("/tables/e-readers");
+  const list = (await (await app.request("/api/tables?q=steam+deck")).json()) as { slug: string }[];
+  expect(list.map((t) => t.slug)).toEqual(["handheld-gaming-pcs"]);
 });
 
-it("says when nothing matches, and escapes what was typed", async () => {
-  const { text } = await get(`/?q=${encodeURIComponent('<script>x"')}`);
-  expect(text).toContain("No table covers");
-  expect(text).not.toContain("<script>x");
-  expect(text).toContain("&lt;script&gt;x");
+it("gives a whole table, evidence included", async () => {
+  const table = (await (await app.request("/api/tables/ai-model-api-prices")).json()) as Table;
+  expect(table.rows.find((row) => row.key === "Grok 4.7")?.cells.output_usd).toMatchObject({ quote: expect.stringContaining("$6.00") });
 });
 
-it("gives the agent address the visitor actually reached", async () => {
-  const { text } = await get("http://tables.example/", { "x-forwarded-proto": "https" });
-  expect(text).toContain("https://tables.example/mcp");
+it("answers wrong API addresses with a 404", async () => {
+  for (const path of ["/api/tables/nope", "/api/nope"]) expect((await app.request(path)).status).toBe(404);
 });
 
-it("links a value to its source and quote", async () => {
-  const { text } = await get("/tables/ai-model-api-prices");
-  expect(text).toContain('href="#grok-4-7--output_usd"');
-  expect(text).toContain('id="grok-4-7--output_usd"');
-  expect(text).toContain("https://docs.x.ai/docs/models");
-  expect(text).toContain("$6.00");
-});
-
-it("shows where we looked for a missing value", async () => {
-  const { text } = await get("/tables/deploy-platforms");
-  expect(text).toContain('id="heroku--free_offer"');
-  expect(text).toContain("https://www.heroku.com/pricing/");
-  expect(text).toContain("Not stated");
-});
-
-it("gives every cell of every table its own address", async () => {
-  for (const table of tables) {
-    const { text } = await get(`/tables/${table.slug}`);
-    const ids = [...text.matchAll(/class="evidence" id="([^"]+)"/g)].map((match) => match[1]);
-    expect(ids).toHaveLength(table.rows.length * table.columns.length);
-    expect(new Set(ids).size).toBe(ids.length);
-  }
-});
-
-it("answers a wrong address with a page and a 404", async () => {
-  for (const path of ["/tables/nope", "/nope"]) {
-    const { status, text } = await get(path);
-    expect(status).toBe(404);
-    expect(text).toContain("See all tables");
-  }
+it("serves the built site, and its page for any address it routes itself", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "web-"));
+  await writeFile(join(dir, "index.html"), "<title>site</title>");
+  await writeFile(join(dir, "app.js"), "ok");
+  const site = createApp(tables, dir);
+  expect(await (await site.request("/")).text()).toContain("site");
+  expect(await (await site.request("/app.js")).text()).toBe("ok");
+  expect(await (await site.request("/tables/e-readers")).text()).toContain("site");
+  expect(((await (await site.request("/health")).json()) as { ok: boolean }).ok).toBe(true);
+  expect((await site.request("/api/nope")).status).toBe(404);
+  await rm(dir, { recursive: true });
 });
