@@ -34,9 +34,9 @@ A cell with no acceptable source stays missing and counts against the table.
 | 2 | Deploy platforms: free offers and first paid step | Developer tools | Built and blind checked |
 | 3 | AI model API prices | AI | Built and blind checked |
 | 4 | E-readers | Consumer tech | Built and checked |
-| 5 | Home batteries: capacity and warranty | Home energy | Planned |
-| 6 | Password managers: plans and prices | Software | Planned |
-| 7 | Right-to-repair laws by US state | Law | Planned |
-| 8 | Data breach notification deadlines by US state | Law | Planned |
-| 9 | Entrance fees at the most visited US national parks | Travel | Planned |
-| 10 | EVs on sale in the US: EPA range | Cars | Planned |
+| 5 | Home batteries: capacity and warranty | Home energy | Built and checked |
+| 6 | Password managers: plans and prices | Software | Deferred |
+| 7 | Right-to-repair laws by US state | Law | Built, check incomplete |
+| 8 | Data breach notification deadlines by US state | Law | Deferred |
+| 9 | Entrance fees at the most visited US national parks | Travel | Deferred |
+| 10 | EVs on sale in the US: EPA range | Cars | Deferred |

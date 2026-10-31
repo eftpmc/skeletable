@@ -1,0 +1,239 @@
+{
+  "format": 1,
+  "slug": "right-to-repair-laws",
+  "title": "Right-to-repair laws by US state",
+  "question": "Which US states have consumer electronics right-to-repair laws, when do they start, and which products do they cover?",
+  "scope": "States with an enacted law giving owners and independent repairers access to parts, tools or documentation for consumer electronics. Vehicle, farm-equipment and wheelchair laws are left out, and so are parts-pairing dates, which often differ. Bills that didn't pass are left out. We found no enacted Maine law of this kind, though one guide lists Maine. This records what the laws say and isn't legal advice. Exclusions vary by state, so read the law before relying on it.",
+  "columns": [
+    {
+      "id": "law",
+      "label": "Law",
+      "type": "text",
+      "rule": "The act or statute as the state's own text names it."
+    },
+    {
+      "id": "starts",
+      "label": "Duties start",
+      "type": "text",
+      "rule": "When the law says its duties begin, in its own words. This can differ from when it was signed."
+    },
+    {
+      "id": "products_from",
+      "label": "Covers products from",
+      "type": "text",
+      "rule": "The first-sale date a product must meet to be covered, in the law's own words."
+    }
+  ],
+  "rows": [
+    {
+      "key": "California",
+      "cells": {
+        "law": {
+          "value": "Senate Bill No. 244, Chapter 704",
+          "source": "https://web.archive.org/web/20260921085008/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202320240SB244",
+          "kind": "archived",
+          "quote": "Senate Bill No. 244 CHAPTER 704",
+          "read": "2026-10-31"
+        },
+        "starts": {
+          "value": "July 1, 2024",
+          "source": "https://web.archive.org/web/20260921085008/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202320240SB244",
+          "kind": "archived",
+          "quote": "this section shall become operative on July 1, 2024",
+          "read": "2026-10-31"
+        },
+        "products_from": {
+          "value": "July 1, 2021",
+          "source": "https://web.archive.org/web/20260921085008/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202320240SB244",
+          "kind": "archived",
+          "quote": "manufactured for the first time, and first sold or used in California, on or after July 1, 2021",
+          "read": "2026-10-31"
+        }
+      }
+    },
+    {
+      "key": "Colorado",
+      "cells": {
+        "law": {
+          "value": "House Bill 24-1121",
+          "source": "https://leg.colorado.gov/sites/default/files/2024a_1121_signed.pdf",
+          "kind": "first-hand",
+          "quote": "HOUSE BILL 24-1121",
+          "read": "2026-10-31"
+        },
+        "starts": {
+          "value": "January 1, 2026",
+          "source": "https://leg.colorado.gov/sites/default/files/2024a_1121_signed.pdf",
+          "kind": "first-hand",
+          "quote": "This act takes effect January 1, 2026",
+          "read": "2026-10-31"
+        },
+        "products_from": {
+          "value": "July 1, 2021",
+          "source": "https://leg.colorado.gov/sites/default/files/2024a_1121_signed.pdf",
+          "kind": "first-hand",
+          "quote": "MANUFACTURED FOR THE FIRST TIME AND FIRST SOLD OR USED IN COLORADO ON OR AFTER JULY 1, 2021",
+          "read": "2026-10-31"
+        }
+      }
+    },
+    {
+      "key": "Connecticut",
+      "cells": {
+        "law": {
+          "value": "Public Act No. 25-44",
+          "source": "https://web.archive.org/web/20260926054523/https://www.cga.ct.gov/2025/ACT/PA/PDF/2025PA-00044-R00SB-00003-PA.PDF",
+          "kind": "archived",
+          "quote": "Substitute Senate Bill No. 3 Public Act No. 25-44",
+          "read": "2026-10-31"
+        },
+        "starts": {
+          "value": "July 1, 2026",
+          "source": "https://web.archive.org/web/20260926054523/https://www.cga.ct.gov/2025/ACT/PA/PDF/2025PA-00044-R00SB-00003-PA.PDF",
+          "kind": "archived",
+          "quote": "Sec. 3. (NEW) (Effective July 1, 2026)",
+          "read": "2026-10-31"
+        },
+        "products_from": {
+          "value": "July 1, 2026",
+          "source": "https://web.archive.org/web/20260926054523/https://www.cga.ct.gov/2025/ACT/PA/PDF/2025PA-00044-R00SB-00003-PA.PDF",
+          "kind": "archived",
+          "quote": "manufactured for the first time, and first sold or used in this state, on or after July 1, 2026",
+          "read": "2026-10-31"
+        }
+      }
+    },
+    {
+      "key": "Minnesota",
+      "cells": {
+        "law": {
+          "value": "325E.72 Digital Fair Repair",
+          "source": "https://www.revisor.mn.gov/laws/2023/0/57/",
+          "kind": "first-hand",
+          "quote": "[325E.72] DIGITAL FAIR REPAIR",
+          "read": "2026-10-31"
+        },
+        "starts": {
+          "value": "July 1, 2024",
+          "source": "https://www.revisor.mn.gov/laws/2023/0/57/",
+          "kind": "first-hand",
+          "quote": "this section applies to equipment sold on or after July 1, 2021. new text end new text begin EFFECTIVE DATE. new text end new text begin This section is effective July 1, 2024",
+          "read": "2026-10-31"
+        },
+        "products_from": {
+          "value": "July 1, 2021",
+          "source": "https://www.revisor.mn.gov/laws/2023/0/57/",
+          "kind": "first-hand",
+          "quote": "this section applies to equipment sold on or after July 1, 2021",
+          "read": "2026-10-31"
+        }
+      }
+    },
+    {
+      "key": "New York",
+      "cells": {
+        "law": {
+          "value": "399-nn",
+          "source": "https://web.archive.org/web/20261017011319/https://www.nysenate.gov/legislation/laws/GBS/399-NN",
+          "kind": "archived",
+          "quote": "399-NN",
+          "read": "2026-10-31"
+        },
+        "starts": {
+          "missing": true,
+          "checked": [
+            "https://web.archive.org/web/20261017011319/https://www.nysenate.gov/legislation/laws/GBS/399-NN",
+            "https://legislation.nysenate.gov/pdf/bills/2021/S4104A"
+          ],
+          "read": "2026-10-31"
+        },
+        "products_from": {
+          "value": "July first, two thousand twenty-three",
+          "source": "https://web.archive.org/web/20261017011319/https://www.nysenate.gov/legislation/laws/GBS/399-NN",
+          "kind": "archived",
+          "quote": "manufactured for the first time, and first sold or used in New York on or after July first, two thousand twenty-three",
+          "read": "2026-10-31"
+        }
+      }
+    },
+    {
+      "key": "Oregon",
+      "cells": {
+        "law": {
+          "value": "Enrolled Senate Bill 1596",
+          "source": "https://olis.oregonlegislature.gov/liz/2024R1/Downloads/MeasureDocument/SB1596/Enrolled",
+          "kind": "first-hand",
+          "quote": "Enrolled Senate Bill 1596",
+          "read": "2026-10-31"
+        },
+        "starts": {
+          "missing": true,
+          "checked": [
+            "https://olis.oregonlegislature.gov/liz/2024R1/Downloads/MeasureDocument/SB1596/Enrolled",
+            "https://olis.oregonlegislature.gov/liz/2024R1/Measures/Overview/SB1596"
+          ],
+          "read": "2026-10-31"
+        },
+        "products_from": {
+          "value": "cell phone July 1, 2021; other consumer electronic equipment July 1, 2015",
+          "source": "https://olis.oregonlegislature.gov/liz/2024R1/Downloads/MeasureDocument/SB1596/Enrolled",
+          "kind": "first-hand",
+          "quote": "A cell phone that was manufactured for the first time, and first sold or used in this state, before July 1, 2021; or (b) Consumer electronic equipment other than a cell phone that was manufactured for the first time, and first sold or used in this state, before July 1, 2015",
+          "read": "2026-10-31"
+        }
+      }
+    },
+    {
+      "key": "Texas",
+      "cells": {
+        "law": {
+          "value": "H.B. No. 2963",
+          "source": "https://capitol.texas.gov/tlodocs/89R/billtext/pdf/HB02963F.pdf",
+          "kind": "first-hand",
+          "quote": "H.B.ANo.A2963 AN ACT relating to diagnosis, maintenance, and repair of certain digital electronic equipment",
+          "read": "2026-10-31"
+        },
+        "starts": {
+          "value": "September 1, 2026",
+          "source": "https://capitol.texas.gov/tlodocs/89R/billtext/pdf/HB02963F.pdf",
+          "kind": "first-hand",
+          "quote": "This Act takes effect September 1, 2026",
+          "read": "2026-10-31"
+        },
+        "products_from": {
+          "value": "on or after the effective date",
+          "source": "https://capitol.texas.gov/tlodocs/89R/billtext/pdf/HB02963F.pdf",
+          "kind": "first-hand",
+          "quote": "originally made available for sale in this state by an original equipment manufacturer on or after the effective date of this Act",
+          "read": "2026-10-31"
+        }
+      }
+    },
+    {
+      "key": "Washington",
+      "cells": {
+        "law": {
+          "value": "ESHB 1483, C 353 L 25",
+          "source": "https://lawfilesext.leg.wa.gov/biennium/2025-26/Pdf/Bill%20Reports/House/1483-S.E%20HBR%20FBR%2025.pdf",
+          "kind": "first-hand",
+          "quote": "FINAL BILL REPORT ESHB 1483 C 353 L 25",
+          "read": "2026-10-31"
+        },
+        "starts": {
+          "value": "January 1, 2026",
+          "source": "https://lawfilesext.leg.wa.gov/biennium/2025-26/Pdf/Bill%20Reports/House/1483-S.E%20HBR%20FBR%2025.pdf",
+          "kind": "first-hand",
+          "quote": "Beginning January 1, 2026, an original manufacturer is required",
+          "read": "2026-10-31"
+        },
+        "products_from": {
+          "value": "July 1, 2021",
+          "source": "https://lawfilesext.leg.wa.gov/biennium/2025-26/Pdf/Bill%20Reports/House/1483-S.E%20HBR%20FBR%2025.pdf",
+          "kind": "first-hand",
+          "quote": "first manufactured, and first sold or used in Washington, on or after July 1, 2021",
+          "read": "2026-10-31"
+        }
+      }
+    }
+  ]
+}

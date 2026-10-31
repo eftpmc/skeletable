@@ -7,7 +7,7 @@ Tables you can trust. Every value links to the source that states it, or says wh
 The server takes MCP over HTTP at `/mcp`, needs no account, and only reads.
 
 ```sh
-claude mcp add --transport http skeleton http://localhost:4200/mcp
+claude mcp add --transport http skeleton https://mcp-production-7f68.up.railway.app/mcp
 ```
 
 | Tool | What it does |

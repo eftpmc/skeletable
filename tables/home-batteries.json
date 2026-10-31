@@ -1,0 +1,136 @@
+{
+  "format": 1,
+  "slug": "home-batteries",
+  "title": "Home batteries: capacity and warranty",
+  "question": "What do the main home batteries actually guarantee, beyond the headline warranty length?",
+  "scope": "Three named US home batteries, using each maker's warranty as the source for its terms. Tesla's page blocks our bot, so its row comes from revision 2.5 of the warranty (effective November 13, 2025), and a newer revision may exist. Warranties have other conditions, such as Tesla's internet connection rule, so read the full warranty before relying on this. Not a complete list of home batteries.",
+  "columns": [
+    {
+      "id": "capacity_kwh",
+      "label": "Capacity",
+      "type": "number",
+      "unit": "kWh",
+      "rule": "Usable or rated energy capacity as the maker states it for one unit."
+    },
+    {
+      "id": "warranty_years",
+      "label": "Warranty",
+      "type": "number",
+      "unit": "years",
+      "rule": "The warranty's stated length in years."
+    },
+    {
+      "id": "retention",
+      "label": "Capacity guaranteed",
+      "type": "text",
+      "rule": "How much capacity the warranty promises, and when."
+    },
+    {
+      "id": "limit",
+      "label": "Usage limit",
+      "type": "text",
+      "rule": "The cycles or energy throughput that can end the warranty early."
+    }
+  ],
+  "rows": [
+    {
+      "key": "Tesla Powerwall 3",
+      "cells": {
+        "capacity_kwh": {
+          "value": 13.5,
+          "source": "https://web.archive.org/web/20251221223944/https://energylibrary.tesla.com/docs/Public/EnergyStorage/Powerwall/General/Warranty/en-us/Powerwall-Warranty-EN.pdf",
+          "kind": "archived",
+          "quote": "energy capacity of 13.5 kWh on its initial installation date",
+          "read": "2026-10-31"
+        },
+        "warranty_years": {
+          "value": 10,
+          "source": "https://web.archive.org/web/20251221223944/https://energylibrary.tesla.com/docs/Public/EnergyStorage/Powerwall/General/Warranty/en-us/Powerwall-Warranty-EN.pdf",
+          "kind": "archived",
+          "quote": "70% at 10 years following initial installation date",
+          "read": "2026-10-31"
+        },
+        "retention": {
+          "value": "70% at 10 years",
+          "source": "https://web.archive.org/web/20251221223944/https://energylibrary.tesla.com/docs/Public/EnergyStorage/Powerwall/General/Warranty/en-us/Powerwall-Warranty-EN.pdf",
+          "kind": "archived",
+          "quote": "70% at 10 years following initial installation date",
+          "read": "2026-10-31"
+        },
+        "limit": {
+          "value": "Unlimited cycles; 37.8 MWh of aggregate throughput, any application not listed",
+          "source": "https://web.archive.org/web/20251221223944/https://energylibrary.tesla.com/docs/Public/EnergyStorage/Powerwall/General/Warranty/en-us/Powerwall-Warranty-EN.pdf",
+          "kind": "archived",
+          "quote": "70% at 10 years following initial installation date Unlimited cycles Any application not listed above, or any combination of applications that includes one not listed above 70% at 10 years following initial installation date 37.8 MWh of aggregate throughput",
+          "read": "2026-10-31"
+        }
+      }
+    },
+    {
+      "key": "Enphase IQ Battery 5P",
+      "cells": {
+        "capacity_kwh": {
+          "value": 5,
+          "source": "https://enphase.com/download/iq-battery-5p-data-sheet",
+          "kind": "first-hand",
+          "quote": "Usable capacity 5.0 kWh",
+          "read": "2026-10-31"
+        },
+        "warranty_years": {
+          "value": 15,
+          "source": "https://enphase.com/download/iq-battery-5p-uscan-2024-12-27-warranty",
+          "kind": "first-hand",
+          "quote": "ends on the earlier of (a) 15 years from the Activation Date or (b) 6,000 discharged cycles",
+          "read": "2026-10-31"
+        },
+        "retention": {
+          "value": "70% at the end of the tenth year; 60% at the end of the fifteenth year",
+          "source": "https://enphase.com/download/iq-battery-5p-uscan-2024-12-27-warranty",
+          "kind": "first-hand",
+          "quote": "(i) seventy percent (70%) of the Covered IQ Battery Product nameplate rating at the end of the tenth year of the Warranty Period and (ii) sixty percent (60%) of the Covered IQ Battery Product nameplate rating at the end of the fifteenth year",
+          "read": "2026-10-31"
+        },
+        "limit": {
+          "value": "6,000 discharged cycles",
+          "source": "https://enphase.com/download/iq-battery-5p-uscan-2024-12-27-warranty",
+          "kind": "first-hand",
+          "quote": "ends on the earlier of (a) 15 years from the Activation Date or (b) 6,000 discharged cycles",
+          "read": "2026-10-31"
+        }
+      }
+    },
+    {
+      "key": "FranklinWH aPower 2",
+      "cells": {
+        "capacity_kwh": {
+          "value": 15,
+          "source": "https://www.franklinwh.com/document/franklin-home-power-fhp-limited-warranty-for-end-users-en",
+          "kind": "first-hand",
+          "quote": "rated energy capacity of 15 kWh",
+          "read": "2026-10-31"
+        },
+        "warranty_years": {
+          "value": 15,
+          "source": "https://www.franklinwh.com/document/franklin-home-power-fhp-limited-warranty-for-end-users-en",
+          "kind": "first-hand",
+          "quote": "free from defects for fifteen (15) years",
+          "read": "2026-10-31"
+        },
+        "retention": {
+          "value": "70% at the end of the 15-year warranty period",
+          "source": "https://www.franklinwh.com/document/franklin-home-power-fhp-limited-warranty-for-end-users-en",
+          "kind": "first-hand",
+          "quote": "70% at the end of the 15-year warranty period",
+          "read": "2026-10-31"
+        },
+        "limit": {
+          "value": "60 MWh aggregate throughput",
+          "source": "https://www.franklinwh.com/document/franklin-home-power-fhp-limited-warranty-for-end-users-en",
+          "kind": "first-hand",
+          "quote": "Aggregate Throughput 15 kWh* 70% at the end of the 15-year warranty period 60 MWh",
+          "read": "2026-10-31"
+        }
+      }
+    }
+  ]
+}
