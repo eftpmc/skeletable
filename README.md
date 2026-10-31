@@ -1,6 +1,6 @@
 # skeleton
 
-Tables you can trust. Every value links to the source that states it, or says where we looked. Agents read them through an MCP server.
+Tables you can trust. Every value links to the source that states it, or says where we looked. People read them on the site, and agents read them through an MCP server.
 
 ## Connect
 
@@ -21,7 +21,7 @@ claude mcp add --transport http skeleton https://mcp-production-7f68.up.railway.
 ```
 tables/          The tables, how they're scored, and their check results
 packages/tables  The table format and its checks
-apps/mcp         The MCP server
+apps/mcp         The server: the site and the MCP endpoint
 docker/          The server's image, which Railway builds
 ```
 
@@ -36,7 +36,7 @@ pnpm dev
 
 | Command | What it does |
 |---|---|
-| `pnpm dev` | Run the MCP server on port 4200 |
+| `pnpm dev` | Run the server on port 4200 |
 | `pnpm test` | Run tests |
 | `pnpm lint` | Lint |
 | `pnpm typecheck` | Type-check every package |
