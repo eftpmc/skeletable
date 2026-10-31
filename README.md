@@ -1,4 +1,4 @@
-# skeleton
+# Skeletable
 
 Tables you can trust. Every value links to the source that states it, or says where we looked. People read them on the site, and agents read them through an MCP server.
 
@@ -7,7 +7,7 @@ Tables you can trust. Every value links to the source that states it, or says wh
 The server takes MCP over HTTP at `/mcp`, needs no account, and only reads.
 
 ```sh
-claude mcp add --transport http skeleton https://mcp-production-7f68.up.railway.app/mcp
+claude mcp add --transport http skeletable https://mcp-production-7f68.up.railway.app/mcp
 ```
 
 | Tool | What it does |

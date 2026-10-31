@@ -2,6 +2,7 @@
   "format": 1,
   "owner": "skeletable",
   "slug": "deploy-platforms",
+  "topic": "Developer tools",
   "title": "Deploy platforms: free offers and first paid step",
   "question": "What does each deploy platform offer for free, and what does the first paid step cost?",
   "scope": "Six platforms for deploying web apps: Railway, Render, Fly.io, Vercel, Netlify and Heroku. Values come only from each platform's own pricing page or docs. Not a complete list of hosting platforms, and it doesn't compare what each plan includes.",

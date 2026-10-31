@@ -30,25 +30,18 @@ const cells = (table: Table) => table.rows.flatMap((row) => Object.values(row.ce
 const lastRead = (table: Table) => cells(table).reduce((latest, cell) => (cell.read > latest ? cell.read : latest), "");
 
 /** What a reader needs to choose a table, without its rows. */
-export function summarize(table: Table) {
+export function summarize(table: PublishedTable) {
   return {
     owner: table.owner,
     slug: table.slug,
+    topic: table.topic,
     title: table.title,
     question: table.question,
     rows: table.rows.length,
     columns: table.columns.map((column) => column.label),
     filled: `${cells(table).filter(isFound).length} of ${cells(table).length} cells`,
     lastRead: lastRead(table),
-  };
-}
-
-/** The top corner of a table, for drawing it small. */
-export function tablePreview(table: Table) {
-  const columns = table.columns.slice(0, 3);
-  return {
-    columns: columns.map((column) => column.label),
-    rows: table.rows.slice(0, 8).map((row) => [row.key, ...columns.map((column) => cellValue(row.cells[column.id]!))]),
+    lastChecked: table.watch?.ran ?? lastRead(table),
   };
 }
 

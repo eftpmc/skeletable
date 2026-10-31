@@ -2,6 +2,7 @@
   "format": 1,
   "owner": "skeletable",
   "slug": "ai-model-api-prices",
+  "topic": "AI",
   "title": "AI model API prices",
   "question": "What do the leading AI models cost through their APIs, per million tokens?",
   "scope": "Flagship models from Anthropic, OpenAI, Google, xAI, Mistral and DeepSeek, at each provider's standard rate for ordinary prompts, without batch, caching, fast-mode or long-context changes. Some providers charge more for very long prompts, and that isn't shown here. Where a provider has announced a new price, it gets its own row. Values come only from each provider's own pages. Not a complete list of models.",

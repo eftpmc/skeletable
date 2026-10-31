@@ -2,6 +2,7 @@
   "format": 1,
   "owner": "skeletable",
   "slug": "right-to-repair-laws",
+  "topic": "Law",
   "title": "Right-to-repair laws by US state",
   "question": "Which US states have consumer electronics right-to-repair laws, when do they start, and which products do they cover?",
   "scope": "States with an enacted law giving owners and independent repairers access to parts, tools or documentation for consumer electronics. Vehicle, farm-equipment and wheelchair laws are left out, and so are parts-pairing dates, which often differ. Bills that didn't pass are left out. We found no enacted Maine law of this kind, though one guide lists Maine. This records what the laws say and isn't legal advice. Exclusions vary by state, so read the law before relying on it.",

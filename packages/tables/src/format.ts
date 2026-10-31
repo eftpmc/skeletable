@@ -88,6 +88,8 @@ export const tableSchema = z.object({
   // The account the table belongs to. A table's address is its owner and slug.
   owner: z.string().regex(/^[a-z0-9-]+$/),
   slug: z.string().regex(/^[a-z0-9-]+$/),
+  // A broad subject, for browsing.
+  topic: text(40),
   title: text(120),
   question: text(300),
   // What belongs in the table and what doesn't. Completeness is judged against this.

@@ -8,6 +8,7 @@ const table: Table = {
   format: 1,
   owner: "demo-owner",
   slug: "demo",
+  topic: "Demo",
   title: "Demo",
   question: "What do these weigh?",
   scope: "Everything in the demo.",

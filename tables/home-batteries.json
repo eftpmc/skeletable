@@ -2,6 +2,7 @@
   "format": 1,
   "owner": "skeletable",
   "slug": "home-batteries",
+  "topic": "Home energy",
   "title": "Home batteries: capacity and warranty",
   "question": "What do the main home batteries actually guarantee, beyond the headline warranty length?",
   "scope": "Three named US home batteries, using each maker's warranty as the source for its terms. Tesla's page blocks our bot, so its row comes from revision 2.5 of the warranty (effective November 13, 2025), and a newer revision may exist. Warranties have other conditions, such as Tesla's internet connection rule, so read the full warranty before relying on this. Not a complete list of home batteries.",

@@ -1,5 +1,6 @@
 import { Bot, Check, Copy, Moon, Sun } from "lucide-react";
 import { useState } from "react";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useTheme } from "@/lib/theme";
@@ -24,8 +25,9 @@ export function ThemeButton() {
   );
 }
 
-export function AgentButton() {
-  const command = `claude mcp add --transport http skeleton ${location.origin}/mcp`;
+/** Opens the MCP command. Shows a label when there's room for one, or just the icon. */
+export function AgentButton({ label }: { label?: string }) {
+  const command = `claude mcp add --transport http skeletable ${location.origin}/mcp`;
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try {
@@ -40,7 +42,11 @@ export function AgentButton() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon-sm" aria-label="Use from an agent"><Bot /></Button>
+        {label ? (
+          <Button variant="outline" size="lg"><Bot />{label}</Button>
+        ) : (
+          <Button variant="ghost" size="icon-sm" aria-label="Use from an agent"><Bot /></Button>
+        )}
       </PopoverTrigger>
       <PopoverContent align="end" className="w-96 max-w-[calc(100vw-2rem)] gap-2 p-3">
         <p className="font-medium">Use these from an agent</p>
@@ -53,5 +59,22 @@ export function AgentButton() {
         </div>
       </PopoverContent>
     </Popover>
+  );
+}
+
+/** The bar across every page except a sheet. */
+export function SiteHeader() {
+  return (
+    <header className="flex items-center gap-4 border-b px-4 py-2.5">
+      <Link href="/" className="flex items-center gap-2 font-medium tracking-tight">
+        <Logo className="size-7" />
+        Skeletable
+      </Link>
+      <Link href="/explore" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Browse tables</Link>
+      <div className="ml-auto flex items-center gap-1">
+        <AgentButton />
+        <ThemeButton />
+      </div>
+    </header>
   );
 }

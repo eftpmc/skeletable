@@ -9,7 +9,7 @@ export function Message({ title, action }: { title: string; action?: ReactNode }
       <p className="text-muted-foreground">{title}</p>
       {action ?? (
         <Button variant="outline" size="sm" asChild>
-          <Link href="/">See all tables</Link>
+          <Link href="/explore">See all tables</Link>
         </Button>
       )}
     </div>

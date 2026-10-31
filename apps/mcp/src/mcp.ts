@@ -8,13 +8,13 @@ const text = (value: unknown) => ({ content: [{ type: "text" as const, text: JSO
 const refuse = (message: string) => ({ content: [{ type: "text" as const, text: message }], isError: true });
 
 const instructions =
-  "Skeleton is a library of tables where every value links to the source that states it. Use list_tables to find a table, " +
+  "Skeletable is a library of tables where every value links to the source that states it. Use list_tables to find a table, " +
   "get_table to read it, and get_cell for a value's source and exact quote. A null value means no acceptable source stated it: " +
   "say it's unknown rather than filling it in. Check a table's scope and lastRead before relying on it, and cite the source when you use a value.";
 
 /** The library as read-only MCP tools, for anyone's agent. */
 export function tablesMcpServer(tables: Table[]) {
-  const server = new McpServer({ name: "skeleton", version: "1.0.0" }, { instructions });
+  const server = new McpServer({ name: "skeletable", version: "1.0.0" }, { instructions });
   const readOnly = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false };
   const bySlug = (slug: string) => tables.find((table) => table.slug === slug);
 

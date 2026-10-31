@@ -2,6 +2,7 @@
   "format": 1,
   "owner": "skeletable",
   "slug": "handheld-gaming-pcs",
+  "topic": "Consumer tech",
   "title": "Handheld gaming PCs",
   "question": "How do the main handheld gaming PCs compare on screen, battery, weight and chip?",
   "scope": "Seven named models from Valve, ASUS, Lenovo and MSI, in their base configuration. Values come from the maker's own pages, or a dated public copy of one where the maker blocks our bot, and only where the page ties the value to that exact model. Not yet a complete list of handhelds on sale.",

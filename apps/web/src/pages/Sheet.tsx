@@ -20,7 +20,7 @@ const kindLabels: Record<FoundCell["kind"], string> = {
 const isFound = (cell: Cell): cell is FoundCell => !("missing" in cell);
 
 /** Empty rows carry the grid down the page, as in a spreadsheet. */
-const emptyRowsTo = 30;
+const fullHeightRows = 30;
 
 const SourceLink = ({ url, label }: { url: string; label: string }) => (
   <Button variant="outline" size="xs" className="max-w-full" asChild>
@@ -42,10 +42,10 @@ function Quote({ cell }: { cell: FoundCell }) {
   );
 }
 
-type Selected = { rowKey: string; column: Column; cell: Cell };
+export type Selected = { rowKey: string; column: Column; cell: Cell };
 
 /** Above the grid, like a spreadsheet's: one line until a cell is selected, then its evidence opens beneath. */
-function FormulaBar({ selected }: { selected?: Selected }) {
+export function FormulaBar({ selected }: { selected?: Selected }) {
   const cell = selected?.cell;
   const value = !selected || !cell ? undefined : isFound(cell) ? `${display(cell.value)}${selected.column.unit ? ` ${selected.column.unit}` : ""}` : "Not stated";
   return (
@@ -84,11 +84,15 @@ function FormulaBar({ selected }: { selected?: Selected }) {
 
 const moves: Record<string, [number, number]> = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
 
-function Grid({ table, selectedId, select }: { table: Table; selectedId: string | null; select: (id: string | null) => void }) {
+type GridProps = { table: Table; selectedId: string | null; select: (id: string | null) => void; emptyRows?: number; focusOnLoad?: boolean };
+
+export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - table.rows.length, focusOnLoad = true }: GridProps) {
   const grid = useRef<HTMLTableElement>(null);
+  const focused = useRef(focusOnLoad ? null : selectedId);
 
   useEffect(() => {
-    if (selectedId) grid.current?.querySelector<HTMLElement>(`[data-cell="${selectedId}"]`)?.focus();
+    if (selectedId && selectedId !== focused.current) grid.current?.querySelector<HTMLElement>(`[data-cell="${selectedId}"]`)?.focus();
+    focused.current = selectedId;
   }, [selectedId]);
 
   const onKeyDown = (event: KeyboardEvent, rowIndex: number, columnIndex: number) => {
@@ -153,7 +157,7 @@ function Grid({ table, selectedId, select }: { table: Table; selectedId: string 
               <td className="border-b" aria-hidden="true" />
             </tr>
           ))}
-          {Array.from({ length: Math.max(emptyRowsTo - table.rows.length, 0) }, (_, index) => (
+          {Array.from({ length: Math.max(emptyRows, 0) }, (_, index) => (
             <tr key={index} aria-hidden="true">
               <td className={`${edge} ${frozen} left-0 bg-muted text-center text-xs text-muted-foreground`}>{table.rows.length + index + 1}</td>
               <td className={`${edge} sticky left-10 z-10 bg-background px-2 py-1`}>&nbsp;</td>
@@ -181,11 +185,11 @@ function TopBar({ table, owner }: { table?: Table; owner: string }) {
           <>
             <h1 className="truncate text-lg leading-6">{table.title}</h1>
             <p className="truncate text-xs text-muted-foreground">
-              by {accountName(owner)} · {found.length} of {cells.length} cells · Read {day(lastRead)}
+              by <Link href={`/${owner}`} className="hover:text-foreground hover:underline">{accountName(owner)}</Link> · {found.length} of {cells.length} cells · Read {day(lastRead)}
             </p>
           </>
         ) : (
-          <p className="text-lg leading-6">skeleton</p>
+          <p className="text-lg leading-6">Skeletable</p>
         )}
       </div>
       <div className="flex shrink-0 items-center gap-1">
@@ -213,7 +217,7 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
   const selectedId = new URLSearchParams(useSearch()).get("cell");
 
   useEffect(() => {
-    if (data) document.title = `${data.title} · skeleton`;
+    if (data) document.title = `${data.title} · Skeletable`;
   }, [data]);
 
   const row = data?.rows.find((r) => selectedId?.startsWith(cellId(r.key, "")));

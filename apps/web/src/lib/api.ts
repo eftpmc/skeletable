@@ -3,13 +3,14 @@ import { useEffect, useState } from "react";
 export type TableSummary = {
   owner: string;
   slug: string;
+  topic: string;
   title: string;
   question: string;
   rows: number;
   columns: string[];
   filled: string;
   lastRead: string;
-  preview: { columns: string[]; rows: (string | number | boolean | null)[][] };
+  lastChecked: string;
 };
 
 type Loaded<T> = { data?: T; status: "loading" | "ready" | "missing" | "failed"; retry: () => void };
