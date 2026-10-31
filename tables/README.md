@@ -16,7 +16,7 @@ Every cell gives a value with its source and exact quote, or says it wasn't foun
 
 Only the hand check can say a value is correct. A quote can be real and still belong to a different model.
 
-Rules: a value must be tied to that exact row, and we never get around a block. Every cell says what kind of source it used, and scores count the kinds separately:
+Rules: a value must be tied to that exact row, everything a value says must be in its quote, and we never get around a block. Every cell says what kind of source it used, and scores count the kinds separately:
 
 | Kind | Meaning | Use it for |
 |---|---|---|
@@ -30,8 +30,8 @@ A cell with no acceptable source stays missing and counts against the table.
 
 | # | Table | Subject | Status |
 |---|---|---|---|
-| 1 | Handheld gaming PCs | Consumer tech | First pass |
-| 2 | Deploy platforms: free tiers and first paid plans | Developer tools | Planned |
+| 1 | Handheld gaming PCs | Consumer tech | Built, awaiting hand check |
+| 2 | Deploy platforms: free offers and first paid step | Developer tools | Built, awaiting hand check |
 | 3 | AI model API prices | AI | Planned |
 | 4 | E-readers | Consumer tech | Planned |
 | 5 | Home batteries: capacity and warranty | Home energy | Planned |

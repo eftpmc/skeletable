@@ -132,3 +132,10 @@ it("pdfText reads the words in a PDF", async () => {
   ].join("\n");
   expect(await pdfText(new TextEncoder().encode(pdf))).toContain("Weight 920 g");
 });
+
+it("matches a quote however the page spaces it", async () => {
+  const spaced = structuredClone(table);
+  spaced.rows[0]!.cells.weight = { value: 5, source: "https://a.example/one", kind: "first-hand", quote: "Hobby $5 minimum", read };
+  const glued: Fetcher = async () => ({ status: 200, contentType: "text/html", body: "<b>Hobby</b><b>$5</b><i>minimum</i>" });
+  expect((await verifyTable(spaced, glued, 0))[0]!.status).toBe("found");
+});

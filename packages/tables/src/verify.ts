@@ -19,6 +19,9 @@ const ROBOTS_REFUSED = 451;
 // Spec sheets run larger than web pages.
 const MAX_PAGE_BYTES = 20 * 1024 * 1024;
 
+// Page layout decides the spacing between words in separate elements, so a quote is matched without it.
+const compact = (text: string) => text.replace(/\s/g, "");
+
 /** What a reader sees on a page: its text without scripts and styles. */
 export function pageText(html: string): string {
   const root = parse(html);
@@ -47,7 +50,7 @@ export async function verifyTable(table: Table, fetcher: Fetcher, pauseMs = 1000
       const page = pages.get(cell.source)!;
       const base = { row: row.key, column, source: cell.source };
       if (!("text" in page)) checks.push({ ...base, ...page });
-      else checks.push({ ...base, status: page.text.includes(normalize(cell.quote)) ? "found" : "not-on-page" });
+      else checks.push({ ...base, status: compact(page.text).includes(compact(normalize(cell.quote))) ? "found" : "not-on-page" });
     }
   }
   return checks;
