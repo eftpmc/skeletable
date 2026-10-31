@@ -44,7 +44,9 @@ export function tablesMcpServer(tables: Table[]) {
   server.registerTool(
     "get_cell",
     {
-      description: "The evidence for one value: the source, the exact quote, what kind of source it is and when it was read. For a missing value, where we looked.",
+      description:
+        "The evidence for one value: the source, the exact quote, what kind of source it is and when it was read. For a missing value, where we looked. " +
+        "`confirmed` says how a second reader backed it up, and without it the value has been read once. `conflicts` lists sources that state something else, `history` lists past values, and `watch` says whether the quote was still on its page at the last check.",
       inputSchema: {
         slug: z.string().max(120).describe("From list_tables"),
         row: z.string().max(200).describe("The row's key, from get_table"),

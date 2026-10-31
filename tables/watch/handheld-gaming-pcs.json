@@ -1,0 +1,132 @@
+{
+  "slug": "handheld-gaming-pcs",
+  "ran": "2026-10-31",
+  "cells": {
+    "MSI Claw 8 AI+/screen_in": {
+      "status": "pinned"
+    },
+    "MSI Claw 8 AI+/refresh_hz": {
+      "status": "pinned"
+    },
+    "MSI Claw 8 AI+/battery_wh": {
+      "status": "pinned"
+    },
+    "MSI Claw 8 AI+/weight_g": {
+      "status": "pinned"
+    },
+    "MSI Claw 8 AI+/chip": {
+      "status": "pinned"
+    },
+    "MSI Claw A8/screen_in": {
+      "status": "pinned"
+    },
+    "MSI Claw A8/refresh_hz": {
+      "status": "pinned"
+    },
+    "MSI Claw A8/battery_wh": {
+      "status": "pinned"
+    },
+    "MSI Claw A8/weight_g": {
+      "status": "pinned"
+    },
+    "MSI Claw A8/chip": {
+      "status": "pinned"
+    },
+    "Steam Deck OLED/screen_in": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Steam Deck OLED/refresh_hz": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Steam Deck OLED/battery_wh": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Steam Deck OLED/weight_g": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Steam Deck OLED/chip": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Steam Deck LCD/screen_in": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Steam Deck LCD/refresh_hz": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Steam Deck LCD/battery_wh": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Steam Deck LCD/chip": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "ROG Xbox Ally/screen_in": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "ROG Xbox Ally/refresh_hz": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "ROG Xbox Ally/battery_wh": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "ROG Xbox Ally/weight_g": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "ROG Xbox Ally/chip": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "ROG Xbox Ally X/screen_in": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "ROG Xbox Ally X/refresh_hz": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "ROG Xbox Ally X/battery_wh": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "ROG Xbox Ally X/weight_g": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "ROG Xbox Ally X/chip": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Lenovo Legion Go Gen 2/screen_in": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Lenovo Legion Go Gen 2/refresh_hz": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Lenovo Legion Go Gen 2/battery_wh": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Lenovo Legion Go Gen 2/weight_g": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Lenovo Legion Go Gen 2/chip": {
+      "status": "found",
+      "seen": "2026-10-31"
+    }
+  }
+}

@@ -34,21 +34,24 @@
           "source": "https://docs.railway.com/reference/pricing/free-trial",
           "kind": "first-hand",
           "quote": "the free trial reverts to the free plan, which provides $1 of free credit per month",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "first_paid": {
           "value": "Hobby",
           "source": "https://railway.com/pricing",
           "kind": "first-hand",
           "quote": "Hobby $5 minimum usage",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "first_paid_usd": {
           "value": 5,
           "source": "https://railway.com/pricing",
           "kind": "first-hand",
           "quote": "Hobby $5 minimum usage",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         }
       }
     },
@@ -60,21 +63,24 @@
           "source": "https://render.com/pricing",
           "kind": "first-hand",
           "quote": "Hobby for individuals building personal projects and prototypes. $0/mo + compute",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "summary"
         },
         "first_paid": {
           "value": "Pro",
           "source": "https://render.com/pricing",
           "kind": "first-hand",
           "quote": "Pro for teams deploying production-grade apps and agents. $25/mo + compute",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "summary"
         },
         "first_paid_usd": {
           "value": 25,
           "source": "https://render.com/pricing",
           "kind": "first-hand",
           "quote": "Pro for teams deploying production-grade apps and agents. $25/mo + compute",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "summary"
         }
       }
     },
@@ -93,14 +99,16 @@
           "source": "https://fly.io/pricing/",
           "kind": "first-hand",
           "quote": "shared-cpu-1x · 256MB $0.0030 $2.19",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "first_paid_usd": {
           "value": 2.19,
           "source": "https://fly.io/pricing/",
           "kind": "first-hand",
           "quote": "shared-cpu-1x · 256MB $0.0030 $2.19",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         }
       }
     },
@@ -112,21 +120,24 @@
           "source": "https://vercel.com/pricing",
           "kind": "first-hand",
           "quote": "Hobby $0/mo. The perfect starting place for your web app or personal project",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "first_paid": {
           "value": "Pro",
           "source": "https://vercel.com/pricing",
           "kind": "first-hand",
           "quote": "Pro Popular $20/mo. Everything you need to build and scale your app",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "first_paid_usd": {
           "value": 20,
           "source": "https://vercel.com/pricing",
           "kind": "first-hand",
           "quote": "Pro Popular $20/mo. Everything you need to build and scale your app",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         }
       }
     },
@@ -138,21 +149,24 @@
           "source": "https://www.netlify.com/pricing/",
           "kind": "first-hand",
           "quote": "Free $0 forever Build and deploy free forever",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "first_paid": {
           "value": "Personal",
           "source": "https://www.netlify.com/pricing/",
           "kind": "first-hand",
           "quote": "Personal $9 /month Ready for real traffic",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "first_paid_usd": {
           "value": 9,
           "source": "https://www.netlify.com/pricing/",
           "kind": "first-hand",
           "quote": "Personal $9 /month Ready for real traffic",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         }
       }
     },
@@ -171,14 +185,16 @@
           "source": "https://www.heroku.com/pricing/",
           "kind": "first-hand",
           "quote": "Eco $5 0.5 GB",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "first_paid_usd": {
           "value": 5,
           "source": "https://www.heroku.com/pricing/",
           "kind": "first-hand",
           "quote": "Eco $5 0.5 GB",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         }
       }
     }

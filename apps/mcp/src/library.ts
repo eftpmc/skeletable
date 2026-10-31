@@ -1,17 +1,27 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { isFound, normalize, validateTable, type Cell, type Table } from "@skeleton/tables/format";
+import { isFound, normalize, validateTable, watchFileSchema, watchKey, type Cell, type Table, type WatchFile } from "@skeleton/tables/format";
+
+/** A table as served, with what the last watch saw, if it's been watched. */
+export type PublishedTable = Table & { watch?: WatchFile };
 
 /** Every published table, read once at start. A table that doesn't pass its checks stops the server rather than going out unchecked. */
-export async function loadTables(dir: string): Promise<Table[]> {
+export async function loadTables(dir: string): Promise<PublishedTable[]> {
   const files = (await readdir(dir)).filter((file) => file.endsWith(".json")).sort();
-  const tables: Table[] = [];
+  const tables: PublishedTable[] = [];
   for (const file of files) {
     const { table, problems } = validateTable(JSON.parse(await readFile(join(dir, file), "utf8")));
     if (!table || problems.length) throw new Error(`${file}: ${problems.join("; ")}`);
-    tables.push(table);
+    const watch = await readFile(join(dir, "watch", `${table.slug}.json`), "utf8").then((text) => watchFileSchema.parse(JSON.parse(text)), noWatchYet);
+    tables.push(watch ? { ...table, watch } : table);
   }
   return tables;
+}
+
+/** A table that's never been watched is fine. A watch file that's there and broken still stops the server. */
+function noWatchYet(error: NodeJS.ErrnoException) {
+  if (error.code === "ENOENT") return undefined;
+  throw error;
 }
 
 const cells = (table: Table) => table.rows.flatMap((row) => Object.values(row.cells));
@@ -60,9 +70,11 @@ export function tableValues(table: Table) {
 }
 
 /** One cell with its evidence, or undefined if there is no such row or column. Matching ignores case. */
-export function findCell(table: Table, rowKey: string, columnId: string) {
+export function findCell(table: PublishedTable, rowKey: string, columnId: string) {
   const row = table.rows.find((r) => normalize(r.key) === normalize(rowKey));
   const column = table.columns.find((c) => c.id === columnId);
   const cell = column && row?.cells[column.id];
-  return row && column && cell ? { table: table.slug, row: row.key, column, cell } : undefined;
+  if (!row || !column || !cell) return undefined;
+  const watch = table.watch?.cells[watchKey(row.key, column.id)];
+  return { table: table.slug, row: row.key, column, cell, ...(watch && { watch: { ...watch, ran: table.watch!.ran } }) };
 }

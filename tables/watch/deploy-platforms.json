@@ -1,0 +1,70 @@
+{
+  "slug": "deploy-platforms",
+  "ran": "2026-10-31",
+  "cells": {
+    "Railway/free_offer": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Railway/first_paid": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Railway/first_paid_usd": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Render/free_offer": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Render/first_paid": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Render/first_paid_usd": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Fly.io/first_paid": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Fly.io/first_paid_usd": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Vercel/free_offer": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Vercel/first_paid": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Vercel/first_paid_usd": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Netlify/free_offer": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Netlify/first_paid": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Netlify/first_paid_usd": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Heroku/first_paid": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Heroku/first_paid_usd": {
+      "status": "found",
+      "seen": "2026-10-31"
+    }
+  }
+}

@@ -125,7 +125,8 @@
           "source": "https://www.revisor.mn.gov/laws/2023/0/57/",
           "kind": "first-hand",
           "quote": "this section applies to equipment sold on or after July 1, 2021",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         }
       }
     },

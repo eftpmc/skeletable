@@ -1,0 +1,78 @@
+{
+  "slug": "ai-model-api-prices",
+  "ran": "2026-10-31",
+  "cells": {
+    "Claude Fable 5.1/input_usd": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Claude Fable 5.1/output_usd": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Claude Opus 5.5/input_usd": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Claude Opus 5.5/output_usd": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "GPT-6 Astra/input_usd": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "GPT-6 Astra/output_usd": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "GPT-6.1 Sol/input_usd": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "GPT-6.1 Sol/output_usd": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Gemini 4 Argon (to November 30, 2026)/input_usd": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Gemini 4 Argon (to November 30, 2026)/output_usd": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Gemini 4 Argon (from December 1, 2026)/input_usd": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Gemini 4 Argon (from December 1, 2026)/output_usd": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Grok 4.7/input_usd": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Grok 4.7/output_usd": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Mistral Large/input_usd": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Mistral Large/output_usd": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "DeepSeek V4 Pro/input_usd": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "DeepSeek V4 Pro/output_usd": {
+      "status": "found",
+      "seen": "2026-10-31"
+    }
+  }
+}

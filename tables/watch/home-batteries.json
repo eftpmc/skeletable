@@ -1,0 +1,50 @@
+{
+  "slug": "home-batteries",
+  "ran": "2026-10-31",
+  "cells": {
+    "Tesla Powerwall 3/capacity_kwh": {
+      "status": "pinned"
+    },
+    "Tesla Powerwall 3/warranty_years": {
+      "status": "pinned"
+    },
+    "Tesla Powerwall 3/retention": {
+      "status": "pinned"
+    },
+    "Tesla Powerwall 3/limit": {
+      "status": "pinned"
+    },
+    "Enphase IQ Battery 5P/capacity_kwh": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Enphase IQ Battery 5P/warranty_years": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Enphase IQ Battery 5P/retention": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Enphase IQ Battery 5P/limit": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "FranklinWH aPower 2/capacity_kwh": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "FranklinWH aPower 2/warranty_years": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "FranklinWH aPower 2/retention": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "FranklinWH aPower 2/limit": {
+      "status": "found",
+      "seen": "2026-10-31"
+    }
+  }
+}

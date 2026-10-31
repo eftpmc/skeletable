@@ -1,0 +1,86 @@
+{
+  "slug": "e-readers",
+  "ran": "2026-10-31",
+  "cells": {
+    "Kobo Clara BW/screen_in": {
+      "status": "pinned"
+    },
+    "Kobo Clara BW/storage_gb": {
+      "status": "pinned"
+    },
+    "Kobo Clara BW/water_rating": {
+      "status": "pinned"
+    },
+    "Kobo Clara BW/weight_g": {
+      "status": "pinned"
+    },
+    "Kobo Clara Colour/screen_in": {
+      "status": "pinned"
+    },
+    "Kobo Clara Colour/storage_gb": {
+      "status": "pinned"
+    },
+    "Kobo Clara Colour/water_rating": {
+      "status": "pinned"
+    },
+    "Kobo Clara Colour/weight_g": {
+      "status": "pinned"
+    },
+    "Kobo Libra Colour/screen_in": {
+      "status": "pinned"
+    },
+    "Kobo Libra Colour/storage_gb": {
+      "status": "pinned"
+    },
+    "Kobo Libra Colour/water_rating": {
+      "status": "pinned"
+    },
+    "Kobo Libra Colour/weight_g": {
+      "status": "pinned"
+    },
+    "Kobo Sage/screen_in": {
+      "status": "pinned"
+    },
+    "Kobo Sage/storage_gb": {
+      "status": "pinned"
+    },
+    "Kobo Sage/water_rating": {
+      "status": "pinned"
+    },
+    "Kobo Sage/weight_g": {
+      "status": "pinned"
+    },
+    "Kindle (2026)/screen_in": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Kindle (2026)/storage_gb": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Kindle Paperwhite (2026)/screen_in": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Kindle Paperwhite (2026)/storage_gb": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Kindle Paperwhite (2026)/water_rating": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Kindle Colorsoft (2026)/screen_in": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Kindle Colorsoft (2026)/storage_gb": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Kindle Colorsoft (2026)/water_rating": {
+      "status": "found",
+      "seen": "2026-10-31"
+    }
+  }
+}

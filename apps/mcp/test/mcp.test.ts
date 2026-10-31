@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createApp } from "../src/app.js";
-import { loadTables, searchTables } from "../src/library.js";
+import { findCell, loadTables, searchTables } from "../src/library.js";
 
 const tables = await loadTables(fileURLToPath(new URL("../../../tables", import.meta.url)));
 const app = createApp(tables);
@@ -71,6 +71,27 @@ describe("get_cell", () => {
     const { cell } = (await call("get_cell", { slug: "ai-model-api-prices", row: "grok 4.7", column: "output_usd" })).json();
     expect(cell).toMatchObject({ value: 6, kind: "first-hand", source: "https://docs.x.ai/docs/models" });
     expect(cell.quote).toContain("$6.00");
+  });
+
+  it("says how a value was confirmed, and leaves it out for one read once", async () => {
+    const confirmed = (await call("get_cell", { slug: "ai-model-api-prices", row: "grok 4.7", column: "output_usd" })).json();
+    expect(confirmed.cell.confirmed).toBe("blind-read");
+    const once = (await call("get_cell", { slug: "home-batteries", row: "Enphase IQ Battery 5P", column: "capacity_kwh" })).json();
+    expect(once.cell.confirmed).toBeUndefined();
+  });
+
+  it("shows what the last watch saw", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "tables-"));
+    const slug = tables[0]!.slug;
+    const row = tables[0]!.rows[0]!.key;
+    const column = tables[0]!.columns[0]!.id;
+    const { watch: _watch, ...table } = tables[0]!;
+    await writeFile(join(dir, `${slug}.json`), JSON.stringify(table));
+    await mkdir(join(dir, "watch"));
+    await writeFile(join(dir, "watch", `${slug}.json`), JSON.stringify({ slug, ran: "2026-11-01", cells: { [`${row}/${column}`]: { status: "found", seen: "2026-11-01" } } }));
+    const [loaded] = await loadTables(dir);
+    expect(findCell(loaded!, row, column)?.watch).toEqual({ status: "found", seen: "2026-11-01", ran: "2026-11-01" });
+    await rm(dir, { recursive: true });
   });
 
   it("shows where we looked for a missing value", async () => {

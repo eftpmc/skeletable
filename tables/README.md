@@ -11,6 +11,7 @@ Every cell gives a value with its source and exact quote, or says it wasn't foun
 | Valid | The file is well formed, every number is in its quote, and a text value uses only its quote's words | `tables validate <file>` |
 | Traceable | Every quote really is on its source page | `tables verify <file>` |
 | Correct | The value is right for that row and column | Blind check: a separate model reads each source without seeing our values, and every difference is settled against the source |
+| Current | Every live quote is still on its page, with no AI involved | `tables watch <file>` |
 | Filled | How much of the table has a value | `tables validate <file>` |
 | Complete | Every row that belongs is there | A person compares it with the scope |
 
@@ -25,6 +26,18 @@ Rules: a value must be tied to that exact row, everything a value says must be i
 | `second-hand` | Someone else's account | Only when nothing closer exists |
 
 A cell with no acceptable source stays missing and counts against the table.
+
+A cell can also record more about itself:
+
+| Field | Meaning |
+|---|---|
+| `confirmed` | How a second reader backed it up: `blind-read`, or the weaker `summary`. Without it, the value has been read once |
+| `conflicts` | What other sources state instead, each read and quoted like the value itself |
+| `history` | What the cell used to say, and the last day it stood |
+
+Conflicts and past values follow the same rules as any value, so a summary's claim doesn't count until the document itself has been read.
+
+`tables watch` saves its results in [`watch/`](watch/), never in the table. It marks each cell `found`, `not-on-page`, `unreadable` or `robots`, and keeps the last day the quote was seen. Archived copies are `pinned` and aren't opened. A quote that's gone is a reason to look again, not proof the value changed, and a publish is what puts new results on the live server.
 
 ## The ten
 

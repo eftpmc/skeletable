@@ -29,14 +29,16 @@
           "source": "https://platform.claude.com/docs/en/about-claude/pricing",
           "kind": "first-hand",
           "quote": "Claude Fable 5.1 For demanding reasoning and long-horizon agentic work $10 / MTok $50 / MTok",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "output_usd": {
           "value": 50,
           "source": "https://platform.claude.com/docs/en/about-claude/pricing",
           "kind": "first-hand",
           "quote": "Claude Fable 5.1 For demanding reasoning and long-horizon agentic work $10 / MTok $50 / MTok",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         }
       }
     },
@@ -48,14 +50,16 @@
           "source": "https://platform.claude.com/docs/en/about-claude/pricing",
           "kind": "first-hand",
           "quote": "Claude Opus 5.5 For long-running agentic coding and knowledge work $4 / MTok $20 / MTok",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "output_usd": {
           "value": 20,
           "source": "https://platform.claude.com/docs/en/about-claude/pricing",
           "kind": "first-hand",
           "quote": "Claude Opus 5.5 For long-running agentic coding and knowledge work $4 / MTok $20 / MTok",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         }
       }
     },
@@ -67,14 +71,16 @@
           "source": "https://developers.openai.com/api/docs/pricing",
           "kind": "first-hand",
           "quote": "Model Input Output Cached input 30m write 12h write gpt-6-astra $10.00 $50.00",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "output_usd": {
           "value": 50,
           "source": "https://developers.openai.com/api/docs/pricing",
           "kind": "first-hand",
           "quote": "Model Input Output Cached input 30m write 12h write gpt-6-astra $10.00 $50.00",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         }
       }
     },
@@ -86,14 +92,16 @@
           "source": "https://developers.openai.com/api/docs/pricing",
           "kind": "first-hand",
           "quote": "gpt-6.1-sol $2.00 $10.00",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "output_usd": {
           "value": 10,
           "source": "https://developers.openai.com/api/docs/pricing",
           "kind": "first-hand",
           "quote": "gpt-6.1-sol $2.00 $10.00",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         }
       }
     },
@@ -105,14 +113,16 @@
           "source": "https://ai.google.dev/gemini-api/docs/pricing",
           "kind": "first-hand",
           "quote": "Input price Not available $2.00 through November 30, 2026. $4.00 starting December 1, 2026.",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "output_usd": {
           "value": 10,
           "source": "https://ai.google.dev/gemini-api/docs/pricing",
           "kind": "first-hand",
           "quote": "Output price (including thinking tokens) Not available $10.00 through November 30, 2026. $20.00 starting December 1, 2026.",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         }
       }
     },
@@ -124,14 +134,16 @@
           "source": "https://ai.google.dev/gemini-api/docs/pricing",
           "kind": "first-hand",
           "quote": "Input price Not available $2.00 through November 30, 2026. $4.00 starting December 1, 2026.",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "output_usd": {
           "value": 20,
           "source": "https://ai.google.dev/gemini-api/docs/pricing",
           "kind": "first-hand",
           "quote": "Output price (including thinking tokens) Not available $10.00 through November 30, 2026. $20.00 starting December 1, 2026.",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         }
       }
     },
@@ -143,14 +155,16 @@
           "source": "https://docs.x.ai/docs/models",
           "kind": "first-hand",
           "quote": "configurable reasoning. Context 500K tokens Input $2.00 / 1M tokens Output $6.00 / 1M tokens",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "output_usd": {
           "value": 6,
           "source": "https://docs.x.ai/docs/models",
           "kind": "first-hand",
           "quote": "configurable reasoning. Context 500K tokens Input $2.00 / 1M tokens Output $6.00 / 1M tokens",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         }
       }
     },
@@ -162,14 +176,16 @@
           "source": "https://mistral.ai/pricing",
           "kind": "first-hand",
           "quote": "Mistral Large costs $0.5 /M tokens in and $1.5 /M tokens out",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "output_usd": {
           "value": 1.5,
           "source": "https://mistral.ai/pricing",
           "kind": "first-hand",
           "quote": "Mistral Large costs $0.5 /M tokens in and $1.5 /M tokens out",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         }
       }
     },
@@ -181,14 +197,16 @@
           "source": "https://api-docs.deepseek.com/quick_start/pricing",
           "kind": "first-hand",
           "quote": "1M input tokens (cache miss) Off-peak $0.15 $0.66 Peak $0.3 $1.32",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "output_usd": {
           "value": 3.96,
           "source": "https://api-docs.deepseek.com/quick_start/pricing",
           "kind": "first-hand",
           "quote": "1M output tokens Off-peak $0.6 $1.98 Peak $1.2 $3.96",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         }
       }
     }

@@ -9,7 +9,7 @@ export const TABLE_FORMAT = 1;
 
 const text = (max: number) => z.string().trim().min(1).max(max);
 const url = z.string().url().max(2000);
-const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+export const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 export const columnSchema = z.object({
   id: z.string().regex(/^[a-z][a-z0-9_]*$/),
@@ -26,13 +26,28 @@ export const columnSchema = z.object({
  */
 export const sourceKinds = ["first-hand", "archived", "second-hand"] as const;
 
-export const foundCellSchema = z.object({
+/**
+ * How a second reader backed a value up: `blind-read` means a separate reader opened the source
+ * without seeing our value, and `summary` means it matched a summary of the owner's pages, which is
+ * weaker. A cell without this has been read once.
+ */
+export const confirmations = ["blind-read", "summary"] as const;
+
+const statedSchema = z.object({
   value: z.union([z.string().trim().min(1).max(300), z.number(), z.boolean()]),
   source: url,
   kind: z.enum(sourceKinds),
   // Copied word for word from the source, short enough to read at a glance.
   quote: text(400),
   read: day,
+});
+
+export const foundCellSchema = statedSchema.extend({
+  confirmed: z.enum(confirmations).optional(),
+  // What other sources state instead. Each is read and quoted like the value itself, and the rule for choosing is the column's.
+  conflicts: z.array(statedSchema).min(1).max(5).optional(),
+  // What the cell used to say, and the last day it stood.
+  history: z.array(statedSchema.extend({ until: day })).max(50).optional(),
 });
 
 export const missingCellSchema = z.object({
@@ -47,6 +62,26 @@ export const rowSchema = z.object({
   key: text(120),
   cells: z.record(z.string(), cellSchema),
 });
+
+/**
+ * What the last watch saw for each cell, kept beside the table so watching never rewrites it.
+ * `pinned` is an archived copy, which can't change. `seen` is the last day the quote was on the page.
+ */
+export const watchEntrySchema = z.object({
+  status: z.enum(["found", "not-on-page", "unreadable", "robots", "pinned"]),
+  seen: day.optional(),
+});
+
+export const watchFileSchema = z.object({
+  slug: z.string().regex(/^[a-z0-9-]+$/),
+  ran: day,
+  cells: z.record(z.string(), watchEntrySchema),
+});
+
+export type WatchEntry = z.infer<typeof watchEntrySchema>;
+export type WatchFile = z.infer<typeof watchFileSchema>;
+
+export const watchKey = (rowKey: string, columnId: string) => `${rowKey}/${columnId}`;
 
 export const tableSchema = z.object({
   format: z.literal(TABLE_FORMAT),
@@ -99,6 +134,17 @@ export function wordsBeyondQuote(value: string, quote: string): string[] {
   return words.filter((word) => !source.includes(word));
 }
 
+/** Why a stated value doesn't fit its column or its quote, if it doesn't. */
+function valueProblem(column: Column, value: FoundCell["value"], quote: string): string | undefined {
+  const expected = column.type === "text" ? "string" : column.type;
+  if (typeof value !== expected) return `should be ${column.type}`;
+  if (typeof value === "number" && !quoteStates(value, quote)) return `${value} isn't in its quote`;
+  if (typeof value === "string") {
+    const beyond = wordsBeyondQuote(value, quote);
+    if (beyond.length) return `says more than its quote (${beyond.join(", ")})`;
+  }
+}
+
 /** Problems a table has on its own, before any page is opened. Empty means it's well formed. */
 export function validateTable(input: unknown): { table?: Table; problems: string[] } {
   const parsed = tableSchema.safeParse(input);
@@ -118,13 +164,9 @@ export function validateTable(input: unknown): { table?: Table; problems: string
       if (!cell) {
         problems.push(`${at}: empty; say where you looked instead`);
       } else if (isFound(cell)) {
-        const expected = column.type === "text" ? "string" : column.type;
-        if (typeof cell.value !== expected) problems.push(`${at}: should be ${column.type}`);
-        else if (typeof cell.value === "number" && !quoteStates(cell.value, cell.quote)) {
-          problems.push(`${at}: ${cell.value} isn't in its quote`);
-        } else if (typeof cell.value === "string") {
-          const beyond = wordsBeyondQuote(cell.value, cell.quote);
-          if (beyond.length) problems.push(`${at}: says more than its quote (${beyond.join(", ")})`);
+        for (const stated of [cell, ...(cell.conflicts ?? []), ...(cell.history ?? [])]) {
+          const problem = valueProblem(column, stated.value, stated.quote);
+          if (problem) problems.push(`${at}: ${problem}`);
         }
       }
     }

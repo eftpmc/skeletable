@@ -49,35 +49,40 @@
           "source": "https://www.steamdeck.com/en/oled",
           "kind": "first-hand",
           "quote": "HDR OLED display 7.4\" diagonal display size",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "refresh_hz": {
           "value": 90,
           "source": "https://www.steamdeck.com/en/oled",
           "kind": "first-hand",
           "quote": "diagonal display size up to 90Hz refresh rate",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "battery_wh": {
           "value": 50,
           "source": "https://www.steamdeck.com/en/oled",
           "kind": "first-hand",
           "quote": "6 nm APU Wi-Fi 6E 50Whr battery",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "weight_g": {
           "value": 640,
           "source": "https://www.steamdeck.com/en/oled",
           "kind": "first-hand",
           "quote": "Reduced total system weight to ~640g",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "chip": {
           "value": "6 nm AMD APU, Zen 2 4c/8t",
           "source": "https://www.steamdeck.com/en/tech",
           "kind": "first-hand",
           "quote": "APU 6 nm AMD APU CPU: Zen 2 4c/8t",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         }
       }
     },
@@ -89,21 +94,24 @@
           "source": "https://www.steamdeck.com/en/oled",
           "kind": "first-hand",
           "quote": "optically bonded LCD display 7\" diagonal display size",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "refresh_hz": {
           "value": 60,
           "source": "https://www.steamdeck.com/en/oled",
           "kind": "first-hand",
           "quote": "up to 60Hz refresh rate",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "battery_wh": {
           "value": 40,
           "source": "https://www.steamdeck.com/en/oled",
           "kind": "first-hand",
           "quote": "Wi-Fi 5 40Whr battery",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "weight_g": {
           "missing": true,
@@ -119,7 +127,8 @@
           "source": "https://www.steamdeck.com/en/oled",
           "kind": "first-hand",
           "quote": "refresh rate 7 nm APU",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         }
       }
     },
@@ -131,35 +140,40 @@
           "source": "https://rog.asus.com/gaming-handhelds/rog-ally/rog-xbox-ally-2025/spec/",
           "kind": "first-hand",
           "quote": "7-inch FHD (1920 x 1080)",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "refresh_hz": {
           "value": 120,
           "source": "https://rog.asus.com/gaming-handhelds/rog-ally/rog-xbox-ally-2025/spec/",
           "kind": "first-hand",
           "quote": "Refresh Rate: 120Hz",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "battery_wh": {
           "value": 60,
           "source": "https://rog.asus.com/gaming-handhelds/rog-ally/rog-xbox-ally-2025/spec/",
           "kind": "first-hand",
           "quote": "60WHrs, 4S1P, 4-cell Li-ion",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "weight_g": {
           "value": 670,
           "source": "https://rog.asus.com/gaming-handhelds/rog-ally/rog-xbox-ally-2025/spec/",
           "kind": "first-hand",
           "quote": "670 g (1.48 lbs)",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "chip": {
           "value": "AMD Ryzen Z2 A",
           "source": "https://rog.asus.com/gaming-handhelds/rog-ally/rog-xbox-ally-2025/spec/",
           "kind": "first-hand",
           "quote": "AMD Ryzen™ Z2 A Processor",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         }
       }
     },
@@ -171,35 +185,40 @@
           "source": "https://rog.asus.com/gaming-handhelds/rog-ally/rog-xbox-ally-x-2025/spec/",
           "kind": "first-hand",
           "quote": "7-inch FHD (1920 x 1080)",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "refresh_hz": {
           "value": 120,
           "source": "https://rog.asus.com/gaming-handhelds/rog-ally/rog-xbox-ally-x-2025/spec/",
           "kind": "first-hand",
           "quote": "Refresh Rate: 120Hz",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "battery_wh": {
           "value": 80,
           "source": "https://rog.asus.com/gaming-handhelds/rog-ally/rog-xbox-ally-x-2025/spec/",
           "kind": "first-hand",
           "quote": "80WHrs, 4S1P, 4-cell Li-ion",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "weight_g": {
           "value": 715,
           "source": "https://rog.asus.com/gaming-handhelds/rog-ally/rog-xbox-ally-x-2025/spec/",
           "kind": "first-hand",
           "quote": "715 g (1.58 lbs)",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "chip": {
           "value": "AMD Ryzen AI Z2 Extreme",
           "source": "https://rog.asus.com/gaming-handhelds/rog-ally/rog-xbox-ally-x-2025/spec/",
           "kind": "first-hand",
           "quote": "AMD Ryzen™ AI Z2 Extreme Processor",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         }
       }
     },
@@ -211,35 +230,40 @@
           "source": "https://download.lenovo.com/pccbbs/pubs/legion_go_8/user_guide/en/index.html",
           "kind": "first-hand",
           "quote": "Screen size (diagonal) 8.8 inches",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "refresh_hz": {
           "value": 144,
           "source": "https://download.lenovo.com/pccbbs/pubs/legion_go_8/user_guide/en/index.html",
           "kind": "first-hand",
           "quote": "Supported refresh rates 60 Hz 144 Hz",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "battery_wh": {
           "value": 74,
           "source": "https://download.lenovo.com/pccbbs/pubs/legion_go_8/user_guide/en/index.html",
           "kind": "first-hand",
           "quote": "Capacity 74 Wh",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "weight_g": {
           "value": 920,
           "source": "https://psref.lenovo.com/syspool/Sys/PDF/Legion/Legion_Go_8AHP2/Legion_Go_8AHP2_Spec.pdf",
           "kind": "first-hand",
           "quote": "Gamepad with controllers Around 920 g",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "summary"
         },
         "chip": {
           "value": "AMD Ryzen Z2 Extreme",
           "source": "https://gaming.lenovo.com/new-releases/post/legion-go-2-kQjvHLQINPkoNmd",
           "kind": "first-hand",
           "quote": "AMD Ryzen™ Z2 Extreme processor",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         }
       }
     },
@@ -251,35 +275,40 @@
           "source": "https://web.archive.org/web/20260612234849/https://www.msi.com/Handheld/Claw-8-AI-Plus-A2VMX/Specification",
           "kind": "archived",
           "quote": "8\" FHD+ (1920x1200)",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "summary"
         },
         "refresh_hz": {
           "value": 120,
           "source": "https://web.archive.org/web/20260612234849/https://www.msi.com/Handheld/Claw-8-AI-Plus-A2VMX/Specification",
           "kind": "archived",
           "quote": "48-120Hz VRR touchscreen",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "summary"
         },
         "battery_wh": {
           "value": 80,
           "source": "https://web.archive.org/web/20260612234849/https://www.msi.com/Handheld/Claw-8-AI-Plus-A2VMX/Specification",
           "kind": "archived",
           "quote": "6-Cell 80 Battery (Whr)",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "summary"
         },
         "weight_g": {
           "value": 795,
           "source": "https://web.archive.org/web/20260612234849/https://www.msi.com/Handheld/Claw-8-AI-Plus-A2VMX/Specification",
           "kind": "archived",
           "quote": "Weight (w/ Battery) 795 g",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "summary"
         },
         "chip": {
           "value": "Up to Intel Core Ultra 7 (Series 2)",
           "source": "https://web.archive.org/web/20260612234849/https://www.msi.com/Handheld/Claw-8-AI-Plus-A2VMX/Specification",
           "kind": "archived",
           "quote": "up to Intel® Core™ Ultra 7 Processor(Series 2)",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "summary"
         }
       }
     },
@@ -291,35 +320,40 @@
           "source": "https://web.archive.org/web/20260712083221/https://www.msi.com/Handheld/Claw-A8-BZ2EMX/Specification",
           "kind": "archived",
           "quote": "8\" FHD+ (1920x1200)",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "summary"
         },
         "refresh_hz": {
           "value": 120,
           "source": "https://web.archive.org/web/20260712083221/https://www.msi.com/Handheld/Claw-A8-BZ2EMX/Specification",
           "kind": "archived",
           "quote": "48-120Hz VRR touchscreen",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "summary"
         },
         "battery_wh": {
           "value": 80,
           "source": "https://web.archive.org/web/20260712083221/https://www.msi.com/Handheld/Claw-A8-BZ2EMX/Specification",
           "kind": "archived",
           "quote": "4-Cell 80 Battery (Whr)",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "summary"
         },
         "weight_g": {
           "value": 765,
           "source": "https://web.archive.org/web/20260712083221/https://www.msi.com/Handheld/Claw-A8-BZ2EMX/Specification",
           "kind": "archived",
           "quote": "Weight (w/ Battery) 765g",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "summary"
         },
         "chip": {
           "value": "AMD Ryzen Z2 Extreme",
           "source": "https://web.archive.org/web/20260712083221/https://www.msi.com/Handheld/Claw-A8-BZ2EMX/Specification",
           "kind": "archived",
           "quote": "AMD Ryzen™ Z2 Extreme",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "summary"
         }
       }
     }

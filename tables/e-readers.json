@@ -42,14 +42,16 @@
           "source": "https://digprjsurvey.amazon.com/csad/help/node/GK33S847NN4V6Y83",
           "kind": "first-hand",
           "quote": "Kindle (2026 release) Touchscreen USB-C charging port 6-inch, 300 PPI glare-free E Ink display",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "storage_gb": {
           "value": 16,
           "source": "https://digprjsurvey.amazon.com/csad/help/node/GK33S847NN4V6Y83",
           "kind": "first-hand",
           "quote": "user-replaceable battery (EBR-compliant) power button on the top right corner 16 GB internal storage, with approx. 10.8 GB available to the user",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "water_rating": {
           "missing": true,
@@ -77,21 +79,24 @@
           "source": "https://digprjsurvey.amazon.com/csad/help/node/GK33S847NN4V6Y83",
           "kind": "first-hand",
           "quote": "Kindle Paperwhite (2026 release) Touchscreen USB-C charging port 7-inch, 300 PPI glare-free E Ink display",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "storage_gb": {
           "value": 16,
           "source": "https://digprjsurvey.amazon.com/csad/help/node/GK33S847NN4V6Y83",
           "kind": "first-hand",
           "quote": "Kindle Paperwhite (2026 release) Touchscreen USB-C charging port 7-inch, 300 PPI glare-free E Ink display adjustable warm front light up to 12 weeks of battery life waterproof (IPX8) dark mode VoiceView screen reader over Bluetooth user-replaceable battery (EBR-compliant) power button on the top right corner 16 GB internal storage",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "water_rating": {
           "value": "IPX8",
           "source": "https://digprjsurvey.amazon.com/csad/help/node/GK33S847NN4V6Y83",
           "kind": "first-hand",
           "quote": "Kindle Paperwhite (2026 release) Touchscreen USB-C charging port 7-inch, 300 PPI glare-free E Ink display adjustable warm front light up to 12 weeks of battery life waterproof (IPX8)",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "weight_g": {
           "missing": true,
@@ -111,21 +116,24 @@
           "source": "https://digprjsurvey.amazon.com/csad/help/node/GK33S847NN4V6Y83",
           "kind": "first-hand",
           "quote": "Kindle Colorsoft (2026 release) Touchscreen USB-C charging port 7-inch color E Ink display",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "storage_gb": {
           "value": 16,
           "source": "https://digprjsurvey.amazon.com/csad/help/node/GK33S847NN4V6Y83",
           "kind": "first-hand",
           "quote": "Kindle Colorsoft (2026 release) Touchscreen USB-C charging port 7-inch color E Ink display adjustable warm front light up to 8 weeks of battery life waterproof (IPX8) dark mode VoiceView screen reader over Bluetooth user-replaceable battery (EBR-compliant) power button on the top right corner 16 GB internal storage",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "water_rating": {
           "value": "IPX8",
           "source": "https://digprjsurvey.amazon.com/csad/help/node/GK33S847NN4V6Y83",
           "kind": "first-hand",
           "quote": "Kindle Colorsoft (2026 release) Touchscreen USB-C charging port 7-inch color E Ink display adjustable warm front light up to 8 weeks of battery life waterproof (IPX8)",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "blind-read"
         },
         "weight_g": {
           "missing": true,
@@ -145,28 +153,32 @@
           "source": "https://web.archive.org/web/20261012093715/https://ereader.kobo.com/en-us/products/kobo-clara-bw",
           "kind": "archived",
           "quote": "6\" Glare-free E Ink Carta 1300 HD touchscreen",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "summary"
         },
         "storage_gb": {
           "value": 16,
           "source": "https://web.archive.org/web/20261012093715/https://ereader.kobo.com/en-us/products/kobo-clara-bw",
           "kind": "archived",
           "quote": "Storage 16GB",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "summary"
         },
         "water_rating": {
           "value": "IPX8",
           "source": "https://web.archive.org/web/20261012093715/https://ereader.kobo.com/en-us/products/kobo-clara-bw",
           "kind": "archived",
           "quote": "Waterproof IPX8 - up to 60 mins in 2 metres of water",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "summary"
         },
         "weight_g": {
           "value": 174,
           "source": "https://web.archive.org/web/20261012093715/https://ereader.kobo.com/en-us/products/kobo-clara-bw",
           "kind": "archived",
           "quote": "Weight 174 g",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "summary"
         }
       }
     },
@@ -178,21 +190,24 @@
           "source": "https://web.archive.org/web/20261021012455/https://ereader.kobo.com/en-us/products/kobo-clara-colour",
           "kind": "archived",
           "quote": "6\" E Ink Kaleido™ 3 display",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "summary"
         },
         "storage_gb": {
           "value": 16,
           "source": "https://web.archive.org/web/20261021012455/https://ereader.kobo.com/en-us/products/kobo-clara-colour",
           "kind": "archived",
           "quote": "Storage 16GB",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "summary"
         },
         "water_rating": {
           "value": "IPX8",
           "source": "https://web.archive.org/web/20261021012455/https://ereader.kobo.com/en-us/products/kobo-clara-colour",
           "kind": "archived",
           "quote": "Waterproof IPX8 - up to 60 mins in 2 metres of water",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "summary"
         },
         "weight_g": {
           "value": 174,
@@ -211,14 +226,16 @@
           "source": "https://web.archive.org/web/20261024110634/https://ereader.kobo.com/en-us/products/kobo-libra-colour",
           "kind": "archived",
           "quote": "7\" E Ink Kaleido™ 3 display",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "summary"
         },
         "storage_gb": {
           "value": 32,
           "source": "https://web.archive.org/web/20261024110634/https://ereader.kobo.com/en-us/products/kobo-libra-colour",
           "kind": "archived",
           "quote": "Storage 32GB",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "summary"
         },
         "water_rating": {
           "value": "IPX8",
@@ -232,7 +249,8 @@
           "source": "https://web.archive.org/web/20261024110634/https://ereader.kobo.com/en-us/products/kobo-libra-colour",
           "kind": "archived",
           "quote": "Weight 199.5 g",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "summary"
         }
       }
     },
@@ -244,14 +262,16 @@
           "source": "https://web.archive.org/web/20261019062744/https://ereader.kobo.com/en-us/products/kobo-sage",
           "kind": "archived",
           "quote": "8\" HD flush E Ink Carta 1200 touchscreen",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "summary"
         },
         "storage_gb": {
           "value": 32,
           "source": "https://web.archive.org/web/20261019062744/https://ereader.kobo.com/en-us/products/kobo-sage",
           "kind": "archived",
           "quote": "Storage 32GB",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "summary"
         },
         "water_rating": {
           "value": "IPX8",
@@ -265,7 +285,8 @@
           "source": "https://web.archive.org/web/20261019062744/https://ereader.kobo.com/en-us/products/kobo-sage",
           "kind": "archived",
           "quote": "Weight 240.8 g",
-          "read": "2026-10-31"
+          "read": "2026-10-31",
+          "confirmed": "summary"
         }
       }
     }

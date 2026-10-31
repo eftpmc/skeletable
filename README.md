@@ -45,6 +45,7 @@ pnpm dev
 | `pnpm build` | Production build |
 | `pnpm tables validate <file>` | Check a table's shape, numbers and text against its quotes |
 | `pnpm tables verify <file>` | Open each source and look for every quote |
+| `pnpm tables watch <file>` | See whether live quotes are still on their pages, and save the result |
 | `pnpm tables sample <file>` | Draw a repeatable sample of cells for spot-checking |
 
 Tables are JSON files in `tables/`, and the server refuses to start if one fails its checks. Adding or changing a table takes a redeploy.

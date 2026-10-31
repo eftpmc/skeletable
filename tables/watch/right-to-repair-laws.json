@@ -1,0 +1,86 @@
+{
+  "slug": "right-to-repair-laws",
+  "ran": "2026-10-31",
+  "cells": {
+    "California/law": {
+      "status": "pinned"
+    },
+    "California/starts": {
+      "status": "pinned"
+    },
+    "California/products_from": {
+      "status": "pinned"
+    },
+    "Connecticut/law": {
+      "status": "pinned"
+    },
+    "Connecticut/starts": {
+      "status": "pinned"
+    },
+    "Connecticut/products_from": {
+      "status": "pinned"
+    },
+    "New York/law": {
+      "status": "pinned"
+    },
+    "New York/products_from": {
+      "status": "pinned"
+    },
+    "Colorado/law": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Colorado/starts": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Colorado/products_from": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Minnesota/law": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Minnesota/starts": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Minnesota/products_from": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Oregon/law": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Oregon/products_from": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Texas/law": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Texas/starts": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Texas/products_from": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Washington/law": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Washington/starts": {
+      "status": "found",
+      "seen": "2026-10-31"
+    },
+    "Washington/products_from": {
+      "status": "found",
+      "seen": "2026-10-31"
+    }
+  }
+}

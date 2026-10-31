@@ -2,7 +2,7 @@ import { parse } from "node-html-parser";
 import { parseRobots, robotsAllows } from "./robots.js";
 import { safeFetch } from "./safe-fetch.js";
 import { extractText } from "unpdf";
-import { isFound, normalize, type Table } from "./format.js";
+import { isFound, normalize, watchKey, type FoundCell, type Table, type WatchFile } from "./format.js";
 
 export type Page = { status: number; contentType: string; body: string };
 export type Fetcher = (url: string) => Promise<Page>;
@@ -34,9 +34,9 @@ export function pageText(html: string): string {
  * Open each source once and see whether every quote is really there. This shows that a quote
  * exists, not that the value was read correctly: that's what the hand-checked sample is for.
  */
-export async function verifyTable(table: Table, fetcher: Fetcher, pauseMs = 1000): Promise<CellCheck[]> {
+export async function verifyTable(table: Table, fetcher: Fetcher, pauseMs = 1000, include: (cell: FoundCell) => boolean = () => true): Promise<CellCheck[]> {
   const sources = new Set<string>();
-  for (const row of table.rows) for (const cell of Object.values(row.cells)) if (isFound(cell)) sources.add(cell.source);
+  for (const row of table.rows) for (const cell of Object.values(row.cells)) if (isFound(cell) && include(cell)) sources.add(cell.source);
 
   const pages = new Map<string, Opened>();
   for (const source of sources) {
@@ -47,7 +47,7 @@ export async function verifyTable(table: Table, fetcher: Fetcher, pauseMs = 1000
   const checks: CellCheck[] = [];
   for (const row of table.rows) {
     for (const [column, cell] of Object.entries(row.cells)) {
-      if (!isFound(cell)) continue;
+      if (!isFound(cell) || !include(cell)) continue;
       const page = pages.get(cell.source)!;
       const base = { row: row.key, column, source: cell.source };
       if (!("text" in page)) checks.push({ ...base, ...page });
@@ -55,6 +55,28 @@ export async function verifyTable(table: Table, fetcher: Fetcher, pauseMs = 1000
     }
   }
   return checks;
+}
+
+/**
+ * See whether each live quote is still on its page, which needs no AI. A quote that's gone is a
+ * reason for someone to look, not proof the value changed, and one that's still there doesn't prove
+ * its meaning held. Archived copies can't change, so they aren't opened. A cell keeps the last day
+ * its quote was seen, so a blocked site shows how long it's been rather than losing the date.
+ */
+export async function watchTable(table: Table, fetcher: Fetcher, ran: string, previous?: WatchFile, pauseMs = 1000): Promise<WatchFile> {
+  const checks = await verifyTable(table, fetcher, pauseMs, (cell) => cell.kind !== "archived");
+  const cells: WatchFile["cells"] = {};
+  for (const row of table.rows) {
+    for (const [column, cell] of Object.entries(row.cells)) {
+      if (isFound(cell) && cell.kind === "archived") cells[watchKey(row.key, column)] = { status: "pinned" };
+    }
+  }
+  for (const { row, column, status } of checks) {
+    const key = watchKey(row, column);
+    const seen = status === "found" ? ran : previous?.cells[key]?.seen;
+    cells[key] = seen ? { status, seen } : { status };
+  }
+  return { slug: table.slug, ran, cells };
 }
 
 type Opened = { text: string } | { status: CheckStatus; detail?: string };
