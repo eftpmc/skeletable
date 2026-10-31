@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./format": "./src/format.ts"
   },
   "scripts": {
     "tables": "tsx src/cli.ts",
@@ -12,7 +13,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@skeleton/engine": "workspace:*",
     "node-html-parser": "^9.0.5",
     "unpdf": "^1.4.0",
     "zod": "^4.6.7"

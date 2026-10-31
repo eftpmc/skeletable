@@ -7,10 +7,12 @@
     "node": ">=22"
   },
   "scripts": {
+    "dev": "pnpm --filter @skeleton/mcp dev",
     "build": "pnpm -r build",
     "lint": "eslint .",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test"
+    "test": "pnpm -r test",
+    "tables": "pnpm --filter @skeleton/tables tables"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

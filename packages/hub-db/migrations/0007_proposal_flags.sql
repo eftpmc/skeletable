@@ -1,1 +1,0 @@
-ALTER TABLE "proposal" ADD COLUMN "flags" text[] DEFAULT '{}' NOT NULL;

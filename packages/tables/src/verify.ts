@@ -1,5 +1,6 @@
 import { parse } from "node-html-parser";
-import { parseRobots, robotsAllows, safeFetch } from "@skeleton/engine";
+import { parseRobots, robotsAllows } from "./robots.js";
+import { safeFetch } from "./safe-fetch.js";
 import { extractText } from "unpdf";
 import { isFound, normalize, type Table } from "./format.js";
 
