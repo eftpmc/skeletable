@@ -1,8 +1,0 @@
-/* The printed look from the signed-out front page, in small doses: a dot screen in the theme color
-   with a black one printed slightly off-register, fading out from a corner (see Halftone.tsx). */
-.ui-halftone {
-  background-image: radial-gradient(circle at center, var(--dot) 0 var(--dot-r, 1.15px), transparent calc(var(--dot-r, 1.15px) + 0.35px));
-  background-size: var(--dot-gap, 7px) var(--dot-gap, 7px);
-  -webkit-mask-image: var(--fade);
-  mask-image: var(--fade);
-}

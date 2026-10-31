@@ -10,8 +10,7 @@ Design: [catalog engine design](https://claude.ai/artifact/RhEhZpD1mUcTTkjGwZ3Ck
 | --- | --- |
 | `packages/hub-db` | The hub's database: sources and their assigned readers, recipes, crawls, listings, readings, annotations, final values, embeddings, jobs, catalog builds |
 | `packages/formats` | The formats everything agrees on: readings, field values, jobs, the catalog file |
-| `packages/readers` | Reading sites safely: the fetcher, robots.txt and sitemaps, store states, recipes |
-| `src/readers` | One reader per kind of site. Shopify so far; each site points at one |
+| `packages/engine` | Reading sites safely: the fetcher, robots.txt and sitemaps, store states, recipes, one reader per kind of site |
 | `src/engine` | The crawl engine around every reader: robots.txt, one request at a time with a pause, readings stored only when something changed, listings marked gone, a site paused when a crawl finds far less than before |
 | `src/lab` | A one-time import of what the brand lab already read |
 | `src/api.ts`, `src/mcp.ts` | The contributor API and the same work as MCP tools, both behind a contributor's token |

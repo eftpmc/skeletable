@@ -1,1 +1,0 @@
-CREATE INDEX "catalog_item_look_idx" ON "catalog_item" USING hnsw ("look" vector_cosine_ops);

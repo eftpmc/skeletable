@@ -1,7 +1,7 @@
 # Store connectors and temporary closures
 
 The catalog foundation supports two connectors with the same `discover` and
-`readProduct` contract (`apps/server/src/catalog/connectors/index.ts`):
+`readProduct` contract (the app that held it is gone; readers now live in `packages/engine`):
 
 - `page`: platform-independent JSON-LD/OpenGraph product reading, with discovery
   of same-origin `/product/`, `/products/`, and `/p/` links on a supplied public page.

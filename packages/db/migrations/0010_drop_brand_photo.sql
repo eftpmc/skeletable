@@ -1,1 +1,0 @@
-DROP TABLE "brand_photo" CASCADE;
