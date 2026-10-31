@@ -1,0 +1,196 @@
+{
+  "format": 1,
+  "slug": "ai-model-api-prices",
+  "title": "AI model API prices",
+  "question": "What do the leading AI models cost through their APIs, per million tokens?",
+  "scope": "Flagship models from Anthropic, OpenAI, Google, xAI, Mistral and DeepSeek, at each provider's standard rate for ordinary prompts, without batch, caching, fast-mode or long-context changes. Some providers charge more for very long prompts, and that isn't shown here. Where a provider has announced a new price, it gets its own row. Values come only from each provider's own pages. Not a complete list of models.",
+  "columns": [
+    {
+      "id": "input_usd",
+      "label": "Input",
+      "type": "number",
+      "unit": "USD per 1M tokens",
+      "rule": "The standard price for input tokens. Where the provider charges by time of day, the peak price."
+    },
+    {
+      "id": "output_usd",
+      "label": "Output",
+      "type": "number",
+      "unit": "USD per 1M tokens",
+      "rule": "The standard price for output tokens. Where the provider charges by time of day, the peak price."
+    }
+  ],
+  "rows": [
+    {
+      "key": "Claude Fable 5.1",
+      "cells": {
+        "input_usd": {
+          "value": 10,
+          "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+          "kind": "first-hand",
+          "quote": "Claude Fable 5.1 For demanding reasoning and long-horizon agentic work $10 / MTok $50 / MTok",
+          "read": "2026-10-31"
+        },
+        "output_usd": {
+          "value": 50,
+          "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+          "kind": "first-hand",
+          "quote": "Claude Fable 5.1 For demanding reasoning and long-horizon agentic work $10 / MTok $50 / MTok",
+          "read": "2026-10-31"
+        }
+      }
+    },
+    {
+      "key": "Claude Opus 5.5",
+      "cells": {
+        "input_usd": {
+          "value": 4,
+          "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+          "kind": "first-hand",
+          "quote": "Claude Opus 5.5 For long-running agentic coding and knowledge work $4 / MTok $20 / MTok",
+          "read": "2026-10-31"
+        },
+        "output_usd": {
+          "value": 20,
+          "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+          "kind": "first-hand",
+          "quote": "Claude Opus 5.5 For long-running agentic coding and knowledge work $4 / MTok $20 / MTok",
+          "read": "2026-10-31"
+        }
+      }
+    },
+    {
+      "key": "GPT-6 Astra",
+      "cells": {
+        "input_usd": {
+          "value": 10,
+          "source": "https://developers.openai.com/api/docs/pricing",
+          "kind": "first-hand",
+          "quote": "Model Input Output Cached input 30m write 12h write gpt-6-astra $10.00 $50.00",
+          "read": "2026-10-31"
+        },
+        "output_usd": {
+          "value": 50,
+          "source": "https://developers.openai.com/api/docs/pricing",
+          "kind": "first-hand",
+          "quote": "Model Input Output Cached input 30m write 12h write gpt-6-astra $10.00 $50.00",
+          "read": "2026-10-31"
+        }
+      }
+    },
+    {
+      "key": "GPT-6.1 Sol",
+      "cells": {
+        "input_usd": {
+          "value": 2,
+          "source": "https://developers.openai.com/api/docs/pricing",
+          "kind": "first-hand",
+          "quote": "gpt-6.1-sol $2.00 $10.00",
+          "read": "2026-10-31"
+        },
+        "output_usd": {
+          "value": 10,
+          "source": "https://developers.openai.com/api/docs/pricing",
+          "kind": "first-hand",
+          "quote": "gpt-6.1-sol $2.00 $10.00",
+          "read": "2026-10-31"
+        }
+      }
+    },
+    {
+      "key": "Gemini 4 Argon (to November 30, 2026)",
+      "cells": {
+        "input_usd": {
+          "value": 2,
+          "source": "https://ai.google.dev/gemini-api/docs/pricing",
+          "kind": "first-hand",
+          "quote": "Input price Not available $2.00 through November 30, 2026. $4.00 starting December 1, 2026.",
+          "read": "2026-10-31"
+        },
+        "output_usd": {
+          "value": 10,
+          "source": "https://ai.google.dev/gemini-api/docs/pricing",
+          "kind": "first-hand",
+          "quote": "Output price (including thinking tokens) Not available $10.00 through November 30, 2026. $20.00 starting December 1, 2026.",
+          "read": "2026-10-31"
+        }
+      }
+    },
+    {
+      "key": "Gemini 4 Argon (from December 1, 2026)",
+      "cells": {
+        "input_usd": {
+          "value": 4,
+          "source": "https://ai.google.dev/gemini-api/docs/pricing",
+          "kind": "first-hand",
+          "quote": "Input price Not available $2.00 through November 30, 2026. $4.00 starting December 1, 2026.",
+          "read": "2026-10-31"
+        },
+        "output_usd": {
+          "value": 20,
+          "source": "https://ai.google.dev/gemini-api/docs/pricing",
+          "kind": "first-hand",
+          "quote": "Output price (including thinking tokens) Not available $10.00 through November 30, 2026. $20.00 starting December 1, 2026.",
+          "read": "2026-10-31"
+        }
+      }
+    },
+    {
+      "key": "Grok 4.7",
+      "cells": {
+        "input_usd": {
+          "value": 2,
+          "source": "https://docs.x.ai/docs/models",
+          "kind": "first-hand",
+          "quote": "configurable reasoning. Context 500K tokens Input $2.00 / 1M tokens Output $6.00 / 1M tokens",
+          "read": "2026-10-31"
+        },
+        "output_usd": {
+          "value": 6,
+          "source": "https://docs.x.ai/docs/models",
+          "kind": "first-hand",
+          "quote": "configurable reasoning. Context 500K tokens Input $2.00 / 1M tokens Output $6.00 / 1M tokens",
+          "read": "2026-10-31"
+        }
+      }
+    },
+    {
+      "key": "Mistral Large",
+      "cells": {
+        "input_usd": {
+          "value": 0.5,
+          "source": "https://mistral.ai/pricing",
+          "kind": "first-hand",
+          "quote": "Mistral Large costs $0.5 /M tokens in and $1.5 /M tokens out",
+          "read": "2026-10-31"
+        },
+        "output_usd": {
+          "value": 1.5,
+          "source": "https://mistral.ai/pricing",
+          "kind": "first-hand",
+          "quote": "Mistral Large costs $0.5 /M tokens in and $1.5 /M tokens out",
+          "read": "2026-10-31"
+        }
+      }
+    },
+    {
+      "key": "DeepSeek V4 Pro",
+      "cells": {
+        "input_usd": {
+          "value": 1.32,
+          "source": "https://api-docs.deepseek.com/quick_start/pricing",
+          "kind": "first-hand",
+          "quote": "1M input tokens (cache miss) Off-peak $0.15 $0.66 Peak $0.3 $1.32",
+          "read": "2026-10-31"
+        },
+        "output_usd": {
+          "value": 3.96,
+          "source": "https://api-docs.deepseek.com/quick_start/pricing",
+          "kind": "first-hand",
+          "quote": "1M output tokens Off-peak $0.6 $1.98 Peak $1.2 $3.96",
+          "read": "2026-10-31"
+        }
+      }
+    }
+  ]
+}

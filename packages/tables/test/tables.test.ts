@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { coverage, normalize, pageText, pdfText, quoteStates, sampleCells, validateTable, verifyTable, type Fetcher, type Table } from "../src/index.js";
+import { coverage, normalize, pageText, pdfText, quoteStates, sampleCells, validateTable, verifyTable, wordsBeyondQuote, type Fetcher, type Table } from "../src/index.js";
 
 const read = "2026-10-31";
 const table: Table = {
@@ -138,4 +138,14 @@ it("matches a quote however the page spaces it", async () => {
   spaced.rows[0]!.cells.weight = { value: 5, source: "https://a.example/one", kind: "first-hand", quote: "Hobby $5 minimum", read };
   const glued: Fetcher = async () => ({ status: 200, contentType: "text/html", body: "<b>Hobby</b><b>$5</b><i>minimum</i>" });
   expect((await verifyTable(spaced, glued, 0))[0]!.status).toBe("found");
+});
+
+it("refuses a text value that says more than its quote", () => {
+  const bad = structuredClone(table);
+  bad.rows[1]!.cells.colour = { value: "Red forever", source: "https://a.example/x", kind: "first-hand", quote: "Comes in red", read };
+  expect(validateTable(bad).problems).toEqual(["Two.colour: says more than its quote (forever)"]);
+});
+
+it("lets a text value skip linking words and page typography", () => {
+  expect(wordsBeyondQuote("AMD Ryzen Z2 at $5 per month", "AMD Ryzen\u2122 Z2 Processor, $5 month")).toEqual([]);
 });

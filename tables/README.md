@@ -8,7 +8,7 @@ Every cell gives a value with its source and exact quote, or says it wasn't foun
 
 | Check | What it shows | How |
 |---|---|---|
-| Valid | The file is well formed, and every number is in its quote | `tables validate <file>` |
+| Valid | The file is well formed, every number is in its quote, and a text value uses only its quote's words | `tables validate <file>` |
 | Traceable | Every quote really is on its source page | `tables verify <file>` |
 | Correct | The value is right for that row and column | Blind check: a separate model reads each source without seeing our values, and every difference is settled against the source |
 | Filled | How much of the table has a value | `tables validate <file>` |
@@ -16,7 +16,7 @@ Every cell gives a value with its source and exact quote, or says it wasn't foun
 
 Only the blind check can say a value is correct: a quote can be real and still belong to a different model, or say less than the value claims. Results are in [`checks/`](checks/). `tables sample <file>` draws cells for a person to spot-check the check itself.
 
-Rules: a value must be tied to that exact row, everything a value says must be in its quote, and we never get around a block. Every cell says what kind of source it used, and scores count the kinds separately:
+Rules: a value must be tied to that exact row, everything a value says must be in its quote, sources that price by time are re-read before a table is relied on, and we never get around a block. Every cell says what kind of source it used, and scores count the kinds separately:
 
 | Kind | Meaning | Use it for |
 |---|---|---|
@@ -30,9 +30,9 @@ A cell with no acceptable source stays missing and counts against the table.
 
 | # | Table | Subject | Status |
 |---|---|---|---|
-| 1 | Handheld gaming PCs | Consumer tech | Built, awaiting hand check |
-| 2 | Deploy platforms: free offers and first paid step | Developer tools | Built, awaiting hand check |
-| 3 | AI model API prices | AI | Planned |
+| 1 | Handheld gaming PCs | Consumer tech | Built and blind checked |
+| 2 | Deploy platforms: free offers and first paid step | Developer tools | Built and blind checked |
+| 3 | AI model API prices | AI | Built and blind checked |
 | 4 | E-readers | Consumer tech | Planned |
 | 5 | Home batteries: capacity and warranty | Home energy | Planned |
 | 6 | Password managers: plans and prices | Software | Planned |

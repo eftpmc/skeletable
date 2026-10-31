@@ -90,6 +90,15 @@ export function quoteStates(value: number, quote: string): boolean {
   return new RegExp(`(?<![\\d.])${number}${tail}(?![\\d.]*\\d)`).test(digits);
 }
 
+const LINKING_WORDS = new Set(["a", "an", "and", "at", "in", "of", "or", "per", "the", "to", "with"]);
+
+/** The words in a text value its quote doesn't have. A value may only say what its source says. */
+export function wordsBeyondQuote(value: string, quote: string): string[] {
+  const words = (normalize(value).match(/[a-z0-9.]+/g) ?? []).map((word) => word.replace(/\.+$/, "")).filter((word) => word && !LINKING_WORDS.has(word));
+  const source = normalize(quote);
+  return words.filter((word) => !source.includes(word));
+}
+
 /** Problems a table has on its own, before any page is opened. Empty means it's well formed. */
 export function validateTable(input: unknown): { table?: Table; problems: string[] } {
   const parsed = tableSchema.safeParse(input);
@@ -113,6 +122,9 @@ export function validateTable(input: unknown): { table?: Table; problems: string
         if (typeof cell.value !== expected) problems.push(`${at}: should be ${column.type}`);
         else if (typeof cell.value === "number" && !quoteStates(cell.value, cell.quote)) {
           problems.push(`${at}: ${cell.value} isn't in its quote`);
+        } else if (typeof cell.value === "string") {
+          const beyond = wordsBeyondQuote(cell.value, cell.quote);
+          if (beyond.length) problems.push(`${at}: says more than its quote (${beyond.join(", ")})`);
         }
       }
     }
