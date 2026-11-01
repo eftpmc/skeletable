@@ -111,6 +111,13 @@ describe("verifyTable", () => {
     expect((await verifyTable(bad, fetcher, 0))[0]!.status).toBe("not-on-page");
   });
 
+  it("says when a page calls itself an old version, even with its quotes there", async () => {
+    const old: Fetcher = async () => ({ status: 200, contentType: "text/html", body: "<p>Superseded 5/3/2023 </p><p>Weighs 1,200 g</p>" });
+    const [check] = await verifyTable(table, old, 0);
+    expect(check).toMatchObject({ status: "found", stale: "superseded 5/3/2023" });
+    expect((await verifyTable(table, fetcher, 0))[0]!.stale).toBeUndefined();
+  });
+
   it("doesn't read a page robots.txt refuses", async () => {
     const checks = await verifyTable(table, async () => ({ status: 451, contentType: "", body: "" }), 0);
     expect(checks.every((c) => c.status === "robots")).toBe(true);

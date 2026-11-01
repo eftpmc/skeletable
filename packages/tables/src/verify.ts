@@ -13,7 +13,7 @@ export type CheckStatus =
   | "unreadable" // a PDF, an error, or a page we couldn't reach
   | "robots"; // the site asks bots not to read it, so we didn't
 
-export type CellCheck = { row: string; column: string; source: string; status: CheckStatus; detail?: string };
+export type CellCheck = { row: string; column: string; source: string; status: CheckStatus; detail?: string; stale?: string };
 
 // Page statuses here stand for "we didn't get to look", which is different from an HTTP failure.
 const ROBOTS_REFUSED = 451;
@@ -29,6 +29,9 @@ export function pageText(html: string): string {
   root.querySelectorAll("script, style, noscript, svg").forEach((node) => node.remove());
   return normalize(root.text);
 }
+
+/** The words a page uses to say it's an old version. An old page still holds its quotes, so finding them can't show this. */
+export const staleMark = (text: string) => text.match(/\b(?:superseded|effective until)\b(?: \S+)?/)?.[0];
 
 /**
  * Open each source once and see whether every quote is really there. This shows that a quote
@@ -51,7 +54,7 @@ export async function verifyTable(table: Table, fetcher: Fetcher, pauseMs = 1000
       const page = pages.get(cell.source)!;
       const base = { row: row.key, column, source: cell.source };
       if (!("text" in page)) checks.push({ ...base, ...page });
-      else checks.push({ ...base, status: compact(page.text).includes(compact(normalize(cell.quote))) ? "found" : "not-on-page" });
+      else checks.push({ ...base, status: compact(page.text).includes(compact(normalize(cell.quote))) ? "found" : "not-on-page", ...(staleMark(page.text) && { stale: staleMark(page.text) }) });
     }
   }
   return checks;

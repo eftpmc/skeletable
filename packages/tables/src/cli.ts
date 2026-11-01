@@ -33,6 +33,8 @@ if (command === "validate") {
   for (const check of checks.filter((c) => c.status !== "found")) {
     console.log(`${check.status}: ${check.row}.${check.column} ${check.source}${check.detail ? ` (${check.detail})` : ""}`);
   }
+  const stale = new Map(checks.filter((c) => c.stale).map((c) => [c.source, c.stale]));
+  for (const [source, mark] of stale) console.log(`old version? ${source} says "${mark}"`);
   console.log(`${checks.length} cells: ${count("found")} found, ${count("not-on-page")} not on page, ${count("unreadable")} unreadable, ${count("robots")} robots`);
 } else if (command === "watch") {
   const path = join(dirname(file), "watch", `${table.slug}.json`);

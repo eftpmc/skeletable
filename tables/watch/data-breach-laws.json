@@ -570,6 +570,10 @@
       "status": "found",
       "seen": "2026-11-01"
     },
+    "New Jersey/encrypted_exempt": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
     "New Jersey/harm_exception": {
       "status": "found",
       "seen": "2026-11-01"
@@ -615,6 +619,10 @@
       "seen": "2026-11-01"
     },
     "New York/ag_notice": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "New York/harm_exception": {
       "status": "found",
       "seen": "2026-11-01"
     },
@@ -682,7 +690,19 @@
       "status": "found",
       "seen": "2026-11-01"
     },
+    "Oklahoma/notify_standard": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
     "Oklahoma/ag_notice": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Oklahoma/ag_threshold": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Oklahoma/ag_days": {
       "status": "found",
       "seen": "2026-11-01"
     },
@@ -943,6 +963,10 @@
       "seen": "2026-11-01"
     },
     "Washington/ag_days": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Washington/encrypted_exempt": {
       "status": "found",
       "seen": "2026-11-01"
     },

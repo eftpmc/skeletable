@@ -1,4 +1,4 @@
-import { validateTable, watchFileSchema, type Cell } from "@skeleton/tables/format";
+import { isFound, validateTable, watchFileSchema, type Cell } from "@skeleton/tables/format";
 import postgres from "postgres";
 import { loadTables, type PublishedTable } from "./library.js";
 
@@ -137,9 +137,19 @@ export async function migrate(sql: Sql) {
 
 const accountName = (handle: string) => handle.charAt(0).toUpperCase() + handle.slice(1);
 
-/** Add any table the database doesn't have. One it has keeps its cells, and only takes a newer watch. */
+/**
+ * Add any table the database doesn't have. One it has gains the file's new rows, its scope and a
+ * newer watch. Its cells only move on for a value in a blank or a value read more recently, each as
+ * a new version, so an edit made on the site isn't undone by a deploy.
+ */
 export async function importTables(sql: Sql, tables: PublishedTable[]) {
   await sql.begin(async (tx) => {
+    const addRow = async (tableId: string, row: PublishedTable["rows"][number], position: number) => {
+      const [saved] = await tx`insert into table_rows (table_id, key, position) values (${tableId}, ${row.key}, ${position}) returning id`;
+      for (const [columnId, cell] of Object.entries(row.cells)) {
+        await tx`insert into cell_versions (row_id, column_id, cell) values (${saved!.id}, ${columnId}, ${tx.json(cell)})`;
+      }
+    };
     for (const table of tables) {
       const [account] = await tx`
         insert into accounts (handle, name) values (${table.owner}, ${accountName(table.owner)})
@@ -148,6 +158,31 @@ export async function importTables(sql: Sql, tables: PublishedTable[]) {
       const [existing] = await tx`select id, watch from data_tables where account_id = ${account!.id} and slug = ${table.slug}`;
       if (existing) {
         if (table.watch && table.watch.ran >= (existing.watch?.ran ?? "")) await tx`update data_tables set watch = ${watch} where id = ${existing.id}`;
+        await tx`update data_tables set scope = ${table.scope} where id = ${existing.id}`;
+        const saved = await tx`select id, key from table_rows where table_id = ${existing.id}`;
+        const current = await tx`
+          select distinct on (v.row_id, v.column_id) v.row_id, v.column_id, v.cell
+          from cell_versions v join table_rows r on r.id = v.row_id
+          where r.table_id = ${existing.id}
+          order by v.row_id, v.column_id, v.id desc`;
+        const onDisk = new Set(table.rows.map((row) => row.key));
+        for (const [position, row] of table.rows.entries()) {
+          const match = saved.find((candidate) => candidate.key === row.key);
+          if (!match) {
+            await addRow(existing.id, row, position);
+            continue;
+          }
+          await tx`update table_rows set position = ${position} where id = ${match.id}`;
+          for (const [columnId, cell] of Object.entries(row.cells)) {
+            const held = current.find((candidate) => candidate.row_id === match.id && candidate.column_id === columnId)?.cell as Cell | undefined;
+            if (isFound(cell) && (!held || !isFound(held) || cell.read > held.read)) {
+              await tx`insert into cell_versions (row_id, column_id, cell) values (${match.id}, ${columnId}, ${tx.json(cell)})`;
+            }
+          }
+        }
+        // Rows added on the site follow the file's, in the order they already had.
+        const added = saved.filter((row) => !onDisk.has(row.key));
+        for (const [offset, row] of added.entries()) await tx`update table_rows set position = ${table.rows.length + offset} where id = ${row.id}`;
         continue;
       }
       const [created] = await tx`
@@ -159,12 +194,7 @@ export async function importTables(sql: Sql, tables: PublishedTable[]) {
           insert into table_columns (table_id, id, position, label, type, unit, rule)
           values (${created!.id}, ${column.id}, ${position}, ${column.label}, ${column.type}, ${column.unit ?? null}, ${column.rule})`;
       }
-      for (const [position, row] of table.rows.entries()) {
-        const [saved] = await tx`insert into table_rows (table_id, key, position) values (${created!.id}, ${row.key}, ${position}) returning id`;
-        for (const [columnId, cell] of Object.entries(row.cells)) {
-          await tx`insert into cell_versions (row_id, column_id, cell) values (${saved!.id}, ${columnId}, ${tx.json(cell)})`;
-        }
-      }
+      for (const [position, row] of table.rows.entries()) await addRow(created!.id, row, position);
     }
   });
 }

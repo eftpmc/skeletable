@@ -61,6 +61,45 @@ describe.skipIf(!url)("database", () => {
     expect((await readTables(sql))[0]!.rows[0]!.cells[column_id]).toMatchObject({ value: 1.5 });
   });
 
+  const smaller = (table: (typeof tables)[number]) => ({ ...table, scope: "Just the first row.", rows: table.rows.slice(0, 1) });
+
+  it("gives a table it already has the file's new rows and scope", async () => {
+    const table = tables[0]!;
+    await importTables(sql, [smaller(table)]);
+    await importTables(sql, [table]);
+    const [fresh] = await readTables(sql);
+    expect(fresh!.rows).toEqual(table.rows);
+    expect(fresh!.scope).toBe(table.scope);
+  });
+
+  it("keeps a row added on the site after the file's rows", async () => {
+    const table = tables[0]!;
+    await importTables(sql, [smaller(table)]);
+    const [{ id: tableId }] = (await sql`select id from data_tables`) as unknown as [{ id: string }];
+    const [added] = await sql`insert into table_rows (table_id, key, position) values (${tableId}, ${"Added on the site"}, ${1}) returning id`;
+    for (const column of table.columns) {
+      await sql`insert into cell_versions (row_id, column_id, cell) values (${added!.id}, ${column.id}, ${sql.json({ missing: true, checked: [], read: "2026-01-01" })})`;
+    }
+    await importTables(sql, [table]);
+    const [fresh] = await readTables(sql);
+    expect(fresh!.rows.map((row) => row.key)).toEqual([...table.rows.map((row) => row.key), "Added on the site"]);
+  });
+
+  it("takes a value for a blank and a newer read, and keeps both as new versions", async () => {
+    const table = tables[0]!;
+    const row = table.rows[0]!;
+    const [first, second] = Object.entries(row.cells).filter(([, cell]) => "value" in cell);
+    const older = structuredClone(table);
+    older.rows[0]!.cells[first![0]] = { missing: true, checked: ["https://a.example/"], read: "2020-01-01" };
+    older.rows[0]!.cells[second![0]] = { ...second![1], read: "2020-01-01" } as (typeof row.cells)[string];
+    await importTables(sql, [older]);
+    await importTables(sql, [table]);
+    const [fresh] = await readTables(sql);
+    expect(fresh!.rows[0]!.cells[first![0]]).toEqual(first![1]);
+    expect(fresh!.rows[0]!.cells[second![0]]).toEqual(second![1]);
+    expect(await sql`select v.id from cell_versions v join table_rows r on r.id = v.row_id where r.key = ${row.key} and v.column_id = ${first![0]}`).toHaveLength(2);
+  });
+
   it("takes a newer watch for a table it already has", async () => {
     await importTables(sql, tables);
     const newer = { ...tables[0]!, watch: { slug: tables[0]!.slug, ran: "2030-01-01", cells: {} } };

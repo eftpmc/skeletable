@@ -5,7 +5,7 @@
   "topic": "Law",
   "title": "US data breach notification laws",
   "question": "After a data breach, how fast must a business tell people, and who else must it tell?",
-  "scope": "The general breach notification law for businesses in each US state, read from official state pages where we can. Laws for banks, insurers, health care and government often differ and are left out. All 50 states and DC have a row. A blank means the page we could read doesn't say, never that the answer is no, and four states are blank throughout because their official text wouldn't open. Where a state's code can't be read, a value may come from an enacted bill, an older official copy or the attorney general's own page, so open the source. California's two day counts come from a legislative committee's account of its 2025 bill. Delays for law enforcement apply in most states. This records what the laws say and isn't legal advice.",
+  "scope": "The general breach notification law for businesses in all 50 states and DC, from official state pages where we can read them. Laws for banks, insurers, health care and government often differ and are left out. A blank means the page we could read doesn't say, never that the answer is no, and four states are blank throughout. A value may come from an enacted bill, an older official copy or an attorney general's page, so open the source. Two California cells and three Oklahoma cells rest on second-hand accounts of 2025 laws. Delays for law enforcement apply in most states. This records what the laws say and isn't legal advice.",
   "columns": [
     {
       "id": "statute",
@@ -816,57 +816,65 @@
       "cells": {
         "statute": {
           "value": "487N-2",
-          "source": "https://data.capitol.hawaii.gov/sessions/session2017/HRS-Chapter-PDF's/HRS_0487N.pdf",
+          "source": "https://data.capitol.hawaii.gov/hrscurrent/Vol11_Ch0476-0490/HRS0487N/HRS_0487N-0002.htm",
           "kind": "first-hand",
           "quote": "487N-2 Notice of security breach",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_standard": {
           "value": "without unreasonable delay",
-          "source": "https://data.capitol.hawaii.gov/sessions/session2017/HRS-Chapter-PDF's/HRS_0487N.pdf",
+          "source": "https://data.capitol.hawaii.gov/hrscurrent/Vol11_Ch0476-0490/HRS0487N/HRS_0487N-0002.htm",
           "kind": "first-hand",
           "quote": "The disclosure notification shall be made without unreasonable delay",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "ag_notice": {
           "value": true,
-          "source": "https://data.capitol.hawaii.gov/sessions/session2017/HRS-Chapter-PDF's/HRS_0487N.pdf",
+          "source": "https://data.capitol.hawaii.gov/hrscurrent/Vol11_Ch0476-0490/HRS0487N/HRS_0487N-0002.htm",
           "kind": "first-hand",
           "quote": "the State of Hawaii's office of consumer protection",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "ag_threshold": {
           "value": 1000,
-          "source": "https://data.capitol.hawaii.gov/sessions/session2017/HRS-Chapter-PDF's/HRS_0487N.pdf",
+          "source": "https://data.capitol.hawaii.gov/hrscurrent/Vol11_Ch0476-0490/HRS0487N/HRS_0487N-0002.htm",
           "kind": "first-hand",
           "quote": "provides notice to more than one thousand persons at one time",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "encrypted_exempt": {
           "value": true,
-          "source": "https://data.capitol.hawaii.gov/sessions/session2017/HRS-Chapter-PDF's/HRS_0487N.pdf",
+          "source": "https://data.capitol.hawaii.gov/hrscurrent/Vol11_Ch0476-0490/HRS0487N/HRS_0487N-0001.htm",
           "kind": "first-hand",
           "quote": "acquisition of unencrypted or unredacted records",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "harm_exception": {
           "value": true,
-          "source": "https://data.capitol.hawaii.gov/sessions/session2017/HRS-Chapter-PDF's/HRS_0487N.pdf",
+          "source": "https://data.capitol.hawaii.gov/hrscurrent/Vol11_Ch0476-0490/HRS0487N/HRS_0487N-0001.htm",
           "kind": "first-hand",
           "quote": "is reasonably likely to occur and that creates a risk of harm to a person",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_days": {
           "missing": true,
           "checked": [
-            "https://data.capitol.hawaii.gov/sessions/session2017/HRS-Chapter-PDF's/HRS_0487N.pdf"
+            "https://data.capitol.hawaii.gov/hrscurrent/Vol11_Ch0476-0490/HRS0487N/HRS_0487N-0002.htm",
+            "https://data.capitol.hawaii.gov/hrscurrent/Vol11_Ch0476-0490/HRS0487N/HRS_0487N-0001.htm"
           ],
           "read": "2026-11-01"
         },
         "ag_days": {
           "missing": true,
           "checked": [
-            "https://data.capitol.hawaii.gov/sessions/session2017/HRS-Chapter-PDF's/HRS_0487N.pdf"
+            "https://data.capitol.hawaii.gov/hrscurrent/Vol11_Ch0476-0490/HRS0487N/HRS_0487N-0002.htm",
+            "https://data.capitol.hawaii.gov/hrscurrent/Vol11_Ch0476-0490/HRS0487N/HRS_0487N-0001.htm"
           ],
           "read": "2026-11-01"
         }
@@ -1009,42 +1017,42 @@
       "cells": {
         "statute": {
           "value": "IC 24-4.9-3-1",
-          "source": "https://iga.in.gov/ic/2024/Title_24/Article_4.9.pdf",
+          "source": "https://iga.in.gov/ic/2026/Title_24/Article_4.9.pdf",
           "kind": "first-hand",
           "quote": "IC 24-4.9-3-1",
           "read": "2026-11-01"
         },
         "notify_days": {
           "value": 45,
-          "source": "https://iga.in.gov/ic/2024/Title_24/Article_4.9.pdf",
+          "source": "https://iga.in.gov/ic/2026/Title_24/Article_4.9.pdf",
           "kind": "first-hand",
           "quote": "not more than forty-five (45) days after the discovery of the breach",
           "read": "2026-11-01"
         },
         "notify_standard": {
           "value": "without unreasonable delay",
-          "source": "https://iga.in.gov/ic/2024/Title_24/Article_4.9.pdf",
+          "source": "https://iga.in.gov/ic/2026/Title_24/Article_4.9.pdf",
           "kind": "first-hand",
           "quote": "shall make the disclosure or notification without unreasonable delay",
           "read": "2026-11-01"
         },
         "ag_notice": {
           "value": true,
-          "source": "https://iga.in.gov/ic/2024/Title_24/Article_4.9.pdf",
+          "source": "https://iga.in.gov/ic/2026/Title_24/Article_4.9.pdf",
           "kind": "first-hand",
           "quote": "the data base owner shall also disclose the breach to the attorney general",
           "read": "2026-11-01"
         },
         "encrypted_exempt": {
           "value": true,
-          "source": "https://iga.in.gov/ic/2024/Title_24/Article_4.9.pdf",
+          "source": "https://iga.in.gov/ic/2026/Title_24/Article_4.9.pdf",
           "kind": "first-hand",
           "quote": "encrypted personal information was or may have been acquired by an unauthorized person with access to the encryption key",
           "read": "2026-11-01"
         },
         "harm_exception": {
           "value": true,
-          "source": "https://iga.in.gov/ic/2024/Title_24/Article_4.9.pdf",
+          "source": "https://iga.in.gov/ic/2026/Title_24/Article_4.9.pdf",
           "kind": "first-hand",
           "quote": "has resulted in or could result in identity deception",
           "read": "2026-11-01"
@@ -1052,7 +1060,7 @@
         "ag_threshold": {
           "missing": true,
           "checked": [
-            "https://iga.in.gov/ic/2024/Title_24/Article_4.9.pdf",
+            "https://iga.in.gov/ic/2026/Title_24/Article_4.9.pdf",
             "https://www.in.gov/attorneygeneral/3037.htm"
           ],
           "read": "2026-11-01"
@@ -1060,7 +1068,7 @@
         "ag_days": {
           "missing": true,
           "checked": [
-            "https://iga.in.gov/ic/2024/Title_24/Article_4.9.pdf",
+            "https://iga.in.gov/ic/2026/Title_24/Article_4.9.pdf",
             "https://www.in.gov/attorneygeneral/3037.htm"
           ],
           "read": "2026-11-01"
@@ -2098,6 +2106,14 @@
           "read": "2026-11-01",
           "confirmed": "blind-read"
         },
+        "encrypted_exempt": {
+          "value": true,
+          "source": "https://www.njleg.state.nj.us/2004/Bills/PL05/226_.HTM",
+          "kind": "first-hand",
+          "quote": "when access to the personal information has not been secured by encryption or by any other method",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
         "harm_exception": {
           "value": true,
           "source": "https://www.njleg.state.nj.us/2004/Bills/PL05/226_.HTM",
@@ -2128,13 +2144,6 @@
           "read": "2026-11-01"
         },
         "ag_days": {
-          "missing": true,
-          "checked": [
-            "https://www.njleg.state.nj.us/2004/Bills/PL05/226_.HTM"
-          ],
-          "read": "2026-11-01"
-        },
-        "encrypted_exempt": {
           "missing": true,
           "checked": [
             "https://www.njleg.state.nj.us/2004/Bills/PL05/226_.HTM"
@@ -2260,12 +2269,12 @@
           "read": "2026-11-01"
         },
         "harm_exception": {
-          "missing": true,
-          "checked": [
-            "https://www.nysenate.gov/legislation/laws/GBS/899-AA",
-            "https://ag.ny.gov/resources/organizations/data-breach-reporting/shield-act"
-          ],
-          "read": "2026-11-01"
+          "value": true,
+          "source": "https://ag.ny.gov/resources/organizations/data-breach-reporting/shield-act",
+          "kind": "first-hand",
+          "quote": "reasonably determines such exposure will not likely result in misuse of such information",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         }
       }
     },
@@ -2468,6 +2477,13 @@
           "read": "2026-11-01",
           "confirmed": "blind-read"
         },
+        "notify_standard": {
+          "value": "without unreasonable delay",
+          "source": "https://www.globalpolicywatch.com/2025/08/oklahoma-substantially-amends-its-data-breach-notification-statute/",
+          "kind": "second-hand",
+          "quote": "(which must be made \"without unreasonable delay,\" subject to exceptions)",
+          "read": "2026-11-01"
+        },
         "ag_notice": {
           "value": true,
           "source": "https://oklahoma.gov/oag/complaints-tiplines/complaints/data-breach.html",
@@ -2476,28 +2492,21 @@
           "read": "2026-11-01",
           "confirmed": "blind-read"
         },
-        "notify_days": {
-          "missing": true,
-          "checked": [
-            "https://oklahoma.gov/oag/complaints-tiplines/complaints/data-breach.html"
-          ],
-          "read": "2026-11-01"
-        },
-        "notify_standard": {
-          "missing": true,
-          "checked": [
-            "https://oklahoma.gov/oag/complaints-tiplines/complaints/data-breach.html"
-          ],
-          "read": "2026-11-01"
-        },
         "ag_threshold": {
-          "missing": true,
-          "checked": [
-            "https://oklahoma.gov/oag/complaints-tiplines/complaints/data-breach.html"
-          ],
+          "value": 500,
+          "source": "https://www.globalpolicywatch.com/2025/08/oklahoma-substantially-amends-its-data-breach-notification-statute/",
+          "kind": "second-hand",
+          "quote": "notify the attorney general of breaches involving 500 or more residents",
           "read": "2026-11-01"
         },
         "ag_days": {
+          "value": 60,
+          "source": "https://www.globalpolicywatch.com/2025/08/oklahoma-substantially-amends-its-data-breach-notification-statute/",
+          "kind": "second-hand",
+          "quote": "no more than 60 days after providing notice to individual residents",
+          "read": "2026-11-01"
+        },
+        "notify_days": {
           "missing": true,
           "checked": [
             "https://oklahoma.gov/oag/complaints-tiplines/complaints/data-breach.html"
@@ -3239,6 +3248,14 @@
           "read": "2026-11-01",
           "confirmed": "blind-read"
         },
+        "encrypted_exempt": {
+          "value": true,
+          "source": "https://www.atg.wa.gov/washington-s-data-breach-notification-laws",
+          "kind": "first-hand",
+          "quote": "the resident's personal information was not secured (i.e. encrypted)",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
         "harm_exception": {
           "value": true,
           "source": "https://www.atg.wa.gov/washington-s-data-breach-notification-laws",
@@ -3246,13 +3263,6 @@
           "quote": "is reasonably likely to subject consumers to a risk of harm",
           "read": "2026-11-01",
           "confirmed": "blind-read"
-        },
-        "encrypted_exempt": {
-          "missing": true,
-          "checked": [
-            "https://www.atg.wa.gov/washington-s-data-breach-notification-laws"
-          ],
-          "read": "2026-11-01"
         }
       }
     },

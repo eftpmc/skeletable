@@ -37,6 +37,10 @@ A cell can also record more about itself:
 
 Conflicts and past values follow the same rules as any value, so a summary's claim doesn't count until the document itself has been read.
 
+A page that holds a law can be out of date and still contain its quotes, so a law's source must be the newest official text we can open, and the check log says how old each older source is. `tables verify` also prints any page that says "superseded" or "effective until". That can be a false alarm, and each one gets read.
+
+A deploy gives a table the live server already has its new rows and scope. A cell only moves on for a value in a blank or a value read more recently, always as a new version, so an edit made on the site stays.
+
 `tables watch` saves its results in [`watch/`](watch/), never in the table. It marks each cell `found`, `not-on-page`, `unreadable` or `robots`, and keeps the last day the quote was seen. Archived copies are `pinned` and aren't opened. A quote that's gone is a reason to look again, not proof the value changed, and a publish is what puts new results on the live server.
 
 ## The ten
@@ -50,6 +54,6 @@ Conflicts and past values follow the same rules as any value, so a summary's cla
 | 5 | Home batteries: capacity and warranty | Home energy | Built and checked |
 | 6 | Password managers: plans and prices | Software | Deferred: two of four makers show no prices to our reader |
 | 7 | Right-to-repair laws by US state | Law | Built, check incomplete |
-| 8 | Data breach notification laws by US state | Law | All 51 rows built and checked, 4 blank |
+| 8 | Data breach notification laws by US state | Law | All 51 rows built, checked and rechecked, 4 blank |
 | 9 | Entrance fees at the most visited US national parks | Travel | Built, read once |
 | 10 | EVs on sale in the US: EPA range | Cars | Deferred |
