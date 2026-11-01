@@ -1,0 +1,254 @@
+{
+  "slug": "data-breach-laws",
+  "ran": "2026-11-01",
+  "cells": {
+    "California/statute": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "California/notify_days": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "California/ag_notice": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "California/ag_threshold": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "California/ag_days": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "California/encrypted_exempt": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Colorado/statute": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Colorado/notify_days": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Colorado/notify_standard": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Colorado/ag_notice": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Colorado/ag_threshold": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Colorado/ag_days": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Colorado/encrypted_exempt": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Colorado/harm_exception": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Connecticut/statute": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Connecticut/notify_days": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Connecticut/notify_standard": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Connecticut/ag_notice": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Florida/statute": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Florida/notify_days": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Florida/notify_standard": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Florida/ag_notice": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Florida/ag_threshold": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Florida/ag_days": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Florida/encrypted_exempt": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Florida/harm_exception": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Louisiana/statute": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Louisiana/notify_days": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Louisiana/notify_standard": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Louisiana/ag_notice": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Louisiana/ag_days": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Louisiana/encrypted_exempt": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Louisiana/harm_exception": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Maryland/statute": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Maryland/notify_days": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Maryland/notify_standard": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Maryland/ag_notice": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Maryland/encrypted_exempt": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Maryland/harm_exception": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Massachusetts/statute": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Massachusetts/notify_standard": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Massachusetts/ag_notice": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Massachusetts/encrypted_exempt": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Massachusetts/harm_exception": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "New York/statute": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "New York/notify_days": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "New York/notify_standard": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "New York/ag_notice": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Oregon/statute": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Oregon/notify_days": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Oregon/notify_standard": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Oregon/ag_notice": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Oregon/ag_threshold": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Oregon/ag_days": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Oregon/encrypted_exempt": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Oregon/harm_exception": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Texas/statute": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Texas/notify_days": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Texas/notify_standard": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Texas/ag_notice": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Texas/ag_threshold": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Texas/ag_days": {
+      "status": "found",
+      "seen": "2026-11-01"
+    }
+  }
+}

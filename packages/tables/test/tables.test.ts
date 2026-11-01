@@ -75,6 +75,20 @@ describe("quoteStates", () => {
     expect(quoteStates(20, "120 g")).toBe(false);
     expect(quoteStates(5, "13.5 kWh")).toBe(false);
   });
+
+  it("reads numbers written in words, the way laws do", () => {
+    expect(quoteStates(30, "not later than thirty days")).toBe(true);
+    expect(quoteStates(45, "within forty-five days")).toBe(true);
+    expect(quoteStates(500, "five hundred residents")).toBe(true);
+    expect(quoteStates(60, "sixty (60) days")).toBe(true);
+  });
+
+  it("doesn't match words inside a longer number", () => {
+    expect(quoteStates(30, "thirty-five days")).toBe(false);
+    expect(quoteStates(5, "five hundred residents")).toBe(false);
+    expect(quoteStates(30, "two hundred thirty days")).toBe(false);
+    expect(quoteStates(30, "thirteen days")).toBe(false);
+  });
 });
 
 describe("verifyTable", () => {

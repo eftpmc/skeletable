@@ -1,0 +1,722 @@
+{
+  "format": 1,
+  "owner": "skeletable",
+  "slug": "data-breach-laws",
+  "topic": "Law",
+  "title": "US data breach notification laws",
+  "question": "After a data breach, how fast must a business tell people, and who else must it tell?",
+  "scope": "The general breach notification law for businesses in each US state, read from official state pages where we can. This first batch covers 10 states; all 50 and DC belong here. Laws for banks, insurers, health care and government often differ and are left out. A blank means the page we could read doesn't say, never that the answer is no. New York's values come from the 2024 bill and Texas's deadline to residents from its 2019 bill, because their current code pages can't be read. California's two day counts come from a legislative committee's account of its 2025 bill, because its code site refuses our reader. Delays for law enforcement apply in most states. This records what the laws say and isn't legal advice.",
+  "columns": [
+    {
+      "id": "statute",
+      "label": "Law",
+      "type": "text",
+      "rule": "The section that holds the state's general breach notification duty for businesses, as the source names it."
+    },
+    {
+      "id": "notify_days",
+      "label": "Days to tell residents",
+      "type": "number",
+      "unit": "days",
+      "rule": "The outer limit in days for telling affected residents, as stated. Blank where no number is stated. States start the clock differently, at discovery or at determining a breach happened, and the quote shows which."
+    },
+    {
+      "id": "notify_standard",
+      "label": "How fast, in the law's words",
+      "type": "text",
+      "rule": "The law's own words for how quickly residents must be told, apart from any day count."
+    },
+    {
+      "id": "ag_notice",
+      "label": "Attorney general told",
+      "type": "boolean",
+      "rule": "Yes if the source says the state attorney general or its equivalent must be told of a breach in at least some cases. Florida's Department of Legal Affairs and Oregon's Attorney General count."
+    },
+    {
+      "id": "ag_threshold",
+      "label": "Residents before the AG is told",
+      "type": "number",
+      "unit": "residents",
+      "rule": "The number of affected residents at which the attorney general must be told, as stated. Blank where no number is stated. The quote shows whether it means that many or more than that many."
+    },
+    {
+      "id": "ag_days",
+      "label": "Days to tell the AG",
+      "type": "number",
+      "unit": "days",
+      "rule": "The deadline in days for telling the attorney general, as stated. Blank where no number is stated. Clocks differ: some run from the breach, and others from telling residents, as the quote shows."
+    },
+    {
+      "id": "encrypted_exempt",
+      "label": "Encrypted data excepted",
+      "type": "boolean",
+      "rule": "Yes if the text limits the duty to unencrypted data, or leaves encrypted data out. Stolen keys can undo this in several states."
+    },
+    {
+      "id": "harm_exception",
+      "label": "Low-harm exception",
+      "type": "boolean",
+      "rule": "Yes if the text lets a business skip notice after finding that harm or misuse is unlikely, or only counts breaches that create a real risk."
+    }
+  ],
+  "rows": [
+    {
+      "key": "California",
+      "cells": {
+        "statute": {
+          "value": "Civ. Code 1798.82",
+          "source": "https://oag.ca.gov/privacy/databreach/reporting",
+          "kind": "first-hand",
+          "quote": "california civ. code s. 1798.82(a) [person or business]",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "notify_days": {
+          "value": 30,
+          "source": "https://apcp.assembly.ca.gov/system/files/2025-06/sb-446-hurtado-apcp-analysis.pdf",
+          "kind": "second-hand",
+          "quote": "within 30 calendar days of discovery or notification of the data breach",
+          "read": "2026-11-01"
+        },
+        "notify_standard": {
+          "missing": true,
+          "checked": [
+            "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?sectionNum=1798.82.&lawCode=CIV",
+            "https://oag.ca.gov/privacy/databreach/reporting"
+          ],
+          "read": "2026-11-01"
+        },
+        "ag_notice": {
+          "value": true,
+          "source": "https://oag.ca.gov/privacy/databreach/reporting",
+          "kind": "first-hand",
+          "quote": "shall electronically submit a single sample copy of that security breach notification, excluding any personally identifiable information, to the attorney general",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "ag_threshold": {
+          "value": 500,
+          "source": "https://oag.ca.gov/privacy/databreach/reporting",
+          "kind": "first-hand",
+          "quote": "more than 500 california residents",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "ag_days": {
+          "value": 15,
+          "source": "https://apcp.assembly.ca.gov/system/files/2025-06/sb-446-hurtado-apcp-analysis.pdf",
+          "kind": "second-hand",
+          "quote": "within 15 calendar days of notifying affected consumers of the security breach",
+          "read": "2026-11-01"
+        },
+        "encrypted_exempt": {
+          "value": true,
+          "source": "https://oag.ca.gov/privacy/databreach/reporting",
+          "kind": "first-hand",
+          "quote": "any california resident whose unencrypted personal information",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "harm_exception": {
+          "missing": true,
+          "checked": [
+            "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?sectionNum=1798.82.&lawCode=CIV",
+            "https://oag.ca.gov/privacy/databreach/reporting"
+          ],
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "Colorado",
+      "cells": {
+        "statute": {
+          "value": "6-1-716",
+          "source": "https://leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf",
+          "kind": "first-hand",
+          "quote": "6-1-716. notification of security breach",
+          "read": "2026-11-01"
+        },
+        "notify_days": {
+          "value": 30,
+          "source": "https://leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf",
+          "kind": "first-hand",
+          "quote": "not later than thirty days after the date of determination that a security breach occurred",
+          "read": "2026-11-01"
+        },
+        "notify_standard": {
+          "value": "in the most expedient time possible and without unreasonable delay",
+          "source": "https://leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf",
+          "kind": "first-hand",
+          "quote": "notice must be made in the most expedient time possible and without unreasonable delay",
+          "read": "2026-11-01"
+        },
+        "ag_notice": {
+          "value": true,
+          "source": "https://leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf",
+          "kind": "first-hand",
+          "quote": "shall provide notice of any security breach to the colorado attorney general",
+          "read": "2026-11-01"
+        },
+        "ag_threshold": {
+          "value": 500,
+          "source": "https://leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf",
+          "kind": "first-hand",
+          "quote": "reasonably believed to have affected five hundred colorado residents or more",
+          "read": "2026-11-01"
+        },
+        "ag_days": {
+          "value": 30,
+          "source": "https://leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf",
+          "kind": "first-hand",
+          "quote": "but not later than thirty days after the date of determination that a security breach occurred, if the security breach is reasonably believed",
+          "read": "2026-11-01"
+        },
+        "encrypted_exempt": {
+          "value": true,
+          "source": "https://leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf",
+          "kind": "first-hand",
+          "quote": "the unauthorized acquisition of unencrypted computerized data",
+          "read": "2026-11-01"
+        },
+        "harm_exception": {
+          "value": true,
+          "source": "https://leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf",
+          "kind": "first-hand",
+          "quote": "unless the investigation determines that the misuse of information about a colorado resident has not occurred and is not reasonably likely to occur",
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "Connecticut",
+      "cells": {
+        "statute": {
+          "value": "36a-701b",
+          "source": "https://portal.ct.gov/ag/sections/privacy/reporting-a-data-breach",
+          "kind": "first-hand",
+          "quote": "36a-701b, any person who owns, licenses or maintains computerized data",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "notify_days": {
+          "value": 60,
+          "source": "https://portal.ct.gov/ag/sections/privacy/reporting-a-data-breach",
+          "kind": "first-hand",
+          "quote": "no later than sixty (60) days from discovery of the breach",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "notify_standard": {
+          "value": "without unreasonable delay",
+          "source": "https://portal.ct.gov/ag/sections/privacy/reporting-a-data-breach",
+          "kind": "first-hand",
+          "quote": "notice to consumers must be made without unreasonable delay",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "ag_notice": {
+          "value": true,
+          "source": "https://portal.ct.gov/ag/sections/privacy/reporting-a-data-breach",
+          "kind": "first-hand",
+          "quote": "required to disclose a security breach to the office of the attorney general",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "ag_threshold": {
+          "missing": true,
+          "checked": [
+            "https://portal.ct.gov/ag/sections/privacy/reporting-a-data-breach"
+          ],
+          "read": "2026-11-01"
+        },
+        "ag_days": {
+          "missing": true,
+          "checked": [
+            "https://portal.ct.gov/ag/sections/privacy/reporting-a-data-breach"
+          ],
+          "read": "2026-11-01"
+        },
+        "encrypted_exempt": {
+          "missing": true,
+          "checked": [
+            "https://portal.ct.gov/ag/sections/privacy/reporting-a-data-breach"
+          ],
+          "read": "2026-11-01"
+        },
+        "harm_exception": {
+          "missing": true,
+          "checked": [
+            "https://portal.ct.gov/ag/sections/privacy/reporting-a-data-breach"
+          ],
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "Florida",
+      "cells": {
+        "statute": {
+          "value": "501.171",
+          "source": "https://www.leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=0500-0599/0501/Sections/0501.171.html",
+          "kind": "first-hand",
+          "quote": "501.171 security of confidential personal information",
+          "read": "2026-11-01"
+        },
+        "notify_days": {
+          "value": 30,
+          "source": "https://www.leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=0500-0599/0501/Sections/0501.171.html",
+          "kind": "first-hand",
+          "quote": "no later than 30 days after the determination of a breach or reason to believe a breach occurred",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "notify_standard": {
+          "value": "as expeditiously as practicable and without unreasonable delay",
+          "source": "https://www.leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=0500-0599/0501/Sections/0501.171.html",
+          "kind": "first-hand",
+          "quote": "notice to individuals shall be made as expeditiously as practicable and without unreasonable delay",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "ag_notice": {
+          "value": true,
+          "source": "https://www.leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=0500-0599/0501/Sections/0501.171.html",
+          "kind": "first-hand",
+          "quote": "a covered entity shall provide notice to the department of any breach of security affecting 500 or more individuals in this state",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "ag_threshold": {
+          "value": 500,
+          "source": "https://www.leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=0500-0599/0501/Sections/0501.171.html",
+          "kind": "first-hand",
+          "quote": "affecting 500 or more individuals in this state",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "ag_days": {
+          "value": 30,
+          "source": "https://www.leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=0500-0599/0501/Sections/0501.171.html",
+          "kind": "first-hand",
+          "quote": "no later than 30 days after the determination of the breach or reason to believe a breach occurred",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "encrypted_exempt": {
+          "value": true,
+          "source": "https://www.leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=0500-0599/0501/Sections/0501.171.html",
+          "kind": "first-hand",
+          "quote": "the term also does not include information that is encrypted",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "harm_exception": {
+          "value": true,
+          "source": "https://www.leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=0500-0599/0501/Sections/0501.171.html",
+          "kind": "first-hand",
+          "quote": "notice to the affected individuals is not required if, after an appropriate investigation and consultation with relevant federal, state, or local law enforcement agencies, the covered entity reasonably determines that the breach has not and will not likely result in identity theft or any other financial harm",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        }
+      }
+    },
+    {
+      "key": "Louisiana",
+      "cells": {
+        "statute": {
+          "value": "RS 51:3074",
+          "source": "https://legis.la.gov/legis/Law.aspx?d=322030",
+          "kind": "first-hand",
+          "quote": "rs 51:3074",
+          "read": "2026-11-01"
+        },
+        "notify_days": {
+          "value": 60,
+          "source": "https://legis.la.gov/legis/Law.aspx?d=322030",
+          "kind": "first-hand",
+          "quote": "not later than sixty days from the discovery of the breach",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "notify_standard": {
+          "value": "in the most expedient time possible and without unreasonable delay",
+          "source": "https://legis.la.gov/legis/Law.aspx?d=322030",
+          "kind": "first-hand",
+          "quote": "shall be made in the most expedient time possible and without unreasonable delay",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "ag_notice": {
+          "value": true,
+          "source": "https://www.ag.state.la.us/Page/DataBreach",
+          "kind": "first-hand",
+          "quote": "the person or agency shall provide written notice detailing the breach of the security of the system to the consumer protection section of the attorney general's office",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "ag_threshold": {
+          "missing": true,
+          "checked": [
+            "https://www.ag.state.la.us/Page/DataBreach"
+          ],
+          "read": "2026-11-01"
+        },
+        "ag_days": {
+          "value": 10,
+          "source": "https://www.ag.state.la.us/Page/DataBreach",
+          "kind": "first-hand",
+          "quote": "notice to the attorney general shall be timely if received within 10 days of distribution of notice to louisiana citizens",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "encrypted_exempt": {
+          "value": true,
+          "source": "https://legis.la.gov/legis/Law.aspx?d=322029",
+          "kind": "first-hand",
+          "quote": "when the name or the data element is not encrypted or redacted",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "harm_exception": {
+          "value": true,
+          "source": "https://legis.la.gov/legis/Law.aspx?d=322030",
+          "kind": "first-hand",
+          "quote": "shall not be required if after a reasonable investigation, the person or business determines that there is no reasonable likelihood of harm",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        }
+      }
+    },
+    {
+      "key": "Maryland",
+      "cells": {
+        "statute": {
+          "value": "14-3504",
+          "source": "https://mgaleg.maryland.gov/mgawebsite/Laws/StatuteText?article=gcl&section=14-3504",
+          "kind": "first-hand",
+          "quote": "14-3504",
+          "read": "2026-11-01"
+        },
+        "notify_days": {
+          "value": 45,
+          "source": "https://mgaleg.maryland.gov/mgawebsite/Laws/StatuteText?article=gcl&section=14-3504",
+          "kind": "first-hand",
+          "quote": "not later than 45 days after the business discovers or is notified of the breach of the security of a system",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "notify_standard": {
+          "value": "as soon as reasonably practicable",
+          "source": "https://mgaleg.maryland.gov/mgawebsite/Laws/StatuteText?article=gcl&section=14-3504",
+          "kind": "first-hand",
+          "quote": "shall be given as soon as reasonably practicable",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "ag_notice": {
+          "value": true,
+          "source": "https://mgaleg.maryland.gov/mgawebsite/Laws/StatuteText?article=gcl&section=14-3504",
+          "kind": "first-hand",
+          "quote": "a business shall provide notice of a breach of the security of a system to the office of the attorney general",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "ag_threshold": {
+          "missing": true,
+          "checked": [
+            "https://mgaleg.maryland.gov/mgawebsite/Laws/StatuteText?article=gcl&section=14-3504"
+          ],
+          "read": "2026-11-01"
+        },
+        "ag_days": {
+          "missing": true,
+          "checked": [
+            "https://mgaleg.maryland.gov/mgawebsite/Laws/StatuteText?article=gcl&section=14-3504"
+          ],
+          "read": "2026-11-01"
+        },
+        "encrypted_exempt": {
+          "value": true,
+          "source": "https://mgaleg.maryland.gov/mgawebsite/Laws/StatuteText?article=gcl&section=14-3501",
+          "kind": "first-hand",
+          "quote": "when the data elements are not encrypted, redacted, or otherwise protected by another method",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "harm_exception": {
+          "value": true,
+          "source": "https://mgaleg.maryland.gov/mgawebsite/Laws/StatuteText?article=gcl&section=14-3504",
+          "kind": "first-hand",
+          "quote": "unless the business reasonably determines that the breach of the security of the system does not create a likelihood that personal information has been or will be misused",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        }
+      }
+    },
+    {
+      "key": "Massachusetts",
+      "cells": {
+        "statute": {
+          "value": "Chapter 93H",
+          "source": "https://malegislature.gov/Laws/GeneralLaws/PartI/TitleXV/Chapter93H/Section3",
+          "kind": "first-hand",
+          "quote": "chapter 93h",
+          "read": "2026-11-01"
+        },
+        "notify_days": {
+          "missing": true,
+          "checked": [
+            "https://malegislature.gov/Laws/GeneralLaws/PartI/TitleXV/Chapter93H/Section3"
+          ],
+          "read": "2026-11-01"
+        },
+        "notify_standard": {
+          "value": "as soon as practicable and without unreasonable delay",
+          "source": "https://malegislature.gov/Laws/GeneralLaws/PartI/TitleXV/Chapter93H/Section3",
+          "kind": "first-hand",
+          "quote": "shall provide notice, as soon as practicable and without unreasonable delay, when such person or agency (1) knows or has reason to know of a breach of security",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "ag_notice": {
+          "value": true,
+          "source": "https://malegislature.gov/Laws/GeneralLaws/PartI/TitleXV/Chapter93H/Section3",
+          "kind": "first-hand",
+          "quote": "to the attorney general, the director of consumer affairs and business regulation and to such resident",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "ag_threshold": {
+          "missing": true,
+          "checked": [
+            "https://malegislature.gov/Laws/GeneralLaws/PartI/TitleXV/Chapter93H/Section3"
+          ],
+          "read": "2026-11-01"
+        },
+        "ag_days": {
+          "missing": true,
+          "checked": [
+            "https://malegislature.gov/Laws/GeneralLaws/PartI/TitleXV/Chapter93H/Section3"
+          ],
+          "read": "2026-11-01"
+        },
+        "encrypted_exempt": {
+          "value": true,
+          "source": "https://malegislature.gov/Laws/GeneralLaws/PartI/TitleXV/Chapter93H/Section1",
+          "kind": "first-hand",
+          "quote": "the unauthorized acquisition or unauthorized use of unencrypted data or, encrypted electronic data and the confidential process or key",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "harm_exception": {
+          "value": true,
+          "source": "https://malegislature.gov/Laws/GeneralLaws/PartI/TitleXV/Chapter93H/Section1",
+          "kind": "first-hand",
+          "quote": "that creates a substantial risk of identity theft or fraud against a resident of the commonwealth",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        }
+      }
+    },
+    {
+      "key": "New York",
+      "cells": {
+        "statute": {
+          "value": "General Business Law section 899-aa",
+          "source": "https://legislation.nysenate.gov/pdf/bills/2023/S2659B",
+          "kind": "first-hand",
+          "quote": "section 899-aa of the general business law",
+          "read": "2026-11-01"
+        },
+        "notify_days": {
+          "value": 30,
+          "source": "https://legislation.nysenate.gov/pdf/bills/2023/S2659B",
+          "kind": "first-hand",
+          "quote": "within thirty days after the breach has been discovered",
+          "read": "2026-11-01"
+        },
+        "notify_standard": {
+          "value": "most expedient time possible",
+          "source": "https://legislation.nysenate.gov/pdf/bills/2023/S2659B",
+          "kind": "first-hand",
+          "quote": "be made in the most expedient time possible",
+          "read": "2026-11-01"
+        },
+        "ag_notice": {
+          "value": true,
+          "source": "https://legislation.nysenate.gov/pdf/bills/2023/S2659B",
+          "kind": "first-hand",
+          "quote": "person or business shall notify the state attorney general",
+          "read": "2026-11-01"
+        },
+        "ag_threshold": {
+          "missing": true,
+          "checked": [
+            "https://legislation.nysenate.gov/pdf/bills/2023/S2659B",
+            "https://ag.ny.gov/resources/organizations/data-breach-reporting/shield-act"
+          ],
+          "read": "2026-11-01"
+        },
+        "ag_days": {
+          "missing": true,
+          "checked": [
+            "https://legislation.nysenate.gov/pdf/bills/2023/S2659B",
+            "https://ag.ny.gov/resources/organizations/data-breach-reporting/shield-act"
+          ],
+          "read": "2026-11-01"
+        },
+        "encrypted_exempt": {
+          "missing": true,
+          "checked": [
+            "https://www.nysenate.gov/legislation/laws/GBS/899-AA",
+            "https://ag.ny.gov/resources/organizations/data-breach-reporting/shield-act"
+          ],
+          "read": "2026-11-01"
+        },
+        "harm_exception": {
+          "missing": true,
+          "checked": [
+            "https://www.nysenate.gov/legislation/laws/GBS/899-AA",
+            "https://ag.ny.gov/resources/organizations/data-breach-reporting/shield-act"
+          ],
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "Oregon",
+      "cells": {
+        "statute": {
+          "value": "646A.604",
+          "source": "https://www.oregonlegislature.gov/bills_laws/ors/ors646A.html",
+          "kind": "first-hand",
+          "quote": "646a.604 notice of breach of security",
+          "read": "2026-11-01"
+        },
+        "notify_days": {
+          "value": 45,
+          "source": "https://www.oregonlegislature.gov/bills_laws/ors/ors646A.html",
+          "kind": "first-hand",
+          "quote": "not later than 45 days after discovering or receiving notification of the breach of security",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "notify_standard": {
+          "value": "in the most expeditious manner possible, without unreasonable delay",
+          "source": "https://www.oregonlegislature.gov/bills_laws/ors/ors646A.html",
+          "kind": "first-hand",
+          "quote": "shall give notice of a breach of security in the most expeditious manner possible, without unreasonable delay",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "ag_notice": {
+          "value": true,
+          "source": "https://www.oregonlegislature.gov/bills_laws/ors/ors646A.html",
+          "kind": "first-hand",
+          "quote": "the attorney general, either in writing or electronically, if the number of consumers",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "ag_threshold": {
+          "value": 250,
+          "source": "https://www.oregonlegislature.gov/bills_laws/ors/ors646A.html",
+          "kind": "first-hand",
+          "quote": "this subsection exceeds 250",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "ag_days": {
+          "value": 45,
+          "source": "https://www.doj.state.or.us/consumer-protection/id-theft-data-breaches/data-breaches/",
+          "kind": "first-hand",
+          "quote": "must also be provided to the oregon department of justice (doj), also within 45 days",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "encrypted_exempt": {
+          "value": true,
+          "source": "https://www.oregonlegislature.gov/bills_laws/ors/ors646A.html",
+          "kind": "first-hand",
+          "quote": "if encryption, redaction or other methods have not rendered the data elements unusable",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "harm_exception": {
+          "value": true,
+          "source": "https://www.oregonlegislature.gov/bills_laws/ors/ors646A.html",
+          "kind": "first-hand",
+          "quote": "does not need to notify consumers of a breach of security if, after an appropriate investigation or after consultation with relevant federal, state or local law enforcement agencies, the covered entity reasonably determines that the consumers whose personal information was subject to the breach of security are unlikely to suffer harm",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        }
+      }
+    },
+    {
+      "key": "Texas",
+      "cells": {
+        "statute": {
+          "value": "Section 521.053",
+          "source": "https://capitol.texas.gov/tlodocs/86R/billtext/html/HB04390F.htm",
+          "kind": "first-hand",
+          "quote": "section 521.053",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "notify_days": {
+          "value": 60,
+          "source": "https://capitol.texas.gov/tlodocs/86R/billtext/html/HB04390F.htm",
+          "kind": "first-hand",
+          "quote": "not later than the 60th day after the date on which the person determines that the breach occurred",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "notify_standard": {
+          "value": "without unreasonable delay",
+          "source": "https://capitol.texas.gov/tlodocs/86R/billtext/html/HB04390F.htm",
+          "kind": "first-hand",
+          "quote": "the disclosure shall be made without unreasonable delay",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "ag_notice": {
+          "value": true,
+          "source": "https://www.texasattorneygeneral.gov/consumer-protection/data-breach-reporting",
+          "kind": "first-hand",
+          "quote": "to report that breach to the office of the texas attorney general",
+          "read": "2026-11-01"
+        },
+        "ag_threshold": {
+          "value": 250,
+          "source": "https://www.texasattorneygeneral.gov/consumer-protection/data-breach-reporting",
+          "kind": "first-hand",
+          "quote": "that affects 250 or more texans",
+          "read": "2026-11-01"
+        },
+        "ag_days": {
+          "value": 30,
+          "source": "https://www.texasattorneygeneral.gov/consumer-protection/data-breach-reporting",
+          "kind": "first-hand",
+          "quote": "no later than 30 days after the discovery of the breach",
+          "read": "2026-11-01"
+        },
+        "encrypted_exempt": {
+          "missing": true,
+          "checked": [
+            "https://statutes.capitol.texas.gov/Docs/BC/htm/BC.521.htm",
+            "https://www.texasattorneygeneral.gov/consumer-protection/data-breach-reporting"
+          ],
+          "read": "2026-11-01"
+        },
+        "harm_exception": {
+          "missing": true,
+          "checked": [
+            "https://statutes.capitol.texas.gov/Docs/BC/htm/BC.521.htm",
+            "https://www.texasattorneygeneral.gov/consumer-protection/data-breach-reporting"
+          ],
+          "read": "2026-11-01"
+        }
+      }
+    }
+  ]
+}
