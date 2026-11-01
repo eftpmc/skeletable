@@ -1,6 +1,6 @@
-import type { Cell, Column, FoundCell, Table } from "@skeleton/tables/format";
-import { ExternalLink, Info } from "lucide-react";
-import { useEffect, useRef, type KeyboardEvent } from "react";
+import type { Cell, Column, FoundCell } from "@skeleton/tables/format";
+import { ExternalLink, Info, ScanLine } from "lucide-react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Link, useLocation, useSearch } from "wouter";
 import { AccountButton, AgentButton, Logo, ThemeButton } from "@/components/Chrome";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Skeleton } from "@/components/ui/skeleton";
 import { useJson } from "@/lib/api";
 import { accountName, cellId, day, display, host, place, splitQuote } from "@/lib/cells";
+import { cellStatus, statusCounts, statuses, type CellStatus, type PublishedTable } from "@/lib/status";
 import { Message } from "@/pages/Message";
 
 const kindLabels: Record<FoundCell["kind"], string> = {
@@ -42,7 +43,36 @@ function Quote({ cell }: { cell: FoundCell }) {
   );
 }
 
-export type Selected = { rowKey: string; column: Column; cell: Cell };
+export type Selected = { rowKey: string; column: Column; cell: Cell; status?: CellStatus };
+
+function StatusBadge({ status }: { status: CellStatus }) {
+  const { label, detail, icon: Icon } = statuses[status];
+  return (
+    <Badge variant="outline" title={detail}>
+      <Icon />
+      {label}
+    </Badge>
+  );
+}
+
+/** What the X-ray found: how the table's cells stack up, worst news first. */
+function XrayReading({ table }: { table: PublishedTable }) {
+  const counts = statusCounts(table);
+  return (
+    <div className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 border-b px-3 py-1.5 text-xs duration-200 animate-in fade-in slide-in-from-top-1">
+      {(Object.keys(statuses) as CellStatus[]).filter((status) => counts.has(status)).map((status) => {
+        const { label, detail, icon: Icon, tint } = statuses[status];
+        return (
+          <span key={status} title={detail} className="flex items-center gap-1.5">
+            <span className={`grid size-5 place-items-center rounded ${tint}`}><Icon className="size-3" /></span>
+            <span className="font-medium tabular-nums">{counts.get(status)}</span>
+            <span className="text-muted-foreground">{label}</span>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
 
 /** Above the grid, like a spreadsheet's: one line until a cell is selected, then its evidence opens beneath. */
 export function FormulaBar({ selected }: { selected?: Selected }) {
@@ -65,6 +95,7 @@ export function FormulaBar({ selected }: { selected?: Selected }) {
               <div className="flex flex-wrap items-center gap-1.5">
                 <SourceLink url={cell.source} label={host(cell.source)} />
                 <Badge variant="secondary">{kindLabels[cell.kind]}</Badge>
+                {selected.status && <StatusBadge status={selected.status} />}
                 <Badge variant="outline">Read {day(cell.read)}</Badge>
               </div>
             </>
@@ -84,9 +115,9 @@ export function FormulaBar({ selected }: { selected?: Selected }) {
 
 const moves: Record<string, [number, number]> = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
 
-type GridProps = { table: Table; selectedId: string | null; select: (id: string | null) => void; emptyRows?: number; focusOnLoad?: boolean };
+type GridProps = { table: PublishedTable; selectedId: string | null; select: (id: string | null) => void; emptyRows?: number; focusOnLoad?: boolean; xray?: boolean };
 
-export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - table.rows.length, focusOnLoad = true }: GridProps) {
+export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - table.rows.length, focusOnLoad = true, xray = false }: GridProps) {
   const grid = useRef<HTMLTableElement>(null);
   const focused = useRef(focusOnLoad ? null : selectedId);
 
@@ -139,6 +170,8 @@ export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - t
                 const cell = row.cells[column.id]!;
                 const id = cellId(row.key, column.id);
                 const first = rowIndex === 0 && columnIndex === 0;
+                const status = statuses[cellStatus(cell, row.key, column.id, table.watch)];
+                const StatusIcon = status.icon;
                 return (
                   <td
                     key={column.id}
@@ -148,8 +181,12 @@ export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - t
                     aria-selected={selectedId === id}
                     onClick={() => select(id)}
                     onKeyDown={(event) => onKeyDown(event, rowIndex, columnIndex)}
-                    className={`${edge} max-w-44 cursor-cell truncate px-2 py-1 hover:bg-muted/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset aria-selected:bg-blue-500/10 aria-selected:ring-2 aria-selected:ring-blue-500 aria-selected:ring-inset sm:max-w-72 ${column.type === "number" ? "text-right" : ""} ${isFound(cell) ? "" : "text-xs text-muted-foreground"}`}
+                    title={xray ? status.detail : undefined}
+                    // The tint runs down the grid row by row, like a scan.
+                    style={xray ? { transitionDelay: `${rowIndex * 35}ms` } : undefined}
+                    className={`${edge} ${xray ? status.tint : ""} max-w-44 cursor-cell truncate px-2 py-1 transition-colors duration-200 hover:bg-muted/50 motion-reduce:transition-none focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset aria-selected:bg-blue-500/10 aria-selected:ring-2 aria-selected:ring-blue-500 aria-selected:ring-inset sm:max-w-72 ${column.type === "number" ? "text-right" : ""} ${isFound(cell) ? "" : "text-xs text-muted-foreground"}`}
                   >
+                    {xray && <StatusIcon className="mr-1.5 inline size-3 align-[-1px] text-foreground/70" aria-label={status.label} />}
                     {isFound(cell) ? display(cell.value) : "Not stated"}
                   </td>
                 );
@@ -171,7 +208,7 @@ export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - t
   );
 }
 
-function TopBar({ table, owner }: { table?: Table; owner: string }) {
+function TopBar({ table, owner, xray, onXray }: { table?: PublishedTable; owner: string; xray: boolean; onXray: () => void }) {
   const cells = table?.rows.flatMap((row) => Object.values(row.cells)) ?? [];
   const found = cells.filter(isFound);
   const lastRead = found.reduce((latest, cell) => (cell.read > latest ? cell.read : latest), "");
@@ -194,6 +231,12 @@ function TopBar({ table, owner }: { table?: Table; owner: string }) {
       </div>
       <div className="flex shrink-0 items-center gap-1">
         {table && (
+          <Button variant={xray ? "default" : "outline"} size="sm" aria-pressed={xray} onClick={onXray}>
+            <ScanLine />
+            X-ray
+          </Button>
+        )}
+        {table && (
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="ghost" size="icon-sm" aria-label="About this table"><Info /></Button>
@@ -213,7 +256,8 @@ function TopBar({ table, owner }: { table?: Table; owner: string }) {
 }
 
 export function Sheet({ owner, slug }: { owner: string; slug: string }) {
-  const { data, status, retry } = useJson<Table>(`/api/tables/${owner}/${slug}`);
+  const { data, status, retry } = useJson<PublishedTable>(`/api/tables/${owner}/${slug}`);
+  const [xray, setXray] = useState(false);
   const [path, navigate] = useLocation();
   const selectedId = new URLSearchParams(useSearch()).get("cell");
 
@@ -225,15 +269,16 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
   const column = data?.columns.find((c) => row && cellId(row.key, c.id) === selectedId);
   return (
     <div className="flex h-svh flex-col">
-      <TopBar table={data} owner={owner} />
+      <TopBar table={data} owner={owner} xray={xray} onXray={() => setXray(!xray)} />
       {status === "missing" ? (
         <Message title="There's no table here" />
       ) : status === "failed" ? (
         <Message title="This table didn't load" action={<Button variant="outline" size="sm" onClick={retry}>Try again</Button>} />
       ) : data ? (
         <>
-          <FormulaBar selected={row && column ? { rowKey: row.key, column, cell: row.cells[column.id]! } : undefined} />
-          <Grid table={data} selectedId={selectedId} select={(id) => navigate(id ? `${path}?cell=${id}` : path, { replace: true })} />
+          <FormulaBar selected={row && column ? { rowKey: row.key, column, cell: row.cells[column.id]!, status: cellStatus(row.cells[column.id]!, row.key, column.id, data.watch) } : undefined} />
+          {xray && <XrayReading table={data} />}
+          <Grid table={data} selectedId={selectedId} select={(id) => navigate(id ? `${path}?cell=${id}` : path, { replace: true })} xray={xray} />
         </>
       ) : (
         <div className="flex-1 space-y-2 p-3" aria-label="Loading table">
