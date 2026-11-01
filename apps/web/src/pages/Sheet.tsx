@@ -2,7 +2,7 @@ import type { Cell, Column, FoundCell } from "@skeleton/tables/format";
 import { ExternalLink, Info, ScanLine } from "lucide-react";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Link, useLocation, useSearch } from "wouter";
-import { AccountButton, AgentButton, Logo, ThemeButton } from "@/components/Chrome";
+import { AccountButton, Logo } from "@/components/Chrome";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -59,18 +59,50 @@ function StatusBadge({ status }: { status: CellStatus }) {
 function XrayReading({ table }: { table: PublishedTable }) {
   const counts = statusCounts(table);
   return (
-    <div className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 border-b px-3 py-1.5 text-xs duration-200 animate-in fade-in slide-in-from-top-1">
+    <div className="flex min-w-0 items-center gap-3 overflow-x-auto duration-200 animate-in fade-in">
       {(Object.keys(statuses) as CellStatus[]).filter((status) => counts.has(status)).map((status) => {
         const { label, detail, icon: Icon, tint } = statuses[status];
         return (
-          <span key={status} title={detail} className="flex items-center gap-1.5">
-            <span className={`grid size-5 place-items-center rounded ${tint}`}><Icon className="size-3" /></span>
+          <span key={status} title={detail} className="flex shrink-0 items-center gap-1">
+            <span className={`grid size-4 place-items-center rounded-sm ${tint}`}><Icon className="size-2.5" /></span>
             <span className="font-medium tabular-nums">{counts.get(status)}</span>
             <span className="text-muted-foreground">{label}</span>
           </span>
         );
       })}
     </div>
+  );
+}
+
+/** Along the bottom of the sheet, like a spreadsheet's: the table's tools, out of the way of the data. */
+function StatusBar({ table, xray, onXray }: { table: PublishedTable; xray: boolean; onXray: () => void }) {
+  return (
+    <footer className="flex h-8 shrink-0 items-center gap-3 border-t bg-muted px-2 text-xs">
+      <Button
+        variant="ghost"
+        size="xs"
+        title="Show how each value was checked"
+        aria-pressed={xray}
+        onClick={onXray}
+        className={xray ? "bg-blue-100 text-foreground hover:bg-blue-100 dark:bg-blue-950 dark:hover:bg-blue-950" : "text-muted-foreground"}
+      >
+        <ScanLine />
+        X-ray
+      </Button>
+      {xray && <XrayReading table={table} />}
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="ghost" size="xs" className="ml-auto shrink-0 text-muted-foreground">
+            <Info />
+            About
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="end" className="w-96 max-w-[calc(100vw-2rem)] gap-2 p-3">
+          <p className="font-medium">{table.question}</p>
+          <p className="text-muted-foreground">{table.scope}</p>
+        </PopoverContent>
+      </Popover>
+    </footer>
   );
 }
 
@@ -208,7 +240,7 @@ export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - t
   );
 }
 
-function TopBar({ table, owner, xray, onXray }: { table?: PublishedTable; owner: string; xray: boolean; onXray: () => void }) {
+function TopBar({ table, owner }: { table?: PublishedTable; owner: string }) {
   const cells = table?.rows.flatMap((row) => Object.values(row.cells)) ?? [];
   const found = cells.filter(isFound);
   const lastRead = found.reduce((latest, cell) => (cell.read > latest ? cell.read : latest), "");
@@ -229,28 +261,7 @@ function TopBar({ table, owner, xray, onXray }: { table?: PublishedTable; owner:
           <p className="text-lg leading-6">Skeletable</p>
         )}
       </div>
-      <div className="flex shrink-0 items-center gap-1">
-        {table && (
-          <Button variant={xray ? "default" : "outline"} size="sm" aria-pressed={xray} onClick={onXray}>
-            <ScanLine />
-            X-ray
-          </Button>
-        )}
-        {table && (
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon-sm" aria-label="About this table"><Info /></Button>
-            </PopoverTrigger>
-            <PopoverContent align="end" className="w-96 max-w-[calc(100vw-2rem)] gap-2 p-3">
-              <p className="font-medium">{table.question}</p>
-              <p className="text-muted-foreground">{table.scope}</p>
-            </PopoverContent>
-          </Popover>
-        )}
-        <AgentButton />
-        <ThemeButton />
-        <AccountButton />
-      </div>
+      <AccountButton />
     </header>
   );
 }
@@ -269,7 +280,7 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
   const column = data?.columns.find((c) => row && cellId(row.key, c.id) === selectedId);
   return (
     <div className="flex h-svh flex-col">
-      <TopBar table={data} owner={owner} xray={xray} onXray={() => setXray(!xray)} />
+      <TopBar table={data} owner={owner} />
       {status === "missing" ? (
         <Message title="There's no table here" />
       ) : status === "failed" ? (
@@ -277,8 +288,8 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
       ) : data ? (
         <>
           <FormulaBar selected={row && column ? { rowKey: row.key, column, cell: row.cells[column.id]!, status: cellStatus(row.cells[column.id]!, row.key, column.id, data.watch) } : undefined} />
-          {xray && <XrayReading table={data} />}
           <Grid table={data} selectedId={selectedId} select={(id) => navigate(id ? `${path}?cell=${id}` : path, { replace: true })} xray={xray} />
+          <StatusBar table={data} xray={xray} onXray={() => setXray(!xray)} />
         </>
       ) : (
         <div className="flex-1 space-y-2 p-3" aria-label="Loading table">
