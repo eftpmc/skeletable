@@ -178,5 +178,7 @@ function PublicFrame({ children }: { children: ReactNode }) {
 /** The frame follows who you are, not which page you're on: a top bar in public, and the rail once signed in. */
 export function Page({ children }: { children: ReactNode }) {
   const { user } = useMe();
-  return user ? <SignedInFrame>{children}</SignedInFrame> : <PublicFrame>{children}</PublicFrame>;
+  const [location] = useLocation();
+  const page = <div key={location} className="duration-200 animate-in fade-in slide-in-from-bottom-1 motion-reduce:animate-none">{children}</div>;
+  return user ? <SignedInFrame>{page}</SignedInFrame> : <PublicFrame>{page}</PublicFrame>;
 }

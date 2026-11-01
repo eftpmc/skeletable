@@ -1,6 +1,6 @@
 import type { Cell, Column, FoundCell } from "@skeleton/tables/format";
-import { ExternalLink, Info, Pencil, Plus, ScanLine } from "lucide-react";
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { ArrowDown, ArrowUp, ExternalLink, Info, Pencil, Plus, ScanLine, Search } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
 import { Link, useLocation, useSearch } from "wouter";
 import { Input } from "@/components/ui/input";
 import { AccountButton, Logo } from "@/components/Chrome";
@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Skeleton } from "@/components/ui/skeleton";
 import { postJson, useJson, useMe } from "@/lib/api";
 import { accountName, cellId, day, display, host, place, splitQuote } from "@/lib/cells";
+import { NAME_COLUMN, matchingRows, nextSort, sortedRows, type SheetSort } from "@/lib/sheet";
 import { cellStatus, statusCounts, statuses, type CellStatus, type PublishedTable } from "@/lib/status";
 import { Message } from "@/pages/Message";
 
@@ -38,7 +39,7 @@ function Quote({ cell }: { cell: FoundCell }) {
   return (
     <p className="break-words text-muted-foreground">
       {before}
-      {match && <mark className="rounded-sm bg-blue-500/20 px-0.5 font-medium text-foreground">{match}</mark>}
+      {match && <mark className="rounded-sm bg-brand/25 px-0.5 font-medium text-foreground">{match}</mark>}
       {after}
     </p>
   );
@@ -153,16 +154,22 @@ function AddRow({ table, onAdded }: { table: PublishedTable; onAdded: () => void
 }
 
 /** Along the bottom of the sheet, like a spreadsheet's: the table's tools, out of the way of the data. */
-function StatusBar({ table, xray, onXray, onChanged }: { table: PublishedTable; xray: boolean; onXray: () => void; onChanged: () => void }) {
+function StatusBar({ table, xray, onXray, onChanged, find, onFind, shown, note }: { table: PublishedTable; xray: boolean; onXray: () => void; onChanged: () => void; find: string; onFind: (find: string) => void; shown: number; note?: string }) {
   return (
-    <footer className="flex h-8 shrink-0 items-center gap-3 border-t bg-muted px-2 text-xs">
+    <footer className="flex h-9 shrink-0 items-center gap-2 border-t bg-muted px-2 text-xs">
+      <div className="relative w-28 shrink-0 sm:w-44">
+        <Search className="pointer-events-none absolute top-1/2 left-2 size-3 -translate-y-1/2 text-muted-foreground" />
+        <Input aria-label="Find in this table" placeholder="Find" value={find} onChange={(event) => onFind(event.target.value)} className="h-6 bg-background pl-6 text-xs md:text-xs" />
+      </div>
+      {find.trim() && <span className="shrink-0 text-muted-foreground tabular-nums">{shown} of {table.rows.length}</span>}
+      {note && <span role="status" className="shrink-0 text-muted-foreground">{note}</span>}
       <Button
         variant="ghost"
         size="xs"
         title="Show how each value was checked"
         aria-pressed={xray}
         onClick={onXray}
-        className={xray ? "bg-blue-100 text-foreground hover:bg-blue-100 dark:bg-blue-950 dark:hover:bg-blue-950" : "text-muted-foreground"}
+        className={xray ? "bg-selected text-foreground hover:bg-selected" : "text-muted-foreground"}
       >
         <ScanLine />
         X-ray
@@ -250,9 +257,54 @@ export function FormulaBar({ selected, table, onChanged }: { selected?: Selected
 
 const moves: Record<string, [number, number]> = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
 
-type GridProps = { table: PublishedTable; selectedId: string | null; select: (id: string | null) => void; emptyRows?: number; focusOnLoad?: boolean; xray?: boolean };
+type GridProps = {
+  table: PublishedTable;
+  selectedId: string | null;
+  select: (id: string | null) => void;
+  emptyRows?: number;
+  focusOnLoad?: boolean;
+  xray?: boolean;
+  // Sorting, resizing and copying only happen in the full sheet, so previews leave these out.
+  sort?: SheetSort;
+  onSort?: (column: string) => void;
+  widths?: Record<string, number>;
+  onResize?: (column: string, width: number) => void;
+  onCopy?: (text: string) => void;
+};
 
-export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - table.rows.length, focusOnLoad = true, xray = false }: GridProps) {
+const MIN_COLUMN_WIDTH = 64;
+
+/** A column heading that sorts when clicked, and resizes from its right edge. */
+function HeaderContent({ column, label, sort, onSort, onResize }: { column: string; label: ReactNode; sort?: SheetSort; onSort?: (column: string) => void; onResize?: (column: string, width: number) => void }) {
+  const active = sort?.column === column;
+  const SortIcon = sort?.descending ? ArrowDown : ArrowUp;
+  const startResize = (event: PointerEvent<HTMLSpanElement>) => {
+    event.preventDefault();
+    const cell = event.currentTarget.parentElement!;
+    const [startX, startWidth] = [event.clientX, cell.getBoundingClientRect().width];
+    const move = (next: globalThis.PointerEvent) => onResize?.(column, Math.max(MIN_COLUMN_WIDTH, startWidth + next.clientX - startX));
+    const stop = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", stop);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", stop);
+  };
+  return (
+    <>
+      {onSort ? (
+        <button type="button" onClick={() => onSort(column)} className="inline-flex max-w-full items-center gap-1 rounded-sm hover:text-foreground focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none">
+          <span className="truncate">{label}</span>
+          {active && <SortIcon className="size-3 shrink-0" aria-hidden="true" />}
+          {active && <span className="sr-only">Sorted {sort?.descending ? "descending" : "ascending"}</span>}
+        </button>
+      ) : label}
+      {onResize && <span onPointerDown={startResize} aria-hidden="true" className="absolute inset-y-0 right-0 w-1.5 cursor-col-resize touch-none hover:bg-brand/50" />}
+    </>
+  );
+}
+
+export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - table.rows.length, focusOnLoad = true, xray = false, sort, onSort, widths, onResize, onCopy }: GridProps) {
   const grid = useRef<HTMLTableElement>(null);
   const focused = useRef(focusOnLoad ? null : selectedId);
 
@@ -263,6 +315,10 @@ export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - t
 
   const onKeyDown = (event: KeyboardEvent, rowIndex: number, columnIndex: number) => {
     if (event.key === "Escape") return select(null);
+    if (event.key.toLowerCase() === "c" && (event.ctrlKey || event.metaKey) && onCopy) {
+      const cell = table.rows[rowIndex]!.cells[table.columns[columnIndex]!.id]!;
+      return onCopy(isFound(cell) ? display(cell.value) : "");
+    }
     const move = moves[event.key];
     if (!move) return;
     event.preventDefault();
@@ -273,7 +329,7 @@ export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - t
 
   const activeRow = table.rows.findIndex((row) => table.columns.some((column) => cellId(row.key, column.id) === selectedId));
   const activeColumn = table.columns.findIndex((column) => table.rows.some((row) => cellId(row.key, column.id) === selectedId));
-  const header = (active: boolean) => (active ? "bg-blue-100 text-foreground dark:bg-blue-950" : "bg-muted");
+  const header = (active: boolean) => (active ? "bg-selected text-foreground" : "bg-muted");
   const edge = "border-r border-b";
   const frozen = "sticky z-10";
   return (
@@ -282,15 +338,19 @@ export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - t
         <thead>
           <tr>
             <th className={`${edge} ${frozen} top-0 left-0 z-30 w-10 min-w-10 bg-muted`}><span className="sr-only">Row</span></th>
-            <th scope="col" className={`${edge} ${frozen} top-0 left-10 z-30 w-28 min-w-28 bg-muted px-2 py-1 text-left text-xs font-medium text-muted-foreground sm:min-w-52`}>Name</th>
+            <th scope="col" className={`${edge} ${frozen} top-0 left-10 z-30 w-28 min-w-28 bg-muted px-2 py-1 text-left text-xs font-medium text-muted-foreground sm:min-w-52`}>
+              <HeaderContent column={NAME_COLUMN} label="Name" sort={sort} onSort={onSort} />
+            </th>
             {table.columns.map((column, columnIndex) => (
               <th
                 key={column.id}
                 scope="col"
                 title={column.rule}
-                className={`${edge} ${frozen} top-0 z-20 px-2 py-1 text-xs font-medium whitespace-nowrap text-muted-foreground transition-colors ${column.type === "number" ? "text-right" : "text-left"} ${header(columnIndex === activeColumn)}`}
+                style={widths?.[column.id] ? { width: widths[column.id], minWidth: widths[column.id], maxWidth: widths[column.id] } : undefined}
+                aria-sort={sort?.column === column.id ? (sort.descending ? "descending" : "ascending") : undefined}
+                className={`${edge} ${frozen} top-0 z-20 overflow-hidden px-2 py-1 text-xs font-medium whitespace-nowrap text-muted-foreground transition-colors ${column.type === "number" ? "text-right" : "text-left"} ${header(columnIndex === activeColumn)}`}
               >
-                {column.label}{column.unit ? ` (${column.unit})` : ""}
+                <HeaderContent column={column.id} label={`${column.label}${column.unit ? ` (${column.unit})` : ""}`} sort={sort} onSort={onSort} onResize={onResize} />
               </th>
             ))}
             <th className={`${frozen} top-0 w-full border-b bg-muted`} aria-hidden="true" />
@@ -318,8 +378,8 @@ export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - t
                     onKeyDown={(event) => onKeyDown(event, rowIndex, columnIndex)}
                     title={xray ? status.detail : undefined}
                     // The tint runs down the grid row by row, like a scan.
-                    style={xray ? { transitionDelay: `${rowIndex * 35}ms` } : undefined}
-                    className={`${edge} ${xray ? status.tint : ""} max-w-44 cursor-cell truncate px-2 py-1 transition-colors duration-200 hover:bg-muted/50 motion-reduce:transition-none focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset aria-selected:bg-blue-500/10 aria-selected:ring-2 aria-selected:ring-blue-500 aria-selected:ring-inset sm:max-w-72 ${column.type === "number" ? "text-right" : ""} ${isFound(cell) ? "" : "text-xs text-muted-foreground"}`}
+                    style={{ ...(xray && { transitionDelay: `${rowIndex * 35}ms` }), ...(widths?.[column.id] && { maxWidth: widths[column.id] }) }}
+                    className={`${edge} ${xray ? status.tint : ""} max-w-44 cursor-cell truncate px-2 py-1 transition-colors duration-200 hover:bg-muted/50 motion-reduce:transition-none focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset aria-selected:bg-brand/10 aria-selected:ring-2 aria-selected:ring-brand aria-selected:ring-inset sm:max-w-72 ${column.type === "number" ? "text-right" : ""} ${isFound(cell) ? "" : "text-xs text-muted-foreground"}`}
                   >
                     {xray && <StatusIcon className="mr-1.5 inline size-3 align-[-1px] text-foreground/70" aria-label={status.label} />}
                     {isFound(cell) ? display(cell.value) : "Not stated"}
@@ -372,6 +432,10 @@ function TopBar({ table, owner }: { table?: PublishedTable; owner: string }) {
 export function Sheet({ owner, slug }: { owner: string; slug: string }) {
   const { data, status, retry } = useJson<PublishedTable>(`/api/tables/${owner}/${slug}`);
   const [xray, setXray] = useState(false);
+  const [sort, setSort] = useState<SheetSort>(null);
+  const [find, setFind] = useState("");
+  const [widths, setWidths] = useState<Record<string, number>>({});
+  const [note, setNote] = useState<string>();
   const [path, navigate] = useLocation();
   const selectedId = new URLSearchParams(useSearch()).get("cell");
 
@@ -379,20 +443,42 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
     if (data) document.title = `${data.title} · Skeletable`;
   }, [data]);
 
+  const shown = useMemo(() => (data ? { ...data, rows: sortedRows(data, matchingRows(data, find), sort) } : undefined), [data, find, sort]);
+
+  const copy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setNote("Copied");
+    } catch {
+      setNote("Your browser blocked copying");
+    }
+    setTimeout(() => setNote(undefined), 1500);
+  };
+
   const row = data?.rows.find((r) => selectedId?.startsWith(cellId(r.key, "")));
   const column = data?.columns.find((c) => row && cellId(row.key, c.id) === selectedId);
   return (
-    <div className="flex h-svh flex-col">
+    <div className="flex h-svh flex-col duration-200 animate-in fade-in zoom-in-[0.995] motion-reduce:animate-none">
       <TopBar table={data} owner={owner} />
       {status === "missing" ? (
         <Message title="There's no table here" />
       ) : status === "failed" ? (
         <Message title="This table didn't load" action={<Button variant="outline" size="sm" onClick={retry}>Try again</Button>} />
-      ) : data ? (
+      ) : data && shown ? (
         <>
           <FormulaBar table={data} onChanged={retry} selected={row && column ? { rowKey: row.key, column, cell: row.cells[column.id]!, status: cellStatus(row.cells[column.id]!, row.key, column.id, data.watch) } : undefined} />
-          <Grid table={data} selectedId={selectedId} select={(id) => navigate(id ? `${path}?cell=${id}` : path, { replace: true })} xray={xray} />
-          <StatusBar table={data} xray={xray} onXray={() => setXray(!xray)} onChanged={retry} />
+          <Grid
+            table={shown}
+            selectedId={selectedId}
+            select={(id) => navigate(id ? `${path}?cell=${id}` : path, { replace: true })}
+            xray={xray}
+            sort={sort}
+            onSort={(column) => setSort(nextSort(sort, column))}
+            widths={widths}
+            onResize={(column, width) => setWidths((current) => ({ ...current, [column]: width }))}
+            onCopy={copy}
+          />
+          <StatusBar table={data} xray={xray} onXray={() => setXray(!xray)} onChanged={retry} find={find} onFind={setFind} shown={shown.rows.length} note={note} />
         </>
       ) : (
         <div className="flex-1 space-y-2 p-3" aria-label="Loading table">

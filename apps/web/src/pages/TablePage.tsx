@@ -13,7 +13,7 @@ import { Message } from "@/pages/Message";
 import { Grid } from "@/pages/Sheet";
 import { Activity, AllChanges, AllProposals } from "@/pages/TableActivity";
 
-const PREVIEW_ROWS = 6;
+const PREVIEW_ROWS = 8;
 
 export const tableViews = ["proposals", "history"] as const;
 export type TableView = (typeof tableViews)[number];
@@ -111,19 +111,17 @@ function Overview({ table, canDecide }: { table: PublishedTable; canDecide: bool
   const [, navigate] = useLocation();
   const sheet = `/${table.owner}/${table.slug}/sheet`;
   return (
-    <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_15rem]">
-      <div className="min-w-0 space-y-6">
-        <section className="flex flex-col overflow-hidden rounded-xl border">
-          <header className="flex items-center justify-between gap-3 border-b bg-muted px-3 py-2 text-sm">
-            <span className="text-muted-foreground">Showing {Math.min(PREVIEW_ROWS, table.rows.length)} of {table.rows.length} rows</span>
-            <Link href={sheet} className="flex items-center gap-1 font-medium hover:underline">
-              Open full sheet
-              <ArrowRight className="size-3.5" />
-            </Link>
-          </header>
-          <Grid table={{ ...table, rows: table.rows.slice(0, PREVIEW_ROWS) }} selectedId={null} select={(id) => id && navigate(`${sheet}?cell=${id}`)} emptyRows={0} />
-        </section>
-        <Activity table={table} canDecide={canDecide} />
+    <div className="space-y-8">
+      <section className="flex flex-col overflow-hidden rounded-xl border shadow-sm">
+        <Grid table={{ ...table, rows: table.rows.slice(0, PREVIEW_ROWS) }} selectedId={null} select={(id) => id && navigate(`${sheet}?cell=${id}`)} emptyRows={0} />
+        <Link href={sheet} className="flex items-center justify-between gap-3 bg-muted px-3 py-2 text-sm transition-colors hover:bg-accent">
+          <span className="min-w-0 truncate text-muted-foreground">{table.rows.length > PREVIEW_ROWS ? `Showing ${PREVIEW_ROWS} of ${table.rows.length} rows` : "Select any value to see its proof"}</span>
+          <span className="flex shrink-0 items-center gap-1 font-medium">Open full sheet<ArrowRight className="size-3.5" /></span>
+        </Link>
+      </section>
+      <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_15rem]">
+        <div className="min-w-0 space-y-6">
+          <Activity table={table} canDecide={canDecide} />
         <section className="overflow-hidden rounded-xl border">
           <h2 className="border-b bg-muted px-3 py-2 text-sm font-medium">About this data</h2>
           <div className="space-y-5 p-4">
@@ -141,8 +139,9 @@ function Overview({ table, canDecide }: { table: PublishedTable; canDecide: bool
             </div>
           </div>
         </section>
+        </div>
+        <About table={table} />
       </div>
-      <About table={table} />
     </div>
   );
 }
@@ -192,7 +191,7 @@ export function TablePage({ owner, slug, view }: { owner: string; slug: string; 
   const { data, status, retry } = useJson<PublishedTable>(`/api/tables/${owner}/${slug}`);
   return (
     <Page>
-      <main className="mx-auto max-w-5xl px-4 pt-6 pb-16 sm:px-6">
+      <main className="mx-auto max-w-6xl px-4 pt-6 pb-16 sm:px-6">
         {status === "missing" ? (
           <Message title="There's no table here" />
         ) : status === "failed" ? (

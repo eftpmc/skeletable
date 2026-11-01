@@ -45,6 +45,18 @@ export function summarize(table: PublishedTable) {
   };
 }
 
+/** How each table's values stand, for showing it at a glance in a list. */
+export function checkCounts(table: Table) {
+  const counts = { confirmed: 0, summary: 0, once: 0, gap: 0 };
+  for (const cell of cells(table)) {
+    if (!isFound(cell)) counts.gap += 1;
+    else if (cell.confirmed === "blind-read") counts.confirmed += 1;
+    else if (cell.confirmed === "summary") counts.summary += 1;
+    else counts.once += 1;
+  }
+  return counts;
+}
+
 /** Tables with every word of the query somewhere in their text or rows. No query means all of them. */
 export function searchTables(tables: Table[], query = ""): Table[] {
   const words = normalize(query).split(" ").filter(Boolean);

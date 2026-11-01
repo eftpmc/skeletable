@@ -41,7 +41,7 @@ export function YourHome({ user }: { user: NonNullable<Me["user"]> }) {
 
   return (
     <Page>
-      <main className="mx-auto max-w-4xl px-4 pt-8 pb-16 sm:px-6">
+      <main className="mx-auto max-w-5xl px-4 pt-8 pb-16 sm:px-6">
         <div className="mb-6 flex items-center justify-between gap-3">
           <h1 className="text-3xl font-semibold tracking-tight">Your tables</h1>
           <Button asChild>

@@ -19,7 +19,7 @@ export function Account({ owner }: { owner: string }) {
 
   return (
     <Page>
-      <main className="mx-auto max-w-4xl px-4 pt-8 pb-16 sm:px-6">
+      <main className="mx-auto max-w-5xl px-4 pt-8 pb-16 sm:px-6">
         {status === "failed" ? (
           <Message title="This account didn't load" action={<Button variant="outline" size="sm" onClick={retry}>Try again</Button>} />
         ) : tables?.length === 0 ? (

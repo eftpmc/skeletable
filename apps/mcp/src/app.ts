@@ -4,7 +4,7 @@ import { serveStatic } from "@hono/node-server/serve-static";
 import type { Table } from "@skeleton/tables/format";
 import { Hono } from "hono";
 import { authRoutes, type AuthConfig } from "./auth.js";
-import { searchTables, summarize } from "./library.js";
+import { checkCounts, searchTables, summarize } from "./library.js";
 import { notifyOwners } from "./email.js";
 import { handleMcp, type Propose } from "./mcp.js";
 import { pageRoutes } from "./pages.js";
@@ -51,7 +51,7 @@ export function createApp(tables: Table[], webDir?: string, auth?: AuthConfig) {
   });
   if (auth) app.route("/", authRoutes(auth));
   else app.get("/api/me", (c) => c.json({ canSignIn: false, user: null }));
-  app.get("/api/tables", (c) => c.json(searchTables(tables, c.req.query("q")).map(summarize)));
+  app.get("/api/tables", (c) => c.json(searchTables(tables, c.req.query("q")).map((table) => ({ ...summarize(table), checks: checkCounts(table) }))));
   app.get("/api/tables/:owner/:slug", (c) => {
     const table = tables.find((t) => t.owner === c.req.param("owner") && t.slug === c.req.param("slug"));
     return table ? c.json(table) : c.json({ error: "No such table" }, 404);

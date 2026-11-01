@@ -4,6 +4,22 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { TableSummary } from "@/lib/api";
 import { accountName, day } from "@/lib/cells";
+import { statuses } from "@/lib/status";
+
+/** A small bar of how the table's values were checked, using the same colours as X-ray. */
+function CheckBar({ table, className }: { table: TableSummary; className: string }) {
+  const { confirmed, summary, once, gap } = table.checks;
+  const parts = [["confirmed", confirmed], ["summary", summary], ["once", once], ["gap", gap]] as const;
+  const total = confirmed + summary + once + gap;
+  return (
+    <div className={`shrink-0 sm:w-32 ${className}`} title={`${confirmed} confirmed by a blind read, ${summary} matched a summary, ${once} read once, ${gap} not stated`}>
+      <div className="flex h-1.5 gap-px overflow-hidden rounded-full" aria-hidden="true">
+        {parts.filter(([, count]) => count).map(([status, count]) => <div key={status} className={statuses[status].solid} style={{ width: `${(count / total) * 100}%` }} />)}
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground tabular-nums sm:text-right">{Math.round(((confirmed + summary) / total) * 100)}% checked twice</p>
+    </div>
+  );
+}
 
 function TableRow({ table }: { table: TableSummary }) {
   return (
@@ -21,7 +37,9 @@ function TableRow({ table }: { table: TableSummary }) {
           <p className="mt-1 text-xs text-muted-foreground">
             by {accountName(table.owner)} · {table.rows} rows · {table.filled} · Checked {day(table.lastChecked)}
           </p>
+          <CheckBar table={table} className="mt-2 sm:hidden" />
         </div>
+        <CheckBar table={table} className="hidden sm:block" />
         <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
       </Link>
     </li>
@@ -33,7 +51,7 @@ export function TableList({ tables }: { tables?: TableSummary[] }) {
   if (!tables) {
     return (
       <div className="space-y-px overflow-hidden rounded-xl border" aria-label="Loading tables">
-        {[0, 1, 2, 3].map((index) => <Skeleton key={index} className="h-24 rounded-none" />)}
+        {[0, 1, 2, 3].map((index) => <Skeleton key={index} className="h-[5.5rem] rounded-none" />)}
       </div>
     );
   }

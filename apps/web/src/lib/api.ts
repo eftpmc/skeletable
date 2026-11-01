@@ -11,6 +11,7 @@ export type TableSummary = {
   filled: string;
   lastRead: string;
   lastChecked: string;
+  checks: { confirmed: number; summary: number; once: number; gap: number };
 };
 
 export type Me = { canSignIn: boolean; user: { email: string; name: string | null; handle: string | null; emailUpdates: boolean; accounts: string[] } | null };

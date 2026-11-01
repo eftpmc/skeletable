@@ -20,6 +20,11 @@ it("says what each listed table is about and when it was checked", async () => {
   expect(list[0]).toMatchObject({ topic: "Consumer tech", lastChecked: "2026-10-31" });
 });
 
+it("says how well each listed table is checked", async () => {
+  const list = (await (await app.request("/api/tables?q=enphase")).json()) as { checks: Record<string, number> }[];
+  expect(list[0]!.checks).toEqual({ confirmed: 0, summary: 11, once: 1, gap: 0 });
+});
+
 it("searches the tables", async () => {
   const list = (await (await app.request("/api/tables?q=steam+deck")).json()) as { slug: string }[];
   expect(list.map((t) => t.slug)).toEqual(["handheld-gaming-pcs"]);
