@@ -2,7 +2,7 @@
 title: New York's own guidance still leaves out its 30-day deadline
 date: 2026-11-01
 summary: New York set a 30-day limit for telling residents about a breach. Its attorney general's page doesn't mention it.
-draft: true
+draft: false
 ---
 New York changed its breach law in late 2024. Businesses now have a hard limit for telling affected residents:
 

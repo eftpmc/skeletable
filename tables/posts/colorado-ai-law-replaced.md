@@ -2,7 +2,7 @@
 title: Colorado replaced its AI law in May. Not every tracker noticed
 date: 2026-11-01
 summary: Colorado repealed and reenacted its landmark AI law. Pages updated months later still describe the old one.
-draft: true
+draft: false
 ---
 Colorado's AI Act was the law everyone watched. On May 14, 2026, it changed: [SB26-189](https://leg.colorado.gov/bills/sb26-189) was signed, and the legislature's summary says it "repeals and reenacts" the provisions of the 2024 act.
 

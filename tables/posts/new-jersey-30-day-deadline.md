@@ -2,7 +2,7 @@
 title: New Jersey's 30-day breach deadline doesn't exist
 date: 2026-11-01
 summary: Guides say New Jersey gives businesses 30 days to report a data breach. The state's law states no number at all.
-draft: true
+draft: false
 ---
 If you search for New Jersey's data breach deadline, you'll find a confident answer: 30 days.
 
