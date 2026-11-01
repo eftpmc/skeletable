@@ -1,11 +1,11 @@
-import { GitPullRequestArrow, Plus } from "lucide-react";
+import { GitPullRequestArrow, Plus, Table2 } from "lucide-react";
 import { useEffect } from "react";
 import { Link } from "wouter";
+import { Content, EmptyState, List, LoadFailed, PageHeader } from "@/components/Layout";
 import { Page } from "@/components/Shell";
 import { TableList } from "@/components/TableList";
 import { Button } from "@/components/ui/button";
 import { useJson, type Me, type TableSummary } from "@/lib/api";
-import { Message } from "@/pages/Message";
 
 type Waiting = { id: string; owner: string; slug: string; title: string; row: string; column: string };
 
@@ -16,7 +16,7 @@ function Inbox() {
   return (
     <section className="mb-6">
       <h2 className="mb-2 font-medium">Waiting for you</h2>
-      <ul className="divide-y rounded-xl border text-sm">
+      <List>
         {data.map((item) => (
           <li key={item.id}>
             <Link href={`/${item.owner}/${item.slug}/proposals`} className="flex items-center gap-2.5 px-3 py-2 transition-colors hover:bg-muted/50">
@@ -25,7 +25,7 @@ function Inbox() {
             </Link>
           </li>
         ))}
-      </ul>
+      </List>
     </section>
   );
 }
@@ -42,25 +42,23 @@ export function YourHome({ user }: { user: NonNullable<Me["user"]> }) {
 
   return (
     <Page>
-      <main className="mx-auto max-w-5xl px-4 pt-8 pb-16 sm:px-6">
-        <div className="mb-6 flex items-center justify-between gap-3">
-          <h1 className="text-3xl font-semibold tracking-tight">Your tables</h1>
-          <Button asChild>
-            <Link href="/new"><Plus />New table</Link>
-          </Button>
-        </div>
+      <Content>
+        <PageHeader title="Your tables" actions={<Button asChild><Link href="/new"><Plus />New table</Link></Button>} />
         <Inbox />
         {status === "failed" ? (
-          <Message title="Your tables didn't load" action={<Button variant="outline" size="sm" onClick={retry}>Try again</Button>} />
+          <LoadFailed what="Your tables" retry={retry} />
         ) : tables?.length === 0 ? (
-          <div className="rounded-xl border p-8 text-center">
-            <p className="font-medium">Start your first table</p>
-            <p className="mt-1 mb-4 text-sm text-muted-foreground">Pick something you want reliable data on, or see what others have built.</p>
-            <div className="flex justify-center gap-2">
-              <Button size="sm" asChild><Link href="/new">New table</Link></Button>
-              <Button size="sm" variant="outline" asChild><Link href="/explore">Browse tables</Link></Button>
-            </div>
-          </div>
+          <EmptyState
+            icon={Table2}
+            title="Start your first table"
+            body="Pick something you want reliable data on, or see what others have built."
+            action={
+              <>
+                <Button size="sm" asChild><Link href="/new">New table</Link></Button>
+                <Button size="sm" variant="outline" asChild><Link href="/explore">Browse tables</Link></Button>
+              </>
+            }
+          />
         ) : (
           <TableList tables={tables} />
         )}
@@ -70,7 +68,7 @@ export function YourHome({ user }: { user: NonNullable<Me["user"]> }) {
             <TableList tables={shared} />
           </section>
         )}
-      </main>
+      </Content>
     </Page>
   );
 }

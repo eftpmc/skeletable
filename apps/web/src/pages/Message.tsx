@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "wouter";
+import { Content } from "@/components/Layout";
 import { Page } from "@/components/Shell";
 import { Button } from "@/components/ui/button";
 
@@ -19,6 +20,6 @@ export function Message({ title, action }: { title: string; action?: ReactNode }
 
 export const NotFound = () => (
   <Page>
-    <main className="px-4"><Message title="There's no page here" /></main>
+    <Content><Message title="There's no page here" /></Content>
   </Page>
 );

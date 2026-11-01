@@ -1,10 +1,12 @@
 import { Check, Copy, Globe, Lock, Share2, Trash2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ownsAccount } from "@/lib/account";
 import { postJson, sendJson, useJson, useMe } from "@/lib/api";
+import { copyText } from "@/lib/copy";
 import type { PublishedTable } from "@/lib/status";
 
 type Access = { private: boolean; people: { id: string; email: string }[] };
@@ -20,7 +22,7 @@ const Line = ({ isPrivate }: { isPrivate?: boolean }) => {
 };
 
 /** Public or private, and who's been added, for the people who own the table. */
-function ManageAccess({ table, onChanged }: { table: PublishedTable; onChanged: () => void }) {
+export function ManageAccess({ table, onChanged }: { table: PublishedTable; onChanged: () => void }) {
   const base = `/api/tables/${table.owner}/${table.slug}`;
   const { data, status, retry } = useJson<Access>(`${base}/access`);
   const [email, setEmail] = useState("");
@@ -32,6 +34,7 @@ function ManageAccess({ table, onChanged }: { table: PublishedTable; onChanged: 
     const { ok, data: result } = await sendJson<{ error?: string }>("PATCH", `${base}/access`, { private: next });
     if (!ok) return setError(result.error ?? "That didn't save.");
     setError(undefined);
+    toast.success(next ? "This table is now private" : "This table is now public");
     retry();
     onChanged();
   };
@@ -39,12 +42,14 @@ function ManageAccess({ table, onChanged }: { table: PublishedTable; onChanged: 
     event.preventDefault();
     const { ok, data: result } = await postJson<{ error?: string }>(`${base}/people`, { email });
     if (!ok) return setError(result.error ?? "That didn't save.");
+    toast.success(`Added ${email}`);
     setEmail("");
     setError(undefined);
     retry();
   };
   const remove = async (id: string) => {
     await sendJson("DELETE", `${base}/people/${id}`);
+    toast.success("Removed");
     retry();
   };
 
@@ -98,12 +103,7 @@ export function ShareButton({ table, path, size = "lg", onChanged }: { table: Pu
   const url = `${location.origin}${path}`;
   const [copied, setCopied] = useState(false);
   const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(url);
-    } catch {
-      // The browser refused; the link is still on screen to select.
-      return;
-    }
+    if (!(await copyText(url, "Link copied"))) return;
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };

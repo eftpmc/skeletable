@@ -1,18 +1,24 @@
 import type { Cell, Column, FoundCell } from "@skeleton/tables/format";
 import { ArrowDown, ArrowUp, ExternalLink, Info, Lock, Pencil, Plus, ScanLine, Search } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent, type PointerEvent, type ReactNode, type RefObject } from "react";
+import { toast } from "sonner";
 import { Link, useLocation, useSearch } from "wouter";
 import { Input } from "@/components/ui/input";
 import { AccountButton, Logo } from "@/components/Chrome";
+import { DownloadButton } from "@/components/Download";
 import { FilterButton } from "@/components/Filter";
 import { NoTable } from "@/components/NoTable";
 import { ShareButton } from "@/components/Share";
+import { Shortcuts } from "@/components/Shortcuts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
+import { signInHref } from "@/lib/account";
 import { postJson, useJson, useMe } from "@/lib/api";
 import { cellId, day, display, host, ownerLabel, place, splitQuote } from "@/lib/cells";
+import { copyText } from "@/lib/copy";
 import { NAME_COLUMN, filteredRows, matchingRows, nextSort, readView, sortedRows, viewSearch, type SheetFilters, type SheetSort, type SheetView } from "@/lib/sheet";
 import { cellStatus, statusCounts, statuses, type CellStatus, type PublishedTable } from "@/lib/status";
 import { Message } from "@/pages/Message";
@@ -56,7 +62,7 @@ function SuggestButton({ onSuggest, canEdit }: { onSuggest: () => void; canEdit:
   if (!user) {
     return (
       <Button variant="ghost" size="xs" asChild>
-        <a href="/auth/google"><Pencil />Sign in to suggest</a>
+        <a href={signInHref()}><Pencil />Sign in to suggest</a>
       </Button>
     );
   }
@@ -75,8 +81,9 @@ function SuggestForm({ table, selected, canEdit, onDone }: { table: PublishedTab
     setError(undefined);
     const { ok, data } = await postJson<{ error?: string }>(`/api/tables/${table.owner}/${table.slug}/proposals`, { ...form, row: selected.rowKey, column: selected.column.id });
     setSending(false);
-    if (ok) onDone(true);
-    else setError(data.error ?? "That didn't send. Try again.");
+    if (!ok) return setError(data.error ?? "That didn't send. Try again.");
+    toast.success(canEdit ? "Value saved" : "Proposal sent");
+    onDone(true);
   };
   return (
     <form onSubmit={send} onKeyDown={(event) => event.stopPropagation()} className="space-y-2 border-t px-3 py-2 text-sm duration-150 animate-in fade-in slide-in-from-top-1">
@@ -135,6 +142,7 @@ function AddRow({ table, onAdded }: { table: PublishedTable; onAdded: () => void
     event.preventDefault();
     const { ok, data } = await postJson<{ error?: string }>(`/api/tables/${table.owner}/${table.slug}/rows`, { key });
     if (!ok) return setError(data.error ?? "That didn't save.");
+    toast.success("Row added");
     setKey("");
     setError(undefined);
     setOpen(false);
@@ -157,16 +165,15 @@ function AddRow({ table, onAdded }: { table: PublishedTable; onAdded: () => void
 }
 
 /** Along the bottom of the sheet, like a spreadsheet's: the table's tools, out of the way of the data. */
-function StatusBar({ table, xray, onXray, onChanged, find, onFind, filters, onFilters, shown, note }: { table: PublishedTable; xray: boolean; onXray: () => void; onChanged: () => void; find: string; onFind: (find: string) => void; filters: SheetFilters; onFilters: (filters: SheetFilters) => void; shown: number; note?: string }) {
+function StatusBar({ table, xray, onXray, onChanged, find, onFind, findInput, filters, onFilters, filtering, onFiltering, shown }: { table: PublishedTable; xray: boolean; onXray: () => void; onChanged: () => void; find: string; onFind: (find: string) => void; findInput: RefObject<HTMLInputElement | null>; filters: SheetFilters; onFilters: (filters: SheetFilters) => void; filtering: boolean; onFiltering: (open: boolean) => void; shown: number }) {
   return (
     <footer className="flex h-9 shrink-0 items-center gap-2 overflow-x-auto border-t bg-muted px-2 text-xs">
       <div className="relative w-24 shrink-0 sm:w-44">
         <Search className="pointer-events-none absolute top-1/2 left-2 size-3 -translate-y-1/2 text-muted-foreground" />
-        <Input aria-label="Find in this table" placeholder="Find" value={find} onChange={(event) => onFind(event.target.value)} className="h-6 bg-background pl-6 text-xs md:text-xs" />
+        <Input ref={findInput} aria-label="Find in this table" placeholder="Find" value={find} onChange={(event) => onFind(event.target.value)} className="h-6 bg-background pl-6 text-xs md:text-xs" />
       </div>
-      <FilterButton table={table} filters={filters} onChange={onFilters} />
+      <FilterButton table={table} filters={filters} onChange={onFilters} open={filtering} onOpenChange={onFiltering} />
       {shown !== table.rows.length && <span className="shrink-0 text-muted-foreground tabular-nums">{shown} of {table.rows.length}</span>}
-      {note && <span role="status" className="shrink-0 text-muted-foreground">{note}</span>}
       <Button
         variant="ghost"
         size="xs"
@@ -407,7 +414,7 @@ export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - t
   );
 }
 
-function TopBar({ table, owner, link, onChanged }: { table?: PublishedTable; owner: string; link: string; onChanged: () => void }) {
+function TopBar({ table, shown, owner, link, onChanged }: { table?: PublishedTable; shown?: PublishedTable; owner: string; link: string; onChanged: () => void }) {
   const cells = table?.rows.flatMap((row) => Object.values(row.cells)) ?? [];
   const found = cells.filter(isFound);
   const lastRead = found.reduce((latest, cell) => (cell.read > latest ? cell.read : latest), "");
@@ -421,13 +428,14 @@ function TopBar({ table, owner, link, onChanged }: { table?: PublishedTable; own
           <>
             <h1 className="truncate text-lg leading-6">{table.private && <Lock aria-label="Private" className="mr-1.5 inline size-3.5 align-[-1px] text-muted-foreground" />}{table.title}</h1>
             <p className="truncate text-xs text-muted-foreground">
-              by <Link href={`/${owner}`} className="hover:text-foreground hover:underline">{ownerLabel(table)}</Link> · {found.length} of {cells.length} cells · Read {day(lastRead)}
+              by <Link href={`/${owner}`} className="hover:text-foreground hover:underline">{ownerLabel(table)}</Link> · {found.length} of {cells.length} cells{lastRead && ` · Read ${day(lastRead)}`}
             </p>
           </>
         ) : (
           <p className="text-lg leading-6">Skeletable</p>
         )}
       </div>
+      {shown && <DownloadButton table={shown} size="sm" />}
       {table && <ShareButton table={table} path={link} size="sm" onChanged={onChanged} />}
       <AccountButton />
     </header>
@@ -438,7 +446,9 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
   const { data, status, retry } = useJson<PublishedTable>(`/api/tables/${owner}/${slug}`);
   const [xray, setXray] = useState(false);
   const [widths, setWidths] = useState<Record<string, number>>({});
-  const [note, setNote] = useState<string>();
+  const [filtering, setFiltering] = useState(false);
+  const [helping, setHelping] = useState(false);
+  const findInput = useRef<HTMLInputElement>(null);
   const [path, navigate] = useLocation();
   const search = useSearch();
   const selectedId = new URLSearchParams(search).get("cell");
@@ -452,21 +462,24 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
 
   const shown = useMemo(() => (data ? { ...data, rows: sortedRows(data, filteredRows(data, matchingRows(data, find), filters), sort) } : undefined), [data, find, filters, sort]);
 
-  const copy = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setNote("Copied");
-    } catch {
-      setNote("Your browser blocked copying");
-    }
-    setTimeout(() => setNote(undefined), 1500);
-  };
+  // Letters only act as shortcuts outside anything you can type in or choose from.
+  useEffect(() => {
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      if (event.ctrlKey || event.metaKey || event.altKey || (event.target as HTMLElement).closest("input, textarea, select, [role=dialog], [role=menu]")) return;
+      const action = { "/": () => findInput.current?.focus(), f: () => setFiltering(true), x: () => setXray((on) => !on), "?": () => setHelping(true) }[event.key];
+      if (!action) return;
+      event.preventDefault();
+      action();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const row = data?.rows.find((r) => selectedId?.startsWith(cellId(r.key, "")));
   const column = data?.columns.find((c) => row && cellId(row.key, c.id) === selectedId);
   return (
     <div className="flex h-svh flex-col duration-200 animate-in fade-in zoom-in-[0.995] motion-reduce:animate-none">
-      <TopBar table={data} owner={owner} link={`${path}${viewSearch(view, selectedId)}`} onChanged={retry} />
+      <TopBar table={data} shown={shown} owner={owner} link={`${path}${viewSearch(view, selectedId)}`} onChanged={retry} />
       {status === "missing" ? (
         <NoTable />
       ) : status === "failed" ? (
@@ -483,9 +496,9 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
             onSort={(column) => show({ sort: nextSort(sort, column) })}
             widths={widths}
             onResize={(column, width) => setWidths((current) => ({ ...current, [column]: width }))}
-            onCopy={copy}
+            onCopy={(text) => void copyText(text)}
           />
-          <StatusBar table={data} xray={xray} onXray={() => setXray(!xray)} onChanged={retry} find={find} onFind={(next) => show({ find: next })} filters={filters} onFilters={(next) => show({ filters: next })} shown={shown.rows.length} note={note} />
+          <StatusBar table={data} xray={xray} onXray={() => setXray(!xray)} onChanged={retry} find={find} onFind={(next) => show({ find: next })} findInput={findInput} filters={filters} onFilters={(next) => show({ filters: next })} filtering={filtering} onFiltering={setFiltering} shown={shown.rows.length} />
         </>
       ) : (
         <div className="flex-1 space-y-2 p-3" aria-label="Loading table">
@@ -493,6 +506,13 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
           <Skeleton className="h-64 w-full" />
         </div>
       )}
+      <Dialog open={helping} onOpenChange={setHelping}>
+        <DialogContent>
+          <DialogTitle>Keyboard shortcuts</DialogTitle>
+          <DialogDescription className="sr-only">What each key does in the sheet</DialogDescription>
+          <Shortcuts />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

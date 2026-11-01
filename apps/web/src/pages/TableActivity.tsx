@@ -1,9 +1,12 @@
 import type { Cell, FoundCell } from "@skeleton/tables/format";
-import { ArrowRight, Bot, CircleCheck, CircleHelp, ExternalLink, GitPullRequestArrow, History, type LucideIcon } from "lucide-react";
+import { ArrowRight, Bot, CircleCheck, CircleHelp, ExternalLink, GitPullRequestArrow, History } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Link } from "wouter";
+import { EmptyState, List, LoadFailed, LoadingList, PageHeader } from "@/components/Layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ownsAccount } from "@/lib/account";
 import { postJson, useJson, useMe } from "@/lib/api";
 import { day, display, host } from "@/lib/cells";
 import type { PublishedTable } from "@/lib/status";
@@ -25,14 +28,6 @@ type Proposal = {
 type Change = { id: string; row: string; column: string; cell: FoundCell; previous: Cell; author: string; created_at: string };
 
 const shown = (cell: Cell) => ("missing" in cell ? "Not stated" : display(cell.value));
-
-const Empty = ({ icon: Icon, title, body }: { icon: LucideIcon; title: string; body: string }) => (
-  <div className="rounded-xl border py-14 text-center">
-    <Icon className="mx-auto size-6 text-muted-foreground" />
-    <p className="mt-3 font-medium">{title}</p>
-    <p className="mx-auto mt-1 max-w-sm px-4 text-sm text-muted-foreground">{body}</p>
-  </div>
-);
 
 /** Old value to new, the shape every change takes. */
 const Diff = ({ from, to }: { from: Cell; to: Cell }) => (
@@ -60,8 +55,9 @@ function ProposalCard({ proposal, table, canDecide, onDecided }: { proposal: Pro
   const [error, setError] = useState<string>();
   const decide = async (action: "accept" | "reject" | "block") => {
     const { ok, data } = await postJson<{ error?: string }>(`/api/proposals/${proposal.id}/${action}`);
-    if (ok) onDecided();
-    else setError(data.error ?? "That didn't work. Try again.");
+    if (!ok) return setError(data.error ?? "That didn't work. Try again.");
+    toast.success({ accept: "Proposal accepted", reject: "Proposal rejected", block: "Person blocked" }[action]);
+    onDecided();
   };
   const CheckIcon = proposal.check === "found" ? CircleCheck : CircleHelp;
   return (
@@ -89,7 +85,7 @@ function ProposalCard({ proposal, table, canDecide, onDecided }: { proposal: Pro
         <div className="mt-3 flex items-center gap-2">
           <Button size="sm" onClick={() => decide("accept")}>Accept</Button>
           <Button size="sm" variant="outline" onClick={() => decide("reject")}>Reject</Button>
-          {user?.accounts.includes("skeletable") && <Button size="sm" variant="ghost" onClick={() => decide("block")}>Block person</Button>}
+          {ownsAccount(user, "skeletable") && <Button size="sm" variant="ghost" onClick={() => decide("block")}>Block person</Button>}
           {error && <span role="alert" className="text-xs text-destructive">{error}</span>}
         </div>
       )}
@@ -122,6 +118,22 @@ export function Activity({ table, canDecide }: { table: PublishedTable; canDecid
   const history = useJson<Change[]>(`/api/tables/${table.owner}/${table.slug}/history`);
   const open = proposals.data?.filter((proposal) => proposal.status === "open") ?? [];
   const changes = history.data ?? [];
+  if (proposals.status === "failed" || history.status === "failed") {
+    return (
+      <section>
+        <Heading title="Activity" />
+        <LoadFailed what="Activity" retry={() => { proposals.retry(); history.retry(); }} />
+      </section>
+    );
+  }
+  if (!proposals.data || !history.data) {
+    return (
+      <section>
+        <Heading title="Activity" />
+        <LoadingList rows={2} label="Loading activity" />
+      </section>
+    );
+  }
   if (!open.length && !changes.length) {
     return (
       <section>
@@ -135,27 +147,22 @@ export function Activity({ table, canDecide }: { table: PublishedTable; canDecid
       {open.length > 0 && (
         <section>
           <Heading title="Open proposals" count={open.length} href={`${base}/proposals`} />
-          <ul className="divide-y rounded-xl border">
+          <List>
             {open.slice(0, 3).map((proposal) => <ProposalCard key={proposal.id} proposal={proposal} table={table} canDecide={canDecide} onDecided={() => { proposals.retry(); history.retry(); }} />)}
-          </ul>
+          </List>
         </section>
       )}
       {changes.length > 0 && (
         <section>
           <Heading title="Recent changes" href={`${base}/history`} />
-          <ul className="divide-y rounded-xl border">{changes.slice(0, 3).map((change) => <ChangeRow key={change.id} change={change} table={table} />)}</ul>
+          <List>{changes.slice(0, 3).map((change) => <ChangeRow key={change.id} change={change} table={table} />)}</List>
         </section>
       )}
     </div>
   );
 }
 
-const Back = ({ table, title }: { table: PublishedTable; title: string }) => (
-  <div className="mb-4">
-    <Link href={`/${table.owner}/${table.slug}`} className="text-sm text-muted-foreground hover:text-foreground hover:underline">Back to {table.title}</Link>
-    <h1 className="mt-1 text-2xl font-semibold tracking-tight">{title}</h1>
-  </div>
-);
+const Back = ({ table, title }: { table: PublishedTable; title: string }) => <PageHeader title={title} back={{ href: `/${table.owner}/${table.slug}`, label: `Back to ${table.title}` }} />;
 
 export function AllProposals({ table, canDecide }: { table: PublishedTable; canDecide: boolean }) {
   const { data, status, retry } = useJson<Proposal[]>(`/api/tables/${table.owner}/${table.slug}/proposals`);
@@ -163,27 +170,31 @@ export function AllProposals({ table, canDecide }: { table: PublishedTable; canD
     <>
       <Back table={table} title="Proposals" />
       {status === "failed" ? (
-        <Empty icon={GitPullRequestArrow} title="Proposals didn't load" body="Try this page again in a moment." />
-      ) : data?.length ? (
-        <ul className="divide-y rounded-xl border">{data.map((proposal) => <ProposalCard key={proposal.id} proposal={proposal} table={table} canDecide={canDecide} onDecided={retry} />)}</ul>
+        <LoadFailed what="Proposals" retry={retry} />
+      ) : !data ? (
+        <LoadingList label="Loading proposals" />
+      ) : data.length ? (
+        <List>{data.map((proposal) => <ProposalCard key={proposal.id} proposal={proposal} table={table} canDecide={canDecide} onDecided={retry} />)}</List>
       ) : (
-        <Empty icon={GitPullRequestArrow} title="No proposals yet" body="Open the sheet, select a cell and suggest a change. Each proposal carries its source and quote." />
+        <EmptyState icon={GitPullRequestArrow} title="No proposals yet" body="Open the sheet, select a cell and suggest a change. Each proposal carries its source and quote." />
       )}
     </>
   );
 }
 
 export function AllChanges({ table }: { table: PublishedTable }) {
-  const { data, status } = useJson<Change[]>(`/api/tables/${table.owner}/${table.slug}/history`);
+  const { data, status, retry } = useJson<Change[]>(`/api/tables/${table.owner}/${table.slug}/history`);
   return (
     <>
       <Back table={table} title="History" />
       {status === "failed" ? (
-        <Empty icon={History} title="History didn't load" body="Try this page again in a moment." />
-      ) : data?.length ? (
-        <ul className="divide-y rounded-xl border">{data.map((change) => <ChangeRow key={change.id} change={change} table={table} />)}</ul>
+        <LoadFailed what="History" retry={retry} />
+      ) : !data ? (
+        <LoadingList label="Loading history" />
+      ) : data.length ? (
+        <List>{data.map((change) => <ChangeRow key={change.id} change={change} table={table} />)}</List>
       ) : (
-        <Empty icon={History} title="No changes yet" body="When a value changes, you'll see what it said before, who changed it and the new proof." />
+        <EmptyState icon={History} title="No changes yet" body="When a value changes, you'll see what it said before, who changed it and the new proof." />
       )}
     </>
   );

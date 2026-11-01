@@ -1,12 +1,13 @@
 import { ListFilter } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { NativeSelect } from "@/components/ui/native-select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { filterChoices, type SheetFilters } from "@/lib/sheet";
 import type { PublishedTable } from "@/lib/status";
 
 /** Pick a column, then the values to keep, like a spreadsheet's filter. */
-export function FilterButton({ table, filters, onChange }: { table: PublishedTable; filters: SheetFilters; onChange: (filters: SheetFilters) => void }) {
+export function FilterButton({ table, filters, onChange, open, onOpenChange }: { table: PublishedTable; filters: SheetFilters; onChange: (filters: SheetFilters) => void; open: boolean; onOpenChange: (open: boolean) => void }) {
   const [columnId, setColumnId] = useState((table.columns.find((column) => filters[column.id]?.length) ?? table.columns[0]!).id);
   const active = table.columns.filter((column) => filters[column.id]?.length).length;
   const picked = filters[columnId] ?? [];
@@ -16,7 +17,7 @@ export function FilterButton({ table, filters, onChange }: { table: PublishedTab
     onChange(values.length ? { ...others, [columnId]: values } : others);
   };
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="xs" aria-label={active ? `Filter, ${active} on` : "Filter"} className={active ? "shrink-0 bg-selected text-foreground hover:bg-selected" : "shrink-0 text-muted-foreground"}>
           <ListFilter />
@@ -26,13 +27,9 @@ export function FilterButton({ table, filters, onChange }: { table: PublishedTab
       <PopoverContent align="start" className="w-72 max-w-[calc(100vw-2rem)] gap-2 p-3">
         <label className="block text-xs font-medium">
           Column
-          <select
-            value={columnId}
-            onChange={(event) => setColumnId(event.target.value)}
-            className="mt-1 h-8 w-full rounded-lg border bg-transparent px-2 text-sm font-normal dark:bg-input/30"
-          >
+          <NativeSelect value={columnId} onChange={(event) => setColumnId(event.target.value)} className="mt-1 w-full font-normal">
             {table.columns.map((column) => <option key={column.id} value={column.id}>{column.label}{filters[column.id]?.length ? " (on)" : ""}</option>)}
-          </select>
+          </NativeSelect>
         </label>
         <ul className="max-h-56 overflow-y-auto text-sm">
           {filterChoices(table, columnId).map(({ value, label, count }) => (

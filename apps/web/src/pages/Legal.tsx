@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from "react";
+import { Content, PageHeader } from "@/components/Layout";
 import { Page } from "@/components/Shell";
 
 const UPDATED = "November 1, 2026";
@@ -9,11 +10,10 @@ const Document = ({ title, updated = true, children }: { title: string; updated?
   }, [title]);
   return (
     <Page>
-      <main className="mx-auto max-w-2xl px-4 pt-8 pb-16 sm:px-6">
-        <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
-        {updated && <p className="mt-1 text-sm text-muted-foreground">Last updated {UPDATED}</p>}
-        <div className="mt-6 space-y-4 text-sm leading-relaxed [&_h2]:mt-6 [&_h2]:font-medium">{children}</div>
-      </main>
+      <Content size="narrow">
+        <PageHeader title={title} description={updated ? `Last updated ${UPDATED}` : undefined} />
+        <div className="space-y-4 text-sm leading-relaxed [&_h2]:mt-6 [&_h2]:font-medium">{children}</div>
+      </Content>
     </Page>
   );
 };

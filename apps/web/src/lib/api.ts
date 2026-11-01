@@ -20,8 +20,8 @@ export type Team = { handle: string; name: string; role: "owner" | "editor" };
 
 export type Me = { canSignIn: boolean; user: { email: string; name: string | null; handle: string | null; emailUpdates: boolean; accounts: string[]; teams: Team[]; invites: number } | null };
 
-/** Who's here, loaded once when the site opens. */
-export const MeContext = createContext<Me>({ canSignIn: false, user: null });
+/** Who's here, loaded when the site opens. `refresh` reloads it after a change to their account. */
+export const MeContext = createContext<Me & { refresh: () => void }>({ canSignIn: false, user: null, refresh: () => {} });
 export const useMe = () => useContext(MeContext);
 
 type Loaded<T> = { data?: T; status: "loading" | "ready" | "missing" | "failed"; retry: () => void };

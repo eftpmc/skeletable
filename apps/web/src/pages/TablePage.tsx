@@ -1,7 +1,8 @@
-import { ArrowRight, ExternalLink } from "lucide-react";
+import { ArrowRight, ExternalLink, Settings2 } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { AgentButton } from "@/components/Chrome";
+import { DownloadButton } from "@/components/Download";
+import { Content, LoadFailed } from "@/components/Layout";
 import { NoTable } from "@/components/NoTable";
 import { ShareButton } from "@/components/Share";
 import { Page } from "@/components/Shell";
@@ -11,13 +12,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useJson, useMe } from "@/lib/api";
 import { day, host, ownerLabel } from "@/lib/cells";
 import { statusCounts, statuses, type CellStatus, type PublishedTable } from "@/lib/status";
-import { Message } from "@/pages/Message";
 import { Grid } from "@/pages/Sheet";
 import { Activity, AllChanges, AllProposals } from "@/pages/TableActivity";
+import { TableSettings } from "@/pages/TableSettings";
 
 const PREVIEW_ROWS = 8;
 
-export const tableViews = ["proposals", "history"] as const;
+export const tableViews = ["proposals", "history", "settings"] as const;
 export type TableView = (typeof tableViews)[number];
 
 const SideSection = ({ title, children }: { title: string; children: ReactNode }) => (
@@ -64,6 +65,7 @@ function Sources({ table }: { table: PublishedTable }) {
       sites.set(site, { url: cell.source, cells: (sites.get(site)?.cells ?? 0) + 1 });
     }
   }
+  if (!sites.size) return <p className="text-sm text-muted-foreground">No sources yet.</p>;
   return (
     <ul className="space-y-1.5 text-sm">
       {[...sites].sort(([, a], [, b]) => b.cells - a.cells).map(([site, { url, cells }]) => (
@@ -89,7 +91,7 @@ function About({ table }: { table: PublishedTable }) {
     ["Rows", table.rows.length],
     ["Columns", table.columns.length],
     ["Filled", `${Math.round((filled.length / cells.length) * 100)}%`],
-    ["Last checked", day(lastChecked)],
+    ["Last checked", lastChecked ? day(lastChecked) : "Not yet"],
   ];
   return (
     <aside className="space-y-5">
@@ -158,6 +160,7 @@ function TableDetails({ table, view, onChanged }: { table: PublishedTable; view?
 
   if (view === "proposals") return <AllProposals table={table} canDecide={canManage} />;
   if (view === "history") return <AllChanges table={table} />;
+  if (view === "settings") return <TableSettings table={table} onChanged={onChanged} />;
 
   return (
     <>
@@ -175,7 +178,12 @@ function TableDetails({ table, view, onChanged }: { table: PublishedTable; view?
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
           <ShareButton table={table} path={`/${table.owner}/${table.slug}`} onChanged={onChanged} />
-          <AgentButton label="Connect an agent" />
+          <DownloadButton table={table} />
+          {canManage && (
+            <Button variant="outline" size="icon-lg" aria-label="Table settings" asChild>
+              <Link href={`/${table.owner}/${table.slug}/settings`}><Settings2 /></Link>
+            </Button>
+          )}
           <Button size="lg" asChild>
             <Link href={`/${table.owner}/${table.slug}/sheet`}>
               Open sheet
@@ -194,11 +202,11 @@ export function TablePage({ owner, slug, view }: { owner: string; slug: string; 
   const { data, status, retry } = useJson<PublishedTable>(`/api/tables/${owner}/${slug}`);
   return (
     <Page>
-      <main className="mx-auto max-w-6xl px-4 pt-6 pb-16 sm:px-6">
+      <Content>
         {status === "missing" ? (
           <NoTable />
         ) : status === "failed" ? (
-          <Message title="This table didn't load" action={<Button variant="outline" size="sm" onClick={retry}>Try again</Button>} />
+          <LoadFailed what="This table" retry={retry} />
         ) : data ? (
           <TableDetails table={data} view={view} onChanged={retry} />
         ) : (
@@ -208,7 +216,7 @@ export function TablePage({ owner, slug, view }: { owner: string; slug: string; 
             <Skeleton className="h-72 rounded-xl" />
           </div>
         )}
-      </main>
+      </Content>
     </Page>
   );
 }

@@ -1,13 +1,17 @@
+import { useEffect } from "react";
+import { toast } from "sonner";
 import { useRoute } from "wouter";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { Toaster } from "@/components/ui/sonner";
 import { MeContext, useJson, type Me } from "@/lib/api";
 import { Account } from "@/pages/Account";
 import { Explore } from "@/pages/Explore";
+import { Help } from "@/pages/Help";
 import { Landing } from "@/pages/Landing";
 import { About, Privacy, Terms } from "@/pages/Legal";
 import { NotFound } from "@/pages/Message";
 import { NewTable } from "@/pages/NewTable";
-import { Settings } from "@/pages/Settings";
+import { AccountSettings, ProfileSettings, TokenSettings } from "@/pages/Settings";
 import { Sheet } from "@/pages/Sheet";
 import { TablePage, tableViews, type TableView } from "@/pages/TablePage";
 import { TeamSettings, Teams } from "@/pages/Teams";
@@ -17,10 +21,13 @@ function Routes({ me }: { me: Me }) {
   const [isHome] = useRoute("/");
   const [isExplore] = useRoute("/explore");
   const [isSettings] = useRoute("/settings");
+  const [isTokens] = useRoute("/settings/tokens");
+  const [isAccountSettings] = useRoute("/settings/account");
   const [isTeams] = useRoute("/settings/teams");
   const [isTeam, team] = useRoute("/settings/teams/:handle");
   const [isNew] = useRoute("/new");
   const [isAbout] = useRoute("/about");
+  const [isHelp] = useRoute("/help");
   const [isTerms] = useRoute("/terms");
   const [isPrivacy] = useRoute("/privacy");
   const [isAccount, account] = useRoute("/:owner");
@@ -29,11 +36,14 @@ function Routes({ me }: { me: Me }) {
   const [isView, view] = useRoute("/:owner/:slug/:view");
   if (isHome) return me.user ? <YourHome user={me.user} /> : <Landing />;
   if (isExplore) return <Explore />;
-  if (isSettings) return <Settings />;
+  if (isSettings) return <ProfileSettings />;
+  if (isTokens) return <TokenSettings />;
+  if (isAccountSettings) return <AccountSettings />;
   if (isTeams) return <Teams />;
   if (isTeam) return <TeamSettings key={team.handle} handle={team.handle} />;
   if (isNew) return <NewTable />;
   if (isAbout) return <About />;
+  if (isHelp) return <Help />;
   if (isTerms) return <Terms />;
   if (isPrivacy) return <Privacy />;
   if (isAccount) return <Account key={account.owner} owner={account.owner} />;
@@ -46,15 +56,25 @@ function Routes({ me }: { me: Me }) {
 }
 
 export function App() {
-  const { data, status } = useJson<Me>("/api/me");
+  const { data, status, retry } = useJson<Me>("/api/me");
+  const me = { ...(data ?? { canSignIn: false, user: null }), refresh: retry };
+
+  // A failed sign-in lands back here with this in the address.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("signin") !== "failed") return;
+    toast.error("Sign-in didn't work. Try again, or use a different Google account.");
+    history.replaceState(null, "", location.pathname);
+  }, []);
+
   // Waiting here keeps the frame from flashing from public to signed-in.
-  if (status === "loading") return null;
-  const me = data ?? { canSignIn: false, user: null };
+  if (status === "loading" && !data) return null;
   return (
     <MeContext.Provider value={me}>
       <ErrorBoundary>
         <Routes me={me} />
       </ErrorBoundary>
+      <Toaster />
     </MeContext.Provider>
   );
 }

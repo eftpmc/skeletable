@@ -1,6 +1,8 @@
 import { ChevronRight } from "lucide-react";
+import { useState } from "react";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { TableSummary } from "@/lib/api";
 import { day, ownerLabel } from "@/lib/cells";
@@ -13,7 +15,7 @@ function CheckBar({ table, className }: { table: TableSummary; className: string
   const total = confirmed + summary + once + gap;
   const filled = confirmed + summary + once;
   return (
-    <div className={`shrink-0 sm:w-32 ${className}`} title={`${confirmed} confirmed by a blind read, ${summary} matched a summary, ${once} read once, ${gap} not stated`}>
+    <div className={`shrink-0 sm:w-44 ${className}`} title={`${confirmed} confirmed by a blind read, ${summary} matched a summary, ${once} read once, ${gap} not stated`}>
       <div className="flex h-1.5 gap-px overflow-hidden rounded-full" aria-hidden="true">
         {parts.filter(([, count]) => count).map(([status, count]) => <div key={status} className={statuses[status].solid} style={{ width: `${(count / total) * 100}%` }} />)}
       </div>
@@ -48,8 +50,11 @@ function TableRow({ table }: { table: TableSummary }) {
   );
 }
 
-/** Tables as an easy list to scan. `tables` is empty while they load. */
+const PAGE = 25;
+
+/** Tables as an easy list to scan, a page at a time. `tables` is empty while they load. */
 export function TableList({ tables }: { tables?: TableSummary[] }) {
+  const [shown, setShown] = useState(PAGE);
   if (!tables) {
     return (
       <div className="space-y-px overflow-hidden rounded-xl border" aria-label="Loading tables">
@@ -58,8 +63,13 @@ export function TableList({ tables }: { tables?: TableSummary[] }) {
     );
   }
   return (
-    <ul className="overflow-hidden rounded-xl border">
-      {tables.map((table) => <TableRow key={`${table.owner}/${table.slug}`} table={table} />)}
-    </ul>
+    <>
+      <ul className="overflow-hidden rounded-xl border">
+        {tables.slice(0, shown).map((table) => <TableRow key={`${table.owner}/${table.slug}`} table={table} />)}
+      </ul>
+      {tables.length > shown && (
+        <div className="mt-3 text-center"><Button variant="outline" size="sm" onClick={() => setShown(shown + PAGE)}>Show more</Button></div>
+      )}
+    </>
   );
 }

@@ -1,55 +1,78 @@
 import { useEffect } from "react";
 import { Link } from "wouter";
-import { Logo } from "@/components/Chrome";
+import { AccountMark } from "@/components/AccountMark";
+import { Content, EmptyState, LoadFailed } from "@/components/Layout";
 import { Page } from "@/components/Shell";
 import { TableList } from "@/components/TableList";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useJson, useMe, type TableSummary } from "@/lib/api";
 import { accountName } from "@/lib/cells";
 import { Message } from "@/pages/Message";
 
-/** One account's public page: who they are and their tables. An empty account only exists to its owner. */
+type AccountDetails = { handle: string; team: boolean; bio: string; name?: string; members?: number };
+
+const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`;
+
+/** One account's page: who they are and their tables. An account with nothing to show only exists to the people in it. */
 export function Account({ owner }: { owner: string }) {
   const { user } = useMe();
-  const { data, status, retry } = useJson<TableSummary[]>("/api/tables");
-  const tables = data?.filter((table) => table.owner === owner);
-  const team = user?.teams.find((candidate) => candidate.handle === owner);
-  const name = team?.name ?? tables?.[0]?.ownerName ?? accountName(owner);
+  const account = useJson<AccountDetails>(`/api/accounts/${owner}`);
+  const list = useJson<TableSummary[]>("/api/tables");
+  const tables = list.data?.filter((table) => table.owner === owner);
+  const details = account.data;
+  const name = details?.name ?? accountName(owner);
   const yours = user?.accounts.includes(owner);
+  const team = user?.teams.find((candidate) => candidate.handle === owner);
 
   useEffect(() => {
-    document.title = name === "Skeletable" ? name : `${name} · Skeletable`;
-  }, [name]);
+    if (details) document.title = name === "Skeletable" ? name : `${name} · Skeletable`;
+  }, [details, name]);
 
   return (
     <Page>
-      <main className="mx-auto max-w-5xl px-4 pt-8 pb-16 sm:px-6">
-        {status === "failed" ? (
-          <Message title="This account didn't load" action={<Button variant="outline" size="sm" onClick={retry}>Try again</Button>} />
-        ) : tables?.length === 0 && !yours ? (
+      <Content>
+        {account.status === "missing" ? (
           <Message title="There's no account here" />
+        ) : account.status === "failed" || list.status === "failed" ? (
+          <LoadFailed what="This account" retry={() => { account.retry(); list.retry(); }} />
+        ) : !details ? (
+          <div className="flex items-center gap-3" aria-label="Loading account">
+            <Skeleton className="size-14 rounded-lg" />
+            <Skeleton className="h-8 w-48" />
+          </div>
         ) : (
           <>
-            <div className="mb-6 flex items-center gap-3">
-              <Logo className="size-12" />
+            <header className="mb-6 flex flex-wrap items-center gap-3">
+              <AccountMark handle={owner} name={name} className="size-14 text-2xl" />
               <div className="min-w-0 flex-1">
-                <h1 className="text-2xl font-semibold tracking-tight">{name}</h1>
-                <p className="text-sm text-muted-foreground">{tables ? `${tables.length} ${tables.length === 1 ? "table" : "tables"}` : " "}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-2xl font-semibold tracking-tight">{name}</h1>
+                  {details.team && <Badge variant="outline">Team</Badge>}
+                  {team && <Badge variant="secondary" className="capitalize">{team.role}</Badge>}
+                </div>
+                {details.bio && <p className="mt-0.5 text-muted-foreground">{details.bio}</p>}
+                <p className="text-sm text-muted-foreground">
+                  {tables ? plural(tables.length, "table") : " "}
+                  {details.team && details.members ? ` · ${plural(details.members, "member")}` : ""}
+                </p>
               </div>
               {team && <Button variant="outline" size="sm" asChild><Link href={`/settings/teams/${owner}`}>Manage team</Link></Button>}
-            </div>
+              {yours && !team && <Button variant="outline" size="sm" asChild><Link href="/settings">Edit profile</Link></Button>}
+            </header>
             {tables?.length === 0 ? (
-              <div className="rounded-xl border p-8 text-center">
-                <p className="font-medium">This is your public page</p>
-                <p className="mt-1 mb-4 text-sm text-muted-foreground">Public tables show up here for anyone to see. Private ones only show to people who can open them.</p>
-                <Button size="sm" asChild><Link href="/new">New table</Link></Button>
-              </div>
+              <EmptyState
+                title="This is your public page"
+                body="Public tables show up here for anyone to see. Private ones only show to people who can open them."
+                action={<Button size="sm" asChild><Link href="/new">New table</Link></Button>}
+              />
             ) : (
               <TableList tables={tables} />
             )}
           </>
         )}
-      </main>
+      </Content>
     </Page>
   );
 }

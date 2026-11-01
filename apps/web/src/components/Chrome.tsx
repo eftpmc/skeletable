@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { accountLinks } from "@/lib/account";
+import { accountLinks, signInHref } from "@/lib/account";
 import { useMe, type Me } from "@/lib/api";
+import { copyText } from "@/lib/copy";
 import { useTheme } from "@/lib/theme";
 
 /** The product's mark: a skull built from a sheet's cells, on its own tile so it reads on any background. */
@@ -22,16 +23,11 @@ export function ThemeButton() {
 }
 
 /** The MCP command, ready to copy. */
-function AgentCommand() {
+export function AgentCommand() {
   const command = `claude mcp add --transport http skeletable ${location.origin}/mcp`;
   const [copied, setCopied] = useState(false);
   const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(command);
-    } catch {
-      // The browser refused; the command is still on screen to select.
-      return;
-    }
+    if (!(await copyText(command))) return;
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
@@ -101,7 +97,7 @@ export function AccountButton() {
   if (!user) {
     return (
       <Button variant="outline" size="sm" asChild>
-        <a href="/auth/google">Sign in</a>
+        <a href={signInHref()}>Sign in</a>
       </Button>
     );
   }

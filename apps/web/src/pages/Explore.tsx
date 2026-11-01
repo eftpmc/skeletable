@@ -1,9 +1,11 @@
 import { Search } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Content, LoadFailed, PageHeader } from "@/components/Layout";
 import { Page } from "@/components/Shell";
 import { TableList } from "@/components/TableList";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
 import { useJson, type TableSummary } from "@/lib/api";
 import { Message } from "@/pages/Message";
 
@@ -34,10 +36,9 @@ export function Explore() {
 
   return (
     <Page>
-      <main className="mx-auto max-w-5xl px-4 pt-8 pb-16 sm:px-6">
-        <h1 className="text-3xl font-semibold tracking-tight">Browse tables</h1>
-        <p className="mt-1 text-muted-foreground">Every value here shows its source. Open a table to see how well it's been checked.</p>
-        <div className="relative mt-5">
+      <Content>
+        <PageHeader title="Browse tables" description="Every value here shows its source. Open a table to see how well it's been checked." />
+        <div className="relative">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             className="h-10 pl-9"
@@ -59,17 +60,13 @@ export function Explore() {
           </div>
           <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
             Sort
-            <select
-              value={sort}
-              onChange={(event) => setSort(event.target.value as keyof typeof sorts)}
-              className="h-6 rounded-md border bg-transparent px-1 text-xs text-foreground dark:bg-input/30"
-            >
+            <NativeSelect value={sort} onChange={(event) => setSort(event.target.value as keyof typeof sorts)} className="h-7 text-xs text-foreground">
               {Object.entries(sorts).map(([value, { label }]) => <option key={value} value={value}>{label}</option>)}
-            </select>
+            </NativeSelect>
           </label>
         </div>
         {status === "failed" ? (
-          <Message title="The tables didn't load" action={<Button variant="outline" size="sm" onClick={retry}>Try again</Button>} />
+          <LoadFailed what="The tables" retry={retry} />
         ) : shown?.length === 0 ? (
           <Message
             title={query ? `No table covers "${query}" yet` : "No tables here yet"}
@@ -78,7 +75,7 @@ export function Explore() {
         ) : (
           <TableList tables={shown} />
         )}
-      </main>
+      </Content>
     </Page>
   );
 }
