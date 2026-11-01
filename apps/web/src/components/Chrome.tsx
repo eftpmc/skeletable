@@ -1,4 +1,4 @@
-import { Bot, Check, ChevronsUpDown, Copy, Moon, Sun } from "lucide-react";
+import { Bot, Check, Copy, Moon, Sun } from "lucide-react";
 import { useRef, useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -80,7 +80,7 @@ const SignOutForm = ({ formRef, children }: { formRef?: React.Ref<HTMLFormElemen
 /** On a phone there's no room for a menu inside the menu, so this just says who you are. */
 export function PhoneAccount({ user }: { user: User }) {
   return (
-    <div className="flex items-center gap-2.5 border-t p-4">
+    <div className="flex items-center gap-2.5 px-2.5 pb-1">
       <Initial user={user} />
       <div className="min-w-0 flex-1 text-sm">
         {user.name && <p className="truncate font-medium">{user.name}</p>}
@@ -91,11 +91,8 @@ export function PhoneAccount({ user }: { user: User }) {
   );
 }
 
-/**
- * Sign in, or the menu for everything about your account. Shows nothing until sign-in is really
- * available. `wide` fills the sidebar with your name, opening upwards from the bottom of the page.
- */
-export function AccountButton({ wide, compact }: { wide?: boolean; compact?: boolean }) {
+/** Sign in, or the menu for everything of yours. Shows nothing until sign-in is really available. */
+export function AccountButton() {
   const { canSignIn, user } = useMe();
   const { dark, toggle } = useTheme();
   const [agent, setAgent] = useState(false);
@@ -108,22 +105,13 @@ export function AccountButton({ wide, compact }: { wide?: boolean; compact?: boo
       </Button>
     );
   }
-  const inRail = wide || compact;
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          {wide ? (
-            <Button variant="ghost" className="h-10 w-full justify-start gap-2.5 px-1.5 font-normal" aria-label="Your account">
-              <Initial user={user} />
-              <span className="min-w-0 flex-1 truncate text-left">{user.name ?? user.email}</span>
-              <ChevronsUpDown className="text-muted-foreground" />
-            </Button>
-          ) : (
-            <Button variant="ghost" size="icon-sm" className="rounded-full" aria-label="Your account"><Initial user={user} /></Button>
-          )}
+          <Button variant="ghost" size="icon-sm" className="rounded-full" aria-label="Your account"><Initial user={user} /></Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent side={inRail ? "top" : "bottom"} align={inRail ? "start" : "end"} className="w-64">
+        <DropdownMenuContent align="end" className="w-64">
           <DropdownMenuLabel className="font-normal">
             {user.name && <p className="truncate font-medium text-foreground">{user.name}</p>}
             <p className="truncate">{user.email}</p>
