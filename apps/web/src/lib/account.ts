@@ -11,7 +11,7 @@ export const signInHref = () => `/auth/google?next=${encodeURIComponent(`${locat
 
 /** Where a signed-in person can go. Someone without a handle has no public profile yet. */
 export const accountLinks = (handle: string | null, teams: Team[] = [], invites = 0): AccountLink[] => [
-  { href: "/", label: "Your tables", icon: Home },
+  { href: "/", label: "Tables", icon: Home },
   ...(handle ? [{ href: `/${handle}`, label: "Public profile", icon: UserRound }] : []),
   ...teams.map((team) => ({ href: `/${team.handle}`, label: team.name, icon: Users })),
   { href: "/settings/teams", label: invites ? `Teams (${invites} ${invites === 1 ? "invite" : "invites"})` : "Teams", icon: Users },

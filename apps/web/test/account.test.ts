@@ -11,5 +11,5 @@ it("leaves out the profile until there's a handle", () => {
 
 it("lists the teams you're on by name, and says when an invite is waiting", () => {
   const links = accountLinks("zack", [{ handle: "skeletable", name: "Skeletable", role: "owner" }], 2);
-  expect(links.map((link) => link.label)).toEqual(["Your tables", "Public profile", "Skeletable", "Teams (2 invites)", "Settings"]);
+  expect(links.map((link) => link.label)).toEqual(["Tables", "Public profile", "Skeletable", "Teams (2 invites)", "Settings"]);
 });
