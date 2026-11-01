@@ -1,13 +1,15 @@
-import { Home, Menu, Table2, X, type LucideIcon } from "lucide-react";
+import { Home, Menu, PanelLeft, Table2, X, type LucideIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { AccountButton, AgentButton, Logo, ThemeButton } from "@/components/Chrome";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useJson, type Me } from "@/lib/api";
+import { useMe } from "@/lib/api";
 
 // Shared by every top bar and the phone menu, so the menu button and its X sit in the same spot.
 const bar = "flex h-12 shrink-0 items-center gap-4 border-b px-4";
+
+const RAIL_KEY = "rail";
 
 const BrandName = () => (
   <>
@@ -23,12 +25,12 @@ const Brand = () => (
 );
 
 function useNavItems() {
-  const { data } = useJson<Me>("/api/me");
+  const { user } = useMe();
   const items: { href: string; label: string; icon: LucideIcon }[] = [{ href: "/explore", label: "Browse tables", icon: Table2 }];
-  return data?.user ? [{ href: "/", label: "Your tables", icon: Home }, ...items] : items;
+  return user ? [{ href: "/", label: "Your tables", icon: Home }, ...items] : items;
 }
 
-function NavLinks({ onNavigate, large = false }: { onNavigate?: () => void; large?: boolean }) {
+function NavLinks({ onNavigate, size = "normal" }: { onNavigate?: () => void; size?: "icons" | "normal" | "large" }) {
   const [location] = useLocation();
   return (
     <nav aria-label="Main" className="flex flex-col gap-1">
@@ -37,11 +39,12 @@ function NavLinks({ onNavigate, large = false }: { onNavigate?: () => void; larg
           key={href}
           href={href}
           onClick={onNavigate}
+          title={size === "icons" ? label : undefined}
           aria-current={location === href ? "page" : undefined}
-          className={`flex items-center gap-2.5 rounded-md px-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground aria-[current=page]:bg-muted aria-[current=page]:font-medium aria-[current=page]:text-foreground ${large ? "py-3 text-lg" : "py-1.5 text-sm"}`}
+          className={`flex items-center gap-2.5 rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground aria-[current=page]:bg-muted aria-[current=page]:font-medium aria-[current=page]:text-foreground ${size === "large" ? "px-2.5 py-3 text-lg" : size === "icons" ? "justify-center py-2" : "px-2.5 py-1.5 text-sm"}`}
         >
-          <Icon className={large ? "size-5" : "size-4"} />
-          {label}
+          <Icon className={size === "large" ? "size-5" : "size-4"} />
+          <span className={size === "icons" ? "sr-only" : undefined}>{label}</span>
         </Link>
       ))}
     </nav>
@@ -68,7 +71,7 @@ function PhoneMenu() {
         </div>
         <DialogDescription className="sr-only">Where to go next</DialogDescription>
         <div className="flex-1 p-4">
-          <NavLinks onNavigate={() => setOpen(false)} large />
+          <NavLinks onNavigate={() => setOpen(false)} size="large" />
         </div>
         <div className="flex items-center gap-2 border-t p-4">
           <AgentButton label="Connect an agent" />
@@ -89,8 +92,56 @@ const PhoneBar = () => (
   </header>
 );
 
-/** The public side: a simple top bar over the page. */
-export function PublicPage({ children }: { children: ReactNode }) {
+const readRail = () => {
+  try {
+    return localStorage.getItem(RAIL_KEY) === "open";
+  } catch {
+    return false;
+  }
+};
+
+/** A slim strip of icons that opens to show their names, and remembers which you prefer. */
+function Rail() {
+  const [open, setOpen] = useState(readRail);
+  const toggle = () => {
+    setOpen(!open);
+    try {
+      localStorage.setItem(RAIL_KEY, open ? "closed" : "open");
+    } catch {
+      // The choice just won't outlast this page.
+    }
+  };
+  return (
+    <aside className={`sticky top-0 hidden h-svh shrink-0 flex-col border-r p-2 transition-[width] duration-150 md:flex ${open ? "w-56" : "w-14"}`}>
+      <Link href="/" aria-label="Skeletable" className={`mb-3 flex h-10 items-center gap-2 font-medium tracking-tight ${open ? "px-1.5" : "justify-center"}`}>
+        {open ? <BrandName /> : <Logo className="size-7" />}
+      </Link>
+      <NavLinks size={open ? "normal" : "icons"} />
+      <div className={`mt-auto flex gap-1 border-t pt-2 ${open ? "items-center" : "flex-col items-center"}`}>
+        <Button variant="ghost" size="icon-sm" onClick={toggle} aria-label={open ? "Collapse sidebar" : "Expand sidebar"} aria-expanded={open}>
+          <PanelLeft />
+        </Button>
+        <AgentButton />
+        <ThemeButton />
+        <div className={open ? "ml-auto flex" : "flex"}><AccountButton /></div>
+      </div>
+    </aside>
+  );
+}
+
+function SignedInFrame({ children }: { children: ReactNode }) {
+  return (
+    <div className="min-h-svh md:flex">
+      <Rail />
+      <div className="min-w-0 flex-1">
+        <PhoneBar />
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function PublicFrame({ children }: { children: ReactNode }) {
   const items = useNavItems();
   return (
     <div className="min-h-svh">
@@ -111,23 +162,8 @@ export function PublicPage({ children }: { children: ReactNode }) {
   );
 }
 
-/** The signed-in side: your own pages, with a sidebar that has room to grow. */
-export function UserPage({ children }: { children: ReactNode }) {
-  return (
-    <div className="min-h-svh md:flex">
-      <aside className="sticky top-0 hidden h-svh w-56 shrink-0 flex-col border-r p-3 md:flex">
-        <div className="mb-5 px-1.5 pt-1"><Brand /></div>
-        <NavLinks />
-        <div className="mt-auto flex items-center gap-1 border-t pt-3">
-          <AgentButton />
-          <ThemeButton />
-          <div className="ml-auto"><AccountButton /></div>
-        </div>
-      </aside>
-      <div className="min-w-0 flex-1">
-        <PhoneBar />
-        {children}
-      </div>
-    </div>
-  );
+/** The frame follows who you are, not which page you're on: a top bar in public, and the rail once signed in. */
+export function Page({ children }: { children: ReactNode }) {
+  const { user } = useMe();
+  return user ? <SignedInFrame>{children}</SignedInFrame> : <PublicFrame>{children}</PublicFrame>;
 }

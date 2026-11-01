@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 export type TableSummary = {
   owner: string;
@@ -14,6 +14,10 @@ export type TableSummary = {
 };
 
 export type Me = { canSignIn: boolean; user: { email: string; name: string | null; accounts: string[] } | null };
+
+/** Who's here, loaded once when the site opens. */
+export const MeContext = createContext<Me>({ canSignIn: false, user: null });
+export const useMe = () => useContext(MeContext);
 
 type Loaded<T> = { data?: T; status: "loading" | "ready" | "missing" | "failed"; retry: () => void };
 

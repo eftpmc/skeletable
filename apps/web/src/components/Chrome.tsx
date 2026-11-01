@@ -2,7 +2,7 @@ import { Bot, Check, Copy, Moon, Sun } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useJson, type Me } from "@/lib/api";
+import { useMe } from "@/lib/api";
 import { useTheme } from "@/lib/theme";
 
 /** The product's mark: a green sheet with one cell left open. */
@@ -64,9 +64,8 @@ export function AgentButton({ label }: { label?: string }) {
 
 /** Sign in, or who you are and a way out. Shows nothing until sign-in is really available. */
 export function AccountButton() {
-  const { data } = useJson<Me>("/api/me");
-  if (!data?.canSignIn) return null;
-  const { user } = data;
+  const { canSignIn, user } = useMe();
+  if (!canSignIn) return null;
   if (!user) {
     return (
       <Button variant="outline" size="sm" asChild>
