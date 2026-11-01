@@ -116,6 +116,78 @@ describe.skipIf(!url)("building a table through an agent", () => {
     expect(held().rows.map((row) => row.key)).toEqual(["Alpha", "Beta", "Gamma"]);
   });
 
+  it("asks for a quote in a table that requires proof", async () => {
+    await call("create_table", draft);
+    const result = (await call("fill_cells", { slug: "keyboards", cells: [{ row: "Alpha", column: "colour", value: "Black", origin: "generated" }] })).json();
+    expect(result.results[0].error).toContain("proof optional");
+    expect(held().rows[0]!.cells.colour).toMatchObject({ missing: true });
+  });
+
+  it("saves values that say where they came from, where proof is optional, without opening a page", async () => {
+    const created = (await call("create_table", { ...draft, proof: "optional" })).json();
+    expect(created.slug).toBe("keyboards");
+    expect(held().proof).toBe("optional");
+    const result = (await call("fill_cells", {
+      slug: "keyboards",
+      cells: [
+        { row: "Alpha", column: "colour", value: "Black", origin: "generated", note: "Label each keyboard's colour" },
+        { row: "Alpha", column: "weight", value: "900", source: "https://maker.example/a" },
+        { row: "Beta", column: "colour", value: "White", origin: "entered" },
+        { row: "Beta", column: "weight", value: "heavy" },
+        { row: "Gamma", column: "colour", value: "Red" },
+        { row: "Beta", column: "colour", value: "Grey", origin: "link" },
+      ],
+    })).json();
+    expect(result).toMatchObject({ saved: 3, of: 6 });
+    expect(result.results[3].error).toContain("number");
+    expect(result.results[4].error).toContain("no such cell");
+    expect(result.results[5].error).toContain("source");
+    expect(held().rows[0]!.cells).toMatchObject({
+      colour: { value: "Black", origin: "generated", note: "Label each keyboard's colour" },
+      weight: { value: 900, origin: "link", source: "https://maker.example/a" },
+    });
+    expect(held().rows[1]!.cells.colour).toMatchObject({ value: "White", origin: "entered" });
+    expect(opened).toEqual([]);
+
+    const values = (await call("get_table", { slug: "keyboards" })).json();
+    expect(values.proof).toBe("optional");
+    expect(values.rows[0]).toEqual({ key: "Alpha", values: { weight: 900, colour: "Black" }, origins: { weight: "link", colour: "generated" } });
+  });
+
+  it("never lets a value without a quote replace a quoted one", async () => {
+    await call("create_table", { ...draft, proof: "optional" });
+    await call("fill_cells", { slug: "keyboards", cells: [{ row: "Alpha", column: "weight", value: "900", source: "https://maker.example/a", quote: "Weighs 900 g" }] });
+    const result = (await call("fill_cells", { slug: "keyboards", cells: [{ row: "Alpha", column: "weight", value: "800", origin: "generated" }] })).json();
+    expect(result.results[0].error).toContain("quoted value");
+    expect(held().rows[0]!.cells.weight).toMatchObject({ value: 900, quote: "Weighs 900 g" });
+  });
+
+  it("fills a large dataset in a few calls, and exports it as CSV", async () => {
+    const rows = Array.from({ length: 300 }, (_, index) => `ex-${index}`);
+    await call("create_table", { title: "Clauses", proof: "optional", columns: [{ label: "Text", type: "text" }, { label: "Label", type: "text" }], rows: rows.slice(0, 1) });
+    expect((await call("add_rows", { slug: "clauses", rows: rows.slice(1) })).json()).toEqual({ added: 299 });
+    const long = `We keep your data, "as needed", for ${"a very long time ".repeat(30)}`.trim();
+    for (let start = 0; start < rows.length; start += 100) {
+      const cells = rows.slice(start, start + 100).flatMap((row) => [
+        { row, column: "text", value: row === "ex-0" ? long : `Sentence ${row}`, source: "https://policy.example/privacy" },
+        { row, column: "label", value: "Data retention", origin: "generated" },
+      ]);
+      expect((await call("fill_cells", { slug: "clauses", cells })).json()).toMatchObject({ saved: 200, of: 200 });
+    }
+    const clauses = tables.find((table) => table.slug === "clauses")!;
+    expect(clauses.rows).toHaveLength(300);
+
+    const csv = (await call("export_table", { slug: "clauses", columns: ["text", "label"], names: false })).text.split("\r\n");
+    expect(csv).toHaveLength(301);
+    expect(csv[0]).toBe("Text,Label");
+    expect(csv[1]).toBe(`"${long.replace(/"/g, '""')}",Data retention`);
+    expect(csv[2]).toBe("Sentence ex-1,Data retention");
+    const withProof = (await call("export_table", { slug: "clauses", columns: ["label"], proof: true })).text.split("\r\n");
+    expect(withProof[0]).toBe("Name,Label,Label: source,Label: quote,Label: origin");
+    expect(withProof[1]).toBe("ex-0,Data retention,,,generated");
+    expect((await call("export_table", { slug: "clauses", columns: ["nope"] })).isError).toBe(true);
+  });
+
   it("can't write to a published table, or someone else's draft", async () => {
     await call("create_table", draft);
     await sql`update data_tables set draft = false, question = 'Q', topic = 'T', scope = 'S' where slug = 'keyboards'`;

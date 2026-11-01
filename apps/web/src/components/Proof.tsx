@@ -1,11 +1,11 @@
-import type { FoundCell } from "@skeleton/tables/format";
+import type { FoundCell, GivenCell } from "@skeleton/tables/format";
 import { cellPaths, displayValue, quoteLink } from "@skeleton/tables/share";
 import { ExternalLink, Link2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { host, splitQuote } from "@/lib/cells";
+import { day, host, splitQuote } from "@/lib/cells";
 import { copyText } from "@/lib/copy";
 import { statuses, type CellStatus } from "@/lib/status";
 
@@ -89,6 +89,20 @@ export const Conflicts = ({ cell }: { cell: FoundCell }) =>
       ))}
     </ul>
   ) : null;
+
+/** Where a value without a quote came from, used wherever a value is shown on its own. */
+export const OriginDetails = ({ cell, status, actions }: { cell: GivenCell; status: CellStatus; actions?: ReactNode }) => (
+  <div className="space-y-1.5 text-sm">
+    <p className="text-muted-foreground">{statuses[status].detail}. It has no quote, so check it before relying on it.</p>
+    {cell.note && <p className="border-l-2 pl-3 break-words text-xs text-muted-foreground">{cell.note}</p>}
+    <div className="flex flex-wrap items-center gap-1.5">
+      {cell.source && <SourceLink url={cell.source} label={host(cell.source)} />}
+      <StatusBadge status={status} />
+      {actions}
+      <Badge variant="outline">Set {day(cell.read)}</Badge>
+    </div>
+  </div>
+);
 
 /** One value's proof, used wherever a value is shown on its own. */
 export const ProofDetails = ({ cell, status, cite }: { cell: FoundCell; status?: CellStatus; cite: ReactNode }) => (

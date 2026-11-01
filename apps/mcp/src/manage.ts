@@ -1,4 +1,5 @@
 import type { Context, Hono } from "hono";
+import { MAX_GIVEN_TEXT, isGiven, proofOptional, type Cell } from "@skeleton/tables/format";
 import { draftChecklist, slugOfRow } from "@skeleton/tables/share";
 import { z } from "zod";
 import { MAX_COLUMNS, MAX_ROWS, addColumn, addRow, columnBody, emptyCell, freeSlug, isOwner, runsTable, type SignedIn } from "./accounts.js";
@@ -18,8 +19,14 @@ const gridChange = z.object({
   addColumns: z.array(columnBody).max(MAX_COLUMNS).default([]),
   addRows: z.array(z.string().trim().min(1).max(120)).max(MAX_ROWS).default([]),
   // `column` is a column's id, or `new:0` for the first of `addColumns`. An empty value clears the cell.
-  cells: z.array(z.object({ row: z.string().max(120), column: z.string().max(80), value: z.string().trim().max(300) })).max(MAX_ROWS * MAX_COLUMNS).default([]),
+  cells: z.array(z.object({ row: z.string().max(120), column: z.string().max(80), value: z.string().trim().max(MAX_GIVEN_TEXT) })).max(MAX_ROWS * MAX_COLUMNS).default([]),
 });
+const proofBody = z.object({ proof: z.enum(["required", "optional"]) });
+
+/** The longest value with no proof yet that a table requiring proof can hold. */
+const MAX_UNPROVEN_TEXT = 300;
+
+const today = () => new Date().toISOString().slice(0, 10);
 const publishBody = z.object({ private: z.boolean() });
 const rowName = z.string().trim().min(1).max(120);
 const rowChange = z.object({ key: rowName, to: rowName });
@@ -59,12 +66,17 @@ export function manageRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sign
     return c.json({ ok: true, slug });
   });
 
-  // What's typed or pasted into a draft, all at once. Values here have no proof yet, so a proved cell is left alone.
+  /**
+   * What's typed or pasted, all at once. In a table that requires proof, this only works on a draft,
+   * and values wait for their proof. Where proof is optional, a typed value counts as entered by a
+   * person. Either way a quoted value is left alone.
+   */
   app.post("/api/tables/:owner/:slug/grid", async (c) => {
     const found = await editing(c);
     if (found instanceof Response) return found;
     const { table } = found;
-    if (!table.draft) return c.json({ error: "A published table's values need their proof." }, 409);
+    const open = proofOptional(table);
+    if (!table.draft && !open) return c.json({ error: "A published table's values need their proof." }, 409);
     const body = gridChange.safeParse(await c.req.json().catch(() => null));
     if (!body.success) return c.json({ error: "That didn't save." }, 400);
     const { addColumns, addRows, cells } = body.data;
@@ -81,9 +93,18 @@ export function manageRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sign
         const rowId = rows.find((candidate) => candidate.key === row)?.id;
         if (!target || !rowId) continue;
         const [held] = await tx`select cell from cell_versions where row_id = ${rowId} and column_id = ${target.id} order by id desc limit 1`;
-        if (held && !held.cell.missing) continue;
+        const heldCell = held?.cell as Cell | undefined;
+        if (heldCell && !("missing" in heldCell) && !isGiven(heldCell)) continue;
         const parsed = value ? asValue({ type: target.type as "text" }, value) : undefined;
-        const { unproven: _old, ...blank } = (held?.cell ?? emptyCell()) as Record<string, unknown>;
+        if (open) {
+          // A value that doesn't fit its column is skipped, not taken as clearing the cell.
+          if (value && parsed === undefined) continue;
+          const cell: Cell = parsed === undefined ? emptyCell() : { value: parsed, origin: "entered", read: today() };
+          await tx`insert into cell_versions (row_id, column_id, cell, created_by) values (${rowId}, ${target.id}, ${tx.json(cell as never)}, ${found.userId})`;
+          continue;
+        }
+        if (typeof parsed === "string" && parsed.length > MAX_UNPROVEN_TEXT) continue;
+        const { unproven: _old, ...blank } = (heldCell && "missing" in heldCell ? heldCell : emptyCell()) as Record<string, unknown>;
         await tx`insert into cell_versions (row_id, column_id, cell, created_by) values (${rowId}, ${target.id}, ${tx.json({ ...blank, ...(parsed !== undefined && { unproven: parsed }) } as never)}, ${found.userId})`;
       }
     });
@@ -112,6 +133,19 @@ export function manageRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sign
       }
       await tx`update data_tables set draft = false, private = ${body.data.private} where id = ${found.id}`;
     });
+    return finish(c);
+  });
+
+  // Whether values need a quote. A table can only go back to requiring one once every value has one.
+  app.put("/api/tables/:owner/:slug/proof", async (c) => {
+    const found = await editing(c);
+    if (found instanceof Response) return found;
+    if (!(await isOwner(sql, found.userId, found.table.owner))) return c.json({ error: "Only this table's owners can change this." }, 403);
+    const body = proofBody.safeParse(await c.req.json().catch(() => null));
+    if (!body.success) return c.json({ error: "Choose whether values need proof." }, 400);
+    const given = found.table.rows.reduce((count, row) => count + Object.values(row.cells).filter(isGiven).length, 0);
+    if (body.data.proof === "required" && given) return c.json({ error: `${given} ${given === 1 ? "value has" : "values have"} no quote. Prove or clear ${given === 1 ? "it" : "them"} first.` }, 409);
+    await sql`update data_tables set proof = ${body.data.proof} where id = ${found.id}`;
     return finish(c);
   });
 

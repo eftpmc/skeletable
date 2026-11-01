@@ -1,6 +1,6 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { isAnswered, isFound, normalize, quoteStates, validateTable, watchFileSchema, watchKey, type Cell, type Column, type FoundCell, type Table, type WatchFile } from "@skeleton/tables/format";
+import { hasValue, isAnswered, isFound, isGiven, normalize, quoteStates, validateTable, watchFileSchema, watchKey, type Cell, type Column, type Table, type WatchFile } from "@skeleton/tables/format";
 import { cellPaths, cellStatus } from "@skeleton/tables/share";
 
 /** A table as served, with what the last watch saw, if it's been watched, and its team's name if a team runs it. A private one must only go out through the rule in access.ts. */
@@ -41,6 +41,7 @@ export function summarize(table: PublishedTable) {
     topic: table.topic,
     title: table.title,
     question: table.question,
+    ...(table.proof === "optional" && { proof: "optional" }),
     rows: table.rows.length,
     columns: table.columns.map((column) => column.label),
     filled: `${cells(table).filter(isAnswered).length} of ${cells(table).length} cells`,
@@ -51,9 +52,10 @@ export function summarize(table: PublishedTable) {
 
 /** How each table's values stand, for showing it at a glance in a list. */
 export function checkCounts(table: Table) {
-  const counts = { confirmed: 0, summary: 0, once: 0, gap: 0 };
+  const counts = { confirmed: 0, summary: 0, once: 0, given: 0, gap: 0 };
   for (const cell of cells(table)) {
-    if (!isFound(cell)) counts.gap += 1;
+    if (isGiven(cell)) counts.given += 1;
+    else if (!isFound(cell)) counts.gap += 1;
     else if (cell.confirmed === "blind-read") counts.confirmed += 1;
     else if (cell.confirmed === "summary") counts.summary += 1;
     else counts.once += 1;
@@ -70,9 +72,12 @@ export function searchTables(tables: Table[], query = ""): Table[] {
   });
 }
 
-const cellValue = (cell: Cell) => (isFound(cell) ? cell.value : null);
+const cellValue = (cell: Cell) => (hasValue(cell) ? cell.value : null);
 
-/** A table's values, with null where no acceptable source stated one. Evidence is one get_cell away. */
+/**
+ * A table's values, with null where no acceptable source stated one. Evidence is one get_cell away.
+ * In a table whose proof is optional, `origins` says where each value without a quote came from.
+ */
 export function tableValues(table: Table) {
   return {
     owner: table.owner,
@@ -80,17 +85,25 @@ export function tableValues(table: Table) {
     title: table.title,
     question: table.question,
     scope: table.scope,
+    proof: table.proof ?? "required",
     lastRead: lastRead(table),
     columns: table.columns,
-    rows: table.rows.map((row) => ({
-      key: row.key,
-      values: Object.fromEntries(table.columns.map((column) => [column.id, cellValue(row.cells[column.id]!)])),
-    })),
+    rows: table.rows.map((row) => {
+      const origins = Object.fromEntries(table.columns.flatMap((column) => {
+        const cell = row.cells[column.id]!;
+        return isGiven(cell) ? [[column.id, cell.origin]] : [];
+      }));
+      return {
+        key: row.key,
+        values: Object.fromEntries(table.columns.map((column) => [column.id, cellValue(row.cells[column.id]!)])),
+        ...(Object.keys(origins).length && { origins }),
+      };
+    }),
   };
 }
 
 /** Whether a claimed value says the same thing as a stated one. A text value may be a shorter or longer wording of it. */
-function agrees(column: Column, stated: FoundCell["value"], claim: string) {
+function agrees(column: Column, stated: string | number | boolean, claim: string) {
   const text = normalize(claim);
   if (typeof stated === "number") return quoteStates(stated, text);
   if (typeof stated === "boolean") return stated ? /^(yes|true)\b/.test(text) : /^(no|false)\b/.test(text);
@@ -108,7 +121,11 @@ export function checkClaim(table: PublishedTable, rowKey: string, columnId: stri
   const { cell, column, url } = found;
   const status = cellStatus(cell, found.row, column.id, table.watch);
   const shared = { row: found.row, column: column.label, unit: column.unit, status, url };
-  if (!isFound(cell)) return { verdict: cell.absent ? "differs" : "unknown", ...shared, ...(cell.absent ? { stated: null, note: "The source was read and gives no such value.", source: cell.checked[0] } : { note: "No acceptable source stated this, so the table can't say." }) };
+  if (isGiven(cell)) {
+    const { value: stated, origin, source, note, read } = cell;
+    return { verdict: agrees(column, stated, claim) ? "matches" : "differs", ...shared, stated, origin, ...(source && { source }), ...(note && { note }), read, caution: "This value has no quote, so check where it came from before relying on it." };
+  }
+  if ("missing" in cell) return { verdict: cell.absent ? "differs" : "unknown", ...shared, ...(cell.absent ? { stated: null, note: "The source was read and gives no such value.", source: cell.checked[0] } : { note: "No acceptable source stated this, so the table can't say." }) };
   const { value: stated, quote, source, read, conflicts } = cell;
   const verdict = conflicts?.length ? "disputed" : agrees(column, stated, claim) ? "matches" : "differs";
   return { verdict, ...shared, stated, quote, source, read, ...(conflicts && { conflicts }) };

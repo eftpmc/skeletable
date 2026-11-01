@@ -17,7 +17,7 @@ import { copyText } from "@/lib/copy";
 type PostDetails = { slug: string; title: string; date: string; summary: string; draft: boolean };
 type Block = { type: "heading"; text: string } | { type: "text"; text: string } | { type: "cell"; rowKey: string; path: string; column: Column; cell: Cell };
 
-const isFound = (cell: Cell): cell is FoundCell => !("missing" in cell);
+const isFound = (cell: Cell): cell is FoundCell => !("missing" in cell) && !("origin" in cell);
 
 const Draft = () => <Badge variant="outline">Draft</Badge>;
 
@@ -72,7 +72,7 @@ function LiveCell({ block, url }: { block: Extract<Block, { type: "cell" }>; url
     <figure className="space-y-2 rounded-xl border p-4">
       <figcaption className="flex flex-wrap items-baseline justify-between gap-x-3">
         <Link href={path} className="font-medium hover:underline">{rowKey} · {column.label}</Link>
-        <span className="text-base font-semibold">{isFound(cell) ? `${display(cell.value)}${column.unit ? ` ${column.unit}` : ""}` : <span className="font-normal text-muted-foreground">{emptyLabel(cell)}</span>}</span>
+        <span className="text-base font-semibold">{!("missing" in cell) ? `${display(cell.value)}${column.unit ? ` ${column.unit}` : ""}` : <span className="font-normal text-muted-foreground">{emptyLabel(cell)}</span>}</span>
       </figcaption>
       {isFound(cell) && <ProofDetails cell={cell} cite={<Button variant="ghost" size="xs" onClick={() => copyText(citation(cell, rowKey, url), "Citation copied")}>Cite</Button>} />}
     </figure>

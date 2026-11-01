@@ -1,4 +1,4 @@
-import { isAnswered, isFound, type Cell, type Column } from "@skeleton/tables/format";
+import { hasValue, isAnswered, isFound, isGiven, proofOptional, type Cell, type Column } from "@skeleton/tables/format";
 import { ArrowDown, ArrowRight, ArrowUp, ChevronDown, Info, Lock, Pencil, ScanLine, Search, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent, type PointerEvent, type ReactNode, type RefObject } from "react";
 import { toast } from "sonner";
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { AgentBuildButton } from "@/components/AgentBuild";
 import { FilterButton } from "@/components/Filter";
 import { NoTable } from "@/components/NoTable";
-import { CiteButton, Conflicts, Quote, SourceLink, StatusBadge, kindLabels } from "@/components/Proof";
+import { CiteButton, Conflicts, OriginDetails, Quote, SourceLink, StatusBadge, kindLabels } from "@/components/Proof";
 import { ShareButton } from "@/components/Share";
 import { CellInput, ColumnDialog, NewColumnInput, NewRowInput, RowDialog, SheetOptions, addTableRow, type GridEdit } from "@/components/SheetEdit";
 import { AppBar } from "@/components/Shell";
@@ -81,7 +81,7 @@ function useQuoteSearch(table: PublishedTable, column: string, value: string, so
 
 /** Propose a new value with its proof, which the server tests before anyone reviews it. */
 function SuggestForm({ table, selected, canEdit, source, typed, onDone }: { table: PublishedTable; selected: Selected; canEdit: boolean; source: string; typed?: string; onDone: (sent: boolean, source: string) => void }) {
-  const unproven = "missing" in selected.cell ? selected.cell.unproven : undefined;
+  const unproven = "missing" in selected.cell ? selected.cell.unproven : isGiven(selected.cell) ? selected.cell.value : undefined;
   const [form, setForm] = useState({ value: typed ?? (unproven === undefined ? "" : display(unproven)), source, quote: "" });
   const [error, setError] = useState<string>();
   const [sending, setSending] = useState(false);
@@ -170,7 +170,7 @@ function SheetToolbar({ table, xray, onXray, onNext, find, onFind, findInput, fi
         <ScanLine />
         Show checks
       </Button>
-      {onNext && <Button variant="ghost" size="xs" className="shrink-0 text-muted-foreground" onClick={onNext}><ArrowRight />Next to prove</Button>}
+      {onNext && <Button variant="ghost" size="xs" className="shrink-0 text-muted-foreground" onClick={onNext}><ArrowRight />{proofOptional(table) ? "Next empty" : "Next to prove"}</Button>}
     </div>
   );
 }
@@ -217,7 +217,7 @@ export function FormulaBar({ selected, table, onChanged, editing, typed, onEditi
   // The last page used, because one page often fills several cells.
   const lastSource = useRef("");
   const cell = selected?.cell;
-  const value = !selected || !cell ? undefined : isFound(cell) ? `${display(cell.value)}${selected.column.unit ? ` ${selected.column.unit}` : ""}` : cell.unproven !== undefined ? `${display(cell.unproven)}${selected.column.unit ? ` ${selected.column.unit}` : ""}` : statuses[selected.status].label;
+  const value = !selected || !cell ? undefined : hasValue(cell) ? `${display(cell.value)}${selected.column.unit ? ` ${selected.column.unit}` : ""}` : cell.unproven !== undefined ? `${display(cell.unproven)}${selected.column.unit ? ` ${selected.column.unit}` : ""}` : statuses[selected.status].label;
   return (
     <section className="shrink-0 border-y" aria-live="polite" aria-label="Selected cell">
       <div className={compact ? "space-y-2 px-4 py-3 text-sm" : "flex h-9 items-center text-sm"}>
@@ -260,6 +260,17 @@ export function FormulaBar({ selected, table, onChanged, editing, typed, onEditi
               </div>
               <Conflicts cell={cell} />
             </>
+          ) : isGiven(cell) ? (
+            <OriginDetails
+              cell={cell}
+              status={selected.status}
+              actions={table && (
+                <>
+                  <SuggestButton onSuggest={() => setSuggesting(true)} canEdit={canEdit} label={canEdit ? "Add proof" : undefined} />
+                  {!table.draft && <CiteButton address={{ table, rowKey: selected.rowKey, columnId: selected.column.id }} />}
+                </>
+              )}
+            />
           ) : (
             <>
               <p className="text-muted-foreground">{cell.unproven !== undefined ? "This has no proof yet, so it doesn't count. Add the page that states it." : cell.absent ? `We read this source on ${day(cell.read)} and it gives no such value.` : cell.checked.length ? `No source we could use stated this. We looked here on ${day(cell.read)}:` : "Nobody has looked for this yet."}</p>
@@ -281,7 +292,7 @@ export function FormulaBar({ selected, table, onChanged, editing, typed, onEditi
 }
 
 /** What a cell holds, for editing it. */
-const cellText = (cell: Cell) => (isFound(cell) ? display(cell.value) : cell.unproven !== undefined ? display(cell.unproven) : "");
+const cellText = (cell: Cell) => (hasValue(cell) ? display(cell.value) : cell.unproven !== undefined ? display(cell.unproven) : "");
 
 const moves: Record<string, [number, number]> = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
 
@@ -358,14 +369,14 @@ export function Grid({ table, selectedId, select, emptyRows = 0, focusOnLoad = t
       };
       if (event.key === "Enter" || event.key === "F2") return start(cellText(cell));
       if (event.key.length === 1) return start(event.key);
-      if ((event.key === "Delete" || event.key === "Backspace") && "missing" in cell && cell.unproven !== undefined) {
+      if ((event.key === "Delete" || event.key === "Backspace") && (("missing" in cell && cell.unproven !== undefined) || isGiven(cell))) {
         edit.typeIn(table.rows[rowIndex]!.key, table.columns[columnIndex]!, "");
         return;
       }
     }
     if (event.key.toLowerCase() === "c" && (event.ctrlKey || event.metaKey) && onCopy) {
       const cell = table.rows[rowIndex]!.cells[table.columns[columnIndex]!.id]!;
-      return onCopy(isFound(cell) ? display(cell.value) : "");
+      return onCopy(hasValue(cell) ? display(cell.value) : "");
     }
     const move = moves[event.key];
     if (!move) return;
@@ -449,15 +460,15 @@ export function Grid({ table, selectedId, select, emptyRows = 0, focusOnLoad = t
                       event.preventDefault();
                       edit.paste!(rowIndex, columnIndex, event.clipboardData.getData("text"));
                     })}
-                    title={isFound(cell) ? `${status.label}: ${cell.quote}` : status.detail}
+                    title={isFound(cell) ? `${status.label}: ${cell.quote}` : isGiven(cell) ? `${status.label}${cell.note ? `: ${cell.note}` : ""}` : status.detail}
                     // The tint runs down the grid row by row, like a scan.
                     style={{ ...(xray && { transitionDelay: `${rowIndex * 35}ms` }), ...(widths?.[column.id] && { maxWidth: widths[column.id] }) }}
-                    className={`${edge} ${xray ? status.tint : ""} relative max-w-44 cursor-cell truncate px-2 py-1 transition-colors duration-200 hover:bg-muted/50 motion-reduce:transition-none focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset aria-selected:bg-brand/10 aria-selected:ring-2 aria-selected:ring-brand aria-selected:ring-inset sm:max-w-72 ${column.type === "number" ? "text-right" : ""} ${isFound(cell) ? "" : "text-xs text-muted-foreground"}`}
+                    className={`${edge} ${xray ? status.tint : ""} relative max-w-44 cursor-cell truncate px-2 py-1 transition-colors duration-200 hover:bg-muted/50 motion-reduce:transition-none focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset aria-selected:bg-brand/10 aria-selected:ring-2 aria-selected:ring-brand aria-selected:ring-inset sm:max-w-72 ${column.type === "number" ? "text-right" : ""} ${hasValue(cell) ? "" : "text-xs text-muted-foreground"}`}
                   >
                     {typing?.id === id && <CellInput initial={typing.text} numeric={column.type === "number"} onDone={(text, move) => finishTyping(rowIndex, columnIndex, id, text, move)} />}
                     {xray && <StatusIcon className="mr-1.5 inline size-3 align-[-1px] text-foreground/70" aria-label={status.label} />}
                     {!xray && status.corner && <span aria-hidden="true" className={`absolute top-0 right-0 size-0 border-t-[7px] border-l-[7px] border-l-transparent ${status.corner}`} />}
-                    {isFound(cell) ? (
+                    {hasValue(cell) ? (
                       <span key={statusName} className={table.draft ? "duration-700 animate-in fade-in" : undefined}>{display(cell.value)}</span>
                     ) : cell.unproven !== undefined ? (
                       <span className="text-sm italic">{display(cell.unproven)}</span>
@@ -583,6 +594,8 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
 
   const canRun = !!data && !data.managed && !!user?.accounts.includes(data.owner);
   const canAdd = canRun && data.draft;
+  // Where proof is optional, typed values count as entered, so they go straight in even once it's published.
+  const canType = canRun && (data.draft || proofOptional(data));
   const tableApi = `/api/tables/${owner}/${slug}`;
   const saveGrid = async (change: ReturnType<typeof gridChange> | { cells: { row: string; column: string; value: string }[] }) => {
     setPendingSaves((count) => count + 1);
@@ -593,11 +606,11 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
     } catch { toast.error("Couldn't connect. Your changes weren't saved. Try again."); }
     finally { setPendingSaves((count) => count - 1); }
   };
-  // Values go straight in while a table is a draft. Otherwise a person types the value and the formula bar asks for its proof.
+  // Values go straight in while a table is a draft or its proof is optional. Otherwise a person types the value and the formula bar asks for its proof.
   const typeIn: GridEdit["typeIn"] = (rowKey, column, text) => {
     const cell = data!.rows.find((candidate) => candidate.key === rowKey)!.cells[column.id]!;
     if (text.trim() === cellText(cell)) return false;
-    if (canAdd && !isFound(cell)) {
+    if (canType && !isFound(cell)) {
       void saveGrid({ cells: [{ row: rowKey, column: column.id, value: text }] });
       return false;
     }
@@ -615,7 +628,7 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
   };
   const gridEdit: GridEdit | undefined = data && user ? {
     typeIn,
-    ...(canAdd && { paste }),
+    ...(canType && { paste }),
     ...(canRun && {
       addRow: async (name: string) => {
         const ok = await addTableRow(data, name);

@@ -22,7 +22,7 @@ it("says what each listed table is about and when it was checked", async () => {
 
 it("says how well each listed table is checked", async () => {
   const list = (await (await app.request("/api/tables?q=enphase")).json()) as { checks: Record<string, number> }[];
-  expect(list[0]!.checks).toEqual({ confirmed: 0, summary: 11, once: 1, gap: 0 });
+  expect(list[0]!.checks).toEqual({ confirmed: 0, summary: 11, once: 1, given: 0, gap: 0 });
 });
 
 it("searches the tables", async () => {

@@ -29,9 +29,9 @@ it("reports what it's serving", async () => {
   expect(await response.json()).toEqual({ ok: true, tables: tables.length });
 });
 
-it("offers four tools, all read-only", async () => {
+it("offers five tools, all read-only", async () => {
   const { result } = await rpc("tools/list");
-  expect(result.tools.map((tool) => tool.name).sort()).toEqual(["check_claim", "get_cell", "get_table", "list_tables"]);
+  expect(result.tools.map((tool) => tool.name).sort()).toEqual(["check_claim", "export_table", "get_cell", "get_table", "list_tables"]);
   expect(result.tools.every((tool) => tool.annotations.readOnlyHint)).toBe(true);
 });
 

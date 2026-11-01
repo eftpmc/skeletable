@@ -9,7 +9,7 @@ import { rateLimit } from "./rate-limit.js";
 export type SignedIn = (c: Context) => Promise<{ id: string; email: string; accounts: string[]; shared: string[] } | null>;
 
 export const CREATIONS_PER_MINUTE = 10;
-export const MAX_ROWS = 200;
+export const MAX_ROWS = 1000;
 export const MAX_COLUMNS = 20;
 
 // These are the site's own addresses, so no account can take them.
@@ -65,6 +65,7 @@ export const tableBody = z.object({
   owner: z.string().trim().optional(),
   private: z.boolean().default(false),
   draft: z.boolean().default(false),
+  proof: z.enum(["required", "optional"]).default("required"),
   title: z.string().trim().min(1).max(120),
   question: z.string().trim().max(300).default(""),
   topic: z.string().trim().max(40).default(""),
@@ -89,15 +90,16 @@ export function freeSlug(tables: PublishedTable[], owner: string, title: string,
 }
 
 /** Make a table for this owner, at the first free address near its title. */
-export async function createTable(sql: Sql, tables: PublishedTable[], owner: string, body: Omit<NewTable, "columns" | "rows"> & { columns: NewTable["columns"]; rows: string[] }) {
+export async function createTable(sql: Sql, tables: PublishedTable[], owner: string, body: Omit<NewTable, "columns" | "rows" | "proof"> & { columns: NewTable["columns"]; rows: string[]; proof?: NewTable["proof"] }) {
   const slug = freeSlug(tables, owner, body.title);
   const ids = columnIds(body.columns.map((column) => column.label));
-  const { title, question, topic, scope, columns, rows, draft } = body;
+  const { title, question, topic, scope, columns, rows, draft, proof } = body;
   const table: Table = {
     format: TABLE_FORMAT,
     owner,
     slug,
     ...(draft && { draft }),
+    ...(proof === "optional" && { proof }),
     topic,
     title,
     question,

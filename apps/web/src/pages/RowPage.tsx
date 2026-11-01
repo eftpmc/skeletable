@@ -1,18 +1,16 @@
-import type { FoundCell } from "@skeleton/tables/format";
+import { hasValue, isFound, isGiven } from "@skeleton/tables/format";
 import { rowSlugs } from "@skeleton/tables/share";
 import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Content, List, LoadFailed, LoadingList, PageHeader } from "@/components/Layout";
 import { NoTable } from "@/components/NoTable";
-import { CiteButton, ProofDetails } from "@/components/Proof";
+import { CiteButton, OriginDetails, ProofDetails } from "@/components/Proof";
 import { ShareButton } from "@/components/Share";
 import { Page } from "@/components/Shell";
 import { Button } from "@/components/ui/button";
 import { useJson } from "@/lib/api";
 import { accountName, cellId, day, display, ownerLabel, rowPath } from "@/lib/cells";
 import { cellStatus, statuses, type PublishedTable } from "@/lib/status";
-
-const isFound = (cell: PublishedTable["rows"][number]["cells"][string]): cell is FoundCell => !("missing" in cell);
 
 function RowDetails({ table, rowKey, onChanged }: { table: PublishedTable; rowKey: string; onChanged: () => void }) {
   const row = table.rows.find((candidate) => candidate.key === rowKey)!;
@@ -44,7 +42,7 @@ function RowDetails({ table, rowKey, onChanged }: { table: PublishedTable; rowKe
             <li key={column.id} id={column.id} className={`space-y-2 px-4 py-3 ${target === column.id ? "bg-brand/10" : ""}`}>
               <div className="flex flex-wrap items-baseline justify-between gap-x-3">
                 <h2 className="font-medium">{column.label}</h2>
-                <p className="text-base font-semibold">{isFound(cell) ? `${display(cell.value)}${column.unit ? ` ${column.unit}` : ""}` : <span className="font-normal text-muted-foreground">{statuses[status].label}</span>}</p>
+                <p className="text-base font-semibold">{hasValue(cell) ? `${display(cell.value)}${column.unit ? ` ${column.unit}` : ""}` : <span className="font-normal text-muted-foreground">{statuses[status].label}</span>}</p>
               </div>
               <p className="text-xs text-muted-foreground">{column.rule}</p>
               {isFound(cell) ? (
@@ -52,6 +50,8 @@ function RowDetails({ table, rowKey, onChanged }: { table: PublishedTable; rowKe
                   <ProofDetails cell={cell} status={status} cite={<CiteButton cell={cell} address={{ table, rowKey, columnId: column.id }} />} />
                   <p className="text-xs text-muted-foreground">Read {day(cell.read)}</p>
                 </>
+              ) : isGiven(cell) ? (
+                <OriginDetails cell={cell} status={status} actions={<CiteButton address={{ table, rowKey, columnId: column.id }} />} />
               ) : (
                 <p className="text-sm text-muted-foreground">{cell.absent ? `${statuses[status].detail}.` : `${statuses[status].detail}. A blank never means no.`}</p>
               )}

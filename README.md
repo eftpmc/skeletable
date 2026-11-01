@@ -1,6 +1,6 @@
 # Skeletable
 
-Tables you can trust. Every value links to the source that states it, or says where we looked. People read them on the site, and agents read them through an MCP server.
+Tables you can trust, and tables you can work in. Every value says where it came from. In a table that requires proof, which is the default and every table in the library, each value links to the source and exact words that state it, or says where we looked. A table whose proof is optional can also hold values from a linked page, a model, a person or a file, each marked with its origin, for working data like a dataset to train a model. People read tables on the site, and agents read and build them through an MCP server.
 
 ## Connect
 
@@ -16,11 +16,12 @@ claude mcp add --transport http skeletable https://skeletable.com/mcp
 | `get_table` | Read a table: its scope, columns and rows |
 | `get_cell` | One value's source, exact quote and date, or where we looked |
 | `check_claim` | Test a statement against a cell: it matches, differs, is disputed, or is unknown |
+| `export_table` | A table as CSV, with chosen columns, and optionally each value's source, quote and origin |
 | `propose_change` | Suggest a new value with its proof, for the owner to review |
-| `create_table` | Make a private draft, ready to fill |
+| `create_table` | Make a private draft, ready to fill. `proof: "optional"` makes one for working data |
 | `add_columns` | Add columns to a draft |
 | `add_rows` | Add rows to a draft |
-| `fill_cells` | Fill a draft's cells with proof, or say where you looked |
+| `fill_cells` | Fill a draft's cells with proof, or say where you looked. Where proof is optional, a value can give its origin instead |
 
 ## What's here
 

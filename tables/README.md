@@ -29,6 +29,8 @@ A cell with no acceptable source stays missing and counts against the table. One
 
 A table made on the site starts as a blank, private `draft`, and everything about its shape is edited in the sheet. Its question, topic, scope and column rules can wait, and a cell can hold `unproven`: a value someone typed or pasted, with no source yet. It never counts, and publishing leaves it out. Files in this folder are never drafts.
 
+A table made on the site can also make its proof optional, for working data such as a dataset to train a model. Its cells can then hold a value with an `origin` instead of a quote: `link` (with its `source`), `generated` (with the prompt as its `note`), `entered` or `imported`. These publish, and every place a value shows says where it came from. A quoted value is never replaced by one without a quote, and a table can only require proof again once every value has it. Files in this folder always require proof.
+
 A cell can also record more about itself:
 
 | Field | Meaning |

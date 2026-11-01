@@ -2,7 +2,7 @@ import { cellStatus, csvField, displayValue, emptyLabel, quoteLink, rowSlugs, st
 import type { Context, Hono } from "hono";
 import { html } from "hono/html";
 import { everyone, readable } from "./access.js";
-import { isFound } from "@skeleton/tables/format";
+import { hasValue, isFound, isGiven } from "@skeleton/tables/format";
 import { lastRead, type PublishedTable } from "./library.js";
 
 /** A public table as a data file, with what a reuser needs to credit it. */
@@ -51,12 +51,14 @@ export function dataRoutes(app: Hono, tables: PublishedTable[], publicUrl: strin
     c.header("access-control-allow-origin", "*");
     c.header("cache-control", "public, max-age=3600");
     const stated = isFound(cell) ? cell : undefined;
+    const given = isGiven(cell) ? cell : undefined;
     if (format === "json") {
-      const { value = null, quote, source, read, kind, conflicts } = stated ?? {};
-      return c.json({ table: table.title, row: row.key, column: column.label, unit: column.unit, value, status, quote, source, kind, read: read ?? cell.read, conflicts, url, licence: "CC BY 4.0", attribution: `Skeletable, ${table.title}, ${url}` });
+      const { quote, source, kind, conflicts } = stated ?? {};
+      const value = hasValue(cell) ? cell.value : null;
+      return c.json({ table: table.title, row: row.key, column: column.label, unit: column.unit, value, status, quote, source: source ?? given?.source, kind, origin: given?.origin, note: given?.note, read: cell.read, conflicts, url, licence: "CC BY 4.0", attribution: `Skeletable, ${table.title}, ${url}` });
     }
     c.header("content-type", "text/csv; charset=utf-8");
-    return c.body(csvField(stated?.value));
+    return c.body(csvField(hasValue(cell) ? cell.value : undefined));
   });
 
   // A card for other pages. It reads the live cell, so a change or a lost quote shows up wherever it's embedded.
@@ -66,7 +68,7 @@ export function dataRoutes(app: Hono, tables: PublishedTable[], publicUrl: strin
     const { row, column, cell, status, url } = found;
     c.header("cache-control", "public, max-age=3600");
     const stated = isFound(cell) ? cell : undefined;
-    const value = stated ? `${displayValue(stated.value)}${column.unit ? ` ${column.unit}` : ""}` : emptyLabel(cell);
+    const value = hasValue(cell) ? `${displayValue(cell.value)}${column.unit ? ` ${column.unit}` : ""}` : emptyLabel(cell);
     return c.html(html`<!doctype html>
 <html lang="en">
 <head>

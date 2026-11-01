@@ -1,8 +1,8 @@
-import type { Cell, Table, WatchFile } from "./format.js";
+import { hasValue, isFound, proofOptional, type Cell, type Origin, type Table, type WatchFile } from "./format.js";
 
 /** Small pure helpers the site and the server both use, so a table reads the same in both. */
 
-const found = (cell: Cell | undefined) => (cell && !("missing" in cell) ? cell : undefined);
+const valued = (cell: Cell | undefined) => (cell && hasValue(cell) ? cell : undefined);
 
 export const displayValue = (value: string | number | boolean) => (typeof value === "boolean" ? (value ? "Yes" : "No") : String(value));
 
@@ -19,7 +19,7 @@ export function rowSlugs(table: { rows: { key: string }[] }) {
   }));
 }
 
-export type CellStatus = "fracture" | "gone" | "once" | "summary" | "confirmed" | "none" | "unproven" | "gap" | "blank";
+export type CellStatus = "fracture" | "gone" | "once" | "summary" | "confirmed" | "none" | "linked" | "generated" | "entered" | "imported" | "unproven" | "gap" | "blank";
 
 export const statusLabels: Record<CellStatus, string> = {
   fracture: "Fracture",
@@ -28,13 +28,21 @@ export const statusLabels: Record<CellStatus, string> = {
   summary: "Matched a summary",
   confirmed: "Confirmed",
   none: "None stated",
+  linked: "Linked",
+  generated: "Generated",
+  entered: "Entered",
+  imported: "Imported",
   unproven: "No proof yet",
   gap: "Not found",
   blank: "Not looked at yet",
 };
 
+/** The status of a value that says where it came from instead of quoting a source. */
+export const originStatus: Record<Origin, CellStatus> = { link: "linked", generated: "generated", entered: "entered", imported: "imported" };
+
 /** How far to trust a cell, worst news first. */
 export const cellStatus = (cell: Cell, rowKey: string, columnId: string, watch?: WatchFile): CellStatus => {
+  if ("origin" in cell) return originStatus[cell.origin];
   if ("missing" in cell) return cell.unproven !== undefined ? "unproven" : cell.absent ? "none" : cell.checked.length ? "gap" : "blank";
   if (cell.conflicts?.length) return "fracture";
   if (watch?.cells[`${rowKey}/${columnId}`]?.status === "not-on-page") return "gone";
@@ -76,17 +84,17 @@ export function inlineParts(text: string) {
 }
 
 /** What a draft still needs. Values with no proof don't hold up publishing: they're left out of it. */
-export function draftChecklist(table: Pick<Table, "question" | "topic" | "scope" | "columns" | "rows">) {
+export function draftChecklist(table: Pick<Table, "question" | "topic" | "scope" | "columns" | "rows" | "proof">) {
   const cells = table.rows.flatMap((row) => Object.values(row.cells));
   const unruled = table.columns.filter((column) => !column.rule).length;
-  const proven = cells.filter((cell) => !("missing" in cell) || cell.absent).length;
+  const proven = cells.filter((cell) => hasValue(cell) || cell.absent).length;
   return {
     items: [
       { label: "Say what question it answers", done: !!table.question },
       { label: "Give it a topic", done: !!table.topic },
       { label: "Say what belongs in it", done: !!table.scope },
       { label: unruled ? `Write what counts for ${unruled} ${unruled === 1 ? "column" : "columns"}` : "Write what counts for each column", done: !unruled },
-      { label: "Prove at least one value", done: proven > 0 },
+      { label: proofOptional(table) ? "Fill at least one value" : "Prove at least one value", done: proven > 0 },
     ],
     unproven: cells.filter((cell) => "missing" in cell && cell.unproven !== undefined).length,
   };
@@ -102,18 +110,32 @@ export const csvField = (value: string | number | boolean | undefined) => {
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 };
 
-/** The table as CSV. With proof, each column is followed by its source and quote. */
-export function tableCsv(table: Pick<Table, "columns" | "rows">, proof: boolean) {
+export type CsvOptions = {
+  // Only these columns, by id, in this order. Left out, every column.
+  columns?: string[];
+  // Whether the first column holds each row's name. Left out, it does.
+  names?: boolean;
+};
+
+/**
+ * The table as CSV. With proof, each column is followed by its source and quote, and in a table
+ * whose proof is optional, by where each value came from.
+ */
+export function tableCsv(table: Pick<Table, "columns" | "rows" | "proof">, proof: boolean, { columns, names = true }: CsvOptions = {}) {
   const heading = (label: string, unit?: string) => (unit ? `${label} (${unit})` : label);
-  const header = ["Name", ...table.columns.flatMap((column) => {
+  const chosen = columns ? columns.flatMap((id) => table.columns.filter((column) => column.id === id)) : table.columns;
+  const origins = proof && proofOptional(table);
+  const header = [...(names ? ["Name"] : []), ...chosen.flatMap((column) => {
     const name = heading(column.label, column.unit);
-    return proof ? [name, `${name}: source`, `${name}: quote`] : [name];
+    return proof ? [name, `${name}: source`, `${name}: quote`, ...(origins ? [`${name}: origin`] : [])] : [name];
   })];
   const lines = table.rows.map((row) => [
-    csvField(row.key),
-    ...table.columns.flatMap((column) => {
-      const cell = found(row.cells[column.id]);
-      return proof ? [csvField(cell?.value), csvField(cell?.source), csvField(cell?.quote)] : [csvField(cell?.value)];
+    ...(names ? [csvField(row.key)] : []),
+    ...chosen.flatMap((column) => {
+      const cell = valued(row.cells[column.id]);
+      const quote = cell && isFound(cell) ? cell.quote : undefined;
+      const origin = cell ? ("origin" in cell ? cell.origin : "quote") : undefined;
+      return proof ? [csvField(cell?.value), csvField(cell?.source), csvField(quote), ...(origins ? [csvField(origin)] : [])] : [csvField(cell?.value)];
     }),
   ]);
   return [header.map(csvField), ...lines].map((line) => line.join(",")).join("\r\n");

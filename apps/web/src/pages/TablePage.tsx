@@ -1,4 +1,4 @@
-import { isAnswered } from "@skeleton/tables/format";
+import { hasValue, isAnswered } from "@skeleton/tables/format";
 import { ArrowRight, ExternalLink, Settings2 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "wouter";
@@ -65,7 +65,7 @@ function Sources({ table }: { table: PublishedTable }) {
   const sites = new Map<string, { url: string; cells: number }>();
   for (const row of table.rows) {
     for (const cell of Object.values(row.cells)) {
-      if ("missing" in cell) continue;
+      if (!("source" in cell) || !cell.source) continue;
       const site = host(cell.source);
       sites.set(site, { url: cell.source, cells: (sites.get(site)?.cells ?? 0) + 1 });
     }
@@ -89,7 +89,7 @@ function Sources({ table }: { table: PublishedTable }) {
 /** The column beside the data, like a repository's About box. */
 function About({ table }: { table: PublishedTable }) {
   const cells = table.rows.flatMap((row) => Object.values(row.cells));
-  const filled = cells.filter((cell) => !("missing" in cell));
+  const filled = cells.filter(hasValue);
   const answered = cells.length ? Math.round((cells.filter(isAnswered).length / cells.length) * 100) : 0;
   const lastChecked = table.watch?.ran ?? filled.reduce((latest, cell) => (cell.read > latest ? cell.read : latest), "");
   const facts: [string, string | number][] = [

@@ -1,6 +1,6 @@
 import type { Table, WatchFile } from "@skeleton/tables/format";
 import { cellStatus, statusLabels, type CellStatus } from "@skeleton/tables/share";
-import { Bone, CircleDashed, CircleSlash, Eye, FileCheck, PenLine, SearchX, ShieldCheck, Square, type LucideIcon } from "lucide-react";
+import { Bone, CircleDashed, CircleSlash, Eye, FileCheck, FileInput, Keyboard, Link, PenLine, SearchX, ShieldCheck, Sparkles, Square, type LucideIcon } from "lucide-react";
 
 export { cellStatus, type CellStatus };
 
@@ -17,6 +17,11 @@ export const statuses: Record<CellStatus, { label: string; detail: string; icon:
   summary: { label: statusLabels.summary, detail: "Matched a summary of the owner's pages", icon: FileCheck, tint: "bg-sky-500/15", solid: "bg-sky-500", corner: "border-t-sky-500" },
   confirmed: { label: statusLabels.confirmed, detail: "A separate reader opened the source without seeing our value", icon: ShieldCheck, tint: "bg-emerald-500/15", solid: "bg-emerald-500", corner: "border-t-emerald-500" },
   none: { label: statusLabels.none, detail: "We read the source and it gives no such value", icon: CircleSlash, tint: "bg-violet-500/15", solid: "bg-violet-500", corner: "border-t-violet-500" },
+  // Values that say where they came from instead of quoting a source share a colour, and their icons tell them apart.
+  linked: { label: statusLabels.linked, detail: "From a linked page", icon: Link, tint: "bg-indigo-500/15", solid: "bg-indigo-400" },
+  generated: { label: statusLabels.generated, detail: "Written or labeled by a model", icon: Sparkles, tint: "bg-indigo-500/15", solid: "bg-indigo-400" },
+  entered: { label: statusLabels.entered, detail: "Typed in by a person", icon: Keyboard, tint: "bg-indigo-500/15", solid: "bg-indigo-400" },
+  imported: { label: statusLabels.imported, detail: "Imported from a file", icon: FileInput, tint: "bg-indigo-500/15", solid: "bg-indigo-400" },
   unproven: { label: statusLabels.unproven, detail: "Typed in, and not counted until it has a source", icon: PenLine, tint: "bg-muted", solid: "bg-muted-foreground/50", corner: "border-t-muted-foreground/60" },
   gap: { label: statusLabels.gap, detail: "No source we could use stated this", icon: CircleDashed, tint: "", solid: "bg-muted-foreground/30" },
   blank: { label: statusLabels.blank, detail: "Nobody has looked for this yet", icon: Square, tint: "", solid: "bg-muted-foreground/15" },

@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import { Resvg } from "@resvg/resvg-js";
-import { isFound } from "@skeleton/tables/format";
+import { hasValue, isFound } from "@skeleton/tables/format";
 import type { PublishedTable } from "./library.js";
 
 const WIDTH = 1200;
@@ -25,8 +25,8 @@ function titleLines(title: string) {
 /** A table's link preview: what it is, how big, and how much of it has been checked twice. */
 export function previewSvg(table: PublishedTable) {
   const cells = table.rows.flatMap((row) => Object.values(row.cells));
-  const filled = cells.filter(isFound);
-  const checked = filled.filter((cell) => cell.confirmed).length;
+  const filled = cells.filter(hasValue);
+  const checked = filled.filter((cell) => isFound(cell) && cell.confirmed).length;
   const facts = [`${table.rows.length} rows`, `${filled.length} of ${cells.length} cells filled`, ...(filled.length ? [`${Math.round((checked / filled.length) * 100)}% of values checked twice`] : [])];
   const title = titleLines(table.title);
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}">

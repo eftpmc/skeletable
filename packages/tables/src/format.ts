@@ -1,9 +1,10 @@
 import { z } from "zod";
 
 /**
- * A living table. Every cell either states a value with the page and exact words it came from, or
- * says it wasn't found and where we looked. A cell holds what a source states: nothing is computed
- * or inferred, so anyone can check it by opening the link.
+ * A living table. Every value knows where it came from. In a table that requires proof, every cell
+ * either states a value with the page and exact words it came from, or says it wasn't found and where
+ * we looked, so anyone can check it by opening the link. A table whose proof is optional can also hold
+ * values that came from somewhere else, such as a link, a person or a model, and each says which.
  */
 export const TABLE_FORMAT = 1;
 
@@ -61,7 +62,27 @@ export const missingCellSchema = z.object({
   unproven: z.union([z.string().trim().min(1).max(300), z.number(), z.boolean()]).optional(),
 });
 
-export const cellSchema = z.union([foundCellSchema, missingCellSchema]);
+/**
+ * Where a value without a quote came from: a page it links to, a model that wrote or labeled it, a
+ * person who typed it, or a file it was imported from. Only a table whose proof is optional holds these.
+ */
+export const origins = ["link", "generated", "entered", "imported"] as const;
+
+/** The longest text a value without a quote can hold, so a table can hold passages, not just facts. */
+export const MAX_GIVEN_TEXT = 2000;
+
+export const givenCellSchema = z.object({
+  value: z.union([z.string().trim().min(1).max(MAX_GIVEN_TEXT), z.number(), z.boolean()]),
+  origin: z.enum(origins),
+  // The page it came from. A `link` value needs one.
+  source: url.optional(),
+  // How it was made: the prompt that generated it, or the file it was imported from.
+  note: z.string().trim().min(1).max(500).optional(),
+  // The day it was set.
+  read: day,
+});
+
+export const cellSchema = z.union([foundCellSchema, missingCellSchema, givenCellSchema]);
 
 export const rowSchema = z.object({
   key: text(120),
@@ -95,6 +116,8 @@ export const tableSchema = z.object({
   slug: z.string().regex(/^[a-z0-9-]+$/),
   // Still being built, so only its people can see it, and its details can wait until it's published.
   draft: z.boolean().optional(),
+  // Whether a value needs a quote. Left out, it does. `optional` lets values say where they came from instead.
+  proof: z.enum(["required", "optional"]).optional(),
   // A broad subject, for browsing.
   topic: z.string().trim().max(40),
   title: text(120),
@@ -109,14 +132,26 @@ export type SourceKind = (typeof sourceKinds)[number];
 export type Column = z.infer<typeof columnSchema>;
 export type FoundCell = z.infer<typeof foundCellSchema>;
 export type MissingCell = z.infer<typeof missingCellSchema>;
+export type GivenCell = z.infer<typeof givenCellSchema>;
+export type Origin = (typeof origins)[number];
 export type Cell = z.infer<typeof cellSchema>;
 export type Row = z.infer<typeof rowSchema>;
 export type Table = z.infer<typeof tableSchema>;
 
-export const isFound = (cell: Cell): cell is FoundCell => !("missing" in cell);
+/** Whether a cell states a value with its source and exact quote. */
+export const isFound = (cell: Cell): cell is FoundCell => !("missing" in cell) && !("origin" in cell);
 
-/** Whether a cell is settled: it states a value, or its source was read and has none. */
-export const isAnswered = (cell: Cell) => isFound(cell) || !!cell.absent;
+/** Whether a cell holds a value that says where it came from instead of quoting a source. */
+export const isGiven = (cell: Cell): cell is GivenCell => "origin" in cell;
+
+/** Whether a cell holds a value at all, quoted or not. */
+export const hasValue = (cell: Cell): cell is FoundCell | GivenCell => !("missing" in cell);
+
+/** Whether a table lets values go without a quote. */
+export const proofOptional = (table: { proof?: "required" | "optional" }) => table.proof === "optional";
+
+/** Whether a cell is settled: it holds a value, or its source was read and has none. */
+export const isAnswered = (cell: Cell) => hasValue(cell) || !!cell.absent;
 
 /** Lowercase, plain punctuation and single spaces, so a quote survives a page's typography. */
 export function normalize(value: string): string {
@@ -167,10 +202,16 @@ export function wordsBeyondQuote(value: string, quote: string): string[] {
   return words.filter((word) => !source.includes(word));
 }
 
-/** Why a stated value doesn't fit its column or its quote, if it doesn't. */
-function valueProblem(column: Column, value: FoundCell["value"], quote: string): string | undefined {
+/** Why a value isn't the kind its column holds, if it isn't. */
+function typeProblem(column: Column, value: FoundCell["value"] | GivenCell["value"]): string | undefined {
   const expected = column.type === "text" ? "string" : column.type;
   if (typeof value !== expected) return `should be ${column.type}`;
+}
+
+/** Why a stated value doesn't fit its column or its quote, if it doesn't. */
+function valueProblem(column: Column, value: FoundCell["value"], quote: string): string | undefined {
+  const wrongType = typeProblem(column, value);
+  if (wrongType) return wrongType;
   if (typeof value === "number" && !quoteStates(value, quote)) return `${value} isn't in its quote`;
   if (typeof value === "string") {
     const beyond = wordsBeyondQuote(value, quote);
@@ -201,6 +242,11 @@ export function validateTable(input: unknown): { table?: Table; problems: string
       const at = `${row.key}.${column.id}`;
       if (!cell) {
         problems.push(`${at}: empty; say where you looked instead`);
+      } else if (isGiven(cell)) {
+        if (!proofOptional(table)) problems.push(`${at}: has no quote, and this table requires one`);
+        const problem = typeProblem(column, cell.value);
+        if (problem) problems.push(`${at}: ${problem}`);
+        if (cell.origin === "link" && !cell.source) problems.push(`${at}: comes from a link but doesn't give it`);
       } else if (isFound(cell)) {
         for (const stated of [cell, ...(cell.conflicts ?? []), ...(cell.history ?? [])]) {
           const problem = valueProblem(column, stated.value, stated.quote);

@@ -1,4 +1,4 @@
-import { isFound, validateTable, watchFileSchema, type Cell } from "@skeleton/tables/format";
+import { isFound, isGiven, validateTable, watchFileSchema, type Cell } from "@skeleton/tables/format";
 import postgres from "postgres";
 import { loadTables, type PublishedTable } from "./library.js";
 
@@ -169,6 +169,9 @@ const migrations = [
   from cell_versions v where v.id = (select max(v2.id) from cell_versions v2 where v2.row_id = p.row_id and v2.column_id = p.column_id and v2.created_at <= p.created_at);
   create index proposals_by_bundle on proposals(bundle_id);
   `,
+  `
+  alter table data_tables add column proof text not null default 'required' check (proof in ('required', 'optional'));
+  `,
 
 ];
 
@@ -228,8 +231,10 @@ export async function importTables(sql: Sql, tables: PublishedTable[], { managed
           for (const [columnId, cell] of Object.entries(row.cells)) {
             const held = current.find((candidate) => candidate.row_id === match.id && candidate.column_id === columnId)?.cell as Cell | undefined;
             // A source read and found to have no value fills a blank the same way.
-            const settles = !isFound(cell) && cell.absent && (!held || (!isFound(held) && !held.absent));
-            if (settles || (isFound(cell) && (!held || !isFound(held) || cell.read > held.read))) {
+            const settles = "missing" in cell && cell.absent && (!held || ("missing" in held && !held.absent));
+            // A value with no quote only fills a blank, and a quoted one replaces it.
+            const fills = isGiven(cell) && (!held || "missing" in held);
+            if (settles || fills || (isFound(cell) && (!held || !isFound(held) || cell.read > held.read))) {
               await tx`insert into cell_versions (row_id, column_id, cell) values (${match.id}, ${columnId}, ${tx.json(cell)})`;
             }
           }
@@ -240,8 +245,8 @@ export async function importTables(sql: Sql, tables: PublishedTable[], { managed
         continue;
       }
       const [created] = await tx`
-        insert into data_tables (account_id, slug, topic, title, question, scope, watch, private, managed, draft)
-        values (${account!.id}, ${table.slug}, ${table.topic}, ${table.title}, ${table.question}, ${table.scope}, ${watch}, ${table.private ?? false}, ${managed}, ${table.draft ?? false})
+        insert into data_tables (account_id, slug, topic, title, question, scope, watch, private, managed, draft, proof)
+        values (${account!.id}, ${table.slug}, ${table.topic}, ${table.title}, ${table.question}, ${table.scope}, ${watch}, ${table.private ?? false}, ${managed}, ${table.draft ?? false}, ${table.proof ?? "required"})
         returning id`;
       for (const [position, column] of table.columns.entries()) {
         await tx`
@@ -256,38 +261,50 @@ export async function importTables(sql: Sql, tables: PublishedTable[], { managed
 /** Every table with the newest version of each cell, held to the same checks as a table on disk. */
 export async function readTables(sql: Sql): Promise<PublishedTable[]> {
   const tables = await sql`
-    select t.id, a.handle as owner, a.name as owner_name, a.team, t.slug, t.topic, t.title, t.question, t.scope, t.watch, t.private, t.managed, t.draft
+    select t.id, a.handle as owner, a.name as owner_name, a.team, t.slug, t.topic, t.title, t.question, t.scope, t.watch, t.private, t.managed, t.draft, t.proof
     from data_tables t join accounts a on a.id = t.account_id
     order by a.handle, t.slug`;
   // Removed rows and columns stay for the history, out of the table.
   const columns = await sql`select * from table_columns where removed_at is null order by table_id, position`;
   const rows = await sql`select * from table_rows where removed_at is null order by table_id, position`;
   const cells = await sql`select distinct on (row_id, column_id) row_id, column_id, cell from cell_versions order by row_id, column_id, id desc`;
+  // Grouped once, so a big table doesn't make every row look through every cell.
+  const group = <T extends Record<string, unknown>>(items: readonly T[], key: string) => {
+    const groups = new Map<unknown, T[]>();
+    for (const item of items) {
+      const list = groups.get(item[key]);
+      if (list) list.push(item);
+      else groups.set(item[key], [item]);
+    }
+    return (id: unknown) => groups.get(id) ?? [];
+  };
+  const columnsOf = group(columns, "table_id");
+  const rowsOf = group(rows, "table_id");
+  const cellsOf = group(cells, "row_id");
 
   return tables.map((table) => {
-    const live = new Set(columns.filter((column) => column.table_id === table.id).map((column) => column.id as string));
+    const live = new Set(columnsOf(table.id).map((column) => column.id as string));
     const { problems, table: checked } = validateTable({
       format: 1,
       owner: table.owner,
       slug: table.slug,
       ...(table.draft && { draft: true }),
+      ...(table.proof === "optional" && { proof: "optional" }),
       topic: table.topic,
       title: table.title,
       question: table.question,
       scope: table.scope,
-      columns: columns
-        .filter((column) => column.table_id === table.id)
+      columns: columnsOf(table.id)
         .map(({ id, label, type, unit, rule }) => ({ id, label, type, rule, ...(unit && { unit }) })),
-      rows: rows
-        .filter((row) => row.table_id === table.id)
+      rows: rowsOf(table.id)
         .map((row) => ({
           key: row.key,
-          cells: Object.fromEntries(cells.filter((cell) => cell.row_id === row.id && live.has(cell.column_id)).map((cell): [string, Cell] => [cell.column_id, cell.cell])),
+          cells: Object.fromEntries(cellsOf(row.id).filter((cell) => live.has(cell.column_id)).map((cell): [string, Cell] => [cell.column_id, cell.cell])),
         })),
     });
     if (!checked || problems.length) throw new Error(`${table.owner}/${table.slug}: ${problems.join("; ")}`);
     // A person's account name can be the name they signed in with, so only a team's goes out with its tables.
-    const moved = Object.fromEntries(rows.filter((row) => row.table_id === table.id).flatMap((row) => (row.former_slugs as string[]).map((slug) => [slug, row.key as string])));
+    const moved = Object.fromEntries(rowsOf(table.id).flatMap((row) => (row.former_slugs as string[]).map((slug) => [slug, row.key as string])));
     return { ...checked, ...(Object.keys(moved).length && { moved }), ...(table.team && { ownerName: table.owner_name as string }), ...(table.private && { private: true }), ...(table.managed && { managed: true }), ...(table.watch && { watch: watchFileSchema.parse(table.watch) }) };
   });
 }

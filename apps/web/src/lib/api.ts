@@ -14,7 +14,7 @@ export type TableSummary = {
   filled: string;
   lastRead: string;
   lastChecked: string;
-  checks: { confirmed: number; summary: number; once: number; gap: number };
+  checks: { confirmed: number; summary: number; once: number; given?: number; gap: number };
 };
 
 export type Team = { handle: string; name: string; role: "owner" | "editor" };

@@ -1,3 +1,4 @@
+import { proofOptional } from "@skeleton/tables/format";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
@@ -47,6 +48,26 @@ function Details({ table, onChanged }: Props) {
   );
 }
 
+/** Whether every value needs a quote, or can say where it came from instead. */
+function ProofSetting({ table, onChanged }: Props) {
+  const { error, save } = useSave(table);
+  const optional = proofOptional(table);
+  const toggle = async () => {
+    if (await save("PUT", "/proof", { proof: optional ? "required" : "optional" }, optional ? "Values now need proof" : "Proof is now optional")) onChanged();
+  };
+  return (
+    <div className="space-y-3 text-sm">
+      <p className="text-muted-foreground">
+        {optional
+          ? "Values can say where they came from instead of quoting a source: a linked page, a model, a person or a file. Each is marked with its origin, and quoted values still show their proof. Use this for working data, like a dataset to train a model."
+          : "Every value needs the page and exact words that state it. Values typed into a draft wait for their proof and are left out when it's published."}
+      </p>
+      <Button variant="outline" onClick={toggle}>{optional ? "Require proof" : "Make proof optional"}</Button>
+      <FormError error={error} />
+    </div>
+  );
+}
+
 function DeleteTable({ table }: { table: PublishedTable }) {
   const [, navigate] = useLocation();
   const [error, setError] = useState<string>();
@@ -82,6 +103,7 @@ export function TableSettings({ table, onChanged }: Props) {
             <Section title="Details" description="Columns and rows are edited in the sheet."><Details key={table.title + table.scope} table={table} onChanged={onChanged} /></Section>
           </>
         )}
+        {owner && !table.managed && <Section title="Proof" description={proofOptional(table) ? "Optional: values can say where they came from." : "Required: every value quotes its source."}><ProofSetting table={table} onChanged={onChanged} /></Section>}
         {owner && <Section title="Who can see it"><ManageAccess table={table} onChanged={onChanged} /></Section>}
         {owner && !table.managed && <DeleteTable table={table} />}
       </div>

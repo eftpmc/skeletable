@@ -189,4 +189,30 @@ describe.skipIf(!url)("managing a table", () => {
     expect(hidden.headers.get("content-type")).not.toBe("image/png");
     expect(await hidden.text()).not.toContain("My keyboards");
   });
+  it("takes typed values as entered once proof is optional, and only requires proof again when every value has it", async () => {
+    const typed = { cells: [{ row: "Alpha", column: "switch", value: "Linear" }, { row: "Beta", column: "weight", value: "not a number" }] };
+    expect((await send(`${base}/grid`, "POST", pat, typed)).status).toBe(409);
+    const sam = await person("sam@example.com");
+    expect((await send(`${base}/proof`, "PUT", sam, { proof: "optional" })).status).toBe(403);
+    expect((await send(`${base}/proof`, "PUT", pat, { proof: "optional" })).status).toBe(200);
+    expect((await send(`${base}/grid`, "POST", pat, typed)).status).toBe(200);
+    const table = (await read()) as unknown as { proof: string; rows: { cells: Record<string, unknown> }[] };
+    expect(table.proof).toBe("optional");
+    expect(table.rows[0]!.cells.switch).toMatchObject({ value: "Linear", origin: "entered" });
+    expect(table.rows[1]!.cells.weight).toMatchObject({ missing: true });
+
+    const back = await send(`${base}/proof`, "PUT", pat, { proof: "required" });
+    expect(back.status).toBe(409);
+    expect(((await back.json()) as { error: string }).error).toContain("1 value has no quote");
+    await send(`${base}/grid`, "POST", pat, { cells: [{ row: "Alpha", column: "switch", value: "" }] });
+    expect((await read()).rows[0]!.cells.switch).toMatchObject({ missing: true });
+    expect((await send(`${base}/proof`, "PUT", pat, { proof: "required" })).status).toBe(200);
+  });
+
+  it("leaves a quoted value alone when values are typed over it", async () => {
+    await send(`${base}/proposals`, "POST", pat, proposal);
+    await send(`${base}/proof`, "PUT", pat, { proof: "optional" });
+    await send(`${base}/grid`, "POST", pat, { cells: [{ row: "Alpha", column: "weight", value: "1" }] });
+    expect((await read()).rows[0]!.cells.weight).toMatchObject({ value: 900, quote: "Weighs 900 g" });
+  });
 });

@@ -17,7 +17,7 @@ const sorts = {
   name: { label: "A to Z", order: (a: TableSummary, b: TableSummary) => a.title.localeCompare(b.title) },
 };
 
-const confirmedShare = ({ checks: { confirmed, summary, once, gap } }: TableSummary) => (confirmed + summary) / (confirmed + summary + once + gap);
+const confirmedShare = ({ checks: { confirmed, summary, once, given = 0, gap } }: TableSummary) => (confirmed + summary) / (confirmed + summary + once + given + gap || 1);
 
 export function Explore() {
   const [query, setQuery] = useState("");

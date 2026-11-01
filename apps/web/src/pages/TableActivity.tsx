@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ownsAccount } from "@/lib/account";
 import { postJson, useJson, useMe } from "@/lib/api";
-import { emptyLabel } from "@skeleton/tables/share";
+import { emptyLabel, originStatus, statusLabels } from "@skeleton/tables/share";
 import { day, display, host } from "@/lib/cells";
 import type { PublishedTable } from "@/lib/status";
 
@@ -43,7 +43,7 @@ function groupProposals(proposals: Proposal[]) {
 
 type Change = { id: string; row: string; column: string; cell: Cell; previous: Cell; author: string; created_at: string };
 
-const shown = (cell: Cell) => ("missing" in cell ? emptyLabel(cell) : display(cell.value));
+const shown = (cell: Cell) => ("missing" in cell ? (cell.unproven !== undefined ? display(cell.unproven) : emptyLabel(cell)) : display(cell.value));
 
 /** Old value to new, the shape every change takes. */
 const Diff = ({ from, to }: { from: Cell; to: Cell }) => (
@@ -54,7 +54,17 @@ const Diff = ({ from, to }: { from: Cell; to: Cell }) => (
   </p>
 );
 
-const Proof = ({ cell }: { cell: Cell }) => "missing" in cell ? (
+const Proof = ({ cell }: { cell: Cell }) => "origin" in cell ? (
+  <div className="mt-2 space-y-1 text-sm">
+    <p className="text-muted-foreground">{statusLabels[originStatus[cell.origin]]}, with no quote{cell.note ? `: ${cell.note}` : ""}</p>
+    {cell.source && (
+      <a href={cell.source} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+        {host(cell.source)}
+        <ExternalLink className="size-3" />
+      </a>
+    )}
+  </div>
+) : "missing" in cell ? (
   <div className="mt-2 space-y-2 text-sm">
     <p className="text-muted-foreground">{cell.unproven !== undefined ? "Value awaiting proof" : emptyLabel(cell)}</p>
     {cell.checked.length > 0 ? <div className="flex flex-wrap gap-3" aria-label="Sources checked">{cell.checked.map((url) => <a key={url} href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">{host(url)}<ExternalLink className="size-3" /></a>)}</div> : <p className="text-xs text-muted-foreground">No sources checked yet.</p>}
