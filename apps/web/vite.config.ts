@@ -7,5 +7,5 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: { alias: { "@": resolve(import.meta.dirname, "src") } },
   // In development the data comes from the server on its usual port.
-  server: { proxy: { "/api": "http://localhost:4200" } },
+  server: { proxy: { "/api": "http://localhost:4200", "/auth": "http://localhost:4200" } },
 });

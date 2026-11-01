@@ -71,6 +71,15 @@ const migrations = [
   );
   create index cell_versions_newest on cell_versions (row_id, column_id, id desc);
   `,
+  `
+  create table sessions (
+    id bigint generated always as identity primary key,
+    token_hash text not null unique,
+    user_id bigint not null references users on delete cascade,
+    expires_at timestamptz not null,
+    created_at timestamptz not null default now()
+  );
+  `,
 ];
 
 /** Run whatever hasn't run yet. The lock keeps two servers starting together from racing. */
@@ -155,12 +164,13 @@ export async function readTables(sql: Sql): Promise<PublishedTable[]> {
   });
 }
 
+export const connect = (url: string): Sql => postgres(url, { max: 5, onnotice: () => {} });
+
 /**
  * The library from the database, seeded with any new tables on disk. A server keeps the same list
  * and refills it, so a change goes live without a deploy. A refresh that fails keeps the last good tables.
  */
-export async function openLibrary(url: string, dir: string): Promise<PublishedTable[]> {
-  const sql = postgres(url, { max: 5, onnotice: () => {} });
+export async function openLibrary(sql: Sql, dir: string): Promise<PublishedTable[]> {
   await migrate(sql);
   await importTables(sql, await loadTables(dir));
   const tables = await readTables(sql);

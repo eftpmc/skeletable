@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useJson, type Me } from "@/lib/api";
 import { useTheme } from "@/lib/theme";
 
 /** The product's mark: a green sheet with one cell left open. */
@@ -62,6 +63,36 @@ export function AgentButton({ label }: { label?: string }) {
   );
 }
 
+/** Sign in, or who you are and a way out. Shows nothing until sign-in is really available. */
+export function AccountButton() {
+  const { data } = useJson<Me>("/api/me");
+  if (!data?.canSignIn) return null;
+  const { user } = data;
+  if (!user) {
+    return (
+      <Button variant="outline" size="sm" asChild>
+        <a href="/auth/google">Sign in</a>
+      </Button>
+    );
+  }
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="secondary" size="icon-sm" className="rounded-full" aria-label="Your account">
+          {(user.name ?? user.email).charAt(0).toUpperCase()}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-64 gap-2 p-3">
+        {user.name && <p className="truncate font-medium">{user.name}</p>}
+        <p className="truncate text-muted-foreground">{user.email}</p>
+        <form method="post" action="/auth/logout">
+          <Button type="submit" variant="outline" size="sm" className="w-full">Sign out</Button>
+        </form>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 /** The bar across every page except a sheet. */
 export function SiteHeader() {
   return (
@@ -74,6 +105,7 @@ export function SiteHeader() {
       <div className="ml-auto flex items-center gap-1">
         <AgentButton />
         <ThemeButton />
+        <AccountButton />
       </div>
     </header>
   );

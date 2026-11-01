@@ -48,4 +48,8 @@ pnpm dev
 | `pnpm tables watch <file>` | See whether live quotes are still on their pages, and save the result |
 | `pnpm tables sample <file>` | Draw a repeatable sample of cells for spot-checking |
 
-Tables are JSON files in `tables/`, and the server refuses to start if one fails its checks. Adding or changing a table takes a redeploy.
+New tables start as JSON files in `tables/`, and the server loads them into Postgres when `DATABASE_URL` is set, or serves them directly when it isn't. It refuses to start if a table fails its checks.
+
+Sign-in needs `DATABASE_URL`, `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`. `PUBLIC_URL` sets the site's address, and `OWNER_EMAIL` says who runs the official account.
+
+Database tests run when `TEST_DATABASE_URL` is set. They wipe that database.

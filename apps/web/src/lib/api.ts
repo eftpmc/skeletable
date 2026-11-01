@@ -13,6 +13,8 @@ export type TableSummary = {
   lastChecked: string;
 };
 
+export type Me = { canSignIn: boolean; user: { email: string; name: string | null; accounts: string[] } | null };
+
 type Loaded<T> = { data?: T; status: "loading" | "ready" | "missing" | "failed"; retry: () => void };
 
 /** Reads JSON from the server, and keeps the last answer on screen while the next one loads. */

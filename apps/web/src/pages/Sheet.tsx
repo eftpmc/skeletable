@@ -2,7 +2,7 @@ import type { Cell, Column, FoundCell, Table } from "@skeleton/tables/format";
 import { ExternalLink, Info } from "lucide-react";
 import { useEffect, useRef, type KeyboardEvent } from "react";
 import { Link, useLocation, useSearch } from "wouter";
-import { AgentButton, Logo, ThemeButton } from "@/components/Chrome";
+import { AccountButton, AgentButton, Logo, ThemeButton } from "@/components/Chrome";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -206,6 +206,7 @@ function TopBar({ table, owner }: { table?: Table; owner: string }) {
         )}
         <AgentButton />
         <ThemeButton />
+        <AccountButton />
       </div>
     </header>
   );
