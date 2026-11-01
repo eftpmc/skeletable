@@ -17,7 +17,7 @@ export function Help() {
     document.title = "Help · Skeletable";
   }, []);
   return (
-    <Page>
+    <Page crumbs={[{ label: "Help" }]}>
       <Content size="narrow">
         <PageHeader title="Help" description="How the tables work, and how far to trust them." />
         <div className="space-y-6">

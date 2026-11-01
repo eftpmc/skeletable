@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Content, PageHeader, SignInLink } from "@/components/Layout";
-import { Page } from "@/components/Shell";
+import { Page, type Crumb } from "@/components/Shell";
 import { useMe } from "@/lib/api";
 import { Message } from "@/pages/Message";
 
@@ -14,7 +14,7 @@ const sections = [
 ];
 
 /** Every settings page, with the same way around them: down the side, or across the top on a phone. */
-export function SettingsLayout({ title, children }: { title: string; children: ReactNode }) {
+export function SettingsLayout({ title, crumbs = [], children }: { title: string; crumbs?: Crumb[]; children: ReactNode }) {
   const { user } = useMe();
   const [location] = useLocation();
 
@@ -31,7 +31,7 @@ export function SettingsLayout({ title, children }: { title: string; children: R
   }
 
   return (
-    <Page>
+    <Page crumbs={[{ label: "Settings", href: "/settings" }, ...crumbs]}>
       <Content>
         <PageHeader title="Settings" />
         <div className="grid gap-6 md:grid-cols-[11rem_minmax(0,1fr)] md:gap-10">

@@ -110,7 +110,7 @@ export function ShareButton({ table, path, size = "lg", onChanged }: { table: Pu
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size={size}><Share2 />Share</Button>
+        <Button variant="outline" size={size} aria-label="Share"><Share2 /><span className="hidden sm:inline">Share</span></Button>
       </DialogTrigger>
       <DialogContent>
         <DialogTitle className="pr-6">Share {table.title}</DialogTitle>

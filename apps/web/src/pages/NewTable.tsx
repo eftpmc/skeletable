@@ -58,7 +58,7 @@ export function NewTable() {
   };
 
   return (
-    <Page>
+    <Page crumbs={[{ label: "New table" }]}>
       <Content size="narrow">
         <PageHeader title="New table" description="Set up its shape here. You'll add each value with its source in the sheet." />
         <form onSubmit={submit} className="space-y-6">

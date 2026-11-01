@@ -1,6 +1,5 @@
 import { CircleAlert, type LucideIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { signInHref } from "@/lib/account";
@@ -13,10 +12,9 @@ export const Content = ({ size = "wide", children }: { size?: keyof typeof width
 );
 
 /** A page's title, what it's for, and its main actions. */
-export function PageHeader({ title, description, back, actions }: { title: ReactNode; description?: ReactNode; back?: { href: string; label: string }; actions?: ReactNode }) {
+export function PageHeader({ title, description, actions }: { title: ReactNode; description?: ReactNode; actions?: ReactNode }) {
   return (
     <header className="mb-6">
-      {back && <Link href={back.href} className="text-sm text-muted-foreground hover:text-foreground hover:underline">{back.label}</Link>}
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <h1 className="min-w-0 text-2xl font-semibold tracking-tight sm:text-3xl">{title}</h1>
         {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}

@@ -162,13 +162,11 @@ export function Activity({ table, canDecide }: { table: PublishedTable; canDecid
   );
 }
 
-const Back = ({ table, title }: { table: PublishedTable; title: string }) => <PageHeader title={title} back={{ href: `/${table.owner}/${table.slug}`, label: `Back to ${table.title}` }} />;
-
 export function AllProposals({ table, canDecide }: { table: PublishedTable; canDecide: boolean }) {
   const { data, status, retry } = useJson<Proposal[]>(`/api/tables/${table.owner}/${table.slug}/proposals`);
   return (
     <>
-      <Back table={table} title="Proposals" />
+      <PageHeader title="Proposals" />
       {status === "failed" ? (
         <LoadFailed what="Proposals" retry={retry} />
       ) : !data ? (
@@ -186,7 +184,7 @@ export function AllChanges({ table }: { table: PublishedTable }) {
   const { data, status, retry } = useJson<Change[]>(`/api/tables/${table.owner}/${table.slug}/history`);
   return (
     <>
-      <Back table={table} title="History" />
+      <PageHeader title="History" />
       {status === "failed" ? (
         <LoadFailed what="History" retry={retry} />
       ) : !data ? (

@@ -56,7 +56,7 @@ export function Teams() {
   };
 
   return (
-    <SettingsLayout title="Teams">
+    <SettingsLayout title="Teams" crumbs={[{ label: "Teams" }]}>
       {!!invites.data?.length && <Invites invites={invites.data} onChanged={() => { invites.retry(); refresh(); }} />}
       <Section title="Your teams" description="A team has its own page and tables, run by the people on it.">
         {user?.teams.length ? (
@@ -207,7 +207,7 @@ export function TeamSettings({ handle }: { handle: string }) {
   };
 
   return (
-    <SettingsLayout title={team?.name ?? "Team"}>
+    <SettingsLayout title={team?.name ?? "Team"} crumbs={[{ label: "Teams", href: "/settings/teams" }, { label: team?.name ?? "Team" }]}>
       {status === "missing" ? (
         <Message title="There's no team here" />
       ) : status === "failed" ? (

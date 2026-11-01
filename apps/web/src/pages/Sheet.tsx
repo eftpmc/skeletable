@@ -4,11 +4,11 @@ import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEven
 import { toast } from "sonner";
 import { Link, useLocation, useSearch } from "wouter";
 import { Input } from "@/components/ui/input";
-import { AccountButton, Logo } from "@/components/Chrome";
 import { DownloadButton } from "@/components/Download";
 import { FilterButton } from "@/components/Filter";
 import { NoTable } from "@/components/NoTable";
 import { ShareButton } from "@/components/Share";
+import { AppBar } from "@/components/Shell";
 import { Shortcuts } from "@/components/Shortcuts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Skeleton } from "@/components/ui/skeleton";
 import { signInHref } from "@/lib/account";
 import { postJson, useJson, useMe } from "@/lib/api";
-import { cellId, day, display, host, ownerLabel, place, splitQuote } from "@/lib/cells";
+import { accountName, cellId, day, display, host, ownerLabel, place, splitQuote } from "@/lib/cells";
 import { copyText } from "@/lib/copy";
 import { NAME_COLUMN, filteredRows, matchingRows, nextSort, readView, sortedRows, viewSearch, type SheetFilters, type SheetSort, type SheetView } from "@/lib/sheet";
 import { cellStatus, statusCounts, statuses, type CellStatus, type PublishedTable } from "@/lib/status";
@@ -187,9 +187,10 @@ function StatusBar({ table, xray, onXray, onChanged, find, onFind, findInput, fi
       </Button>
       {xray && <XrayReading table={table} />}
       <AddRow table={table} onAdded={onChanged} />
+      <SheetFacts table={table} />
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="ghost" size="xs" className="ml-auto shrink-0 text-muted-foreground">
+          <Button variant="ghost" size="xs" className="shrink-0 text-muted-foreground max-md:ml-auto">
             <Info />
             About
           </Button>
@@ -414,32 +415,12 @@ export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - t
   );
 }
 
-function TopBar({ table, shown, owner, link, onChanged }: { table?: PublishedTable; shown?: PublishedTable; owner: string; link: string; onChanged: () => void }) {
-  const cells = table?.rows.flatMap((row) => Object.values(row.cells)) ?? [];
+/** The sheet's size and age, kept quiet at the end of the status bar. */
+function SheetFacts({ table }: { table: PublishedTable }) {
+  const cells = table.rows.flatMap((row) => Object.values(row.cells));
   const found = cells.filter(isFound);
   const lastRead = found.reduce((latest, cell) => (cell.read > latest ? cell.read : latest), "");
-  return (
-    <header className="flex shrink-0 items-center gap-3 px-3 py-2">
-      <Link href={table ? `/${owner}/${table.slug}` : "/"} aria-label="Back to the table's page" className="shrink-0 rounded-lg transition-transform hover:scale-105 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
-        <Logo className="size-9" />
-      </Link>
-      <div className="min-w-0 flex-1">
-        {table ? (
-          <>
-            <h1 className="truncate text-lg leading-6">{table.private && <Lock aria-label="Private" className="mr-1.5 inline size-3.5 align-[-1px] text-muted-foreground" />}{table.title}</h1>
-            <p className="truncate text-xs text-muted-foreground">
-              by <Link href={`/${owner}`} className="hover:text-foreground hover:underline">{ownerLabel(table)}</Link> · {found.length} of {cells.length} cells{lastRead && ` · Read ${day(lastRead)}`}
-            </p>
-          </>
-        ) : (
-          <p className="text-lg leading-6">Skeletable</p>
-        )}
-      </div>
-      {shown && <DownloadButton table={shown} size="sm" />}
-      {table && <ShareButton table={table} path={link} size="sm" onChanged={onChanged} />}
-      <AccountButton />
-    </header>
-  );
+  return <span className="ml-auto hidden shrink-0 text-muted-foreground tabular-nums md:inline">{found.length} of {cells.length} cells{lastRead && ` · Read ${day(lastRead)}`}</span>;
 }
 
 export function Sheet({ owner, slug }: { owner: string; slug: string }) {
@@ -479,7 +460,17 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
   const column = data?.columns.find((c) => row && cellId(row.key, c.id) === selectedId);
   return (
     <div className="flex h-svh flex-col duration-200 animate-in fade-in zoom-in-[0.995] motion-reduce:animate-none">
-      <TopBar table={data} shown={shown} owner={owner} link={`${path}${viewSearch(view, selectedId)}`} onChanged={retry} />
+      <AppBar
+        crumbs={[{ label: data ? ownerLabel(data) : accountName(owner), href: `/${owner}` }, { label: data?.title ?? "Table", href: `/${owner}/${slug}` }, { label: "Sheet" }]}
+        phoneTitle={data?.title}
+        actions={
+          <>
+            {data?.private && <Lock aria-label="Private" className="size-4 text-muted-foreground" />}
+            {shown && <DownloadButton table={shown} size="sm" />}
+            {data && <ShareButton table={data} path={`${path}${viewSearch(view, selectedId)}`} size="sm" onChanged={retry} />}
+          </>
+        }
+      />
       {status === "missing" ? (
         <NoTable />
       ) : status === "failed" ? (

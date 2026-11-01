@@ -192,13 +192,12 @@ function DeleteTable({ table }: { table: PublishedTable }) {
 export function TableSettings({ table, onChanged }: Props) {
   const { user } = useMe();
   const owner = ownsAccount(user, table.owner);
-  const back = { href: `/${table.owner}/${table.slug}`, label: `Back to ${table.title}` };
   if (!user?.accounts.includes(table.owner)) {
-    return <PageHeader title="Settings" back={back} description="Only the people running this table can change it." />;
+    return <PageHeader title="Table settings" description="Only the people running this table can change it." />;
   }
   return (
     <div className="mx-auto max-w-2xl">
-      <PageHeader title="Table settings" back={back} />
+      <PageHeader title="Table settings" />
       <div className="space-y-6">
         {table.managed ? (
           <Section title="Details and shape"><p className="text-sm text-muted-foreground">This table is kept in the library's files, so its details, columns and rows are changed there.</p></Section>

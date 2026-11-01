@@ -73,19 +73,15 @@ const SignOutForm = ({ formRef, children }: { formRef?: React.Ref<HTMLFormElemen
   <form ref={formRef} method="post" action="/auth/logout">{children}</form>
 );
 
-/** On a phone there's no room for a menu inside the menu, so this just says who you are. */
-export function PhoneAccount({ user }: { user: User }) {
-  return (
-    <div className="flex items-center gap-2.5 px-2.5 pb-1">
-      <Initial user={user} />
-      <div className="min-w-0 flex-1 text-sm">
-        {user.name && <p className="truncate font-medium">{user.name}</p>}
-        <p className="truncate text-muted-foreground">{user.email}</p>
-      </div>
-      <SignOutForm><Button type="submit" variant="outline" size="sm">Sign out</Button></SignOutForm>
-    </div>
-  );
-}
+export const AgentDialog = ({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) => (
+  <Dialog open={open} onOpenChange={onOpenChange}>
+    <DialogContent>
+      <DialogTitle>Use these from an agent</DialogTitle>
+      <DialogDescription>A read-only MCP server for public tables. To let an agent read your private tables or propose changes, make a token in Settings.</DialogDescription>
+      <AgentCommand />
+    </DialogContent>
+  </Dialog>
+);
 
 /** Sign in, or the menu for everything of yours. Shows nothing until sign-in is really available. */
 export function AccountButton() {
@@ -114,6 +110,7 @@ export function AccountButton() {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
+            <DropdownMenuItem asChild className="md:hidden"><Link href="/explore">Browse tables</Link></DropdownMenuItem>
             {accountLinks(user.handle, user.teams, user.invites).map(({ href, label }) => (
               <DropdownMenuItem key={href} asChild><Link href={href}>{label}</Link></DropdownMenuItem>
             ))}
@@ -129,13 +126,7 @@ export function AccountButton() {
         </DropdownMenuContent>
       </DropdownMenu>
       <SignOutForm formRef={signOut} />
-      <Dialog open={agent} onOpenChange={setAgent}>
-        <DialogContent>
-          <DialogTitle>Use these from an agent</DialogTitle>
-          <DialogDescription>A read-only MCP server for public tables. To let an agent read your private tables or propose changes, make a token in Settings.</DialogDescription>
-          <AgentCommand />
-        </DialogContent>
-      </Dialog>
+      <AgentDialog open={agent} onOpenChange={setAgent} />
     </>
   );
 }

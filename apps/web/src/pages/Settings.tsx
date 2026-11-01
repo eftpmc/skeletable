@@ -105,7 +105,7 @@ export function TokenSettings() {
   };
 
   return (
-    <SettingsLayout title="Agent tokens">
+    <SettingsLayout title="Agent tokens" crumbs={[{ label: "Agent tokens" }]}>
       <Section title="Agent tokens" description="Reading public tables needs no token. A token lets an agent read every private table you can, and propose changes in your name, which owners still approve. Treat it like a password.">
         <form onSubmit={create} className="flex gap-2">
           <Input aria-label="Token name" placeholder="Name it, like Laptop" value={name} onChange={(event) => setName(event.target.value)} maxLength={80} />
@@ -148,7 +148,7 @@ export function AccountSettings() {
     else setError(data.error ?? "That didn't delete.");
   };
   return (
-    <SettingsLayout title="Account">
+    <SettingsLayout title="Account" crumbs={[{ label: "Account" }]}>
       <Section title="Signed in with Google"><p className="text-sm text-muted-foreground">{user?.email}</p></Section>
       <Section title="Delete your account" description="This removes your email, tokens and tables for good. Proposals you made to other people's tables stay, with your name removed.">
         <ConfirmButton label="Delete account" confirm="Delete everything" onConfirm={remove} />

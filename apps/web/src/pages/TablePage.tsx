@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useJson, useMe } from "@/lib/api";
-import { day, host, ownerLabel } from "@/lib/cells";
+import { accountName, day, host, ownerLabel } from "@/lib/cells";
 import { statusCounts, statuses, type CellStatus, type PublishedTable } from "@/lib/status";
 import { Grid } from "@/pages/Sheet";
 import { Activity, AllChanges, AllProposals } from "@/pages/TableActivity";
@@ -20,6 +20,8 @@ const PREVIEW_ROWS = 8;
 
 export const tableViews = ["proposals", "history", "settings"] as const;
 export type TableView = (typeof tableViews)[number];
+
+const viewLabels: Record<TableView, string> = { proposals: "Proposals", history: "History", settings: "Settings" };
 
 const SideSection = ({ title, children }: { title: string; children: ReactNode }) => (
   <section className="border-b pb-5 last:border-b-0">
@@ -167,11 +169,7 @@ function TableDetails({ table, view, onChanged }: { table: PublishedTable; view?
       <section className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
         <div className="min-w-0 flex-1 basis-96">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <h1 className="text-xl tracking-tight sm:text-2xl">
-              <Link href={`/${table.owner}`} className="text-muted-foreground hover:text-foreground hover:underline">{ownerLabel(table)}</Link>
-              <span className="mx-1.5 text-muted-foreground">/</span>
-              <span className="font-semibold">{table.title}</span>
-            </h1>
+            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{table.title}</h1>
             <Badge variant="outline">{table.private ? "Private" : "Public"}</Badge>
           </div>
           <p className="mt-1.5 max-w-2xl text-muted-foreground">{table.question}</p>
@@ -200,8 +198,13 @@ function TableDetails({ table, view, onChanged }: { table: PublishedTable; view?
 /** A table's own page: what it is and how far to trust it, with the sheet one click away. */
 export function TablePage({ owner, slug, view }: { owner: string; slug: string; view?: TableView }) {
   const { data, status, retry } = useJson<PublishedTable>(`/api/tables/${owner}/${slug}`);
+  const crumbs = [
+    { label: data ? ownerLabel(data) : accountName(owner), href: `/${owner}` },
+    { label: data?.title ?? "Table", href: `/${owner}/${slug}` },
+    ...(view ? [{ label: viewLabels[view] }] : []),
+  ];
   return (
-    <Page>
+    <Page crumbs={crumbs}>
       <Content>
         {status === "missing" ? (
           <NoTable />

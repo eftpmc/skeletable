@@ -1,92 +1,104 @@
-import { Menu, Table2, X } from "lucide-react";
+import { ArrowLeft, Menu } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { AccountButton, AgentButton, Logo, PhoneAccount, ThemeButton } from "@/components/Chrome";
+import { AccountButton, AgentButton, AgentDialog, Logo, ThemeButton } from "@/components/Chrome";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { accountLinks, type AccountLink } from "@/lib/account";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { signInHref } from "@/lib/account";
 import { useMe } from "@/lib/api";
+import { useTheme } from "@/lib/theme";
 
-// Shared by every top bar and the phone menu, so the menu button and its X sit in the same spot.
-const bar = "flex h-12 shrink-0 items-center gap-4 border-b px-4";
+/** One step of where you are. The last is the current page, so it needs no link. */
+export type Crumb = { label: string; href?: string };
 
-// The public library. Everything of your own lives in the account menu instead.
-const browse: AccountLink = { href: "/explore", label: "Browse tables", icon: Table2 };
+const BROWSE = { href: "/explore", label: "Browse tables" };
 
-const BrandName = () => (
-  <>
-    <Logo className="size-7" />
-    Skeletable
-  </>
-);
-
-const Brand = () => (
-  <Link href="/" className="flex items-center gap-2 font-medium tracking-tight">
-    <BrandName />
-  </Link>
-);
-
-function PhoneLinks({ links, label, onNavigate }: { links: AccountLink[]; label: string; onNavigate: () => void }) {
-  const [location] = useLocation();
+/** What a signed-out phone gets in place of the links and buttons that fit on a wider screen. */
+function PublicMenu() {
+  const { canSignIn } = useMe();
+  const { dark, toggle } = useTheme();
+  const [agent, setAgent] = useState(false);
   return (
-    <nav aria-label={label} className="flex flex-col gap-1">
-      {links.map(({ href, label: text, icon: Icon }) => (
-        <Link
-          key={href}
-          href={href}
-          onClick={onNavigate}
-          aria-current={location === href ? "page" : undefined}
-          className="flex items-center gap-2.5 rounded-md px-2.5 py-3 text-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground aria-[current=page]:bg-muted aria-[current=page]:font-medium aria-[current=page]:text-foreground"
-        >
-          <Icon className="size-5" />
-          {text}
-        </Link>
-      ))}
-    </nav>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon-sm" aria-label="Menu"><Menu /></Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-52">
+          <DropdownMenuItem asChild><Link href={BROWSE.href}>{BROWSE.label}</Link></DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => setAgent(true)}>Connect an agent</DropdownMenuItem>
+          <DropdownMenuItem onSelect={(event) => { event.preventDefault(); toggle(); }}>{dark ? "Use light theme" : "Use dark theme"}</DropdownMenuItem>
+          {canSignIn && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild><a href={signInHref()}>Sign in</a></DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <AgentDialog open={agent} onOpenChange={setAgent} />
+    </>
   );
 }
 
-/** On a phone, all navigation opens as one simple full-screen menu: the public library, then what's yours. */
-function PhoneMenu() {
+/**
+ * The same bar on every screen. Wide screens show the path, each step a link. Phones show a back
+ * arrow to the step before, and the page's name.
+ */
+export function AppBar({ crumbs = [], phoneTitle, actions }: { crumbs?: Crumb[]; phoneTitle?: string; actions?: ReactNode }) {
   const { user } = useMe();
-  const [open, setOpen] = useState(false);
-  const close = () => setOpen(false);
+  const [location] = useLocation();
+  const current = crumbs.at(-1);
+  const back = current && (crumbs.at(-2)?.href ?? "/");
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon-sm" aria-label="Menu"><Menu /></Button>
-      </DialogTrigger>
-      <DialogContent
-        showCloseButton={false}
-        className="top-0 left-0 flex h-svh w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-none p-0 ring-0 sm:max-w-none"
-      >
-        <div className={bar}>
-          <DialogTitle className="flex items-center gap-2 text-base font-medium tracking-tight"><BrandName /></DialogTitle>
-          <DialogClose asChild>
-            <Button variant="ghost" size="icon-sm" className="ml-auto" aria-label="Close menu"><X /></Button>
-          </DialogClose>
-        </div>
-        <DialogDescription className="sr-only">Where to go next</DialogDescription>
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <div className="p-4">
-            <PhoneLinks links={[browse]} label="Main" onNavigate={close} />
-          </div>
-          {user && (
-            <div className="space-y-2 border-t p-4">
-              <PhoneAccount user={user} />
-              <PhoneLinks links={accountLinks(user.handle, user.teams, user.invites)} label="Your account" onNavigate={close} />
+    <header className="flex h-14 shrink-0 items-center gap-3 border-b px-4">
+      {back && (
+        <Button variant="ghost" size="icon-sm" className="-ml-1.5 md:hidden" aria-label="Back" asChild>
+          <Link href={back}><ArrowLeft /></Link>
+        </Button>
+      )}
+      <Link href="/" aria-label="Skeletable home" className={`shrink-0 items-center gap-2 font-medium tracking-tight ${back ? "hidden md:flex" : "flex"}`}>
+        <Logo className="size-8" />
+        {!current && "Skeletable"}
+      </Link>
+      {current && <p className="min-w-0 truncate font-medium md:hidden">{phoneTitle ?? current.label}</p>}
+      {current && (
+        <nav aria-label="Where you are" className="hidden min-w-0 items-center gap-1.5 text-sm md:flex">
+          {crumbs.map(({ label, href }, index) => (
+            <span key={`${index}-${label}`} className="flex min-w-0 items-center gap-1.5">
+              {index > 0 && <span aria-hidden="true" className="text-muted-foreground">/</span>}
+              {href && index < crumbs.length - 1 ? (
+                <Link href={href} className="max-w-48 truncate text-muted-foreground transition-colors hover:text-foreground">{label}</Link>
+              ) : (
+                <span aria-current="page" className="truncate font-medium">{label}</span>
+              )}
+            </span>
+          ))}
+        </nav>
+      )}
+      <div className="ml-auto flex shrink-0 items-center gap-1.5">
+        <Link
+          href={BROWSE.href}
+          aria-current={location === BROWSE.href ? "page" : undefined}
+          className="mr-1.5 hidden text-sm text-muted-foreground transition-colors hover:text-foreground aria-[current=page]:text-foreground md:block"
+        >
+          {BROWSE.label}
+        </Link>
+        {actions}
+        {user ? (
+          <AccountButton />
+        ) : (
+          <>
+            <div className="hidden items-center gap-1 md:flex">
+              <AgentButton />
+              <ThemeButton />
+              <AccountButton />
             </div>
-          )}
-        </div>
-        <div className="flex items-center gap-2 border-t p-4">
-          <AgentButton label="Connect an agent" />
-          <div className="ml-auto flex items-center gap-1">
-            <ThemeButton />
-            {!user && <AccountButton />}
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+            <div className="md:hidden"><PublicMenu /></div>
+          </>
+        )}
+      </div>
+    </header>
   );
 }
 
@@ -101,46 +113,11 @@ function Footer() {
   );
 }
 
-const PhoneBar = () => (
-  <header className={`${bar} md:hidden`}>
-    <Brand />
-    <div className="ml-auto flex"><PhoneMenu /></div>
-  </header>
-);
-
-/** The same bar for everyone. Signing in only swaps the far right, where your account menu takes over. */
-function TopBar() {
-  const { user } = useMe();
-  const [location] = useLocation();
-  return (
-    <header className={`${bar} hidden md:flex`}>
-      <Brand />
-      <Link
-        href={browse.href}
-        aria-current={location === browse.href ? "page" : undefined}
-        className="text-sm text-muted-foreground transition-colors hover:text-foreground aria-[current=page]:text-foreground"
-      >
-        {browse.label}
-      </Link>
-      <div className="ml-auto flex items-center gap-1">
-        {!user && (
-          <>
-            <AgentButton />
-            <ThemeButton />
-          </>
-        )}
-        <AccountButton />
-      </div>
-    </header>
-  );
-}
-
-export function Page({ children }: { children: ReactNode }) {
+export function Page({ crumbs, children }: { crumbs?: Crumb[]; children: ReactNode }) {
   const [location] = useLocation();
   return (
     <div className="min-h-svh">
-      <PhoneBar />
-      <TopBar />
+      <AppBar crumbs={crumbs} />
       <div key={location} className="duration-200 animate-in fade-in slide-in-from-bottom-1 motion-reduce:animate-none">{children}</div>
       <Footer />
     </div>

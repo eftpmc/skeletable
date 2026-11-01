@@ -9,7 +9,7 @@ const Document = ({ title, updated = true, children }: { title: string; updated?
     document.title = `${title} · Skeletable`;
   }, [title]);
   return (
-    <Page>
+    <Page crumbs={[{ label: title }]}>
       <Content size="narrow">
         <PageHeader title={title} description={updated ? `Last updated ${UPDATED}` : undefined} />
         <div className="space-y-4 text-sm leading-relaxed [&_h2]:mt-6 [&_h2]:font-medium">{children}</div>

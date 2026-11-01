@@ -31,7 +31,7 @@ export function Account({ owner }: { owner: string }) {
   }, [details, name]);
 
   return (
-    <Page>
+    <Page crumbs={[{ label: name }]}>
       <Content>
         {account.status === "missing" ? (
           <Message title="There's no account here" />
