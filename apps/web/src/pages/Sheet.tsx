@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Link, useLocation, useSearch } from "wouter";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
+import { AgentBuildButton } from "@/components/AgentBuild";
 import { DownloadButton } from "@/components/Download";
 import { FilterButton } from "@/components/Filter";
 import { NoTable } from "@/components/NoTable";
@@ -28,6 +29,8 @@ import { Message } from "@/pages/Message";
 
 /** Empty rows carry the grid down the page, as in a spreadsheet. */
 const fullHeightRows = 30;
+
+const DRAFT_RELOAD_MS = 2500;
 
 export type Selected = { rowKey: string; column: Column; cell: Cell; status: CellStatus };
 
@@ -471,7 +474,7 @@ export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - t
                     {xray && <StatusIcon className="mr-1.5 inline size-3 align-[-1px] text-foreground/70" aria-label={status.label} />}
                     {!xray && status.corner && <span aria-hidden="true" className={`absolute top-0 right-0 size-0 border-t-[7px] border-l-[7px] border-l-transparent ${status.corner}`} />}
                     {isFound(cell) ? (
-                      display(cell.value)
+                      <span key={statusName} className={table.draft ? "duration-700 animate-in fade-in" : undefined}>{display(cell.value)}</span>
                     ) : cell.unproven !== undefined ? (
                       <span className="text-sm italic">{display(cell.unproven)}</span>
                     ) : statusName === "blank" && !xray ? (
@@ -511,6 +514,7 @@ function SheetFacts({ table }: { table: PublishedTable }) {
 
 export function Sheet({ owner, slug }: { owner: string; slug: string }) {
   const { data, status, retry } = useJson<PublishedTable>(`/api/tables/${owner}/${slug}`);
+  const { user } = useMe();
   const [xray, setXray] = useState(false);
   const [widths, setWidths] = useState<Record<string, number>>({});
   const [filtering, setFiltering] = useState(false);
@@ -527,6 +531,18 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
   useEffect(() => {
     if (data) document.title = `${data.title} · Skeletable`;
   }, [data]);
+
+  // A draft can be filling up from an agent, so it keeps itself current while someone's looking.
+  const reload = useRef(retry);
+  reload.current = retry;
+  const isDraft = !!data?.draft;
+  useEffect(() => {
+    if (!isDraft) return;
+    const timer = setInterval(() => {
+      if (!document.hidden) reload.current();
+    }, DRAFT_RELOAD_MS);
+    return () => clearInterval(timer);
+  }, [isDraft]);
 
   const shown = useMemo(() => (data ? { ...data, rows: sortedRows(data, filteredRows(data, matchingRows(data, find), filters), sort) } : undefined), [data, find, filters, sort]);
 
@@ -568,8 +584,9 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
         actions={
           <>
             {data?.private && <Lock aria-label="Private" className="size-4 text-muted-foreground" />}
+            {data?.draft && user?.accounts.includes(data.owner) && <AgentBuildButton table={data} />}
             {shown && <DownloadButton table={shown} size="sm" />}
-            {data && <ShareButton table={data} path={`${path}${viewSearch(view, selectedId)}`} size="sm" onChanged={retry} />}
+            {data && !data.draft && <ShareButton table={data} path={`${path}${viewSearch(view, selectedId)}`} size="sm" onChanged={retry} />}
           </>
         }
       />

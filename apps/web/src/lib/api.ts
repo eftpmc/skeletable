@@ -42,7 +42,7 @@ export function useJson<T>(url: string): Loaded<T> {
 
   useEffect(() => {
     const request = new AbortController();
-    setState((previous) => ({ data: previous.data, status: "loading" }));
+    setState((previous) => ({ data: previous.data, status: previous.data ? "ready" : "loading" }));
     fetch(url, { signal: request.signal })
       .then(async (response) => {
         if (response.status === 404) return setState({ status: "missing" });
@@ -50,7 +50,8 @@ export function useJson<T>(url: string): Loaded<T> {
         setState({ data: (await response.json()) as T, status: "ready" });
       })
       .catch(() => {
-        if (!request.signal.aborted) setState({ status: "failed" });
+        // A later look that fails leaves what's on screen alone, and only a first one shows as failed.
+        if (!request.signal.aborted) setState((previous) => (previous.data ? { data: previous.data, status: "ready" } : { status: "failed" }));
       });
     return () => request.abort();
   }, [url, attempt]);

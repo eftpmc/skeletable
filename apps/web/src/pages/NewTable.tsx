@@ -1,6 +1,7 @@
 import { ListPlus } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { useLocation } from "wouter";
+import { AgentBuildButton } from "@/components/AgentBuild";
 import { DraftGrid } from "@/components/DraftGrid";
 import { Content, Field, FormError, PageHeader, SignInLink } from "@/components/Layout";
 import { Page } from "@/components/Shell";
@@ -71,7 +72,10 @@ export function NewTable() {
           <DraftGrid draft={draft} onChange={setDraft} />
           <p className="text-sm text-muted-foreground">Paste a range from Excel or Google Sheets into any cell, and the first row becomes your headings.</p>
           <FormError error={error} />
-          <Button type="submit" size="lg" disabled={sending}>{sending ? "Creating..." : "Create draft"}</Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="submit" size="lg" disabled={sending}>{sending ? "Creating..." : "Create draft"}</Button>
+            <AgentBuildButton subject={title} />
+          </div>
         </form>
       </Content>
     </Page>

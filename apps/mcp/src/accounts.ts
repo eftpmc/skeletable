@@ -10,7 +10,7 @@ import { rateLimit } from "./rate-limit.js";
 export type SignedIn = (c: Context) => Promise<{ id: string; email: string; accounts: string[]; shared: string[] } | null>;
 
 export const CREATIONS_PER_MINUTE = 10;
-const MAX_ROWS = 200;
+export const MAX_ROWS = 200;
 export const MAX_COLUMNS = 20;
 
 // These are the site's own addresses, so no account can take them.
@@ -111,7 +111,7 @@ export async function createTable(sql: Sql, tables: PublishedTable[], owner: str
   if (problems.length) return undefined;
   // A draft is private until someone publishes it.
   await importTables(sql, [{ ...table, private: draft || body.private }]);
-  return { owner, slug };
+  return { owner, slug, columns: table.columns.map(({ id, label }) => ({ id, label })) };
 }
 
 export const emptyCell = (): Cell => ({ missing: true, checked: [], read: today() });
@@ -127,6 +127,21 @@ function columnIds(labels: string[]) {
     return id;
   });
 }
+
+/** Add a row. A removed row of this name comes back with its old values. */
+export const addRow = (sql: Sql, table: PublishedTable, key: string) =>
+  sql.begin(async (tx) => {
+    const [saved] = await tx`
+      insert into table_rows (table_id, key, position)
+      select t.id, ${key}, coalesce((select max(position) + 1 from table_rows r where r.table_id = t.id), 0)
+      from data_tables t join accounts a on a.id = t.account_id where a.handle = ${table.owner} and t.slug = ${table.slug}
+      on conflict (table_id, key) do update set removed_at = null
+      returning id`;
+    const held = new Set((await tx`select distinct column_id from cell_versions where row_id = ${saved!.id}`).map((cell) => cell.column_id as string));
+    for (const column of table.columns) {
+      if (!held.has(column.id)) await tx`insert into cell_versions (row_id, column_id, cell) values (${saved!.id}, ${column.id}, ${tx.json(emptyCell())})`;
+    }
+  });
 
 /** Whether a table's owner has this person in it, for the routes that change a table. */
 export const runsTable = (user: { accounts: string[] } | null, owner: string) => !!user?.accounts.includes(owner);
@@ -217,7 +232,7 @@ export function accountRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sig
     const created = await createTable(sql, tables, owner, body.data);
     if (!created) return c.json({ error: "That table isn't valid. Check its columns and rows." }, 400);
     await refresh?.();
-    return c.json(created, 201);
+    return c.json({ owner: created.owner, slug: created.slug }, 201);
   });
 
   app.post("/api/tables/:owner/:slug/rows", rateLimit(CREATIONS_PER_MINUTE * 3), async (c) => {
@@ -229,19 +244,7 @@ export function accountRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sig
     if (!table || !key.success) return c.json({ error: "Enter a name for the row." }, 400);
     if (table.rows.some((row) => row.key === key.data.key)) return c.json({ error: "That row already exists." }, 409);
     if (table.rows.length >= MAX_ROWS) return c.json({ error: "This table has reached its row limit." }, 400);
-    await sql.begin(async (tx) => {
-      // A removed row of this name comes back with its old values.
-      const [saved] = await tx`
-        insert into table_rows (table_id, key, position)
-        select t.id, ${key.data.key}, coalesce((select max(position) + 1 from table_rows r where r.table_id = t.id), 0)
-        from data_tables t join accounts a on a.id = t.account_id where a.handle = ${owner} and t.slug = ${table.slug}
-        on conflict (table_id, key) do update set removed_at = null
-        returning id`;
-      const held = new Set((await tx`select distinct column_id from cell_versions where row_id = ${saved!.id}`).map((cell) => cell.column_id as string));
-      for (const column of table.columns) {
-        if (!held.has(column.id)) await tx`insert into cell_versions (row_id, column_id, cell) values (${saved!.id}, ${column.id}, ${tx.json(emptyCell())})`;
-      }
-    });
+    await addRow(sql, table, key.data.key);
     await refresh?.();
     return c.json({ ok: true }, 201);
   });

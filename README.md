@@ -4,7 +4,7 @@ Tables you can trust. Every value links to the source that states it, or says wh
 
 ## Connect
 
-The server takes MCP over HTTP at `/mcp`. Reading needs no account. Proposing a change needs a token from Settings, sent as a Bearer token.
+The server takes MCP over HTTP at `/mcp`. Reading needs no account. Proposing a change or building a draft needs a token from Settings, sent as a Bearer token. An agent can only write to drafts its person runs, each value still passes every check, and a person publishes.
 
 ```sh
 claude mcp add --transport http skeletable https://skeletable.com/mcp
@@ -17,6 +17,9 @@ claude mcp add --transport http skeletable https://skeletable.com/mcp
 | `get_cell` | One value's source, exact quote and date, or where we looked |
 | `check_claim` | Test a statement against a cell: it matches, differs, is disputed, or is unknown |
 | `propose_change` | Suggest a new value with its proof, for the owner to review |
+| `create_table` | Make a private draft, ready to fill |
+| `add_rows` | Add rows to a draft |
+| `fill_cells` | Fill a draft's cells with proof, or say where you looked |
 
 ## What's here
 

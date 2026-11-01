@@ -3,6 +3,7 @@ import { join, resolve } from "node:path";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono, type Context } from "hono";
 import { canRead, everyone, readable, viewerFor } from "./access.js";
+import { agentActions } from "./agents.js";
 import { authRoutes, sessionViewer, type AuthConfig } from "./auth.js";
 import { dataRoutes } from "./data.js";
 import { checkCounts, searchTables, summarize, type PublishedTable } from "./library.js";
@@ -58,7 +59,7 @@ export function createApp(tables: PublishedTable[], webDir?: string, auth?: Auth
       if ("id" in result) await notifyOwners(auth.sql, auth.mail, auth.publicUrl, result.id);
       return result;
     };
-    return handleMcp(visible, publicUrl, c.req.raw, propose);
+    return handleMcp(visible, publicUrl, c.req.raw, propose, userId ? agentActions(auth.sql, tables, userId, publicUrl, auth.refresh, auth.pages) : null);
   });
   if (auth) app.route("/", authRoutes(auth));
   else app.get("/api/me", (c) => c.json({ canSignIn: false, user: null }));
