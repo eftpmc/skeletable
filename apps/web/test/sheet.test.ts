@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import type { Cell } from "@skeleton/tables/format";
-import { NAME_COLUMN, matchingRows, nextSort, sortedRows } from "../src/lib/sheet";
+import { BLANK, NAME_COLUMN, filterChoices, filteredRows, matchingRows, nextSort, readView, sortedRows, viewSearch } from "../src/lib/sheet";
 import type { PublishedTable } from "../src/lib/status";
 
 const found = (value: number | string): Cell => ({ value, source: "https://a.example", kind: "first-hand", quote: String(value), read: "2026-11-01" });
@@ -45,4 +45,36 @@ it("cycles a column's sort up, down, then off", () => {
   expect(down).toEqual({ column: "weight", descending: true });
   expect(nextSort(down, "weight")).toBeNull();
   expect(nextSort(down, "chip")).toEqual({ column: "chip", descending: false });
+});
+
+const keys = (filters: Record<string, string[]>) => filteredRows(table, table.rows, filters).map((row) => row.key);
+
+it("keeps rows with a picked value, and needs every filtered column to match", () => {
+  expect(keys({ chip: ["Zen", "Arm"] })).toEqual(["Beta", "Gamma"]);
+  expect(keys({ weight: [BLANK] })).toEqual(["Alpha"]);
+  expect(keys({ chip: ["Zen"], weight: ["9"] })).toEqual([]);
+});
+
+it("ignores a filter on a column the table no longer has", () => {
+  expect(keys({ gone: ["x"] })).toHaveLength(3);
+});
+
+it("lists a column's values in order, with blanks last", () => {
+  expect(filterChoices(table, "weight")).toEqual([
+    { value: "9", label: "9", count: 1 },
+    { value: "20", label: "20", count: 1 },
+    { value: BLANK, label: "Not stated", count: 1 },
+  ]);
+});
+
+it("puts a view in the address and reads the same view back", () => {
+  const view = { sort: { column: "weight", descending: true }, find: "a b", filters: { chip: ["Zen", "Colon: here"], weight: [BLANK] } };
+  const search = viewSearch(view, "beta--chip");
+  expect(readView(search)).toEqual(view);
+  expect(new URLSearchParams(search).get("cell")).toBe("beta--chip");
+});
+
+it("leaves the address clean when there's nothing to keep", () => {
+  expect(viewSearch({ sort: null, find: "", filters: {} })).toBe("");
+  expect(readView("?cell=beta--chip")).toEqual({ sort: null, find: "", filters: {} });
 });

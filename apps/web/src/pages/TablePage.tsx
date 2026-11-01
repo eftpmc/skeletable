@@ -2,6 +2,7 @@ import { ArrowRight, ExternalLink } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { AgentButton } from "@/components/Chrome";
+import { ShareButton } from "@/components/Share";
 import { Page } from "@/components/Shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -171,7 +172,8 @@ function TableDetails({ table, view }: { table: PublishedTable; view?: TableView
           </div>
           <p className="mt-1.5 max-w-2xl text-muted-foreground">{table.question}</p>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <ShareButton title={table.title} path={`/${table.owner}/${table.slug}`} />
           <AgentButton label="Connect an agent" />
           <Button size="lg" asChild>
             <Link href={`/${table.owner}/${table.slug}/sheet`}>

@@ -39,3 +39,63 @@ export function nextSort(sort: SheetSort, column: string): SheetSort {
   if (sort?.column !== column) return { column, descending: false };
   return sort.descending ? null : { column, descending: true };
 }
+
+/** The values picked for each column. A row needs one of them in every filtered column. */
+export type SheetFilters = Record<string, string[]>;
+
+/** How a sheet is being looked at. It lives in the address, so a copied link opens the same view of the live table. */
+export type SheetView = { sort: SheetSort; find: string; filters: SheetFilters };
+
+/** The filter choice for a cell with no value. */
+export const BLANK = "__blank";
+
+const filterValue = (cell: Cell | undefined) => {
+  const value = cellValue(cell);
+  return value === undefined ? BLANK : String(value);
+};
+
+export function readView(search: string): SheetView {
+  const params = new URLSearchParams(search);
+  const column = params.get("sort");
+  const filters: SheetFilters = {};
+  for (const filter of params.getAll("f")) {
+    const split = filter.indexOf(":");
+    if (split > 0) (filters[filter.slice(0, split)] ??= []).push(filter.slice(split + 1));
+  }
+  return { sort: column ? { column, descending: params.has("desc") } : null, find: params.get("find") ?? "", filters };
+}
+
+/** The address's search text for a view and a selected cell. */
+export function viewSearch({ sort, find, filters }: SheetView, cell?: string | null) {
+  const params = new URLSearchParams();
+  if (sort) params.set("sort", sort.column);
+  if (sort?.descending) params.set("desc", "1");
+  if (find) params.set("find", find);
+  for (const [column, values] of Object.entries(filters)) for (const value of values) params.append("f", `${column}:${value}`);
+  if (cell) params.set("cell", cell);
+  const search = params.toString();
+  return search ? `?${search}` : "";
+}
+
+/** Rows that fit the filters. A column the table no longer has is ignored, so an old link still opens. */
+export function filteredRows(table: PublishedTable, rows: PublishedTable["rows"], filters: SheetFilters) {
+  const active = table.columns.filter((column) => filters[column.id]?.length);
+  return rows.filter((row) => active.every((column) => filters[column.id]!.includes(filterValue(row.cells[column.id]))));
+}
+
+/** What a column can be filtered to, with how many rows hold each value. Blanks go last. */
+export function filterChoices(table: PublishedTable, columnId: string) {
+  const column = table.columns.find((c) => c.id === columnId);
+  const counts = new Map<string, { value: string; label: string; count: number }>();
+  for (const row of table.rows) {
+    const cell = row.cells[columnId];
+    const value = filterValue(cell);
+    const shown = cellValue(cell);
+    const label = shown === undefined ? "Not stated" : display(shown);
+    counts.set(value, { value, label, count: (counts.get(value)?.count ?? 0) + 1 });
+  }
+  return [...counts.values()].sort((a, b) => {
+    if (a.value === BLANK || b.value === BLANK) return a.value === b.value ? 0 : a.value === BLANK ? 1 : -1;
+    return column?.type === "number" ? Number(a.value) - Number(b.value) : a.label.localeCompare(b.label, undefined, { numeric: true });
+  });
+}

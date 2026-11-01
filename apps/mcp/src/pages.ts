@@ -56,13 +56,16 @@ export function pageRoutes(app: Hono, tables: Table[], webDir: string, publicUrl
     return c.body(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${paths.map((path) => `<url><loc>${escape(publicUrl + path)}</loc></url>`).join("")}</urlset>`);
   });
 
-  app.get("/:owner/:slug", (c, next) => {
-    const table = tables.find((t) => t.owner === c.req.param("owner") && t.slug === c.req.param("slug"));
-    if (!table) return next();
-    const url = `${publicUrl}/${table.owner}/${table.slug}`;
-    const data = { "@context": "https://schema.org", "@type": "Dataset", name: table.title, description: table.question, url, creator: { "@type": "Organization", name: table.owner } };
-    return c.html(render(headFor(`${table.title} · Skeletable`, table.question, url, data), tableText(table)));
-  });
+  // The sheet is the address people share, so its link previews name the table too.
+  for (const path of ["/:owner/:slug", "/:owner/:slug/sheet"]) {
+    app.get(path, (c, next) => {
+      const table = tables.find((t) => t.owner === c.req.param("owner") && t.slug === c.req.param("slug"));
+      if (!table) return next();
+      const url = `${publicUrl}/${table.owner}/${table.slug}`;
+      const data = { "@context": "https://schema.org", "@type": "Dataset", name: table.title, description: table.question, url, creator: { "@type": "Organization", name: table.owner } };
+      return c.html(render(headFor(`${table.title} · Skeletable`, table.question, url, data), tableText(table)));
+    });
+  }
 
   // Anything else is an address the app handles itself.
   app.get("*", (c) => c.html(render(headFor("Skeletable", description, `${publicUrl}${c.req.path}`))));

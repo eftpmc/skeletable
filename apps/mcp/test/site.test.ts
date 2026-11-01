@@ -48,6 +48,7 @@ it("serves the built site, and its page for any address it routes itself", async
   expect(page).toContain("<title>E-readers · Skeletable</title>");
   expect(page).toContain('"@type":"Dataset"');
   expect(page).toContain("Kobo Sage");
+  expect(await (await site.request("/skeletable/e-readers/sheet?sort=weight")).text()).toContain("<title>E-readers · Skeletable</title>");
   expect(await (await site.request("/robots.txt")).text()).toContain("sitemap.xml");
   expect(await (await site.request("/sitemap.xml")).text()).toContain("https://skeletable.com/skeletable/e-readers");
   expect(await (await site.request("/settings")).text()).toContain('<div id="root"></div>');

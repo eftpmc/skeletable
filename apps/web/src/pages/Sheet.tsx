@@ -4,13 +4,15 @@ import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEven
 import { Link, useLocation, useSearch } from "wouter";
 import { Input } from "@/components/ui/input";
 import { AccountButton, Logo } from "@/components/Chrome";
+import { FilterButton } from "@/components/Filter";
+import { ShareButton } from "@/components/Share";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { postJson, useJson, useMe } from "@/lib/api";
 import { accountName, cellId, day, display, host, place, splitQuote } from "@/lib/cells";
-import { NAME_COLUMN, matchingRows, nextSort, sortedRows, type SheetSort } from "@/lib/sheet";
+import { NAME_COLUMN, filteredRows, matchingRows, nextSort, readView, sortedRows, viewSearch, type SheetFilters, type SheetSort, type SheetView } from "@/lib/sheet";
 import { cellStatus, statusCounts, statuses, type CellStatus, type PublishedTable } from "@/lib/status";
 import { Message } from "@/pages/Message";
 
@@ -154,14 +156,15 @@ function AddRow({ table, onAdded }: { table: PublishedTable; onAdded: () => void
 }
 
 /** Along the bottom of the sheet, like a spreadsheet's: the table's tools, out of the way of the data. */
-function StatusBar({ table, xray, onXray, onChanged, find, onFind, shown, note }: { table: PublishedTable; xray: boolean; onXray: () => void; onChanged: () => void; find: string; onFind: (find: string) => void; shown: number; note?: string }) {
+function StatusBar({ table, xray, onXray, onChanged, find, onFind, filters, onFilters, shown, note }: { table: PublishedTable; xray: boolean; onXray: () => void; onChanged: () => void; find: string; onFind: (find: string) => void; filters: SheetFilters; onFilters: (filters: SheetFilters) => void; shown: number; note?: string }) {
   return (
-    <footer className="flex h-9 shrink-0 items-center gap-2 border-t bg-muted px-2 text-xs">
-      <div className="relative w-28 shrink-0 sm:w-44">
+    <footer className="flex h-9 shrink-0 items-center gap-2 overflow-x-auto border-t bg-muted px-2 text-xs">
+      <div className="relative w-24 shrink-0 sm:w-44">
         <Search className="pointer-events-none absolute top-1/2 left-2 size-3 -translate-y-1/2 text-muted-foreground" />
         <Input aria-label="Find in this table" placeholder="Find" value={find} onChange={(event) => onFind(event.target.value)} className="h-6 bg-background pl-6 text-xs md:text-xs" />
       </div>
-      {find.trim() && <span className="shrink-0 text-muted-foreground tabular-nums">{shown} of {table.rows.length}</span>}
+      <FilterButton table={table} filters={filters} onChange={onFilters} />
+      {shown !== table.rows.length && <span className="shrink-0 text-muted-foreground tabular-nums">{shown} of {table.rows.length}</span>}
       {note && <span role="status" className="shrink-0 text-muted-foreground">{note}</span>}
       <Button
         variant="ghost"
@@ -403,7 +406,7 @@ export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - t
   );
 }
 
-function TopBar({ table, owner }: { table?: PublishedTable; owner: string }) {
+function TopBar({ table, owner, link }: { table?: PublishedTable; owner: string; link: string }) {
   const cells = table?.rows.flatMap((row) => Object.values(row.cells)) ?? [];
   const found = cells.filter(isFound);
   const lastRead = found.reduce((latest, cell) => (cell.read > latest ? cell.read : latest), "");
@@ -424,6 +427,7 @@ function TopBar({ table, owner }: { table?: PublishedTable; owner: string }) {
           <p className="text-lg leading-6">Skeletable</p>
         )}
       </div>
+      {table && <ShareButton title={table.title} path={link} size="sm" />}
       <AccountButton />
     </header>
   );
@@ -432,18 +436,20 @@ function TopBar({ table, owner }: { table?: PublishedTable; owner: string }) {
 export function Sheet({ owner, slug }: { owner: string; slug: string }) {
   const { data, status, retry } = useJson<PublishedTable>(`/api/tables/${owner}/${slug}`);
   const [xray, setXray] = useState(false);
-  const [sort, setSort] = useState<SheetSort>(null);
-  const [find, setFind] = useState("");
   const [widths, setWidths] = useState<Record<string, number>>({});
   const [note, setNote] = useState<string>();
   const [path, navigate] = useLocation();
-  const selectedId = new URLSearchParams(useSearch()).get("cell");
+  const search = useSearch();
+  const selectedId = new URLSearchParams(search).get("cell");
+  const view = useMemo(() => readView(search), [search]);
+  const { sort, find, filters } = view;
+  const show = (next: Partial<SheetView>, cell = selectedId) => navigate(`${path}${viewSearch({ ...view, ...next }, cell)}`, { replace: true });
 
   useEffect(() => {
     if (data) document.title = `${data.title} · Skeletable`;
   }, [data]);
 
-  const shown = useMemo(() => (data ? { ...data, rows: sortedRows(data, matchingRows(data, find), sort) } : undefined), [data, find, sort]);
+  const shown = useMemo(() => (data ? { ...data, rows: sortedRows(data, filteredRows(data, matchingRows(data, find), filters), sort) } : undefined), [data, find, filters, sort]);
 
   const copy = async (text: string) => {
     try {
@@ -459,7 +465,7 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
   const column = data?.columns.find((c) => row && cellId(row.key, c.id) === selectedId);
   return (
     <div className="flex h-svh flex-col duration-200 animate-in fade-in zoom-in-[0.995] motion-reduce:animate-none">
-      <TopBar table={data} owner={owner} />
+      <TopBar table={data} owner={owner} link={`${path}${viewSearch(view, selectedId)}`} />
       {status === "missing" ? (
         <Message title="There's no table here" />
       ) : status === "failed" ? (
@@ -470,15 +476,15 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
           <Grid
             table={shown}
             selectedId={selectedId}
-            select={(id) => navigate(id ? `${path}?cell=${id}` : path, { replace: true })}
+            select={(id) => show({}, id)}
             xray={xray}
             sort={sort}
-            onSort={(column) => setSort(nextSort(sort, column))}
+            onSort={(column) => show({ sort: nextSort(sort, column) })}
             widths={widths}
             onResize={(column, width) => setWidths((current) => ({ ...current, [column]: width }))}
             onCopy={copy}
           />
-          <StatusBar table={data} xray={xray} onXray={() => setXray(!xray)} onChanged={retry} find={find} onFind={setFind} shown={shown.rows.length} note={note} />
+          <StatusBar table={data} xray={xray} onXray={() => setXray(!xray)} onChanged={retry} find={find} onFind={(next) => show({ find: next })} filters={filters} onFilters={(next) => show({ filters: next })} shown={shown.rows.length} note={note} />
         </>
       ) : (
         <div className="flex-1 space-y-2 p-3" aria-label="Loading table">

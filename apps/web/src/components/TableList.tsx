@@ -11,12 +11,13 @@ function CheckBar({ table, className }: { table: TableSummary; className: string
   const { confirmed, summary, once, gap } = table.checks;
   const parts = [["confirmed", confirmed], ["summary", summary], ["once", once], ["gap", gap]] as const;
   const total = confirmed + summary + once + gap;
+  const filled = confirmed + summary + once;
   return (
     <div className={`shrink-0 sm:w-32 ${className}`} title={`${confirmed} confirmed by a blind read, ${summary} matched a summary, ${once} read once, ${gap} not stated`}>
       <div className="flex h-1.5 gap-px overflow-hidden rounded-full" aria-hidden="true">
         {parts.filter(([, count]) => count).map(([status, count]) => <div key={status} className={statuses[status].solid} style={{ width: `${(count / total) * 100}%` }} />)}
       </div>
-      <p className="mt-1 text-xs text-muted-foreground tabular-nums sm:text-right">{Math.round(((confirmed + summary) / total) * 100)}% checked twice</p>
+      <p className="mt-1 text-xs text-muted-foreground tabular-nums sm:text-right">{filled ? `${Math.round(((confirmed + summary) / filled) * 100)}% of values checked twice` : "No values yet"}</p>
     </div>
   );
 }
