@@ -1,17 +1,19 @@
 import { TABLE_FORMAT, validateTable, type Cell, type Table } from "@skeleton/tables/format";
 import type { Context, Hono } from "hono";
 import { z } from "zod";
+import { everyone, readable } from "./access.js";
 import { OFFICIAL_ACCOUNT, importTables, type Sql } from "./db.js";
 import type { PublishedTable } from "./library.js";
 import { rateLimit } from "./rate-limit.js";
 
-export type SignedIn = (c: Context) => Promise<{ id: string; email: string; accounts: string[] } | null>;
+export type SignedIn = (c: Context) => Promise<{ id: string; email: string; accounts: string[]; shared: string[] } | null>;
 
 export const CREATIONS_PER_MINUTE = 10;
 const MAX_ROWS = 200;
+export const MAX_COLUMNS = 20;
 
 // These are the site's own addresses, so no account can take them.
-const reserved = new Set(["api", "auth", "mcp", "health", "explore", "settings", "new", "about", "terms", "privacy", "assets", "logo", "robots", "sitemap", "admin", "www", OFFICIAL_ACCOUNT]);
+const reserved = new Set(["api", "auth", "mcp", "health", "explore", "settings", "new", "about", "help", "terms", "privacy", "assets", "logo", "og", "robots", "sitemap", "admin", "www", OFFICIAL_ACCOUNT]);
 
 const handlePattern = /^[a-z0-9](?:[a-z0-9-]{0,37}[a-z0-9])?$/;
 
@@ -48,9 +50,11 @@ export async function isOwner(sql: Sql, userId: string, handle: string) {
   return !!member;
 }
 
-const profileBody = z.object({ name: z.string().trim().min(1).max(80).optional(), handle: z.string().trim().toLowerCase().optional(), emailUpdates: z.boolean().optional() });
+export const bioSchema = z.string().trim().max(160);
 
-const columnBody = z.object({
+const profileBody = z.object({ name: z.string().trim().min(1).max(80).optional(), handle: z.string().trim().toLowerCase().optional(), bio: bioSchema.optional(), emailUpdates: z.boolean().optional() });
+
+export const columnBody = z.object({
   label: z.string().trim().min(1).max(80),
   type: z.enum(["text", "number", "boolean"]),
   unit: z.string().trim().max(30).optional(),
@@ -64,11 +68,11 @@ const tableBody = z.object({
   question: z.string().trim().min(1).max(300),
   topic: z.string().trim().min(1).max(40),
   scope: z.string().trim().min(1).max(800),
-  columns: z.array(columnBody).min(1).max(20),
+  columns: z.array(columnBody).min(1).max(MAX_COLUMNS),
   rows: z.array(z.string().trim().min(1).max(120)).min(1).max(MAX_ROWS),
 });
 
-const emptyCell = (): Cell => ({ missing: true, checked: [], read: today() });
+export const emptyCell = (): Cell => ({ missing: true, checked: [], read: today() });
 
 /** A column id that's safe and unique within its table. */
 function columnIds(labels: string[]) {
@@ -86,17 +90,37 @@ function columnIds(labels: string[]) {
 export const runsTable = (user: { accounts: string[] } | null, owner: string) => !!user?.accounts.includes(owner);
 
 export function accountRoutes(app: Hono, sql: Sql, tables: PublishedTable[], signedIn: SignedIn, refresh?: () => Promise<unknown>) {
+  // What an account's page shows. An account with nothing to show only exists to the people in it.
+  app.get("/api/accounts/:handle", async (c) => {
+    const handle = c.req.param("handle");
+    const viewer = (await signedIn(c)) ?? everyone;
+    const [account] = await sql`
+      select a.name, a.team, a.bio, (select count(*)::int from account_members m where m.account_id = a.id) as members
+      from accounts a where a.handle = ${handle}`;
+    const shown = viewer.accounts.includes(handle) || readable(tables, viewer).some((table) => table.owner === handle);
+    if (!account || !shown) return c.json({ error: "No such account" }, 404);
+    return c.json({ handle, team: account.team, bio: account.bio, ...(account.team && { name: account.name, members: account.members }) });
+  });
+
+  app.get("/api/me/profile", async (c) => {
+    const user = await signedIn(c);
+    if (!user) return c.json({ error: "Sign in first." }, 401);
+    const [account] = await sql`select a.bio from accounts a join users u on u.account_id = a.id where u.id = ${user.id}`;
+    return c.json({ bio: (account?.bio as string | undefined) ?? "" });
+  });
+
   app.patch("/api/me", async (c) => {
     const user = await signedIn(c);
     if (!user) return c.json({ error: "Sign in first." }, 401);
     const body = profileBody.safeParse(await c.req.json().catch(() => null));
     if (!body.success) return c.json({ error: "Enter a name of up to 80 characters." }, 400);
-    const { name, handle, emailUpdates } = body.data;
+    const { name, handle, bio, emailUpdates } = body.data;
     if (handle !== undefined && (!handlePattern.test(handle) || reserved.has(handle))) {
       return c.json({ error: "Use letters, numbers and dashes, and pick a name that isn't reserved." }, 400);
     }
     const [account] = await sql`select a.id, a.handle from accounts a join users u on u.account_id = a.id where u.id = ${user.id}`;
     if (emailUpdates !== undefined) await sql`update users set email_updates = ${emailUpdates} where id = ${user.id}`;
+    if (bio !== undefined && account) await sql`update accounts set bio = ${bio} where id = ${account.id}`;
     if (name !== undefined) {
       await sql`update users set name = ${name} where id = ${user.id}`;
       if (account) await sql`update accounts set name = ${name} where id = ${account.id}`;
@@ -182,13 +206,16 @@ export function accountRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sig
     if (table.rows.some((row) => row.key === key.data.key)) return c.json({ error: "That row already exists." }, 409);
     if (table.rows.length >= MAX_ROWS) return c.json({ error: "This table has reached its row limit." }, 400);
     await sql.begin(async (tx) => {
+      // A removed row of this name comes back with its old values.
       const [saved] = await tx`
         insert into table_rows (table_id, key, position)
         select t.id, ${key.data.key}, coalesce((select max(position) + 1 from table_rows r where r.table_id = t.id), 0)
         from data_tables t join accounts a on a.id = t.account_id where a.handle = ${owner} and t.slug = ${table.slug}
+        on conflict (table_id, key) do update set removed_at = null
         returning id`;
+      const held = new Set((await tx`select distinct column_id from cell_versions where row_id = ${saved!.id}`).map((cell) => cell.column_id as string));
       for (const column of table.columns) {
-        await tx`insert into cell_versions (row_id, column_id, cell) values (${saved!.id}, ${column.id}, ${tx.json(emptyCell())})`;
+        if (!held.has(column.id)) await tx`insert into cell_versions (row_id, column_id, cell) values (${saved!.id}, ${column.id}, ${tx.json(emptyCell())})`;
       }
     });
     await refresh?.();

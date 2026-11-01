@@ -1,12 +1,13 @@
 import type { Hono } from "hono";
 import { z } from "zod";
-import { CREATIONS_PER_MINUTE, createAccount, isOwner, slugOf, type SignedIn } from "./accounts.js";
+import { CREATIONS_PER_MINUTE, bioSchema, createAccount, isOwner, slugOf, type SignedIn } from "./accounts.js";
 import { OFFICIAL_ACCOUNT, type Sql } from "./db.js";
 import type { Mailer } from "./email.js";
 import { rateLimit } from "./rate-limit.js";
 
 const roleSchema = z.enum(["owner", "editor"]);
 const nameBody = z.object({ name: z.string().trim().min(1).max(80) });
+const teamBody = nameBody.extend({ bio: bioSchema.optional() });
 const inviteBody = z.object({ email: z.string().trim().toLowerCase().email().max(254), role: roleSchema.default("editor") });
 
 type Options = { mail?: Mailer; publicUrl: string; refresh?: () => Promise<unknown> };
@@ -36,7 +37,7 @@ export function teamRoutes(app: Hono, sql: Sql, signedIn: SignedIn, { mail, publ
   app.get("/api/teams/:handle", async (c) => {
     const user = await signedIn(c);
     const handle = c.req.param("handle");
-    const [team] = await sql`select id, name from accounts where handle = ${handle} and team`;
+    const [team] = await sql`select id, name, bio from accounts where handle = ${handle} and team`;
     // Someone outside a team gets the same answer as for a team that doesn't exist.
     if (!team || !user?.accounts.includes(handle)) return c.json({ error: "No such team" }, 404);
     const members = await sql`
@@ -44,16 +45,16 @@ export function teamRoutes(app: Hono, sql: Sql, signedIn: SignedIn, { mail, publ
       where m.account_id = ${team.id} order by m.role desc, u.name, u.id`;
     const owner = await isOwner(sql, user.id, handle);
     const invites = owner ? await sql`select id, email, role from team_invites where account_id = ${team.id} order by id` : [];
-    return c.json({ handle, name: team.name, role: owner ? "owner" : "editor", you: user.id, members, invites });
+    return c.json({ handle, name: team.name, bio: team.bio, role: owner ? "owner" : "editor", you: user.id, members, invites });
   });
 
   app.patch("/api/teams/:handle", async (c) => {
     const user = await signedIn(c);
     const handle = c.req.param("handle");
     if (!user || !(await isOwner(sql, user.id, handle))) return c.json({ error: "Only a team's owners can do that." }, 403);
-    const body = nameBody.safeParse(await c.req.json().catch(() => null));
-    if (!body.success) return c.json({ error: "Enter a name of up to 80 characters." }, 400);
-    await sql`update accounts set name = ${body.data.name} where handle = ${handle} and team`;
+    const body = teamBody.safeParse(await c.req.json().catch(() => null));
+    if (!body.success) return c.json({ error: "Enter a name of up to 80 characters and a description of up to 160." }, 400);
+    await sql`update accounts set name = ${body.data.name}, bio = coalesce(${body.data.bio ?? null}, bio) where handle = ${handle} and team`;
     await refresh?.();
     return c.json({ ok: true });
   });

@@ -146,6 +146,13 @@ const migrations = [
   );
   create index table_access_by_email on table_access (email);
   `,
+  `
+  alter table accounts add column bio text not null default '';
+  alter table data_tables add column managed boolean not null default false;
+  alter table table_columns add column removed_at timestamptz;
+  alter table table_rows add column removed_at timestamptz;
+  update data_tables t set managed = true from accounts a where a.id = t.account_id and a.handle = 'skeletable';
+  `,
 ];
 
 /** Run whatever hasn't run yet. The lock keeps two servers starting together from racing. */
@@ -167,9 +174,10 @@ const accountName = (handle: string) => handle.charAt(0).toUpperCase() + handle.
 /**
  * Add any table the database doesn't have. One it has gains the file's new rows, its scope and a
  * newer watch. Its cells only move on for a value in a blank or a value read more recently, each as
- * a new version, so an edit made on the site isn't undone by a deploy.
+ * a new version, so an edit made on the site isn't undone by a deploy. Tables from the library's
+ * files are `managed`: their shape is changed in the file, so the site won't change it for them.
  */
-export async function importTables(sql: Sql, tables: PublishedTable[]) {
+export async function importTables(sql: Sql, tables: PublishedTable[], { managed = false } = {}) {
   await sql.begin(async (tx) => {
     const addRow = async (tableId: string, row: PublishedTable["rows"][number], position: number) => {
       const [saved] = await tx`insert into table_rows (table_id, key, position) values (${tableId}, ${row.key}, ${position}) returning id`;
@@ -185,7 +193,7 @@ export async function importTables(sql: Sql, tables: PublishedTable[]) {
       const [existing] = await tx`select id, watch from data_tables where account_id = ${account!.id} and slug = ${table.slug}`;
       if (existing) {
         if (table.watch && table.watch.ran >= (existing.watch?.ran ?? "")) await tx`update data_tables set watch = ${watch} where id = ${existing.id}`;
-        await tx`update data_tables set scope = ${table.scope} where id = ${existing.id}`;
+        await tx`update data_tables set scope = ${table.scope}, managed = managed or ${managed} where id = ${existing.id}`;
         const saved = await tx`select id, key from table_rows where table_id = ${existing.id}`;
         const current = await tx`
           select distinct on (v.row_id, v.column_id) v.row_id, v.column_id, v.cell
@@ -213,8 +221,8 @@ export async function importTables(sql: Sql, tables: PublishedTable[]) {
         continue;
       }
       const [created] = await tx`
-        insert into data_tables (account_id, slug, topic, title, question, scope, watch, private)
-        values (${account!.id}, ${table.slug}, ${table.topic}, ${table.title}, ${table.question}, ${table.scope}, ${watch}, ${table.private ?? false})
+        insert into data_tables (account_id, slug, topic, title, question, scope, watch, private, managed)
+        values (${account!.id}, ${table.slug}, ${table.topic}, ${table.title}, ${table.question}, ${table.scope}, ${watch}, ${table.private ?? false}, ${managed})
         returning id`;
       for (const [position, column] of table.columns.entries()) {
         await tx`
@@ -229,14 +237,16 @@ export async function importTables(sql: Sql, tables: PublishedTable[]) {
 /** Every table with the newest version of each cell, held to the same checks as a table on disk. */
 export async function readTables(sql: Sql): Promise<PublishedTable[]> {
   const tables = await sql`
-    select t.id, a.handle as owner, a.name as owner_name, a.team, t.slug, t.topic, t.title, t.question, t.scope, t.watch, t.private
+    select t.id, a.handle as owner, a.name as owner_name, a.team, t.slug, t.topic, t.title, t.question, t.scope, t.watch, t.private, t.managed
     from data_tables t join accounts a on a.id = t.account_id
     order by a.handle, t.slug`;
-  const columns = await sql`select * from table_columns order by table_id, position`;
-  const rows = await sql`select * from table_rows order by table_id, position`;
+  // Removed rows and columns stay for the history, out of the table.
+  const columns = await sql`select * from table_columns where removed_at is null order by table_id, position`;
+  const rows = await sql`select * from table_rows where removed_at is null order by table_id, position`;
   const cells = await sql`select distinct on (row_id, column_id) row_id, column_id, cell from cell_versions order by row_id, column_id, id desc`;
 
   return tables.map((table) => {
+    const live = new Set(columns.filter((column) => column.table_id === table.id).map((column) => column.id as string));
     const { problems, table: checked } = validateTable({
       format: 1,
       owner: table.owner,
@@ -252,12 +262,12 @@ export async function readTables(sql: Sql): Promise<PublishedTable[]> {
         .filter((row) => row.table_id === table.id)
         .map((row) => ({
           key: row.key,
-          cells: Object.fromEntries(cells.filter((cell) => cell.row_id === row.id).map((cell): [string, Cell] => [cell.column_id, cell.cell])),
+          cells: Object.fromEntries(cells.filter((cell) => cell.row_id === row.id && live.has(cell.column_id)).map((cell): [string, Cell] => [cell.column_id, cell.cell])),
         })),
     });
     if (!checked || problems.length) throw new Error(`${table.owner}/${table.slug}: ${problems.join("; ")}`);
     // A person's account name can be the name they signed in with, so only a team's goes out with its tables.
-    return { ...checked, ...(table.team && { ownerName: table.owner_name as string }), ...(table.private && { private: true }), ...(table.watch && { watch: watchFileSchema.parse(table.watch) }) };
+    return { ...checked, ...(table.team && { ownerName: table.owner_name as string }), ...(table.private && { private: true }), ...(table.managed && { managed: true }), ...(table.watch && { watch: watchFileSchema.parse(table.watch) }) };
   });
 }
 
@@ -269,7 +279,7 @@ export const connect = (url: string): Sql => postgres(url, { max: 5, onnotice: (
  */
 export async function openLibrary(sql: Sql, dir: string) {
   await migrate(sql);
-  await importTables(sql, await loadTables(dir));
+  await importTables(sql, await loadTables(dir), { managed: true });
   const tables = await readTables(sql);
   const refresh = () => readTables(sql).then((fresh) => tables.splice(0, tables.length, ...fresh));
   setInterval(() => refresh().catch((error) => console.error(`Keeping the last good tables: ${error}`)), REFRESH_MS).unref();

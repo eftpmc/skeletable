@@ -8,6 +8,7 @@ import { accountRoutes, ensureAccount, runsTable } from "./accounts.js";
 import { OFFICIAL_ACCOUNT, type Sql } from "./db.js";
 import { notifyOwners, type Mailer } from "./email.js";
 import type { PublishedTable } from "./library.js";
+import { manageRoutes } from "./manage.js";
 import { createToken, decideProposal, deleteToken, listProposals, listTokens, submitProposal, tableHistory } from "./proposals.js";
 import { rateLimit } from "./rate-limit.js";
 import { teamRoutes } from "./teams.js";
@@ -210,6 +211,7 @@ export function authRoutes({ sql, clientId, clientSecret, publicUrl, ownerEmail,
   accountRoutes(app, sql, tables, signedIn, refresh);
   teamRoutes(app, sql, signedIn, { mail, publicUrl, refresh });
   accessRoutes(app, sql, signedIn, { tables, mail, publicUrl, refresh });
+  manageRoutes(app, sql, tables, signedIn, refresh);
 
   return app;
 }

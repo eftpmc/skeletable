@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { isFound, normalize, validateTable, watchFileSchema, watchKey, type Cell, type Table, type WatchFile } from "@skeleton/tables/format";
 
 /** A table as served, with what the last watch saw, if it's been watched, and its team's name if a team runs it. A private one must only go out through the rule in access.ts. */
-export type PublishedTable = Table & { watch?: WatchFile; ownerName?: string; private?: boolean };
+export type PublishedTable = Table & { watch?: WatchFile; ownerName?: string; private?: boolean; managed?: boolean };
 
 /** Every published table, read once at start. A table that doesn't pass its checks stops the server rather than going out unchecked. */
 export async function loadTables(dir: string): Promise<PublishedTable[]> {
