@@ -35,7 +35,7 @@ function CopyBlock({ label, text, rows }: { label: string; text: string; rows: n
 }
 
 /** The one place to hand a table to the person's own agent. It does the reading, and a person keeps the final say. */
-export function AgentBuildButton({ table }: { table: { owner: string; slug: string; draft?: boolean; columns: unknown[] } }) {
+export function AgentBuildButton({ table, label = "Agent", size = "sm" }: { table: { owner: string; slug: string; draft?: boolean; columns: unknown[] }; label?: string; size?: "sm" | "default" | "lg" }) {
   const [token, setToken] = useState<string>();
   const [error, setError] = useState<string>();
   const [sending, setSending] = useState(false);
@@ -56,7 +56,7 @@ export function AgentBuildButton({ table }: { table: { owner: string; slug: stri
   const command = `claude mcp add --transport http skeletable ${location.origin}/mcp --header "Authorization: Bearer ${token ?? "YOUR_TOKEN"}"`;
   return (
     <Dialog>
-      <DialogTrigger asChild><Button type="button" variant="outline" size="sm"><Bot />Agent</Button></DialogTrigger>
+      <DialogTrigger asChild><Button type="button" variant="outline" size={size}><Bot />{label}</Button></DialogTrigger>
       <DialogContent className="sm:max-w-xl">
         <DialogTitle>Edit this table with your agent</DialogTitle>
         <DialogDescription>{table.draft ? "Your own agent does the reading. Each value is tested before it's saved, and this sheet fills in as it works. Nothing goes public until you publish." : "Your own agent does the reading. Each change it finds comes to you under Proposals, with its proof already tested, and nothing changes until you accept it."}</DialogDescription>

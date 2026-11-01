@@ -638,13 +638,13 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
     <div className="flex h-svh flex-col duration-200 animate-in fade-in zoom-in-[0.995] motion-reduce:animate-none">
       <AppBar
         workspace
-        crumbs={[{ label: data ? ownerLabel(data) : accountName(owner), href: `/${owner}` }, { label: data?.title ?? "Table", href: `/${owner}/${slug}`, ...(canRun && data && { editor: <TitleInput table={data} onChanged={retry} /> }) }]}
-        phoneTitle={data?.title}
+        crumbs={[{ label: data ? ownerLabel(data) : accountName(owner), href: `/${owner}` }, { label: data?.title ?? "Table", href: `/${owner}/${slug}`, ...(canRun && data && { editor: <TitleInput table={data} onChanged={retry} /> }) }, { label: "Sheet" }]}
+        phoneTitle="Sheet"
         actions={
           <>
             {pendingSaves > 0 && <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><Spinner label="Saving changes" />Saving</span>}
             {data?.private && <Lock aria-label="Private" className="size-4 text-muted-foreground" />}
-            {data && user?.accounts.includes(data.owner) && <AgentBuildButton table={data} />}
+            {data && user?.accounts.includes(data.owner) && <AgentBuildButton table={data} label="Use agent" size="default" />}
             {data && <SheetOptions table={data} downloadTable={shown} canRun={canRun} onRows={(names) => void saveGrid({ addColumns: [], addRows: names, cells: [] })} onShortcuts={() => setHelping(true)} />}
             {data && !data.draft && <ShareButton table={data} path={`${path}${viewSearch(view, selectedId)}`} size="sm" onChanged={retry} />}
           </>

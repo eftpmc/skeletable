@@ -72,7 +72,7 @@ export function TableSettings({ table, onChanged }: Props) {
     return <PageHeader title="Table settings" description="Only the people running this table can change it." />;
   }
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-3xl">
       <PageHeader title="Table settings" />
       <div className="space-y-6">
         {table.managed ? (
