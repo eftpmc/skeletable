@@ -1,4 +1,4 @@
-import { ArrowRight, Bot, Quote, SearchX } from "lucide-react";
+import { ArrowRight, Bot, GitPullRequestArrow, Quote } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { AgentButton } from "@/components/Chrome";
@@ -16,9 +16,9 @@ const demoColumns = ["statute", "notify_days", "notify_standard", "ag_notice"];
 const demoKey = ["confirmed", "once", "none", "gap"] satisfies CellStatus[];
 
 const points = [
-  { icon: Quote, title: "Proof in every cell", body: "Select a value to read the exact words that state it, and open the source." },
-  { icon: SearchX, title: "Honest gaps", body: "When no source states a value, the cell says so and shows where we looked." },
-  { icon: Bot, title: "Ready for agents", body: "Connect any agent over MCP, so it answers from sourced facts." },
+  { icon: Quote, title: "Proof, not just answers", body: "Open any value to see its exact quote, source, checks, and what the source did not state." },
+  { icon: GitPullRequestArrow, title: "Changes stay reviewable", body: "Send related corrections together with their proof. Owners accept them together, and every edit stays in history." },
+  { icon: Bot, title: "People and agents use the same facts", body: "Read public tables over MCP, or let your own agent build and check a private draft." },
 ];
 
 /** A real table to try on the page: select a cell and its proof opens. */
@@ -31,7 +31,7 @@ function Demo() {
   return (
     <>
       <p className="mb-3 text-center text-sm text-muted-foreground">
-        Guides say New Jersey gives businesses 30 days to report a breach. <Link href="/blog/new-jersey-30-day-deadline" className="text-foreground underline underline-offset-2">Its law gives no number.</Link>
+        Select a value to inspect its proof. If it needs changing, send a sourced proposal for the owner to review—nothing changes silently.
       </p>
       <div className="flex flex-col overflow-hidden rounded-xl border bg-background shadow-lg">
         <FormulaBar selected={selectedCell(shown, selectedId)} />
@@ -57,12 +57,12 @@ export function Landing() {
     <Page>
       <main className="mx-auto max-w-5xl px-4 pb-16 sm:px-6">
         <section className="mx-auto max-w-2xl pt-14 pb-10 text-center sm:pt-20">
-          <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl">Every value shows its source</h1>
-          <p className="mt-4 text-lg text-muted-foreground">A public library of tables, where each cell links to the exact words that prove it.</p>
+          <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl">Facts you can trace and improve</h1>
+          <p className="mt-4 text-lg text-muted-foreground">Source-backed tables for people and agents. Every value has proof, a review path, and a history.</p>
           <div className="mt-7 flex items-center justify-center gap-2">
             <Button size="lg" asChild>
               <Link href="/explore">
-                Browse tables
+                Browse public tables
                 <ArrowRight />
               </Link>
             </Button>
