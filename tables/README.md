@@ -58,3 +58,4 @@ A deploy gives a table the live server already has its new rows and scope. A cel
 | 9 | Entrance fees at the most visited US national parks | Travel | Built, read once |
 | 10 | EVs on sale in the US: EPA range | Cars | Deferred |
 | 11 | State AI laws: enacted, with proof | Law | First 22 laws built, 159 values blind read, more laws to add |
+| 12 | AI API data terms | AI | 16 offerings built, 108 values blind read |

@@ -1,0 +1,1340 @@
+{
+  "format": 1,
+  "owner": "skeletable",
+  "slug": "ai-provider-data-terms",
+  "topic": "AI",
+  "title": "AI API data terms: training, retention and zero retention",
+  "question": "What does each AI provider say happens to data sent to its commercial API: is it used for training, how long is it kept, and can zero retention be had?",
+  "scope": "Commercial API offerings from major AI model providers and hosts, with a separate row where a provider has routes with distinct terms, such as free and paid tiers. Records what each provider's own pages state, not what happens in practice. Consumer apps are left out. A blank means we couldn't find it in the provider's own pages, not that the answer is no. A cell holds one passage, so a provider may have more exceptions than the one shown: open the source. Each row reflects the page as read on the date shown. Not legal advice.",
+  "columns": [
+    {
+      "id": "provider",
+      "label": "Provider",
+      "type": "text",
+      "rule": "The company offering the API, as named on its own page."
+    },
+    {
+      "id": "route",
+      "label": "Offering",
+      "type": "text",
+      "rule": "The API, tier or platform the row covers, in the provider's words."
+    },
+    {
+      "id": "trains_default",
+      "label": "Trains on API data by default",
+      "type": "boolean",
+      "rule": "True or false only where the text plainly says what happens to this offering's API data with no opt-in or opt-out by the customer. An opt-out with no stated default is left blank. Where pages differ: legal or privacy page first, then help or trust pages, then developer docs, with the other in conflicts."
+    },
+    {
+      "id": "retention",
+      "label": "Default retention",
+      "type": "text",
+      "rule": "How long prompts and outputs are kept by default, in the provider's words. Where pages differ: legal or privacy page first, then help or trust pages, then developer docs, with the other in conflicts. A page that's only less specific isn't a conflict: the more specific statement is the value."
+    },
+    {
+      "id": "retention_exceptions",
+      "label": "Exceptions",
+      "type": "text",
+      "rule": "The main case with different retention, in the provider's words: first a model carved out of the general promise, then a feature, then a case such as flagged content. Pages rank as for Default retention; between pages of equal rank, the one naming the models. One passage only, so others may exist."
+    },
+    {
+      "id": "zero_retention",
+      "label": "Zero retention offered",
+      "type": "boolean",
+      "rule": "True only where the provider plainly offers zero data retention by that name for this offering; false only where it plainly excludes it. A similar control under another name is left blank here and described in How to get it."
+    },
+    {
+      "id": "zero_retention_how",
+      "label": "How to get it",
+      "type": "text",
+      "rule": "What the provider says is needed for zero retention. Where it has no offer by that name, its nearest named control or pointer, in its own words. Where pages differ: legal or privacy page first, then help or trust pages, then developer docs, with the other in conflicts."
+    },
+    {
+      "id": "hipaa_baa",
+      "label": "BAA available",
+      "type": "boolean",
+      "rule": "True where the provider says it signs or offers a HIPAA Business Associate Agreement, or sets terms for use under one, for this offering. A general cloud BAA that the page doesn't tie to this offering, or an invitation to ask, is left blank."
+    },
+    {
+      "id": "region_note",
+      "label": "Data location",
+      "type": "text",
+      "rule": "Where the provider states data is processed or stored, in its words. Where pages differ: legal or privacy page first, then help or trust pages, then developer docs, with the other in conflicts."
+    }
+  ],
+  "rows": [
+    {
+      "key": "OpenAI API",
+      "cells": {
+        "provider": {
+          "value": "OpenAI",
+          "source": "https://developers.openai.com/api/docs/guides/your-data",
+          "kind": "first-hand",
+          "quote": "data sent to the OpenAI API is not used to train or improve OpenAI models",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "route": {
+          "value": "OpenAI API",
+          "source": "https://developers.openai.com/api/docs/guides/your-data",
+          "kind": "first-hand",
+          "quote": "data sent to the OpenAI API is not used to train or improve OpenAI models",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "trains_default": {
+          "value": false,
+          "source": "https://developers.openai.com/api/docs/guides/your-data",
+          "kind": "first-hand",
+          "quote": "As of March 1, 2023, data sent to the OpenAI API is not used to train or improve OpenAI models (unless you explicitly opt in to share data with us).",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "retention": {
+          "value": "Abuse monitoring logs are generated for all API feature usage and retained for up to 30 days",
+          "source": "https://developers.openai.com/api/docs/guides/your-data",
+          "kind": "first-hand",
+          "quote": "By default, abuse monitoring logs are generated for all API feature usage and retained for up to 30 days, unless longer retention is required by law, or is reasonably necessary to protect our services or any third party from harm.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "retention_exceptions": {
+          "value": "We reserve the right to make models ineligible for zero data retention or modified abuse monitoring for specific customers",
+          "source": "https://developers.openai.com/api/docs/guides/your-data",
+          "kind": "first-hand",
+          "quote": "For customers approved for Zero Data Retention or Modified Abuse Monitoring, we reserve the right to make models ineligible for Zero Data Retention or Modified Abuse Monitoring for specific customers, as notified in advance to the impacted customers in writing.",
+          "read": "2026-11-01"
+        },
+        "zero_retention": {
+          "value": true,
+          "source": "https://developers.openai.com/api/docs/guides/your-data",
+          "kind": "first-hand",
+          "quote": "Eligible customers may have their customer content excluded from these abuse monitoring logs, subject to the limitations below, by getting approved for the Zero Data Retention or Modified Abuse Monitoring controls.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "zero_retention_how": {
+          "value": "Prior approval by OpenAI and acceptance of additional requirements",
+          "source": "https://developers.openai.com/api/docs/guides/your-data",
+          "kind": "first-hand",
+          "quote": "Currently, these controls are subject to prior approval by OpenAI and acceptance of additional requirements.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "hipaa_baa": {
+          "value": true,
+          "source": "https://developers.openai.com/api/docs/guides/your-data",
+          "kind": "first-hand",
+          "quote": "For customers who have executed an OpenAI Business Associate and Healthcare Addendum, once your org ID is provisioned with Safety Retention, BAA-eligible endpoints can be used for processing PHI, even if data is retained.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "region_note": {
+          "value": "Data residency controls are a project configuration option; contact our sales team to see if you're eligible",
+          "source": "https://developers.openai.com/api/docs/guides/your-data",
+          "kind": "first-hand",
+          "quote": "Data residency controls are a project configuration option that allow you to configure the location of infrastructure OpenAI uses to provide services. Contact our sales team to see if you’re eligible for using data residency controls.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        }
+      }
+    },
+    {
+      "key": "Anthropic Claude API",
+      "cells": {
+        "provider": {
+          "value": "Anthropic",
+          "source": "https://platform.claude.com/docs/en/manage-claude/api-and-data-retention",
+          "kind": "first-hand",
+          "quote": "This page covers the Claude API (api.anthropic.com), Claude Platform on AWS, Claude in Microsoft Foundry, and Claude Models on Google Cloud (Anthropic managed), where Anthropic is the data processor.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "route": {
+          "value": "Claude API",
+          "source": "https://platform.claude.com/docs/en/manage-claude/api-and-data-retention",
+          "kind": "first-hand",
+          "quote": "This page covers the Claude API (api.anthropic.com), Claude Platform on AWS, Claude in Microsoft Foundry, and Claude Models on Google Cloud (Anthropic managed), where Anthropic is the data processor.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "trains_default": {
+          "value": false,
+          "source": "https://privacy.claude.com/en/articles/7996868-is-my-data-used-for-model-training",
+          "kind": "first-hand",
+          "quote": "By default, we will not use your inputs or outputs from our commercial products (e.g. Claude for Work, Anthropic API, Claude Gov, etc.) to train our models.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "retention": {
+          "value": "Automatically delete inputs and outputs on our backend within 30 days of receipt or generation",
+          "source": "https://privacy.claude.com/en/articles/7996866-how-long-do-you-store-my-organization-s-data",
+          "kind": "first-hand",
+          "quote": "For Anthropic API users, we automatically delete inputs and outputs on our backend within 30 days of receipt or generation, except:",
+          "read": "2026-11-01",
+          "conflicts": [
+            {
+              "value": "Conversation content is not retained by default; the exception is covered models, which require 30-day retention",
+              "source": "https://platform.claude.com/docs/en/manage-claude/api-and-data-retention",
+              "kind": "first-hand",
+              "quote": "Conversation content (your prompts and Claude’s outputs) is not retained by default; the exception is Covered Models, which require 30-day retention.",
+              "read": "2026-11-01"
+            }
+          ],
+          "confirmed": "blind-read"
+        },
+        "retention_exceptions": {
+          "value": "Claude Fable 5.1, Claude Mythos 5.1, Claude Fable 5, and Claude Mythos 5: these models require 30-day data retention and are not available under ZDR unless expressly authorized by Anthropic",
+          "source": "https://platform.claude.com/docs/en/manage-claude/api-and-data-retention",
+          "kind": "first-hand",
+          "quote": "Claude Fable 5.1, Claude Mythos 5.1, Claude Fable 5, and Claude Mythos 5: These models require 30-day data retention and are not available under ZDR unless expressly authorized by Anthropic.",
+          "read": "2026-11-01",
+          "conflicts": [
+            {
+              "value": "Retained for at least 30 days; zero data retention is not available where covered models can be accessed",
+              "source": "https://support.claude.com/en/articles/15425695-covered-models",
+              "kind": "first-hand",
+              "quote": "Prompts and model completions are retained for at least 30 days and then automatically deleted, unless they are subject to a safety investigation or we are legally required to maintain them. Accordingly, zero data retention is not available in workspaces, Claude Enterprise organizations, or third-party platforms (e.g., Azure Subscriptions) where Covered Models can be accessed.",
+              "read": "2026-11-01"
+            }
+          ],
+          "confirmed": "blind-read"
+        },
+        "zero_retention": {
+          "value": true,
+          "source": "https://privacy.claude.com/en/articles/8956058-i-have-a-zero-data-retention-agreement-with-anthropic-what-products-does-it-apply-to",
+          "kind": "first-hand",
+          "quote": "Some Claude Platform (Claude API) and Claude Code for Enterprise customers, subject to Anthropic’s approval, may have arrangements under which Anthropic does not store their inputs or outputs except where needed to comply with law or combat misuse or harm.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "zero_retention_how": {
+          "value": "Reach out to our sales team; requests are reviewed and applied on a per-organization basis",
+          "source": "https://privacy.claude.com/en/articles/8956058-i-have-a-zero-data-retention-agreement-with-anthropic-what-products-does-it-apply-to",
+          "kind": "first-hand",
+          "quote": "please reach out to our Sales Team. Note that zero data retention requests are reviewed and applied on a per-organization basis",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "hipaa_baa": {
+          "value": true,
+          "source": "https://privacy.claude.com/en/articles/8114513-business-associate-agreements-baa-for-commercial-customers",
+          "kind": "first-hand",
+          "quote": "Anthropic provides a BAA covering our HIPAA-ready services, such as use of our first-party API, Claude in Microsoft Foundry, or Enterprise plans.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "region_note": {
+          "value": "Inference geo: only \"us\" and \"global\" are available. Workspace geo: only \"us\" is currently available",
+          "source": "https://platform.claude.com/docs/en/build-with-claude/data-residency",
+          "kind": "first-hand",
+          "quote": "Inference geo: Only \"us\" and \"global\" are available. Workspace geo: Only \"us\" is currently available.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        }
+      }
+    },
+    {
+      "key": "Google Gemini API (paid services)",
+      "cells": {
+        "provider": {
+          "value": "Google",
+          "source": "https://ai.google.dev/gemini-api/terms",
+          "kind": "first-hand",
+          "quote": "When you use Paid Services, including, for example, the paid quota of the Gemini API, Google doesn't use your prompts",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "route": {
+          "value": "Paid quota of the Gemini API",
+          "source": "https://ai.google.dev/gemini-api/terms",
+          "kind": "first-hand",
+          "quote": "When you use Paid Services, including, for example, the paid quota of the Gemini API, Google doesn't use your prompts",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "trains_default": {
+          "value": false,
+          "source": "https://ai.google.dev/gemini-api/terms",
+          "kind": "first-hand",
+          "quote": "When you use Paid Services, including, for example, the paid quota of the Gemini API, Google doesn't use your prompts (including associated system instructions, cached content, and files such as images, videos, or documents) or responses to improve our products",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "retention": {
+          "value": "Fifty-five (55) days for the purposes of detecting and preventing violations of the prohibited use policy",
+          "source": "https://ai.google.dev/gemini-api/docs/usage-policies",
+          "kind": "first-hand",
+          "quote": "Google retains the following data for fifty-five (55) days for the purposes of detecting and preventing violations of the Prohibited Use Policy",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "retention_exceptions": {
+          "value": "Grounding with Google Search: stores prompts, contextual information, and generated output for thirty (30) days; no way to disable",
+          "source": "https://ai.google.dev/gemini-api/docs/zdr",
+          "kind": "first-hand",
+          "quote": "Google stores prompts, contextual information, and generated output for thirty (30) days for the purposes of creating grounded results and search suggestions. This stored information may be used for debugging and testing of systems that support grounding. There is no way to disable the storage of this information if you use Grounding with Google Search.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "zero_retention": {
+          "missing": true,
+          "checked": [
+            "https://ai.google.dev/gemini-api/docs/zdr",
+            "https://ai.google.dev/gemini-api/terms",
+            "https://ai.google.dev/gemini-api/docs/usage-policies"
+          ],
+          "read": "2026-11-01"
+        },
+        "zero_retention_how": {
+          "value": "If your workload requires guaranteed zero data retention or enterprise data processing agreements, use Vertex AI",
+          "source": "https://ai.google.dev/gemini-api/docs/zdr",
+          "kind": "first-hand",
+          "quote": "If your workload requires guaranteed zero data retention or enterprise data processing agreements, use Vertex AI.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "hipaa_baa": {
+          "missing": true,
+          "checked": [
+            "https://ai.google.dev/gemini-api/terms",
+            "https://ai.google.dev/gemini-api/docs/zdr",
+            "https://cloud.google.com/security/compliance/hipaa"
+          ],
+          "read": "2026-11-01"
+        },
+        "region_note": {
+          "value": "May be stored transiently or cached in any country in which Google or its agents maintain facilities",
+          "source": "https://ai.google.dev/gemini-api/terms",
+          "kind": "first-hand",
+          "quote": "This data may be stored transiently or cached in any country in which Google or its agents maintain facilities.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        }
+      }
+    },
+    {
+      "key": "Google Gemini API (unpaid services)",
+      "cells": {
+        "provider": {
+          "value": "Google",
+          "source": "https://ai.google.dev/gemini-api/terms",
+          "kind": "first-hand",
+          "quote": "Any Services that are offered free of charge like direct interactions with Google AI Studio or unpaid quota in Gemini API are unpaid Services",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "route": {
+          "value": "Unpaid quota in Gemini API",
+          "source": "https://ai.google.dev/gemini-api/terms",
+          "kind": "first-hand",
+          "quote": "Any Services that are offered free of charge like direct interactions with Google AI Studio or unpaid quota in Gemini API are unpaid Services",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "trains_default": {
+          "value": true,
+          "source": "https://ai.google.dev/gemini-api/terms",
+          "kind": "first-hand",
+          "quote": "When you use Unpaid Services, including, for example, Google AI Studio and the unpaid quota on Gemini API, Google uses the content you submit to the Services and any generated responses to provide, improve, and develop Google products and services and machine learning technologies",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "retention": {
+          "value": "Fifty-five (55) days for the purposes of detecting and preventing violations of the prohibited use policy",
+          "source": "https://ai.google.dev/gemini-api/docs/usage-policies",
+          "kind": "first-hand",
+          "quote": "Google retains the following data for fifty-five (55) days for the purposes of detecting and preventing violations of the Prohibited Use Policy",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "retention_exceptions": {
+          "value": "In the European Economic Area, Switzerland, or the United Kingdom, the paid services terms apply to all services, including unpaid quota in the Gemini API",
+          "source": "https://ai.google.dev/gemini-api/terms",
+          "kind": "first-hand",
+          "quote": "If you're in the European Economic Area, Switzerland, or the United Kingdom, the terms under \"How Google uses Your Data\" in \"Paid Services\" apply to all Services, including Google AI Studio and unpaid quota in the Gemini API, even though they are offered free of charge.",
+          "read": "2026-11-01"
+        },
+        "zero_retention": {
+          "missing": true,
+          "checked": [
+            "https://ai.google.dev/gemini-api/docs/zdr",
+            "https://ai.google.dev/gemini-api/terms",
+            "https://ai.google.dev/gemini-api/docs/usage-policies"
+          ],
+          "read": "2026-11-01"
+        },
+        "zero_retention_how": {
+          "missing": true,
+          "checked": [
+            "https://ai.google.dev/gemini-api/docs/zdr",
+            "https://ai.google.dev/gemini-api/terms"
+          ],
+          "read": "2026-11-01"
+        },
+        "hipaa_baa": {
+          "missing": true,
+          "checked": [
+            "https://ai.google.dev/gemini-api/terms",
+            "https://ai.google.dev/gemini-api/docs/zdr",
+            "https://cloud.google.com/security/compliance/hipaa"
+          ],
+          "read": "2026-11-01"
+        },
+        "region_note": {
+          "missing": true,
+          "checked": [
+            "https://ai.google.dev/gemini-api/terms",
+            "https://ai.google.dev/gemini-api/docs/usage-policies"
+          ],
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "Google Vertex AI (Gemini Enterprise Agent Platform)",
+      "cells": {
+        "provider": {
+          "value": "Google",
+          "source": "https://docs.cloud.google.com/vertex-ai/generative-ai/docs/data-governance",
+          "kind": "first-hand",
+          "quote": "Google won't use your data to train or fine-tune any AI/ML models without your prior permission or instruction. This applies to all managed models on Gemini Enterprise Agent Platform, including GA and pre-GA models.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "route": {
+          "value": "Gemini Enterprise Agent Platform",
+          "source": "https://docs.cloud.google.com/vertex-ai/generative-ai/docs/data-governance",
+          "kind": "first-hand",
+          "quote": "Google won't use your data to train or fine-tune any AI/ML models without your prior permission or instruction. This applies to all managed models on Gemini Enterprise Agent Platform, including GA and pre-GA models.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "trains_default": {
+          "value": false,
+          "source": "https://docs.cloud.google.com/vertex-ai/generative-ai/docs/data-governance",
+          "kind": "first-hand",
+          "quote": "Google won't use your data to train or fine-tune any AI/ML models without your prior permission or instruction. This applies to all managed models on Gemini Enterprise Agent Platform, including GA and pre-GA models.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "retention": {
+          "value": "Customer data is retained for limited periods of time in the following scenarios and conditions",
+          "source": "https://docs.cloud.google.com/vertex-ai/generative-ai/docs/data-governance",
+          "kind": "first-hand",
+          "quote": "Customer data is retained in Gemini Enterprise Agent Platform for Models as a Service (MaaS) for limited periods of time in the following scenarios and conditions.",
+          "read": "2026-11-01"
+        },
+        "retention_exceptions": {
+          "value": "Models designated as \"advanced AI\": all prompts and responses will be logged and securely stored for up to 30 days",
+          "source": "https://docs.cloud.google.com/vertex-ai/generative-ai/docs/learn/abuse-monitoring",
+          "kind": "first-hand",
+          "quote": "Google Cloud has implemented a more rigorous abuse monitoring system for models designated as \"Advanced AI\". Prompt and response logging: All prompts and responses will be logged and securely stored for up to 30 days for the sole purpose of monitoring for abuse.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "zero_retention": {
+          "value": true,
+          "source": "https://docs.cloud.google.com/vertex-ai/generative-ai/docs/data-governance",
+          "kind": "first-hand",
+          "quote": "To achieve zero data retention, customers must take specific actions within each of these areas:",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "zero_retention_how": {
+          "value": "Customers must take specific actions within each of these areas",
+          "source": "https://docs.cloud.google.com/vertex-ai/generative-ai/docs/data-governance",
+          "kind": "first-hand",
+          "quote": "To achieve zero data retention, customers must take specific actions within each of these areas:",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "hipaa_baa": {
+          "value": true,
+          "source": "https://cloud.google.com/security/compliance/hipaa",
+          "kind": "first-hand",
+          "quote": "Gemini Enterprise Gemini Enterprise Agent Platform Gemini Enterprise for Customer Experience",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "region_note": {
+          "value": "Data stored at rest in the customer selected location remains at rest in that location. Requests submitted to a global endpoint may be processed in any Google Cloud location around the world",
+          "source": "https://docs.cloud.google.com/vertex-ai/generative-ai/docs/learn/data-residency",
+          "kind": "first-hand",
+          "quote": "Data stored at rest in the customer selected location remains at rest in that location, independent of the Gemini Enterprise Agent Platform endpoint called by that customer's request. Global endpoints are listed on the Deployments and endpoints page. Requests submitted to a global endpoint may be processed in any Google Cloud location around the world",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        }
+      }
+    },
+    {
+      "key": "Azure OpenAI / Foundry Models sold by Azure",
+      "cells": {
+        "provider": {
+          "value": "Microsoft Azure",
+          "source": "https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/openai/data-privacy",
+          "kind": "first-hand",
+          "quote": "Foundry is an Azure service; Microsoft hosts the Models sold by Azure in Microsoft's Azure environment",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "route": {
+          "value": "Foundry Models sold by Azure",
+          "source": "https://learn.microsoft.com/en-us/azure/ai-foundry/openai/concepts/abuse-monitoring",
+          "kind": "first-hand",
+          "quote": "Foundry Models sold by Azure detect and mitigate instances of recurring content and/or behaviors",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "trains_default": {
+          "value": false,
+          "source": "https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/openai/data-privacy",
+          "kind": "first-hand",
+          "quote": "are NOT used to train any generative AI foundation models without your permission or instruction.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "retention": {
+          "missing": true,
+          "checked": [
+            "https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/openai/data-privacy",
+            "https://learn.microsoft.com/en-us/azure/ai-foundry/openai/concepts/abuse-monitoring",
+            "https://learn.microsoft.com/en-us/legal/cognitive-services/openai/limited-access"
+          ],
+          "read": "2026-11-01"
+        },
+        "retention_exceptions": {
+          "value": "Azure preview features, including models sold by Azure in preview, may employ different privacy practices, including with respect to abuse monitoring",
+          "source": "https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/openai/data-privacy",
+          "kind": "first-hand",
+          "quote": "Azure Preview features, including Models sold by Azure in preview, may employ different privacy practices, including with respect to abuse monitoring.",
+          "read": "2026-11-01"
+        },
+        "zero_retention": {
+          "missing": true,
+          "checked": [
+            "https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/openai/data-privacy",
+            "https://learn.microsoft.com/en-us/azure/ai-foundry/openai/concepts/abuse-monitoring",
+            "https://learn.microsoft.com/en-us/legal/cognitive-services/openai/limited-access"
+          ],
+          "read": "2026-11-01"
+        },
+        "zero_retention_how": {
+          "value": "Customers who meet additional limited access eligibility criteria apply to modify abuse monitoring by completing this form; some advanced models may have more stringent criteria",
+          "source": "https://learn.microsoft.com/en-us/azure/ai-foundry/openai/concepts/abuse-monitoring",
+          "kind": "first-hand",
+          "quote": "Microsoft allows customers who meet additional Limited Access eligibility criteria to apply to modify abuse monitoring by completing this form. Some advanced Models sold by Azure may have more stringent criteria for turning off abuse monitoring.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "hipaa_baa": {
+          "missing": true,
+          "checked": [
+            "https://learn.microsoft.com/en-us/azure/compliance/offerings/offering-hipaa-us",
+            "https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/openai/data-privacy"
+          ],
+          "read": "2026-11-01"
+        },
+        "region_note": {
+          "value": "Processed within the customer-specified geography (unless you are using a global or datazone deployment type)",
+          "source": "https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/openai/data-privacy",
+          "kind": "first-hand",
+          "quote": "Prompts and responses are processed within the customer-specified geography (unless you are using a Global or DataZone deployment type), but may be processed between regions within the geography for operational purposes (including performance and capacity management).",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        }
+      }
+    },
+    {
+      "key": "Amazon Bedrock",
+      "cells": {
+        "provider": {
+          "value": "Amazon",
+          "source": "https://aws.amazon.com/bedrock/faqs/",
+          "kind": "first-hand",
+          "quote": "AWS and the third-party model providers will not use any inputs to or outputs from Amazon Bedrock to train Amazon Nova, Amazon Titan, or any third-party models.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "route": {
+          "value": "Amazon Bedrock",
+          "source": "https://aws.amazon.com/bedrock/faqs/",
+          "kind": "first-hand",
+          "quote": "AWS and the third-party model providers will not use any inputs to or outputs from Amazon Bedrock to train Amazon Nova, Amazon Titan, or any third-party models.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "trains_default": {
+          "value": false,
+          "source": "https://aws.amazon.com/bedrock/faqs/",
+          "kind": "first-hand",
+          "quote": "AWS and the third-party model providers will not use any inputs to or outputs from Amazon Bedrock to train Amazon Nova, Amazon Titan, or any third-party models.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "retention": {
+          "value": "Actual retention depends on the model - consult the model's terms for specifics",
+          "source": "https://docs.aws.amazon.com/bedrock/latest/userguide/data-retention.html",
+          "kind": "first-hand",
+          "quote": "Default means the data retention policy of the model applies. There is no change to previous model retention behavior; if ZDR applied previously, then ZDR still applies. Actual retention depends on the model — consult the model's terms for specifics.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "retention_exceptions": {
+          "value": "For Anthropic Claude Fable 5 and Claude Fable 5.1, all traffic will be retained for up to 30 days for automated offline abuse detection",
+          "source": "https://docs.aws.amazon.com/bedrock/latest/userguide/abuse-detection.html",
+          "kind": "first-hand",
+          "quote": "For Anthropic Claude Fable 5 and Claude Fable 5.1, all traffic will be retained for up to 30 days for automated offline abuse detection.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "zero_retention": {
+          "value": true,
+          "source": "https://docs.aws.amazon.com/bedrock/latest/userguide/data-retention.html",
+          "kind": "first-hand",
+          "quote": "none Zero data retention. No request or response data is written to durable storage by AWS or shared with the model provider.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "zero_retention_how": {
+          "value": "Set data_retention_mode to none",
+          "source": "https://docs.aws.amazon.com/bedrock/latest/userguide/data-retention.html",
+          "kind": "first-hand",
+          "quote": "If you require guaranteed zero retention, set data_retention_mode to none.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "hipaa_baa": {
+          "missing": true,
+          "checked": [
+            "https://aws.amazon.com/compliance/hipaa-compliance/",
+            "https://aws.amazon.com/bedrock/faqs/",
+            "https://aws.amazon.com/bedrock/security-compliance/",
+            "https://docs.aws.amazon.com/bedrock/latest/userguide/compliance-validation.html"
+          ],
+          "read": "2026-11-01"
+        },
+        "region_note": {
+          "value": "Encrypted and stored at rest in the AWS Region where you are using Amazon Bedrock",
+          "source": "https://aws.amazon.com/bedrock/faqs/",
+          "kind": "first-hand",
+          "quote": "Any customer content processed by Amazon Bedrock is encrypted and stored at rest in the AWS Region where you are using Amazon Bedrock.",
+          "read": "2026-11-01",
+          "conflicts": [
+            {
+              "value": "If cross-region inference is enabled for these models, retained inputs and outputs are stored in destination regions",
+              "source": "https://docs.aws.amazon.com/bedrock/latest/userguide/abuse-detection.html",
+              "kind": "first-hand",
+              "quote": "If cross-region inference is enabled for these models, retained inputs and outputs are stored in destination regions (i.e., the region where your inference request is processed).",
+              "read": "2026-11-01"
+            }
+          ],
+          "confirmed": "blind-read"
+        }
+      }
+    },
+    {
+      "key": "Mistral Studio (free mode)",
+      "cells": {
+        "provider": {
+          "value": "Mistral",
+          "source": "https://help.mistral.ai/en/articles/347617-do-you-use-my-user-data-to-train-your-artificial-intelligence-models",
+          "kind": "first-hand",
+          "quote": "Controls on Mistral Studio Free mode As stated during subscription, we may use your data (input and output) to train our artificial intelligence models.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "route": {
+          "value": "Mistral Studio free mode",
+          "source": "https://help.mistral.ai/en/articles/347617-do-you-use-my-user-data-to-train-your-artificial-intelligence-models",
+          "kind": "first-hand",
+          "quote": "Controls on Mistral Studio Free mode As stated during subscription, we may use your data (input and output) to train our artificial intelligence models.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "trains_default": {
+          "value": true,
+          "source": "https://help.mistral.ai/en/articles/347617-do-you-use-my-user-data-to-train-your-artificial-intelligence-models",
+          "kind": "first-hand",
+          "quote": "Controls on Mistral Studio Free mode As stated during subscription, we may use your data (input and output) to train our artificial intelligence models.",
+          "read": "2026-11-01"
+        },
+        "retention": {
+          "value": "For the period necessary to generate the output and then for thirty (30) rolling days to monitor abuse",
+          "source": "https://legal.mistral.ai/terms/privacy-policy/",
+          "kind": "first-hand",
+          "quote": "Data we use to provide our APIs to you: Except for specific APIs, we keep your Input and Output for the period necessary to generate the Output and then for thirty (30) rolling days to monitor abuse (unless zero data retention is activated).",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "retention_exceptions": {
+          "value": "If you use our Agents API, we keep your input and output until you terminate your account",
+          "source": "https://legal.mistral.ai/terms/privacy-policy/",
+          "kind": "first-hand",
+          "quote": "If you use our Agents API, we keep your Input and Output until you terminate your account.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "zero_retention": {
+          "value": false,
+          "source": "https://help.mistral.ai/en/articles/347612-can-i-activate-zero-data-retention-zdr",
+          "kind": "first-hand",
+          "quote": "ZDR is available only with pay-as-you-go. If you’re in Free mode, enable pay-as-you-go first.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "zero_retention_how": {
+          "value": "ZDR is available only with pay-as-you-go. If you're in free mode, enable pay-as-you-go first",
+          "source": "https://help.mistral.ai/en/articles/347612-can-i-activate-zero-data-retention-zdr",
+          "kind": "first-hand",
+          "quote": "ZDR is available only with pay-as-you-go. If you’re in Free mode, enable pay-as-you-go first.",
+          "read": "2026-11-01",
+          "conflicts": [
+            {
+              "value": "ZDR is available on paid plans for supported stateless API calls",
+              "source": "https://docs.mistral.ai/admin/monitor-comply/zero-data-retention",
+              "kind": "first-hand",
+              "quote": "ZDR is available on paid plans for supported stateless API calls.",
+              "read": "2026-11-01"
+            }
+          ],
+          "confirmed": "blind-read"
+        },
+        "hipaa_baa": {
+          "missing": true,
+          "checked": [
+            "https://legal.mistral.ai/terms/commercial-terms-of-service",
+            "https://legal.mistral.ai/terms/data-processing-addendum",
+            "https://legal.mistral.ai/terms/privacy-policy/"
+          ],
+          "read": "2026-11-01"
+        },
+        "region_note": {
+          "value": "By default, your data is hosted in the European Union. You may explicitely use our US API endpoint and your data is hosted in the United States",
+          "source": "https://help.mistral.ai/en/articles/347629-where-do-you-store-my-data-or-my-organization-s-data",
+          "kind": "first-hand",
+          "quote": "By default, your data is hosted in the European Union. You may, however, explicitely use our US API endpoint and in such a case your data is hosted in the United States.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        }
+      }
+    },
+    {
+      "key": "Mistral Studio (pay-as-you-go)",
+      "cells": {
+        "provider": {
+          "value": "Mistral",
+          "source": "https://help.mistral.ai/en/articles/455207-can-i-opt-out-of-my-input-or-output-data-being-used-for-training",
+          "kind": "first-hand",
+          "quote": "You may opt out of data training for Mistral Studio and related API services by following the steps below:",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "route": {
+          "value": "Mistral Studio pay-as-you-go",
+          "source": "https://help.mistral.ai/en/articles/347612-can-i-activate-zero-data-retention-zdr",
+          "kind": "first-hand",
+          "quote": "ZDR on Mistral Studio When ZDR is enabled, your API inputs and outputs are not retained on our systems beyond what is required to return the response.🔑 ZDR is available only with pay-as-you-go.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "trains_default": {
+          "missing": true,
+          "checked": [
+            "https://help.mistral.ai/en/articles/347617-do-you-use-my-user-data-to-train-your-artificial-intelligence-models",
+            "https://help.mistral.ai/en/articles/455207-can-i-opt-out-of-my-input-or-output-data-being-used-for-training",
+            "https://legal.mistral.ai/terms/commercial-terms-of-service"
+          ],
+          "read": "2026-11-01"
+        },
+        "retention": {
+          "value": "For the period necessary to generate the output and then for thirty (30) rolling days to monitor abuse",
+          "source": "https://legal.mistral.ai/terms/privacy-policy/",
+          "kind": "first-hand",
+          "quote": "Data we use to provide our APIs to you: Except for specific APIs, we keep your Input and Output for the period necessary to generate the Output and then for thirty (30) rolling days to monitor abuse (unless zero data retention is activated).",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "retention_exceptions": {
+          "value": "The opt-out preferences you selected (including through zero data retention) does not apply to labs or preview models",
+          "source": "https://legal.mistral.ai/terms/commercial-terms-of-service",
+          "kind": "first-hand",
+          "quote": "the opt-out preferences you selected for other Mistral AI Products (including through zero data retention) does not apply to Labs or Preview Models.",
+          "read": "2026-11-01"
+        },
+        "zero_retention": {
+          "value": true,
+          "source": "https://help.mistral.ai/en/articles/347612-can-i-activate-zero-data-retention-zdr",
+          "kind": "first-hand",
+          "quote": "Zero Data Retention (ZDR) is available only with pay-as-you-go and only for stateless API calls.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "zero_retention_how": {
+          "value": "Provide sufficient detail of your legitimate reasons; we will review your request and, at our discretion, approve or deny it",
+          "source": "https://help.mistral.ai/en/articles/347612-can-i-activate-zero-data-retention-zdr",
+          "kind": "first-hand",
+          "quote": "you must provide sufficient detail of your legitimate reasons for requesting Zero Data Retention. We will review your request and, at our discretion, approve or deny it.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "hipaa_baa": {
+          "missing": true,
+          "checked": [
+            "https://legal.mistral.ai/terms/commercial-terms-of-service",
+            "https://legal.mistral.ai/terms/data-processing-addendum",
+            "https://legal.mistral.ai/terms/privacy-policy/"
+          ],
+          "read": "2026-11-01"
+        },
+        "region_note": {
+          "value": "By default, your data is hosted in the European Union. You may explicitely use our US API endpoint and your data is hosted in the United States",
+          "source": "https://help.mistral.ai/en/articles/347629-where-do-you-store-my-data-or-my-organization-s-data",
+          "kind": "first-hand",
+          "quote": "By default, your data is hosted in the European Union. You may, however, explicitely use our US API endpoint and in such a case your data is hosted in the United States.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        }
+      }
+    },
+    {
+      "key": "Cohere SaaS platform",
+      "cells": {
+        "provider": {
+          "value": "Cohere",
+          "source": "https://cohere.com/enterprise-data-commitments",
+          "kind": "first-hand",
+          "quote": "If you have been approved for zero data retention, Cohere does not log any customer prompts or generations.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "route": {
+          "value": "Cohere SaaS platform",
+          "source": "https://cohere.com/enterprise-data-commitments",
+          "kind": "first-hand",
+          "quote": "You can also use the Cohere SaaS Platform to leverage Cohere-managed infrastructure.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "trains_default": {
+          "missing": true,
+          "checked": [
+            "https://cohere.com/enterprise-data-commitments",
+            "https://cohere.com/terms-of-use",
+            "https://cohere.com/privacy",
+            "https://docs.cohere.com/docs/usage-policy"
+          ],
+          "read": "2026-11-01"
+        },
+        "retention": {
+          "value": "We automatically delete logged prompts and generations after 30 days",
+          "source": "https://cohere.com/enterprise-data-commitments",
+          "kind": "first-hand",
+          "quote": "We automatically delete logged prompts and generations after 30 days, unless we need it to comply with a legal requirement or customer contract, or unless your usage is flagged as potentially violating our terms, including our Usage Policy (e.g. abuse or misuse of our services).",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "retention_exceptions": {
+          "value": "Data you allow us to use for training purposes may be retained separately",
+          "source": "https://cohere.com/enterprise-data-commitments",
+          "kind": "first-hand",
+          "quote": "Data you allow us to use for training purposes may be retained separately in accordance with our agreement with you.",
+          "read": "2026-11-01"
+        },
+        "zero_retention": {
+          "value": true,
+          "source": "https://cohere.com/enterprise-data-commitments",
+          "kind": "first-hand",
+          "quote": "Zero data retention (ZDR) means we do not log any prompts or generations.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "zero_retention_how": {
+          "value": "We only allow ZDR for enterprise customers who can make additional commitments about their usage",
+          "source": "https://cohere.com/enterprise-data-commitments",
+          "kind": "first-hand",
+          "quote": "Because of this, we only allow ZDR for enterprise customers who can make additional commitments about their usage of the Cohere Services.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "hipaa_baa": {
+          "missing": true,
+          "checked": [
+            "https://cohere.com/enterprise-data-commitments",
+            "https://cohere.com/security",
+            "https://cohere.com/terms-of-use"
+          ],
+          "read": "2026-11-01"
+        },
+        "region_note": {
+          "missing": true,
+          "checked": [
+            "https://cohere.com/enterprise-data-commitments",
+            "https://cohere.com/security",
+            "https://cohere.com/terms-of-use"
+          ],
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "xAI API",
+      "cells": {
+        "provider": {
+          "value": "xAI",
+          "source": "https://docs.x.ai/developers/faq/security",
+          "kind": "first-hand",
+          "quote": "Is the xAI API HIPAA compliant?",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "route": {
+          "value": "xAI API",
+          "source": "https://docs.x.ai/developers/faq/security",
+          "kind": "first-hand",
+          "quote": "Is the xAI API HIPAA compliant?",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "trains_default": {
+          "value": false,
+          "source": "https://docs.x.ai/developers/faq/security",
+          "kind": "first-hand",
+          "quote": "SpaceXSI never trains on your API inputs or outputs without your explicit permission.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "retention": {
+          "value": "All API requests and responses are stored on our servers (encrypted at rest) for 30 days for auditing purposes in the event of suspected abuse or misuse",
+          "source": "https://docs.x.ai/developers/faq/security",
+          "kind": "first-hand",
+          "quote": "By default, all API requests and responses are stored on our servers (encrypted at rest) for 30 days for auditing purposes in the event of suspected abuse or misuse.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "retention_exceptions": {
+          "value": "ZDR disables features that depend on stored data, including the stateful Responses API, files and collections, and the batch API",
+          "source": "https://docs.x.ai/developers/faq/security",
+          "kind": "first-hand",
+          "quote": "ZDR disables important API features that depend on stored data, including the stateful Responses API, Files and Collections, and the Batch API",
+          "read": "2026-11-01"
+        },
+        "zero_retention": {
+          "value": true,
+          "source": "https://docs.x.ai/developers/faq/security",
+          "kind": "first-hand",
+          "quote": "No storage of prompts: ZDR ensures that API request inputs (i.e., your prompt) and outputs (i.e., the tokens generated by the LLM) are never persisted to disk.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "zero_retention_how": {
+          "value": "Self-serve: where available, a team admin can turn it on or off directly from the xAI Console",
+          "source": "https://docs.x.ai/developers/faq/security",
+          "kind": "first-hand",
+          "quote": "Self-serve: Where available, a team admin can turn it on or off directly from the xAI Console.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "hipaa_baa": {
+          "missing": true,
+          "checked": [
+            "https://docs.x.ai/developers/faq/security",
+            "https://x.ai/legal/terms-of-service-enterprise"
+          ],
+          "read": "2026-11-01"
+        },
+        "region_note": {
+          "value": "The default endpoint does not guarantee a processing region. To keep retained request data in the United States, use the US regional endpoint",
+          "source": "https://docs.x.ai/developers/faq/security",
+          "kind": "first-hand",
+          "quote": "The default endpoint, https://api.x.ai, does not guarantee a processing region. To keep API request handling, model inference, moderation, and retained request data in the United States, use the US regional endpoint, https://us.api.x.ai/v1.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        }
+      }
+    },
+    {
+      "key": "DeepSeek Open Platform",
+      "cells": {
+        "provider": {
+          "value": "DeepSeek",
+          "source": "https://cdn.deepseek.com/policies/en-US/deepseek-open-platform-terms-of-service.html",
+          "kind": "first-hand",
+          "quote": "We will collect and process the personal information you provide as the data subject in accordance with the \"DeepSeek Privacy Policy\".",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "route": {
+          "value": "DeepSeek Open Platform",
+          "source": "https://cdn.deepseek.com/policies/en-US/deepseek-open-platform-terms-of-service.html",
+          "kind": "first-hand",
+          "quote": "DeepSeek Open Platform Terms of Service",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "trains_default": {
+          "missing": true,
+          "checked": [
+            "https://cdn.deepseek.com/policies/en-US/deepseek-open-platform-terms-of-service.html",
+            "https://cdn.deepseek.com/policies/en-US/deepseek-privacy-policy.html"
+          ],
+          "read": "2026-11-01"
+        },
+        "retention": {
+          "value": "We keep this personal data for as long as you have an account. This personal data includes your account personal data, input and payment personal data",
+          "source": "https://cdn.deepseek.com/policies/en-US/deepseek-privacy-policy.html",
+          "kind": "first-hand",
+          "quote": "when we process your Personal Data to provide you with the Services, we keep this Personal Data for as long as you have an account. This Personal Data includes your account Personal Data, input and payment Personal Data.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "retention_exceptions": {
+          "value": "If you violate any of our terms, policies or guidelines, we may keep your personal data as necessary to process the violation",
+          "source": "https://cdn.deepseek.com/policies/en-US/deepseek-privacy-policy.html",
+          "kind": "first-hand",
+          "quote": "If you violate any of our terms, policies or guidelines, we may keep your Personal Data as necessary to process the violation.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "zero_retention": {
+          "missing": true,
+          "checked": [
+            "https://cdn.deepseek.com/policies/en-US/deepseek-open-platform-terms-of-service.html",
+            "https://cdn.deepseek.com/policies/en-US/deepseek-privacy-policy.html"
+          ],
+          "read": "2026-11-01"
+        },
+        "zero_retention_how": {
+          "missing": true,
+          "checked": [
+            "https://cdn.deepseek.com/policies/en-US/deepseek-open-platform-terms-of-service.html",
+            "https://cdn.deepseek.com/policies/en-US/deepseek-privacy-policy.html"
+          ],
+          "read": "2026-11-01"
+        },
+        "hipaa_baa": {
+          "missing": true,
+          "checked": [
+            "https://cdn.deepseek.com/policies/en-US/deepseek-open-platform-terms-of-service.html",
+            "https://cdn.deepseek.com/policies/en-US/deepseek-privacy-policy.html"
+          ],
+          "read": "2026-11-01"
+        },
+        "region_note": {
+          "value": "We directly collect, process and store your personal data in People's Republic of China",
+          "source": "https://cdn.deepseek.com/policies/en-US/deepseek-privacy-policy.html",
+          "kind": "first-hand",
+          "quote": "To provide you with our services, we directly collect, process and store your Personal Data in People's Republic of China.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        }
+      }
+    },
+    {
+      "key": "GroqCloud",
+      "cells": {
+        "provider": {
+          "value": "Groq",
+          "source": "https://console.groq.com/docs/your-data",
+          "kind": "first-hand",
+          "quote": "By default, Groq does not retain customer data for inference requests.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "route": {
+          "value": "GroqCloud",
+          "source": "https://console.groq.com/docs/legal/customer-business-associate-addendum",
+          "kind": "first-hand",
+          "quote": "Business Associate Addendum for GroqCloud Services",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "trains_default": {
+          "value": false,
+          "source": "https://console.groq.com/docs/legal/services-agreement",
+          "kind": "first-hand",
+          "quote": "Groq is not permitted to use Inputs or Outputs for training or fine-tuning any AI Model Services or other models, unless explicitly granted permission or instructed by Customer.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "retention": {
+          "value": "By default, Groq does not retain customer data for inference requests",
+          "source": "https://console.groq.com/docs/your-data",
+          "kind": "first-hand",
+          "quote": "By default, Groq does not retain customer data for inference requests.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "retention_exceptions": {
+          "value": "We may temporarily log inputs and outputs when troubleshooting errors or investigating suspected abuse; these logs are retained for up to 30 days",
+          "source": "https://console.groq.com/docs/your-data",
+          "kind": "first-hand",
+          "quote": "We may temporarily log inputs and outputs only when: Troubleshooting errors that degrade platform reliability, or Investigating suspected abuse (e.g. rate-limit circumvention). These logs are retained for up to 30 days, unless legally required to retain longer.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "zero_retention": {
+          "value": true,
+          "source": "https://console.groq.com/docs/your-data",
+          "kind": "first-hand",
+          "quote": "All customers may enable Zero Data Retention (ZDR) in Data Controls settings.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "zero_retention_how": {
+          "value": "All customers may enable zero data retention (ZDR) in Data Controls settings",
+          "source": "https://console.groq.com/docs/your-data",
+          "kind": "first-hand",
+          "quote": "All customers may enable Zero Data Retention (ZDR) in Data Controls settings.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "hipaa_baa": {
+          "value": true,
+          "source": "https://console.groq.com/docs/legal/customer-business-associate-addendum",
+          "kind": "first-hand",
+          "quote": "This Business Associate Addendum (“BAA”) is entered into between the Groq Contracting Party (“Business Associate” or “Groq”) and the customer",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "region_note": {
+          "value": "All customer data is retained in Google Cloud Platform (GCP) buckets located in the United States",
+          "source": "https://console.groq.com/docs/your-data",
+          "kind": "first-hand",
+          "quote": "All customer data is retained in Google Cloud Platform (GCP) buckets located in the United States.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        }
+      }
+    },
+    {
+      "key": "Together AI inference",
+      "cells": {
+        "provider": {
+          "value": "Together AI",
+          "source": "https://docs.together.ai/docs/zero-data-retention",
+          "kind": "first-hand",
+          "quote": "Together AI supports zero data retention (ZDR) at the organization level.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "route": {
+          "value": "Together's inference services",
+          "source": "https://docs.together.ai/docs/zero-data-retention",
+          "kind": "first-hand",
+          "quote": "the content you submit to Together’s inference services, including text, images, and prompts, and any outputs returned to you are not stored, retained, or used for model training",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "trains_default": {
+          "value": false,
+          "source": "https://www.together.ai/privacy",
+          "kind": "first-hand",
+          "quote": "We do not use any data collected from you to train our models without your explicit opt-in and consent.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "retention": {
+          "value": "Together stores the prompts you send and the responses models return, and may use them for product improvements",
+          "source": "https://docs.together.ai/docs/zero-data-retention",
+          "kind": "first-hand",
+          "quote": "Unless your organization enables ZDR, Together stores the prompts you send and the responses models return, and may use them for product improvements.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "retention_exceptions": {
+          "value": "Passthrough models: data sent to them is handled under that provider's own policy",
+          "source": "https://docs.together.ai/docs/zero-data-retention",
+          "kind": "first-hand",
+          "quote": "Passthrough models: Models that forward requests to a third-party provider are allowed by default. Data sent to them is handled under that provider’s own policy.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "zero_retention": {
+          "value": true,
+          "source": "https://docs.together.ai/docs/zero-data-retention",
+          "kind": "first-hand",
+          "quote": "Together AI supports zero data retention (ZDR) at the organization level.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "zero_retention_how": {
+          "value": "Open the Privacy section of organization settings. Set Store prompts and model responses to No",
+          "source": "https://docs.together.ai/docs/zero-data-retention",
+          "kind": "first-hand",
+          "quote": "ZDR is not enabled by default. To enable it: Open the Privacy section of Organization Settings. Set Store prompts and model responses to No.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "hipaa_baa": {
+          "missing": true,
+          "checked": [
+            "https://www.together.ai/terms-of-service",
+            "https://www.together.ai/privacy",
+            "https://docs.together.ai/docs/privacy-and-security",
+            "https://docs.together.ai/docs/zero-data-retention"
+          ],
+          "read": "2026-11-01"
+        },
+        "region_note": {
+          "value": "Geo-specific inference keeps inference processing in the United States for select serverless models. It covers only where those requests are processed, not where data is stored, logged, or routed",
+          "source": "https://docs.together.ai/docs/privacy-and-security",
+          "kind": "first-hand",
+          "quote": "For select serverless models, geo-specific inference keeps inference processing in the United States, with no GPUs to provision. The guarantee applies to requests sent to us-api.together.ai. It covers only where those requests are processed, not where data is stored, logged, or routed.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        }
+      }
+    },
+    {
+      "key": "Fireworks AI serverless (open models)",
+      "cells": {
+        "provider": {
+          "value": "Fireworks",
+          "source": "https://docs.fireworks.ai/guides/security_compliance/data_handling",
+          "kind": "first-hand",
+          "quote": "Fireworks does not log or store prompt or generation data for any open models, without explicit user opt-in.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "route": {
+          "value": "Open models",
+          "source": "https://docs.fireworks.ai/guides/security_compliance/data_handling",
+          "kind": "first-hand",
+          "quote": "Fireworks does not log or store prompt or generation data for any open models, without explicit user opt-in.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "trains_default": {
+          "value": false,
+          "source": "https://fireworks.ai/terms-of-service",
+          "kind": "first-hand",
+          "quote": "We will not use your Content to train our own models or to improve the Service.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "retention": {
+          "value": "Fireworks does not log or store prompt or generation data for any open models, without explicit user opt-in",
+          "source": "https://docs.fireworks.ai/guides/security_compliance/data_handling",
+          "kind": "first-hand",
+          "quote": "Fireworks has Zero Data Retention by default. Specifically, this means Fireworks does not log or store prompt or generation data for any open models, without explicit user opt-in.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "retention_exceptions": {
+          "value": "Response API retention of up to 30 days when store=true is enabled",
+          "source": "https://docs.fireworks.ai/guides/security_compliance/data_handling",
+          "kind": "first-hand",
+          "quote": "How Fireworks handles zero data retention for prompts and generations by default, plus Response API retention of up to 30 days when store=True is enabled.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "zero_retention": {
+          "value": true,
+          "source": "https://docs.fireworks.ai/guides/security_compliance/data_handling",
+          "kind": "first-hand",
+          "quote": "Fireworks has Zero Data Retention by default.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "zero_retention_how": {
+          "value": "Enterprise account admins can additionally turn on the zero data retention policy to reject requests and jobs that would persist or log customer content",
+          "source": "https://docs.fireworks.ai/guides/security_compliance/data_handling",
+          "kind": "first-hand",
+          "quote": "Enterprise account admins can additionally turn on the Zero Data Retention policy to reject requests and jobs that would persist or log customer content.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "hipaa_baa": {
+          "missing": true,
+          "checked": [
+            "https://fireworks.ai/enterprise"
+          ],
+          "read": "2026-11-01"
+        },
+        "region_note": {
+          "value": "Pin your account's inference to a region, starting with US-only endpoints",
+          "source": "https://fireworks.ai/enterprise",
+          "kind": "first-hand",
+          "quote": "Pin your account’s inference to a region, starting with US-only endpoints.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        }
+      }
+    },
+    {
+      "key": "Perplexity API",
+      "cells": {
+        "provider": {
+          "value": "Perplexity",
+          "source": "https://www.perplexity.ai/hub/legal/perplexity-api-terms-of-service",
+          "kind": "first-hand",
+          "quote": "Perplexity shall not use (or authorize third parties to use) Customer Content to train, retrain, fine-tune or otherwise improve any generative artificial intelligence models.",
+          "read": "2026-11-01"
+        },
+        "route": {
+          "value": "Perplexity API platform",
+          "source": "https://docs.perplexity.ai/docs/resources/privacy-security",
+          "kind": "first-hand",
+          "quote": "Perplexity’s API Platform is designed to process Customer Content to provide the requested API service.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "trains_default": {
+          "value": false,
+          "source": "https://www.perplexity.ai/hub/legal/perplexity-api-terms-of-service",
+          "kind": "first-hand",
+          "quote": "Perplexity shall not use (or authorize third parties to use) Customer Content to train, retrain, fine-tune or otherwise improve any generative artificial intelligence models.",
+          "read": "2026-11-01"
+        },
+        "retention": {
+          "value": "Retention, use, and security practices vary by API, model, and account configuration",
+          "source": "https://docs.perplexity.ai/docs/resources/privacy-security",
+          "kind": "first-hand",
+          "quote": "Retention, use, and security practices vary by API, model, and account configuration",
+          "read": "2026-11-01"
+        },
+        "retention_exceptions": {
+          "value": "Some providers require limited retention as a condition of offering their models",
+          "source": "https://docs.perplexity.ai/docs/resources/privacy-security",
+          "kind": "first-hand",
+          "quote": "Models served by third-party providers are also subject to those providers’ terms and policies. Some providers require limited retention as a condition of offering their models.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "zero_retention": {
+          "value": true,
+          "source": "https://docs.perplexity.ai/docs/resources/privacy-security",
+          "kind": "first-hand",
+          "quote": "Zero Data Retention is not default: ZDR is available only to eligible customers through an account-level configuration under a written agreement with Perplexity.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "zero_retention_how": {
+          "value": "Available only to eligible customers through an account-level configuration under a written agreement with Perplexity",
+          "source": "https://docs.perplexity.ai/docs/resources/privacy-security",
+          "kind": "first-hand",
+          "quote": "Zero Data Retention is not default: ZDR is available only to eligible customers through an account-level configuration under a written agreement with Perplexity.",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "hipaa_baa": {
+          "value": true,
+          "source": "https://www.perplexity.ai/hub/legal/perplexity-api-terms-of-service",
+          "kind": "first-hand",
+          "quote": "Customer may not use the Services to create, receive, maintain, transmit, or otherwise process any information that includes or constitutes “Protected Health Information”, as defined under the HIPAA Privacy Rule (45 C.F.R. Section 160.103), unless Customer and Perplexity have executed a Business Associate Agreement.",
+          "read": "2026-11-01"
+        },
+        "region_note": {
+          "missing": true,
+          "checked": [
+            "https://docs.perplexity.ai/docs/resources/privacy-security",
+            "https://www.perplexity.ai/hub/legal/perplexity-api-terms-of-service",
+            "https://docs.perplexity.ai/faq/faq"
+          ],
+          "read": "2026-11-01"
+        }
+      }
+    }
+  ]
+}
