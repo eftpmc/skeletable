@@ -68,6 +68,49 @@ export function Accuracy() {
   );
 }
 
+/** The editorial rules that make a published value traceable and correctable. */
+export function Methodology() {
+  useEffect(() => {
+    document.title = "Methodology and corrections · Skeletable";
+  }, []);
+  return (
+    <Page crumbs={[{ label: "Methodology" }]}>
+      <Content size="narrow">
+        <PageHeader title="How Skeletable verifies and corrects facts" description="A published value is a claim with evidence, not a line in a spreadsheet." />
+        <div className="space-y-6">
+          <Section title="Evidence standard">
+            <Prose>
+              <p>Every stated value needs a source and the exact words from that source that support it. Numbers must appear in the quoted text. A value is only published when its quote is found on the cited page.</p>
+              <p>If no acceptable source states a value, the cell stays blank. It records where we looked; a blank never means the answer is no.</p>
+            </Prose>
+          </Section>
+          <Section title="Checks and freshness">
+            <Prose>
+              <p>Each public cell shows how far it has been checked. A second reader can independently answer the same question from the same source, and differences are settled against the source. We also check whether live quotes are still present on their pages.</p>
+              <p>Check the source and read date before relying on a value. A page retaining a quote does not prove that its meaning or the surrounding law, product, or policy has not changed.</p>
+            </Prose>
+          </Section>
+          <Section title="Corrections and review">
+            <Prose>
+              <p>Anyone signed in can select a cell and suggest a correction with its source and exact quote. Related corrections can be submitted as one proposal bundle, so a reviewer sees the full context.</p>
+              <p>An owner or editor accepts the bundle together or closes it. Acceptance stops if a proposed cell changed after submission, preventing a stale proposal from overwriting a newer value. Accepted values remain in the table's history.</p>
+            </Prose>
+          </Section>
+          <Section title="What we do not claim">
+            <Prose>
+              <p>We record what sources state; we do not decide legal meaning or provide legal, medical, financial, or other professional advice. We do not claim a site-wide error rate because we have not measured one across every table.</p>
+              <p>Find a problem? Open the relevant table, select the cell, and send a proposal with better evidence.</p>
+            </Prose>
+          </Section>
+          <Section title="Using and citing the data">
+            <Prose><p>Public tables are available under CC BY 4.0. Cite Skeletable with the permanent table or row URL, then cite the underlying source when relying on a specific value.</p></Prose>
+          </Section>
+        </div>
+      </Content>
+    </Page>
+  );
+}
+
 /** How to use the tables from code or an agent. */
 export function Developers() {
   useEffect(() => {

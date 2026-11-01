@@ -150,6 +150,7 @@ export function pageRoutes(app: Hono, tables: PublishedTable[], webDir: string, 
     "/explore": ["Browse tables · Skeletable", "Browse public tables where every value links to its source."],
     "/about": ["About · Skeletable", description],
     "/help": ["Help · Skeletable", "How Skeletable's tables are checked, and how to use them."],
+    "/methodology": ["Methodology and corrections · Skeletable", "How Skeletable verifies source-backed facts, reviews corrections, and records their history."],
     "/accuracy": ["How accurate is Skeletable?", "How every value is checked, how many have been, and what we can't tell you."],
     "/blog": ["Blog · Skeletable", "What checking the sources turns up."],
     "/developers": ["Developers · Skeletable", "Use Skeletable's tables from agents over MCP, or as CSV and JSON."],
@@ -181,7 +182,7 @@ export function pageRoutes(app: Hono, tables: PublishedTable[], webDir: string, 
     ].join("\n")));
 
   app.get("/sitemap.xml", (c) => {
-    const entries: [string, string?][] = [["/"], ["/explore"], ["/blog"], ["/accuracy"], ["/developers"], ["/help"], ...published(posts).map((post): [string, string] => [`/blog/${post.slug}`, post.date])];
+    const entries: [string, string?][] = [["/"], ["/explore"], ["/blog"], ["/methodology"], ["/accuracy"], ["/developers"], ["/help"], ...published(posts).map((post): [string, string] => [`/blog/${post.slug}`, post.date])];
     for (const table of open()) {
       const base = `/${table.owner}/${table.slug}`;
       const slugs = rowSlugs(table);

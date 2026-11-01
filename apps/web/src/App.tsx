@@ -6,7 +6,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Toaster } from "@/components/ui/sonner";
 import { MeContext, useJson, type Me } from "@/lib/api";
 import { BlogIndex, BlogPost } from "@/pages/Blog";
-import { Accuracy, Developers } from "@/pages/Docs";
+import { Accuracy, Developers, Methodology } from "@/pages/Docs";
 import { Account } from "@/pages/Account";
 import { Explore } from "@/pages/Explore";
 import { Help } from "@/pages/Help";
@@ -29,6 +29,7 @@ function Routes({ me }: { me: Me }) {
   const [isAccountSettings] = useRoute("/settings/account");
   const [isVisits] = useRoute("/settings/visits");
   const [isAccuracy] = useRoute("/accuracy");
+  const [isMethodology] = useRoute("/methodology");
   const [isBlog] = useRoute("/blog");
   const [isPost, post] = useRoute("/blog/:slug");
   const [isDevelopers] = useRoute("/developers");
@@ -51,6 +52,7 @@ function Routes({ me }: { me: Me }) {
   if (isAccountSettings) return <AccountSettings />;
   if (isVisits) return <VisitSettings />;
   if (isAccuracy) return <Accuracy />;
+  if (isMethodology) return <Methodology />;
   if (isBlog) return <BlogIndex />;
   if (isPost) return <BlogPost key={post.slug} slug={post.slug} />;
   if (isDevelopers) return <Developers />;

@@ -100,6 +100,7 @@ describe("what crawlers and tools can read", () => {
   it("lists rows and their dates in the sitemap, and tables in llms.txt", async () => {
     const sitemap = await text("/sitemap.xml");
     expect(sitemap).toContain("/skeletable/data-breach-laws/row/texas</loc><lastmod>");
+    expect(sitemap).toContain("https://skeletable.com/methodology");
     expect(await text("/llms.txt")).toContain("data/skeletable/data-breach-laws.json");
   });
 

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.eftpmc/skeletable",
+  "version": "1.0.0",
+  "title": "Skeletable",
+  "description": "Source-backed public tables with citations, claim checks, and reviewable corrections.",
+  "websiteUrl": "https://skeletable.com/developers",
+  "icons": [
+    {
+      "src": "https://skeletable.com/logo.png",
+      "mimeType": "image/png"
+    }
+  ],
+  "repository": {
+    "url": "https://github.com/eftpmc/skeletable",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://skeletable.com/mcp"
+    }
+  ]
+}
