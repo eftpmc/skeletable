@@ -17,7 +17,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Skeleton } from "@/components/ui/skeleton";
 import { signInHref } from "@/lib/account";
 import { postJson, useJson, useMe } from "@/lib/api";
 import { accountName, cellId, day, display, host, ownerLabel, place } from "@/lib/cells";
@@ -465,7 +464,7 @@ export function Grid({ table, selectedId, select, emptyRows = 0, focusOnLoad = t
                     ) : statusName === "blank" && !xray ? (
                       <>
                         <span className="sr-only">{status.label}</span>
-                        <Skeleton aria-hidden="true" className={`my-[5px] h-2.5 bg-foreground/10 motion-reduce:animate-none ${column.type === "number" ? "ml-auto" : ""}`} style={{ width: `${35 + ((rowIndex * 37 + columnIndex * 53) % 45)}%` }} />
+                        <span aria-hidden="true" className={`block text-muted-foreground/50 ${column.type === "number" ? "text-right" : ""}`}>—</span>
                       </>
                     ) : (
                       status.label
