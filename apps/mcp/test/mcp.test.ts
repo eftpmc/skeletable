@@ -29,10 +29,64 @@ it("reports what it's serving", async () => {
   expect(await response.json()).toEqual({ ok: true, tables: tables.length });
 });
 
-it("offers three tools, all read-only", async () => {
+it("offers four tools, all read-only", async () => {
   const { result } = await rpc("tools/list");
-  expect(result.tools.map((tool) => tool.name).sort()).toEqual(["get_cell", "get_table", "list_tables"]);
+  expect(result.tools.map((tool) => tool.name).sort()).toEqual(["check_claim", "get_cell", "get_table", "list_tables"]);
   expect(result.tools.every((tool) => tool.annotations.readOnlyHint)).toBe(true);
+});
+
+describe("check_claim", () => {
+  const claim = async (row: string, column: string, value: string) => (await call("check_claim", { slug: "data-breach-laws", row, column, value })).json();
+
+  it("confirms a claim that matches, with the words behind it", async () => {
+    expect(await claim("Texas", "notify_days", "60 days")).toMatchObject({ verdict: "matches", stated: 60, url: "https://skeletable.com/skeletable/data-breach-laws/row/texas#notify_days" });
+  });
+
+  it("says a claim differs, and gives what the source states", async () => {
+    const result = await claim("Texas", "notify_days", "30");
+    expect(result).toMatchObject({ verdict: "differs", stated: 60 });
+    expect(result.quote).toContain("60");
+  });
+
+  it("corrects a claim when the source was read and has no such value", async () => {
+    expect(await claim("New Jersey", "notify_days", "30")).toMatchObject({ verdict: "differs", stated: null, status: "none" });
+  });
+
+  it("won't guess about a blank", async () => {
+    expect(await claim("Alaska", "notify_days", "30")).toMatchObject({ verdict: "unknown" });
+  });
+
+  it("refuses a cell that isn't there", async () => {
+    expect((await call("check_claim", { slug: "data-breach-laws", row: "Atlantis", column: "notify_days", value: "1" })).isError).toBe(true);
+  });
+});
+
+describe("one value", () => {
+  it("serves the bare value for a spreadsheet formula, safely", async () => {
+    const response = await app.request("/data/skeletable/data-breach-laws/texas/notify_days.csv");
+    expect(await response.text()).toBe("60");
+    expect(response.headers.get("access-control-allow-origin")).toBe("*");
+    expect(await (await app.request("/data/skeletable/data-breach-laws/new-jersey/notify_days.csv")).text()).toBe("");
+  });
+
+  it("serves the value with its proof, and credit", async () => {
+    const cell = (await (await app.request("/data/skeletable/data-breach-laws/texas/notify_days.json")).json()) as { quote: string };
+    expect(cell).toMatchObject({ value: 60, status: "confirmed", licence: "CC BY 4.0" });
+    expect(cell.quote).toContain("60");
+  });
+
+  it("gives other pages a live card, with a page's words escaped", async () => {
+    const card = await (await app.request("/embed/skeletable/data-breach-laws/texas/notify_days")).text();
+    expect(card).toContain("60");
+    expect(card).toContain("Skeletable");
+    const none = await (await app.request("/embed/skeletable/data-breach-laws/new-jersey/notify_days")).text();
+    expect(none).toContain("None stated");
+  });
+
+  it("has no address for a cell that isn't there", async () => {
+    expect((await app.request("/embed/skeletable/data-breach-laws/texas/no_such_column")).status).toBe(404);
+    expect((await app.request("/data/skeletable/data-breach-laws/atlantis/notify_days.csv")).status).toBe(404);
+  });
 });
 
 describe("list_tables", () => {
@@ -90,7 +144,7 @@ describe("get_cell", () => {
     await mkdir(join(dir, "watch"));
     await writeFile(join(dir, "watch", `${slug}.json`), JSON.stringify({ slug, ran: "2026-11-01", cells: { [`${row}/${column}`]: { status: "found", seen: "2026-11-01" } } }));
     const [loaded] = await loadTables(dir);
-    expect(findCell(loaded!, row, column)?.watch).toEqual({ status: "found", seen: "2026-11-01", ran: "2026-11-01" });
+    expect(findCell(loaded!, row, column, "https://skeletable.com")?.watch).toEqual({ status: "found", seen: "2026-11-01", ran: "2026-11-01" });
     await rm(dir, { recursive: true });
   });
 

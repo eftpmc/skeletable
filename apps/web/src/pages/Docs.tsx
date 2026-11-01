@@ -81,13 +81,20 @@ export function Developers() {
         <div className="space-y-6">
           <Section title="MCP" description="A server any MCP client can connect to. Public tables need no account.">
             <AgentCommand />
-            <Prose><p>It offers <Code>list_tables</Code>, <Code>get_table</Code> and <Code>get_cell</Code>, which gives a value's source and exact quote. A token from Settings adds your private tables and <Code>propose_change</Code>.</p></Prose>
+            <Prose><p>It offers <Code>list_tables</Code>, <Code>get_table</Code> and <Code>get_cell</Code>, which gives a value's source and exact quote, and <Code>check_claim</Code>, which tests a statement against a cell. A token from Settings adds your private tables and <Code>propose_change</Code>.</p></Prose>
           </Section>
           <Section title="Data files" description="Each public table has stable addresses, free to read and crawl.">
             <Prose>
               <p><Code>{origin}/data/skeletable/data-breach-laws.json</Code></p>
               <p><Code>{origin}/data/skeletable/data-breach-laws.csv</Code></p>
               <p>JSON has every value with its source, quote and read date. CSV has a source and quote column beside each value.</p>
+            </Prose>
+          </Section>
+          <Section title="One value" description="Every public cell has its own addresses. Cite in a sheet copies them for you.">
+            <Prose>
+              <p><Code>{origin}/data/skeletable/data-breach-laws/texas/notify_days.csv</Code> is the bare value, for a formula in your own spreadsheet.</p>
+              <p><Code>{origin}/data/skeletable/data-breach-laws/texas/notify_days.json</Code> adds its source, quote, date and status.</p>
+              <p><Code>{origin}/embed/skeletable/data-breach-laws/texas/notify_days</Code> is a live card for your own pages, which shows it if the quote leaves its page.</p>
             </Prose>
           </Section>
           <Section title="Row pages">

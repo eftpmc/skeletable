@@ -1,6 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { isAnswered, isFound, normalize, validateTable, watchFileSchema, watchKey, type Cell, type Table, type WatchFile } from "@skeleton/tables/format";
+import { isAnswered, isFound, normalize, quoteStates, validateTable, watchFileSchema, watchKey, type Cell, type Column, type FoundCell, type Table, type WatchFile } from "@skeleton/tables/format";
+import { cellPaths, cellStatus } from "@skeleton/tables/share";
 
 /** A table as served, with what the last watch saw, if it's been watched, and its team's name if a team runs it. A private one must only go out through the rule in access.ts. */
 export type PublishedTable = Table & { watch?: WatchFile; ownerName?: string; private?: boolean; managed?: boolean; moved?: Record<string, string> };
@@ -88,12 +89,37 @@ export function tableValues(table: Table) {
   };
 }
 
-/** One cell with its evidence, or undefined if there is no such row or column. Matching ignores case. */
-export function findCell(table: PublishedTable, rowKey: string, columnId: string) {
+/** Whether a claimed value says the same thing as a stated one. A text value may be a shorter or longer wording of it. */
+function agrees(column: Column, stated: FoundCell["value"], claim: string) {
+  const text = normalize(claim);
+  if (typeof stated === "number") return quoteStates(stated, text);
+  if (typeof stated === "boolean") return stated ? /^(yes|true)\b/.test(text) : /^(no|false)\b/.test(text);
+  const value = normalize(stated);
+  return column.type === "text" && !!text && (value.includes(text) || text.includes(value));
+}
+
+/**
+ * Test a claim against a cell, with nothing inferred: `matches` and `differs` come with the words to
+ * judge it by, and `unknown` means the table can't say. A fracture never gets a plain match.
+ */
+export function checkClaim(table: PublishedTable, rowKey: string, columnId: string, claim: string, publicUrl: string) {
+  const found = findCell(table, rowKey, columnId, publicUrl);
+  if (!found) return undefined;
+  const { cell, column, url } = found;
+  const status = cellStatus(cell, found.row, column.id, table.watch);
+  const shared = { row: found.row, column: column.label, unit: column.unit, status, url };
+  if (!isFound(cell)) return { verdict: cell.absent ? "differs" : "unknown", ...shared, ...(cell.absent ? { stated: null, note: "The source was read and gives no such value.", source: cell.checked[0] } : { note: "No acceptable source stated this, so the table can't say." }) };
+  const { value: stated, quote, source, read, conflicts } = cell;
+  const verdict = conflicts?.length ? "disputed" : agrees(column, stated, claim) ? "matches" : "differs";
+  return { verdict, ...shared, stated, quote, source, read, ...(conflicts && { conflicts }) };
+}
+
+/** One cell with its evidence and its lasting address, or undefined if there is no such row or column. Matching ignores case. */
+export function findCell(table: PublishedTable, rowKey: string, columnId: string, publicUrl: string) {
   const row = table.rows.find((r) => normalize(r.key) === normalize(rowKey));
   const column = table.columns.find((c) => c.id === columnId);
   const cell = column && row?.cells[column.id];
   if (!row || !column || !cell) return undefined;
   const watch = table.watch?.cells[watchKey(row.key, column.id)];
-  return { owner: table.owner, table: table.slug, row: row.key, column, cell, ...(watch && { watch: { ...watch, ran: table.watch!.ran } }) };
+  return { owner: table.owner, table: table.slug, row: row.key, column, cell, url: `${publicUrl}${cellPaths(table, row.key, column.id).page}`, ...(watch && { watch: { ...watch, ran: table.watch!.ran } }) };
 }

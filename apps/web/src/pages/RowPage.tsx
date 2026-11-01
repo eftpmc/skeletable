@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Content, List, LoadFailed, LoadingList, PageHeader } from "@/components/Layout";
 import { NoTable } from "@/components/NoTable";
-import { ProofDetails } from "@/components/Proof";
+import { CiteButton, ProofDetails } from "@/components/Proof";
 import { ShareButton } from "@/components/Share";
 import { Page } from "@/components/Shell";
 import { Button } from "@/components/ui/button";
@@ -17,12 +17,17 @@ const isFound = (cell: PublishedTable["rows"][number]["cells"][string]): cell is
 function RowDetails({ table, rowKey, onChanged }: { table: PublishedTable; rowKey: string; onChanged: () => void }) {
   const row = table.rows.find((candidate) => candidate.key === rowKey)!;
   const path = rowPath(table, rowKey);
-  const url = `${location.origin}${path}`;
   const sheet = `/${table.owner}/${table.slug}/sheet`;
 
   useEffect(() => {
     document.title = `${rowKey}: ${table.title} · Skeletable`;
   }, [rowKey, table.title]);
+
+  // A link to one value lands on it, and the page only exists once the table has loaded.
+  const target = location.hash.slice(1);
+  useEffect(() => {
+    if (target) document.getElementById(target)?.scrollIntoView({ block: "center" });
+  }, [target]);
 
   return (
     <>
@@ -36,7 +41,7 @@ function RowDetails({ table, rowKey, onChanged }: { table: PublishedTable; rowKe
           const cell = row.cells[column.id]!;
           const status = cellStatus(cell, rowKey, column.id, table.watch);
           return (
-            <li key={column.id} className="space-y-2 px-4 py-3">
+            <li key={column.id} id={column.id} className={`space-y-2 px-4 py-3 ${target === column.id ? "bg-brand/10" : ""}`}>
               <div className="flex flex-wrap items-baseline justify-between gap-x-3">
                 <h2 className="font-medium">{column.label}</h2>
                 <p className="text-base font-semibold">{isFound(cell) ? `${display(cell.value)}${column.unit ? ` ${column.unit}` : ""}` : <span className="font-normal text-muted-foreground">{statuses[status].label}</span>}</p>
@@ -44,7 +49,7 @@ function RowDetails({ table, rowKey, onChanged }: { table: PublishedTable; rowKe
               <p className="text-xs text-muted-foreground">{column.rule}</p>
               {isFound(cell) ? (
                 <>
-                  <ProofDetails cell={cell} status={status} title={table.title} url={url} />
+                  <ProofDetails cell={cell} status={status} cite={<CiteButton cell={cell} address={{ table, rowKey, columnId: column.id }} />} />
                   <p className="text-xs text-muted-foreground">Read {day(cell.read)}</p>
                 </>
               ) : (

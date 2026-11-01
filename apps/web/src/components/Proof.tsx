@@ -1,8 +1,10 @@
 import type { FoundCell } from "@skeleton/tables/format";
-import { displayValue, quoteLink } from "@skeleton/tables/share";
-import { ExternalLink } from "lucide-react";
+import { cellPaths, displayValue, quoteLink } from "@skeleton/tables/share";
+import { ExternalLink, Link2 } from "lucide-react";
+import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { host, splitQuote } from "@/lib/cells";
 import { copyText } from "@/lib/copy";
 import { statuses, type CellStatus } from "@/lib/status";
@@ -48,9 +50,31 @@ export function StatusBadge({ status }: { status: CellStatus }) {
 /** A citation someone can paste: the words, where they're from, when we read them, and where we show them. */
 export const citation = (cell: FoundCell, title: string, url: string) => `"${cell.quote}" Source: ${cell.source}, read ${cell.read}. Via Skeletable, ${title}: ${url}`;
 
-export const CiteButton = ({ cell, title, url }: { cell: FoundCell; title: string; url: string }) => (
-  <Button variant="ghost" size="xs" onClick={() => copyText(citation(cell, title, url), "Citation copied")}>Cite</Button>
-);
+export type CellAddress = { table: { owner: string; slug: string; title: string; private?: boolean; rows: { key: string }[] }; rowKey: string; columnId: string };
+
+/** Every way to take a value elsewhere. A private table's data and cards aren't public, so it only gives a link. */
+export function CiteButton({ cell, address: { table, rowKey, columnId } }: { cell?: FoundCell; address: CellAddress }) {
+  const { page, value, embed } = cellPaths(table, rowKey, columnId);
+  const at = (path: string) => `${location.origin}${path}`;
+  const copy = (text: string, label: string) => () => void copyText(text, `${label} copied`);
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild><Button variant="ghost" size="xs"><Link2 />Cite</Button></DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-60">
+        <DropdownMenuItem onSelect={copy(at(page), "Link")}>Copy link to this value</DropdownMenuItem>
+        {cell && <DropdownMenuItem onSelect={copy(citation(cell, table.title, at(page)), "Citation")}>Copy citation</DropdownMenuItem>}
+        {!table.private && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={copy(`<iframe src="${at(embed)}" title="${rowKey} on Skeletable" width="100%" height="150" style="border:0" loading="lazy"></iframe>`, "Embed code")}>Copy live embed</DropdownMenuItem>
+            <DropdownMenuItem onSelect={copy(`=IMPORTDATA("${at(value)}")`, "Formula")}>Copy Google Sheets formula</DropdownMenuItem>
+            <DropdownMenuItem onSelect={copy(`=WEBSERVICE("${at(value)}")`, "Formula")}>Copy Excel formula</DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 /** What other sources state instead, each with its own proof. */
 export const Conflicts = ({ cell }: { cell: FoundCell }) =>
@@ -67,7 +91,7 @@ export const Conflicts = ({ cell }: { cell: FoundCell }) =>
   ) : null;
 
 /** One value's proof, used wherever a value is shown on its own. */
-export const ProofDetails = ({ cell, status, title, url }: { cell: FoundCell; status?: CellStatus; title: string; url: string }) => (
+export const ProofDetails = ({ cell, status, cite }: { cell: FoundCell; status?: CellStatus; cite: ReactNode }) => (
   <div className="space-y-1.5 text-sm">
     <Quote cell={cell} />
     <Conflicts cell={cell} />
@@ -75,7 +99,7 @@ export const ProofDetails = ({ cell, status, title, url }: { cell: FoundCell; st
       <SourceLink url={cell.source} label={host(cell.source)} quote={cell.quote} />
       <Badge variant="secondary">{kindLabels[cell.kind]}</Badge>
       {status && <StatusBadge status={status} />}
-      <CiteButton cell={cell} title={title} url={url} />
+      {cite}
     </div>
   </div>
 );

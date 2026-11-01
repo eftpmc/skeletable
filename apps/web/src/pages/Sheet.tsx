@@ -8,7 +8,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { DownloadButton } from "@/components/Download";
 import { FilterButton } from "@/components/Filter";
 import { NoTable } from "@/components/NoTable";
-import { Conflicts, Quote, SourceLink, StatusBadge, kindLabels } from "@/components/Proof";
+import { CiteButton, Conflicts, Quote, SourceLink, StatusBadge, kindLabels } from "@/components/Proof";
 import { ShareButton } from "@/components/Share";
 import { AppBar } from "@/components/Shell";
 import { Shortcuts } from "@/components/Shortcuts";
@@ -308,6 +308,7 @@ export function FormulaBar({ selected, table, onChanged, editing, onEditing, onN
                 <Badge variant="secondary">{kindLabels[cell.kind]}</Badge>
                 <StatusBadge status={selected.status} />
                 {table && <SuggestButton onSuggest={() => setSuggesting(true)} canEdit={canEdit} />}
+                {table && !table.draft && <CiteButton cell={cell} address={{ table, rowKey: selected.rowKey, columnId: selected.column.id }} />}
                 <Badge variant="outline">Read {day(cell.read)}</Badge>
               </div>
               <Conflicts cell={cell} />

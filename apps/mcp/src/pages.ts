@@ -54,7 +54,7 @@ function rowText(table: PublishedTable, row: Row) {
     const proof = cell && isFound(cell)
       ? `<blockquote>${escape(cell.quote)}</blockquote><p>Source: <a href="${escape(cell.source)}">${escape(cell.source)}</a>. Read ${escape(cell.read)}.${cell.confirmed ? " Checked by a second reader." : " Read once."}</p>`
       : cell && "missing" in cell && cell.absent ? `<p>The source was read and gives no such value.</p>` : `<p>No source we could use stated this. A blank never means no.</p>`;
-    return `<section><h2>${escape(column.label)}: ${escape(shown(cell, column))}</h2><p>${escape(column.rule)}</p>${proof}</section>`;
+    return `<section id="${escape(column.id)}"><h2>${escape(column.label)}: ${escape(shown(cell, column))}</h2><p>${escape(column.rule)}</p>${proof}</section>`;
   }).join("");
   return `<main><h1>${escape(row.key)}</h1><p>From <a href="${base}">${escape(table.title)}</a>: ${escape(table.question)}</p>${items}</main>`;
 }

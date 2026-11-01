@@ -14,7 +14,7 @@ const MAX_ROWS = 200;
 export const MAX_COLUMNS = 20;
 
 // These are the site's own addresses, so no account can take them.
-const reserved = new Set(["api", "auth", "mcp", "health", "explore", "settings", "new", "about", "accuracy", "blog", "data", "developers", "help", "llms", "terms", "privacy", "assets", "logo", "og", "robots", "sitemap", "admin", "www", OFFICIAL_ACCOUNT]);
+const reserved = new Set(["api", "auth", "mcp", "health", "explore", "settings", "new", "about", "accuracy", "blog", "data", "embed", "developers", "help", "llms", "terms", "privacy", "assets", "logo", "og", "robots", "sitemap", "admin", "www", OFFICIAL_ACCOUNT]);
 
 const handlePattern = /^[a-z0-9](?:[a-z0-9-]{0,37}[a-z0-9])?$/;
 

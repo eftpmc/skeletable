@@ -22,6 +22,7 @@ const SIGN_IN_PER_MINUTE = 20;
 /** The server: the MCP endpoint, the JSON the site reads, a health check, and the built site when there is one. */
 export function createApp(tables: PublishedTable[], webDir?: string, auth?: AuthConfig, posts: Post[] = []) {
   const app = new Hono();
+  const publicUrl = auth?.publicUrl ?? "https://skeletable.com";
   const viewerOf = (c: Context) => (auth ? sessionViewer(auth.sql, c) : Promise.resolve(everyone));
   app.use("*", async (c, next) => {
     const url = new URL(c.req.url);
@@ -47,7 +48,7 @@ export function createApp(tables: PublishedTable[], webDir?: string, auth?: Auth
   });
   app.use("/auth/*", rateLimit(SIGN_IN_PER_MINUTE));
   app.all("/mcp", async (c) => {
-    if (!auth) return handleMcp(readable(tables, everyone), c.req.raw);
+    if (!auth) return handleMcp(readable(tables, everyone), publicUrl, c.req.raw);
     // A token lets an agent see what its person can. Without one, it's the public library.
     const userId = await tokenUser(auth.sql, c.req.header("authorization"));
     const visible = readable(tables, userId ? await viewerFor(auth.sql, userId) : everyone);
@@ -57,7 +58,7 @@ export function createApp(tables: PublishedTable[], webDir?: string, auth?: Auth
       if ("id" in result) await notifyOwners(auth.sql, auth.mail, auth.publicUrl, result.id);
       return result;
     };
-    return handleMcp(visible, c.req.raw, propose);
+    return handleMcp(visible, publicUrl, c.req.raw, propose);
   });
   if (auth) app.route("/", authRoutes(auth));
   else app.get("/api/me", (c) => c.json({ canSignIn: false, user: null }));
@@ -69,12 +70,12 @@ export function createApp(tables: PublishedTable[], webDir?: string, auth?: Auth
   });
   blogRoutes(app, posts, tables, viewerOf);
   app.all("/api/*", (c) => c.json({ error: "Not found" }, 404));
-  dataRoutes(app, tables, auth?.publicUrl ?? "https://skeletable.com");
+  dataRoutes(app, tables, publicUrl);
   if (webDir && existsSync(join(resolve(webDir), "index.html"))) {
     const root = resolve(webDir);
     app.get("/assets/*", serveStatic({ root }));
     app.get("/logo.*", serveStatic({ root }));
-    pageRoutes(app, tables, root, auth?.publicUrl ?? "https://skeletable.com", posts);
+    pageRoutes(app, tables, root, publicUrl, posts);
   }
   app.onError((error, c) => {
     console.error(`${c.req.method} ${c.req.path}: ${error.stack ?? error}`);

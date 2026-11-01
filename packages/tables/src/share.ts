@@ -1,4 +1,4 @@
-import type { Cell, Table } from "./format.js";
+import type { Cell, Table, WatchFile } from "./format.js";
 
 /** Small pure helpers the site and the server both use, so a table reads the same in both. */
 
@@ -17,6 +17,36 @@ export function rowSlugs(table: { rows: { key: string }[] }) {
     used.set(base, count);
     return [row.key, count > 1 ? `${base}-${count}` : base] as const;
   }));
+}
+
+export type CellStatus = "fracture" | "gone" | "once" | "summary" | "confirmed" | "none" | "unproven" | "gap" | "blank";
+
+export const statusLabels: Record<CellStatus, string> = {
+  fracture: "Fracture",
+  gone: "Quote gone",
+  once: "Read once",
+  summary: "Matched a summary",
+  confirmed: "Confirmed",
+  none: "None stated",
+  unproven: "No proof yet",
+  gap: "Not found",
+  blank: "Not looked at yet",
+};
+
+/** How far to trust a cell, worst news first. */
+export const cellStatus = (cell: Cell, rowKey: string, columnId: string, watch?: WatchFile): CellStatus => {
+  if ("missing" in cell) return cell.unproven !== undefined ? "unproven" : cell.absent ? "none" : cell.checked.length ? "gap" : "blank";
+  if (cell.conflicts?.length) return "fracture";
+  if (watch?.cells[`${rowKey}/${columnId}`]?.status === "not-on-page") return "gone";
+  if (cell.confirmed === "blind-read") return "confirmed";
+  return cell.confirmed === "summary" ? "summary" : "once";
+};
+
+/** A cell's lasting addresses: its proof, the bare value, the value with its proof as data, and a live card for other pages. */
+export function cellPaths(table: { owner: string; slug: string; rows: { key: string }[] }, rowKey: string, columnId: string) {
+  const row = rowSlugs(table).get(rowKey)!;
+  const at = `${table.owner}/${table.slug}`;
+  return { page: `/${at}/row/${row}#${columnId}`, value: `/data/${at}/${row}/${columnId}.csv`, data: `/data/${at}/${row}/${columnId}.json`, embed: `/embed/${at}/${row}/${columnId}` };
 }
 
 /** What an empty cell says: the source has no such value, we looked and couldn't find one, or nobody has looked. */
@@ -65,7 +95,7 @@ export function draftChecklist(table: Pick<Table, "question" | "topic" | "scope"
 /** A spreadsheet runs text starting with these as a formula, so a value from a page can't reach it as one. */
 const safe = (text: string) => (/^[=+\-@\t\r]/.test(text) ? `'${text}` : text);
 
-const field = (value: string | number | boolean | undefined) => {
+export const csvField = (value: string | number | boolean | undefined) => {
   if (value === undefined) return "";
   if (typeof value !== "string") return String(value);
   const text = safe(value);
@@ -80,11 +110,11 @@ export function tableCsv(table: Pick<Table, "columns" | "rows">, proof: boolean)
     return proof ? [name, `${name}: source`, `${name}: quote`] : [name];
   })];
   const lines = table.rows.map((row) => [
-    field(row.key),
+    csvField(row.key),
     ...table.columns.flatMap((column) => {
       const cell = found(row.cells[column.id]);
-      return proof ? [field(cell?.value), field(cell?.source), field(cell?.quote)] : [field(cell?.value)];
+      return proof ? [csvField(cell?.value), csvField(cell?.source), csvField(cell?.quote)] : [csvField(cell?.value)];
     }),
   ]);
-  return [header.map(field), ...lines].map((line) => line.join(",")).join("\r\n");
+  return [header.map(csvField), ...lines].map((line) => line.join(",")).join("\r\n");
 }

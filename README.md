@@ -15,6 +15,7 @@ claude mcp add --transport http skeletable https://skeletable.com/mcp
 | `list_tables` | Find a table by what it covers |
 | `get_table` | Read a table: its scope, columns and rows |
 | `get_cell` | One value's source, exact quote and date, or where we looked |
+| `check_claim` | Test a statement against a cell: it matches, differs, is disputed, or is unknown |
 | `propose_change` | Suggest a new value with its proof, for the owner to review |
 
 ## What's here

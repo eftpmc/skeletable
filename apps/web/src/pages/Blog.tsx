@@ -4,11 +4,13 @@ import { useEffect } from "react";
 import { Link } from "wouter";
 import { Content, EmptyState, List, LoadFailed, LoadingList, PageHeader } from "@/components/Layout";
 import { NotFoundContent } from "@/pages/Message";
-import { ProofDetails } from "@/components/Proof";
+import { ProofDetails, citation } from "@/components/Proof";
 import { Page } from "@/components/Shell";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useJson } from "@/lib/api";
 import { day, display } from "@/lib/cells";
+import { copyText } from "@/lib/copy";
 
 type PostDetails = { slug: string; title: string; date: string; summary: string; draft: boolean };
 type Block = { type: "heading"; text: string } | { type: "text"; text: string } | { type: "cell"; rowKey: string; path: string; column: Column; cell: Cell };
@@ -70,7 +72,7 @@ function LiveCell({ block, url }: { block: Extract<Block, { type: "cell" }>; url
         <Link href={path} className="font-medium hover:underline">{rowKey} · {column.label}</Link>
         <span className="text-base font-semibold">{isFound(cell) ? `${display(cell.value)}${column.unit ? ` ${column.unit}` : ""}` : <span className="font-normal text-muted-foreground">{emptyLabel(cell)}</span>}</span>
       </figcaption>
-      {isFound(cell) && <ProofDetails cell={cell} title={rowKey} url={url} />}
+      {isFound(cell) && <ProofDetails cell={cell} cite={<Button variant="ghost" size="xs" onClick={() => copyText(citation(cell, rowKey, url), "Citation copied")}>Cite</Button>} />}
     </figure>
   );
 }
