@@ -6,13 +6,13 @@ export type CellStatus = "fracture" | "gone" | "once" | "summary" | "confirmed" 
 export type PublishedTable = Table & { watch?: WatchFile };
 
 /** How much to trust a cell, worst news first. Each has an icon, so meaning never rests on colour alone. */
-export const statuses: Record<CellStatus, { label: string; detail: string; icon: LucideIcon; tint: string }> = {
-  fracture: { label: "Fracture", detail: "Sources disagree", icon: Bone, tint: "bg-rose-500/20" },
-  gone: { label: "Quote gone", detail: "The quote left its page at the last check", icon: SearchX, tint: "bg-orange-500/20" },
-  once: { label: "Read once", detail: "No second reader yet", icon: Eye, tint: "bg-amber-500/20" },
-  summary: { label: "Matched a summary", detail: "Matched a summary of the owner's pages", icon: FileCheck, tint: "bg-sky-500/15" },
-  confirmed: { label: "Confirmed", detail: "A separate reader opened the source without seeing our value", icon: ShieldCheck, tint: "bg-emerald-500/15" },
-  gap: { label: "Not stated", detail: "No source we could use stated this", icon: CircleDashed, tint: "" },
+export const statuses: Record<CellStatus, { label: string; detail: string; icon: LucideIcon; tint: string; solid: string }> = {
+  fracture: { label: "Fracture", detail: "Sources disagree", icon: Bone, tint: "bg-rose-500/20", solid: "bg-rose-500" },
+  gone: { label: "Quote gone", detail: "The quote left its page at the last check", icon: SearchX, tint: "bg-orange-500/20", solid: "bg-orange-500" },
+  once: { label: "Read once", detail: "No second reader yet", icon: Eye, tint: "bg-amber-500/20", solid: "bg-amber-500" },
+  summary: { label: "Matched a summary", detail: "Matched a summary of the owner's pages", icon: FileCheck, tint: "bg-sky-500/15", solid: "bg-sky-500" },
+  confirmed: { label: "Confirmed", detail: "A separate reader opened the source without seeing our value", icon: ShieldCheck, tint: "bg-emerald-500/15", solid: "bg-emerald-500" },
+  gap: { label: "Not stated", detail: "No source we could use stated this", icon: CircleDashed, tint: "", solid: "bg-muted-foreground/30" },
 };
 
 export const cellStatus = (cell: Cell, rowKey: string, columnId: string, watch?: WatchFile): CellStatus => {

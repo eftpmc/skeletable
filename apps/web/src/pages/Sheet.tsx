@@ -246,7 +246,7 @@ function TopBar({ table, owner }: { table?: PublishedTable; owner: string }) {
   const lastRead = found.reduce((latest, cell) => (cell.read > latest ? cell.read : latest), "");
   return (
     <header className="flex shrink-0 items-center gap-3 px-3 py-2">
-      <Link href="/" aria-label="All tables" className="shrink-0 rounded-lg transition-transform hover:scale-105 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
+      <Link href={table ? `/${owner}/${table.slug}` : "/"} aria-label="Back to the table's page" className="shrink-0 rounded-lg transition-transform hover:scale-105 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
         <Logo className="size-9" />
       </Link>
       <div className="min-w-0 flex-1">
