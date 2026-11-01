@@ -1,6 +1,5 @@
 import { Bot, Check, Copy, Moon, Sun } from "lucide-react";
 import { useState } from "react";
-import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useJson, type Me } from "@/lib/api";
