@@ -1,6 +1,6 @@
 import { Search } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Shell } from "@/components/Shell";
+import { PublicPage } from "@/components/Shell";
 import { TableList } from "@/components/TableList";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +20,7 @@ export function Explore() {
   }, []);
 
   return (
-    <Shell>
+    <PublicPage>
       <main className="mx-auto max-w-4xl px-4 pt-8 pb-16 sm:px-6">
         <h1 className="text-3xl font-semibold tracking-tight">Browse tables</h1>
         <div className="relative mt-5">
@@ -52,6 +52,6 @@ export function Explore() {
           <TableList tables={shown} />
         )}
       </main>
-    </Shell>
+    </PublicPage>
   );
 }

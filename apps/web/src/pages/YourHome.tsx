@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link } from "wouter";
-import { Shell } from "@/components/Shell";
+import { UserPage } from "@/components/Shell";
 import { TableList } from "@/components/TableList";
 import { Button } from "@/components/ui/button";
 import { useJson, type Me, type TableSummary } from "@/lib/api";
@@ -16,7 +16,7 @@ export function YourHome({ user }: { user: NonNullable<Me["user"]> }) {
   }, []);
 
   return (
-    <Shell>
+    <UserPage>
       <main className="mx-auto max-w-4xl px-4 pt-8 pb-16 sm:px-6">
         <h1 className="mb-6 text-3xl font-semibold tracking-tight">Your tables</h1>
         {status === "failed" ? (
@@ -33,6 +33,6 @@ export function YourHome({ user }: { user: NonNullable<Me["user"]> }) {
           <TableList tables={tables} />
         )}
       </main>
-    </Shell>
+    </UserPage>
   );
 }
