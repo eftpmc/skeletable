@@ -35,9 +35,28 @@ describe("what crawlers and tools can read", () => {
     const page = await text("/skeletable/data-breach-laws");
     const [, json] = page.match(/application\/ld\+json">(.*?)<\/script>/s)!;
     const data = JSON.parse(json!);
-    expect(data).toMatchObject({ "@type": "Dataset", license: "https://creativecommons.org/licenses/by/4.0/", isAccessibleForFree: true });
+    expect(data).toMatchObject({
+      "@type": "Dataset",
+      license: "https://creativecommons.org/licenses/by/4.0/",
+      isAccessibleForFree: true,
+      identifier: { propertyID: "Skeletable", value: "skeletable/data-breach-laws" },
+      publisher: { name: "Skeletable" },
+      includedInDataCatalog: { name: "Skeletable public tables" },
+    });
     expect(data.dateModified).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(data.distribution).toHaveLength(2);
+  });
+
+  it("identifies Skeletable as the organization publishing the site", async () => {
+    const page = await text("/");
+    const [, json] = page.match(/application\/ld\+json">(.*?)<\/script>/s)!;
+    expect(JSON.parse(json!)).toMatchObject({
+      "@type": "Organization",
+      "@id": "https://skeletable.com/#organization",
+      name: "Skeletable",
+      url: "https://skeletable.com",
+      logo: "https://skeletable.com/logo.png",
+    });
   });
 
   it("gives each row a page with the proof for its values", async () => {

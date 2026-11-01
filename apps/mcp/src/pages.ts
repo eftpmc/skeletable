@@ -81,18 +81,34 @@ function rowSummary(table: PublishedTable, row: Row) {
 
 const creator = (table: PublishedTable) => ({ "@type": "Organization", name: table.ownerName ?? table.owner });
 
+/** The publisher identity shared by the site and every public dataset. */
+const organizationData = (publicUrl: string) => ({
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": `${publicUrl}/#organization`,
+  name: "Skeletable",
+  url: publicUrl,
+  logo: `${publicUrl}/logo.png`,
+  description,
+});
+
 function tableData(table: PublishedTable, url: string, publicUrl: string) {
   return {
     "@context": "https://schema.org",
     "@type": "Dataset",
+    "@id": `${url}#dataset`,
     name: table.title,
     description: `${table.question} ${table.scope}`.slice(0, 5000),
     url,
+    identifier: { "@type": "PropertyValue", propertyID: "Skeletable", value: `${table.owner}/${table.slug}` },
     creator: creator(table),
+    publisher: { "@id": `${publicUrl}/#organization`, name: "Skeletable" },
+    includedInDataCatalog: { "@type": "DataCatalog", name: "Skeletable public tables", url: `${publicUrl}/explore` },
     keywords: [table.topic],
     license: "https://creativecommons.org/licenses/by/4.0/",
     isAccessibleForFree: true,
     dateModified: lastRead(table),
+    measurementTechnique: "Each published value links to an exact source quote and is checked against its source.",
     variableMeasured: table.columns.map((column) => column.label),
     distribution: [
       { "@type": "DataDownload", encodingFormat: "text/csv", contentUrl: `${publicUrl}/data/${table.owner}/${table.slug}.csv` },
@@ -142,7 +158,7 @@ export function pageRoutes(app: Hono, tables: PublishedTable[], webDir: string, 
   };
 
   for (const [path, [title, summary]] of Object.entries(known)) {
-    app.get(path, (c) => c.html(render(headFor(title, summary, `${publicUrl}${path}`))));
+    app.get(path, (c) => c.html(render(headFor(title, summary, `${publicUrl}${path}`, path === "/" ? organizationData(publicUrl) : undefined))));
   }
 
   app.get("/robots.txt", (c) => c.text(`User-agent: *\nDisallow: /api/\nDisallow: /auth/\nDisallow: /settings\nSitemap: ${publicUrl}/sitemap.xml\n`));
