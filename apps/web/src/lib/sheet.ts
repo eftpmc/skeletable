@@ -91,7 +91,7 @@ export function filterChoices(table: PublishedTable, columnId: string) {
     const cell = row.cells[columnId];
     const value = filterValue(cell);
     const shown = cellValue(cell);
-    const label = shown === undefined ? "Not stated" : display(shown);
+    const label = shown === undefined ? "No value" : display(shown);
     counts.set(value, { value, label, count: (counts.get(value)?.count ?? 0) + 1 });
   }
   return [...counts.values()].sort((a, b) => {

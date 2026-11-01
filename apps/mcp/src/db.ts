@@ -213,7 +213,9 @@ export async function importTables(sql: Sql, tables: PublishedTable[], { managed
           await tx`update table_rows set position = ${position} where id = ${match.id}`;
           for (const [columnId, cell] of Object.entries(row.cells)) {
             const held = current.find((candidate) => candidate.row_id === match.id && candidate.column_id === columnId)?.cell as Cell | undefined;
-            if (isFound(cell) && (!held || !isFound(held) || cell.read > held.read)) {
+            // A source read and found to have no value fills a blank the same way.
+            const settles = !isFound(cell) && cell.absent && (!held || (!isFound(held) && !held.absent));
+            if (settles || (isFound(cell) && (!held || !isFound(held) || cell.read > held.read))) {
               await tx`insert into cell_versions (row_id, column_id, cell) values (${match.id}, ${columnId}, ${tx.json(cell)})`;
             }
           }

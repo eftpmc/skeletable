@@ -1,4 +1,3 @@
-import type { Table } from "@skeleton/tables/format";
 import { ArrowRight, Bot, Quote, SearchX } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
@@ -8,9 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useJson } from "@/lib/api";
 import { cellId } from "@/lib/cells";
-import { FormulaBar, Grid } from "@/pages/Sheet";
+import { statuses, type CellStatus, type PublishedTable } from "@/lib/status";
+import { FormulaBar, Grid, selectedCell } from "@/pages/Sheet";
 
-const demoTable = "skeletable/handheld-gaming-pcs";
+const demoTable = "skeletable/data-breach-laws";
+const demoRows = ["California", "Colorado", "Florida", "New Jersey", "New York", "Texas", "Washington"];
+const demoColumns = ["statute", "notify_days", "notify_standard", "ag_notice"];
+const demoKey = ["confirmed", "once", "none", "gap"] satisfies CellStatus[];
 
 const points = [
   { icon: Quote, title: "Proof in every cell", body: "Select a value to read the exact words that state it, and open the source." },
@@ -20,17 +23,29 @@ const points = [
 
 /** A real table to try on the page: select a cell and its proof opens. */
 function Demo() {
-  const { data, status } = useJson<Table>(`/api/tables/${demoTable}`);
-  const [selectedId, setSelectedId] = useState<string | null>(cellId("Steam Deck OLED", "battery_wh"));
+  const { data, status } = useJson<PublishedTable>(`/api/tables/${demoTable}`);
+  const [selectedId, setSelectedId] = useState<string | null>(cellId("New Jersey", "notify_days"));
   if (status === "failed") return null;
   if (!data) return <Skeleton className="h-96 rounded-xl" />;
-  const row = data.rows.find((r) => selectedId?.startsWith(cellId(r.key, "")));
-  const column = data.columns.find((c) => row && cellId(row.key, c.id) === selectedId);
+  const shown = { ...data, columns: data.columns.filter((column) => demoColumns.includes(column.id)), rows: data.rows.filter((row) => demoRows.includes(row.key)) };
   return (
-    <div className="flex flex-col overflow-hidden rounded-xl border bg-background shadow-lg">
-      <FormulaBar selected={row && column ? { rowKey: row.key, column, cell: row.cells[column.id]! } : undefined} />
-      <Grid table={data} selectedId={selectedId} select={setSelectedId} emptyRows={0} focusOnLoad={false} />
-    </div>
+    <>
+      <p className="mb-3 text-center text-sm text-muted-foreground">
+        Guides say New Jersey gives businesses 30 days to report a breach. <Link href="/blog/new-jersey-30-day-deadline" className="text-foreground underline underline-offset-2">Its law gives no number.</Link>
+      </p>
+      <div className="flex flex-col overflow-hidden rounded-xl border bg-background shadow-lg">
+        <FormulaBar selected={selectedCell(shown, selectedId)} />
+        <Grid table={shown} selectedId={selectedId} select={setSelectedId} emptyRows={0} focusOnLoad={false} />
+        <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t bg-muted px-3 py-2 text-xs text-muted-foreground" aria-label="What the corner of a cell means">
+          {demoKey.map((name) => (
+            <li key={name} className="flex items-center gap-1.5">
+              {statuses[name].corner ? <span aria-hidden="true" className={`size-0 border-t-[7px] border-l-[7px] border-l-transparent ${statuses[name].corner}`} /> : <span aria-hidden="true" className="size-[7px]" />}
+              {statuses[name].label}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </>
   );
 }
 

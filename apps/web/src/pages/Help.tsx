@@ -23,7 +23,7 @@ export function Help() {
         <div className="space-y-6">
           <Section title="Reading a table">
             <Prose>
-              <p>Select any value in a sheet to see the exact words that state it, and a link to where they came from. "Not stated" means no source we could use said so. It never means no.</p>
+              <p>Select any value in a sheet to see the exact words that state it, and a link to where they came from. The mark in a cell's corner shows how far it was checked. "Not found" means no source we could use said so, which never means no. "None stated" means the source was read and gives no such value.</p>
               <p>Sort by clicking a column, and use Find and Filter at the bottom of the sheet. Share gives you a link to the live table with your view kept, and Download saves what you're looking at.</p>
             </Prose>
           </Section>

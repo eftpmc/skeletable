@@ -63,7 +63,7 @@ it("lists a column's values in order, with blanks last", () => {
   expect(filterChoices(table, "weight")).toEqual([
     { value: "9", label: "9", count: 1 },
     { value: "20", label: "20", count: 1 },
-    { value: BLANK, label: "Not stated", count: 1 },
+    { value: BLANK, label: "No value", count: 1 },
   ]);
 });
 

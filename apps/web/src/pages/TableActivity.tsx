@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ownsAccount } from "@/lib/account";
 import { postJson, useJson, useMe } from "@/lib/api";
+import { emptyLabel } from "@skeleton/tables/share";
 import { day, display, host } from "@/lib/cells";
 import type { PublishedTable } from "@/lib/status";
 
@@ -27,7 +28,7 @@ type Proposal = {
 
 type Change = { id: string; row: string; column: string; cell: FoundCell; previous: Cell; author: string; created_at: string };
 
-const shown = (cell: Cell) => ("missing" in cell ? "Not stated" : display(cell.value));
+const shown = (cell: Cell) => ("missing" in cell ? emptyLabel(cell) : display(cell.value));
 
 /** Old value to new, the shape every change takes. */
 const Diff = ({ from, to }: { from: Cell; to: Cell }) => (

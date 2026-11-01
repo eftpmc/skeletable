@@ -1,22 +1,27 @@
 import type { Cell, Table, WatchFile } from "@skeleton/tables/format";
-import { Bone, CircleDashed, Eye, FileCheck, SearchX, ShieldCheck, type LucideIcon } from "lucide-react";
+import { Bone, CircleDashed, CircleSlash, Eye, FileCheck, SearchX, ShieldCheck, Square, type LucideIcon } from "lucide-react";
 
-export type CellStatus = "fracture" | "gone" | "once" | "summary" | "confirmed" | "gap";
+export type CellStatus = "fracture" | "gone" | "once" | "summary" | "confirmed" | "none" | "gap" | "blank";
 
 export type PublishedTable = Table & { watch?: WatchFile; ownerName?: string; private?: boolean; managed?: boolean; moved?: Record<string, string> };
 
-/** How much to trust a cell, worst news first. Each has an icon, so meaning never rests on colour alone. */
-export const statuses: Record<CellStatus, { label: string; detail: string; icon: LucideIcon; tint: string; solid: string }> = {
-  fracture: { label: "Fracture", detail: "Sources disagree", icon: Bone, tint: "bg-rose-500/20", solid: "bg-rose-500" },
-  gone: { label: "Quote gone", detail: "The quote left its page at the last check", icon: SearchX, tint: "bg-orange-500/20", solid: "bg-orange-500" },
-  once: { label: "Read once", detail: "No second reader yet", icon: Eye, tint: "bg-amber-500/20", solid: "bg-amber-500" },
-  summary: { label: "Matched a summary", detail: "Matched a summary of the owner's pages", icon: FileCheck, tint: "bg-sky-500/15", solid: "bg-sky-500" },
-  confirmed: { label: "Confirmed", detail: "A separate reader opened the source without seeing our value", icon: ShieldCheck, tint: "bg-emerald-500/15", solid: "bg-emerald-500" },
-  gap: { label: "Not stated", detail: "No source we could use stated this", icon: CircleDashed, tint: "", solid: "bg-muted-foreground/30" },
+/**
+ * How much to trust a cell, worst news first. Each has an icon, so meaning never rests on colour
+ * alone. `corner` is the mark in a cell's corner, like a spreadsheet's note: only settled values get one.
+ */
+export const statuses: Record<CellStatus, { label: string; detail: string; icon: LucideIcon; tint: string; solid: string; corner?: string }> = {
+  fracture: { label: "Fracture", detail: "Sources disagree", icon: Bone, tint: "bg-rose-500/20", solid: "bg-rose-500", corner: "border-t-rose-500" },
+  gone: { label: "Quote gone", detail: "The quote left its page at the last check", icon: SearchX, tint: "bg-orange-500/20", solid: "bg-orange-500", corner: "border-t-orange-500" },
+  once: { label: "Read once", detail: "No second reader yet", icon: Eye, tint: "bg-amber-500/20", solid: "bg-amber-500", corner: "border-t-amber-500" },
+  summary: { label: "Matched a summary", detail: "Matched a summary of the owner's pages", icon: FileCheck, tint: "bg-sky-500/15", solid: "bg-sky-500", corner: "border-t-sky-500" },
+  confirmed: { label: "Confirmed", detail: "A separate reader opened the source without seeing our value", icon: ShieldCheck, tint: "bg-emerald-500/15", solid: "bg-emerald-500", corner: "border-t-emerald-500" },
+  none: { label: "None stated", detail: "We read the source and it gives no such value", icon: CircleSlash, tint: "bg-violet-500/15", solid: "bg-violet-500", corner: "border-t-violet-500" },
+  gap: { label: "Not found", detail: "No source we could use stated this", icon: CircleDashed, tint: "", solid: "bg-muted-foreground/30" },
+  blank: { label: "Not looked at yet", detail: "Nobody has looked for this yet", icon: Square, tint: "", solid: "bg-muted-foreground/15" },
 };
 
 export const cellStatus = (cell: Cell, rowKey: string, columnId: string, watch?: WatchFile): CellStatus => {
-  if ("missing" in cell) return "gap";
+  if ("missing" in cell) return cell.absent ? "none" : cell.checked.length ? "gap" : "blank";
   if (cell.conflicts?.length) return "fracture";
   if (watch?.cells[`${rowKey}/${columnId}`]?.status === "not-on-page") return "gone";
   if (cell.confirmed === "blind-read") return "confirmed";

@@ -2167,7 +2167,8 @@
           "checked": [
             "https://www.njleg.state.nj.us/2004/Bills/PL05/226_.HTM"
           ],
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "absent": true
         },
         "ag_notice": {
           "missing": true,

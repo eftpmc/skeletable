@@ -13,6 +13,11 @@ it("ranks a cell by how far it can be trusted", () => {
   expect(cellStatus(missing, "One", "weight")).toBe("gap");
 });
 
+it("tells an unread cell from a searched one and from a source with no value", () => {
+  expect(cellStatus({ missing: true, checked: [], read: "2026-10-31" }, "One", "weight")).toBe("blank");
+  expect(cellStatus({ ...missing, missing: true, checked: ["https://a.example"], read: "2026-10-31", absent: true }, "One", "weight")).toBe("none");
+});
+
 it("lets a vanished quote outrank a confirmation", () => {
   expect(cellStatus({ ...found, confirmed: "blind-read" }, "One", "weight", watch("not-on-page"))).toBe("gone");
   expect(cellStatus({ ...found, confirmed: "blind-read" }, "One", "weight", watch("found"))).toBe("confirmed");

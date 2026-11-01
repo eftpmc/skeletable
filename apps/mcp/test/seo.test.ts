@@ -25,7 +25,8 @@ describe("what crawlers and tools can read", () => {
   it("puts a table's values in its page, without needing scripts", async () => {
     const page = await text("/skeletable/data-breach-laws");
     expect(page).toContain("<td>60 days</td>");
-    expect(page).toContain("Not stated");
+    expect(page).toContain("Not found");
+    expect(page).toContain("None stated");
     expect(page).toContain('href="/skeletable/data-breach-laws/row/texas"');
     expect(page).toContain('href="/data/skeletable/data-breach-laws.csv"');
   });

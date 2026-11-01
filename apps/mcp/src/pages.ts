@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { isFound, type Cell, type Column } from "@skeleton/tables/format";
-import { displayValue, inlineParts, rowSlugs } from "@skeleton/tables/share";
+import { displayValue, emptyLabel, inlineParts, rowSlugs } from "@skeleton/tables/share";
 import type { Hono } from "hono";
 import { everyone, readable } from "./access.js";
 import { lastRead, type PublishedTable } from "./library.js";
@@ -32,7 +32,7 @@ function headFor(title: string, summary: string, url: string, data?: object, ima
   return tags.join("\n    ");
 }
 
-const shown = (cell: Cell | undefined, column: Column) => (cell && isFound(cell) ? `${displayValue(cell.value)}${column.unit ? ` ${column.unit}` : ""}` : "Not stated");
+const shown = (cell: Cell | undefined, column: Column) => (cell && isFound(cell) ? `${displayValue(cell.value)}${column.unit ? ` ${column.unit}` : ""}` : emptyLabel(cell));
 
 /** The table as plain HTML, values included, because many crawlers don't run scripts. The app replaces it when it loads. */
 function tableText(table: PublishedTable) {
@@ -43,7 +43,7 @@ function tableText(table: PublishedTable) {
     const cells = table.columns.map((column) => `<td>${escape(shown(row.cells[column.id], column))}</td>`).join("");
     return `<tr><th><a href="${base}/row/${escape(slugs.get(row.key)!)}">${escape(row.key)}</a></th>${cells}</tr>`;
   }).join("");
-  return `<main><h1>${escape(table.title)}</h1><p>${escape(table.question)}</p><p>${escape(table.scope)}</p><p>Last read ${escape(lastRead(table))}. "Not stated" means no source we could use said so. It never means no. Each row's page gives the source and exact quote for its values.</p><table><thead><tr><th>Name</th>${header}</tr></thead><tbody>${rows}</tbody></table><p>Data: <a href="/data/${table.owner}/${table.slug}.csv">CSV</a>, <a href="/data/${table.owner}/${table.slug}.json">JSON</a>. Licence: CC BY 4.0.</p></main>`;
+  return `<main><h1>${escape(table.title)}</h1><p>${escape(table.question)}</p><p>${escape(table.scope)}</p><p>Last read ${escape(lastRead(table))}. "Not found" means no source we could use said so, which never means no. "None stated" means the source was read and gives no such value. Each row's page gives the source and exact quote for its values.</p><table><thead><tr><th>Name</th>${header}</tr></thead><tbody>${rows}</tbody></table><p>Data: <a href="/data/${table.owner}/${table.slug}.csv">CSV</a>, <a href="/data/${table.owner}/${table.slug}.json">JSON</a>. Licence: CC BY 4.0.</p></main>`;
 }
 
 /** One row with the proof for each value, the most useful page to land on from a search. */
@@ -53,7 +53,7 @@ function rowText(table: PublishedTable, row: Row) {
     const cell = row.cells[column.id];
     const proof = cell && isFound(cell)
       ? `<blockquote>${escape(cell.quote)}</blockquote><p>Source: <a href="${escape(cell.source)}">${escape(cell.source)}</a>. Read ${escape(cell.read)}.${cell.confirmed ? " Checked by a second reader." : " Read once."}</p>`
-      : `<p>No source we could use stated this. A blank never means no.</p>`;
+      : cell && "missing" in cell && cell.absent ? `<p>The source was read and gives no such value.</p>` : `<p>No source we could use stated this. A blank never means no.</p>`;
     return `<section><h2>${escape(column.label)}: ${escape(shown(cell, column))}</h2><p>${escape(column.rule)}</p>${proof}</section>`;
   }).join("");
   return `<main><h1>${escape(row.key)}</h1><p>From <a href="${base}">${escape(table.title)}</a>: ${escape(table.question)}</p>${items}</main>`;
@@ -66,7 +66,7 @@ function postText(post: Post, tables: PublishedTable[]) {
   const blocks = postBlocks(post, tables).map((block) => {
     if (block.type === "heading") return `<h2>${escape(block.text)}</h2>`;
     if (block.type === "text") return `<p>${inline(block.text)}</p>`;
-    const value = isFound(block.cell) ? `${displayValue(block.cell.value)}${block.column.unit ? ` ${block.column.unit}` : ""}` : "Not stated";
+    const value = isFound(block.cell) ? `${displayValue(block.cell.value)}${block.column.unit ? ` ${block.column.unit}` : ""}` : emptyLabel(block.cell);
     return `<figure><figcaption>${escape(block.rowKey)}, ${escape(block.column.label)}: ${escape(value)}</figcaption>${isFound(block.cell) ? `<blockquote>${escape(block.cell.quote)}</blockquote><p>Source: <a href="${escape(block.cell.source)}">${escape(block.cell.source)}</a>. Read ${escape(block.cell.read)}.</p>` : ""}</figure>`;
   });
   return `<main><article><h1>${escape(post.title)}</h1><p>${escape(post.date)}</p>${blocks.join("")}</article></main>`;

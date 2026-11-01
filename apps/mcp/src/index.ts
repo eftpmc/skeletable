@@ -12,7 +12,8 @@ const { DATABASE_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, OWNER_EMAIL, PUBLI
 const sql = DATABASE_URL ? connect(DATABASE_URL) : undefined;
 const library = sql ? await openLibrary(sql, dir) : undefined;
 const tables: PublishedTable[] = library ? library.tables : await loadTables(dir);
-if (sql && library) startWatching(sql, tables, library.refresh);
+// WATCH=off keeps a local copy from reading every source.
+if (sql && library && process.env.WATCH !== "off") startWatching(sql, tables, library.refresh);
 const auth: AuthConfig | undefined =
   sql && library && GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET
     ? { sql, clientId: GOOGLE_CLIENT_ID, clientSecret: GOOGLE_CLIENT_SECRET, publicUrl: PUBLIC_URL, ownerEmail: OWNER_EMAIL, tables, refresh: library.refresh, mail: RESEND_API_KEY ? resendMailer(RESEND_API_KEY, EMAIL_FROM) : undefined }

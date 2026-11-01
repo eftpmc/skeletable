@@ -55,6 +55,8 @@ export const missingCellSchema = z.object({
   // Empty when a new table hasn't been filled in yet, so nobody has looked anywhere.
   checked: z.array(url).max(10),
   read: day,
+  // The source was read in full and gives no such value, which is an answer rather than a gap.
+  absent: z.literal(true).optional(),
 });
 
 export const cellSchema = z.union([foundCellSchema, missingCellSchema]);
@@ -108,6 +110,9 @@ export type Row = z.infer<typeof rowSchema>;
 export type Table = z.infer<typeof tableSchema>;
 
 export const isFound = (cell: Cell): cell is FoundCell => !("missing" in cell);
+
+/** Whether a cell is settled: it states a value, or its source was read and has none. */
+export const isAnswered = (cell: Cell) => isFound(cell) || !!cell.absent;
 
 /** Lowercase, plain punctuation and single spaces, so a quote survives a page's typography. */
 export function normalize(value: string): string {
@@ -192,6 +197,8 @@ export function validateTable(input: unknown): { table?: Table; problems: string
           const problem = valueProblem(column, stated.value, stated.quote);
           if (problem) problems.push(`${at}: ${problem}`);
         }
+      } else if (cell.absent && !cell.checked.length) {
+        problems.push(`${at}: says its source has no value, without naming the source`);
       }
     }
   }

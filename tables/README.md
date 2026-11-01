@@ -25,7 +25,7 @@ Rules: a value must be tied to that exact row, everything a value says must be i
 | `archived` | A dated public copy of the owner's page, for when the live page can't be read | Facts that don't change, never prices |
 | `second-hand` | Someone else's account | Only when nothing closer exists |
 
-A cell with no acceptable source stays missing and counts against the table.
+A cell with no acceptable source stays missing and counts against the table. One whose `checked` source was read in full and gives no such value can say `absent`, which is an answer and needs that reading to have been done: a partial page or a summary doesn't count.
 
 A cell can also record more about itself:
 

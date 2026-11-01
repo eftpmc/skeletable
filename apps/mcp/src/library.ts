@@ -1,6 +1,6 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { isFound, normalize, validateTable, watchFileSchema, watchKey, type Cell, type Table, type WatchFile } from "@skeleton/tables/format";
+import { isAnswered, isFound, normalize, validateTable, watchFileSchema, watchKey, type Cell, type Table, type WatchFile } from "@skeleton/tables/format";
 
 /** A table as served, with what the last watch saw, if it's been watched, and its team's name if a team runs it. A private one must only go out through the rule in access.ts. */
 export type PublishedTable = Table & { watch?: WatchFile; ownerName?: string; private?: boolean; managed?: boolean; moved?: Record<string, string> };
@@ -41,7 +41,7 @@ export function summarize(table: PublishedTable) {
     question: table.question,
     rows: table.rows.length,
     columns: table.columns.map((column) => column.label),
-    filled: `${cells(table).filter(isFound).length} of ${cells(table).length} cells`,
+    filled: `${cells(table).filter(isAnswered).length} of ${cells(table).length} cells`,
     lastRead: lastRead(table),
     lastChecked: table.watch?.ran ?? lastRead(table),
   };

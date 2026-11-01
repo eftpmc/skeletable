@@ -1,4 +1,5 @@
 import type { FoundCell } from "@skeleton/tables/format";
+import { displayValue, quoteLink } from "@skeleton/tables/share";
 import { ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,9 +13,10 @@ export const kindLabels: Record<FoundCell["kind"], string> = {
   "second-hand": "Second-hand",
 };
 
-export const SourceLink = ({ url, label }: { url: string; label: string }) => (
+/** A link to a source. Given the quote, it opens at those words. */
+export const SourceLink = ({ url, label, quote }: { url: string; label: string; quote?: string }) => (
   <Button variant="outline" size="xs" className="max-w-full" asChild>
-    <a href={url} target="_blank" rel="noopener noreferrer">
+    <a href={quote ? quoteLink(url, quote) : url} target="_blank" rel="noopener noreferrer">
       <span className="truncate">{label}</span>
       <ExternalLink />
     </a>
@@ -22,7 +24,7 @@ export const SourceLink = ({ url, label }: { url: string; label: string }) => (
 );
 
 /** The source's exact words, with the part that states the value marked. */
-export function Quote({ cell }: { cell: FoundCell }) {
+export function Quote({ cell }: { cell: Pick<FoundCell, "value" | "quote"> }) {
   const [before, match, after] = splitQuote(cell.value, cell.quote);
   return (
     <p className="break-words text-muted-foreground">
@@ -50,12 +52,27 @@ export const CiteButton = ({ cell, title, url }: { cell: FoundCell; title: strin
   <Button variant="ghost" size="xs" onClick={() => copyText(citation(cell, title, url), "Citation copied")}>Cite</Button>
 );
 
+/** What other sources state instead, each with its own proof. */
+export const Conflicts = ({ cell }: { cell: FoundCell }) =>
+  cell.conflicts?.length ? (
+    <ul className="space-y-1.5 border-t pt-1.5">
+      {cell.conflicts.map((conflict) => (
+        <li key={conflict.source + conflict.quote} className="space-y-1">
+          <p className="text-xs font-medium">Another source states {displayValue(conflict.value)}</p>
+          <Quote cell={conflict} />
+          <SourceLink url={conflict.source} label={host(conflict.source)} quote={conflict.quote} />
+        </li>
+      ))}
+    </ul>
+  ) : null;
+
 /** One value's proof, used wherever a value is shown on its own. */
 export const ProofDetails = ({ cell, status, title, url }: { cell: FoundCell; status?: CellStatus; title: string; url: string }) => (
   <div className="space-y-1.5 text-sm">
     <Quote cell={cell} />
+    <Conflicts cell={cell} />
     <div className="flex flex-wrap items-center gap-1.5">
-      <SourceLink url={cell.source} label={host(cell.source)} />
+      <SourceLink url={cell.source} label={host(cell.source)} quote={cell.quote} />
       <Badge variant="secondary">{kindLabels[cell.kind]}</Badge>
       {status && <StatusBadge status={status} />}
       <CiteButton cell={cell} title={title} url={url} />

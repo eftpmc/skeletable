@@ -48,7 +48,7 @@ export function tablesMcpServer(tables: PublishedTable[], propose?: Propose) {
     "get_cell",
     {
       description:
-        "The evidence for one value: the source, the exact quote, what kind of source it is and when it was read. For a missing value, where we looked. " +
+        "The evidence for one value: the source, the exact quote, what kind of source it is and when it was read. For a missing value, where we looked, and `absent` means the source was read and gives no such value. " +
         "`confirmed` says how a second reader backed it up, and without it the value has been read once. `conflicts` lists sources that state something else, `history` lists past values, and `watch` says whether the quote was still on its page at the last check.",
       inputSchema: {
         slug: z.string().max(120).describe("From list_tables"),

@@ -1,4 +1,4 @@
-import type { Cell, Column, FoundCell } from "@skeleton/tables/format";
+import { isAnswered, isFound, type Cell, type Column } from "@skeleton/tables/format";
 import { ArrowDown, ArrowUp, Info, Lock, Pencil, Plus, ScanLine, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent, type PointerEvent, type ReactNode, type RefObject } from "react";
 import { toast } from "sonner";
@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { DownloadButton } from "@/components/Download";
 import { FilterButton } from "@/components/Filter";
 import { NoTable } from "@/components/NoTable";
-import { Quote, SourceLink, StatusBadge, kindLabels } from "@/components/Proof";
+import { Conflicts, Quote, SourceLink, StatusBadge, kindLabels } from "@/components/Proof";
 import { ShareButton } from "@/components/Share";
 import { AppBar } from "@/components/Shell";
 import { Shortcuts } from "@/components/Shortcuts";
@@ -25,12 +25,19 @@ import { NAME_COLUMN, filteredRows, matchingRows, nextSort, readView, sortedRows
 import { cellStatus, statusCounts, statuses, type CellStatus, type PublishedTable } from "@/lib/status";
 import { Message } from "@/pages/Message";
 
-const isFound = (cell: Cell): cell is FoundCell => !("missing" in cell);
-
 /** Empty rows carry the grid down the page, as in a spreadsheet. */
 const fullHeightRows = 30;
 
-export type Selected = { rowKey: string; column: Column; cell: Cell; status?: CellStatus };
+export type Selected = { rowKey: string; column: Column; cell: Cell; status: CellStatus };
+
+/** The cell a selection points at, with how far to trust it. */
+export function selectedCell(table: PublishedTable, id: string | null): Selected | undefined {
+  const row = table.rows.find((r) => id?.startsWith(cellId(r.key, "")));
+  const column = table.columns.find((c) => row && cellId(row.key, c.id) === id);
+  if (!row || !column) return undefined;
+  const cell = row.cells[column.id]!;
+  return { rowKey: row.key, column, cell, status: cellStatus(cell, row.key, column.id, table.watch) };
+}
 
 function SuggestButton({ onSuggest, canEdit }: { onSuggest: () => void; canEdit: boolean }) {
   const { canSignIn, user } = useMe();
@@ -177,7 +184,7 @@ export function FormulaBar({ selected, table, onChanged }: { selected?: Selected
   const [suggesting, setSuggesting] = useState(false);
   const [sent, setSent] = useState(false);
   const cell = selected?.cell;
-  const value = !selected || !cell ? undefined : isFound(cell) ? `${display(cell.value)}${selected.column.unit ? ` ${selected.column.unit}` : ""}` : "Not stated";
+  const value = !selected || !cell ? undefined : isFound(cell) ? `${display(cell.value)}${selected.column.unit ? ` ${selected.column.unit}` : ""}` : statuses[selected.status].label;
   return (
     <section className="shrink-0 border-y" aria-live="polite" aria-label="Selected cell">
       <div className="flex h-9 items-center text-sm">
@@ -206,16 +213,17 @@ export function FormulaBar({ selected, table, onChanged }: { selected?: Selected
             <>
               <Quote cell={cell} />
               <div className="flex flex-wrap items-center gap-1.5">
-                <SourceLink url={cell.source} label={host(cell.source)} />
+                <SourceLink url={cell.source} label={host(cell.source)} quote={cell.quote} />
                 <Badge variant="secondary">{kindLabels[cell.kind]}</Badge>
-                {selected.status && <StatusBadge status={selected.status} />}
+                <StatusBadge status={selected.status} />
                 {table && <SuggestButton onSuggest={() => setSuggesting(true)} canEdit={canEdit} />}
                 <Badge variant="outline">Read {day(cell.read)}</Badge>
               </div>
+              <Conflicts cell={cell} />
             </>
           ) : (
             <>
-              <p className="text-muted-foreground">{cell.checked.length ? `No source we could use stated this. We looked here on ${day(cell.read)}:` : "Nothing has been added here yet."}</p>
+              <p className="text-muted-foreground">{cell.absent ? `We read this source on ${day(cell.read)} and it gives no such value.` : cell.checked.length ? `No source we could use stated this. We looked here on ${day(cell.read)}:` : "Nobody has looked for this yet."}</p>
               <div className="flex flex-wrap gap-1.5">
                 {cell.checked.map((url) => <SourceLink key={url} url={url} label={place(url)} />)}
                 {table && <SuggestButton onSuggest={() => setSuggesting(true)} canEdit={canEdit} />}
@@ -346,7 +354,8 @@ export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - t
                 const cell = row.cells[column.id]!;
                 const id = cellId(row.key, column.id);
                 const first = rowIndex === 0 && columnIndex === 0;
-                const status = statuses[cellStatus(cell, row.key, column.id, table.watch)];
+                const statusName = cellStatus(cell, row.key, column.id, table.watch);
+                const status = statuses[statusName];
                 const StatusIcon = status.icon;
                 return (
                   <td
@@ -357,13 +366,23 @@ export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - t
                     aria-selected={selectedId === id}
                     onClick={() => select(id)}
                     onKeyDown={(event) => onKeyDown(event, rowIndex, columnIndex)}
-                    title={xray ? status.detail : undefined}
+                    title={isFound(cell) ? `${status.label}: ${cell.quote}` : status.detail}
                     // The tint runs down the grid row by row, like a scan.
                     style={{ ...(xray && { transitionDelay: `${rowIndex * 35}ms` }), ...(widths?.[column.id] && { maxWidth: widths[column.id] }) }}
-                    className={`${edge} ${xray ? status.tint : ""} max-w-44 cursor-cell truncate px-2 py-1 transition-colors duration-200 hover:bg-muted/50 motion-reduce:transition-none focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset aria-selected:bg-brand/10 aria-selected:ring-2 aria-selected:ring-brand aria-selected:ring-inset sm:max-w-72 ${column.type === "number" ? "text-right" : ""} ${isFound(cell) ? "" : "text-xs text-muted-foreground"}`}
+                    className={`${edge} ${xray ? status.tint : ""} relative max-w-44 cursor-cell truncate px-2 py-1 transition-colors duration-200 hover:bg-muted/50 motion-reduce:transition-none focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset aria-selected:bg-brand/10 aria-selected:ring-2 aria-selected:ring-brand aria-selected:ring-inset sm:max-w-72 ${column.type === "number" ? "text-right" : ""} ${isFound(cell) ? "" : "text-xs text-muted-foreground"}`}
                   >
                     {xray && <StatusIcon className="mr-1.5 inline size-3 align-[-1px] text-foreground/70" aria-label={status.label} />}
-                    {isFound(cell) ? display(cell.value) : "Not stated"}
+                    {!xray && status.corner && <span aria-hidden="true" className={`absolute top-0 right-0 size-0 border-t-[7px] border-l-[7px] border-l-transparent ${status.corner}`} />}
+                    {isFound(cell) ? (
+                      display(cell.value)
+                    ) : statusName === "blank" && !xray ? (
+                      <>
+                        <span className="sr-only">{status.label}</span>
+                        <Skeleton aria-hidden="true" className={`my-[5px] h-2.5 bg-foreground/10 motion-reduce:animate-none ${column.type === "number" ? "ml-auto" : ""}`} style={{ width: `${35 + ((rowIndex * 37 + columnIndex * 53) % 45)}%` }} />
+                      </>
+                    ) : (
+                      status.label
+                    )}
                   </td>
                 );
               })}
@@ -387,9 +406,8 @@ export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - t
 /** The sheet's size and age, kept quiet at the end of the status bar. */
 function SheetFacts({ table }: { table: PublishedTable }) {
   const cells = table.rows.flatMap((row) => Object.values(row.cells));
-  const found = cells.filter(isFound);
-  const lastRead = found.reduce((latest, cell) => (cell.read > latest ? cell.read : latest), "");
-  return <span className="ml-auto hidden shrink-0 text-muted-foreground tabular-nums md:inline">{found.length} of {cells.length} cells{lastRead && ` · Read ${day(lastRead)}`}</span>;
+  const lastRead = cells.filter(isFound).reduce((latest, cell) => (cell.read > latest ? cell.read : latest), "");
+  return <span className="ml-auto hidden shrink-0 text-muted-foreground tabular-nums md:inline">{cells.filter(isAnswered).length} of {cells.length} cells{lastRead && ` · Read ${day(lastRead)}`}</span>;
 }
 
 export function Sheet({ owner, slug }: { owner: string; slug: string }) {
@@ -425,8 +443,6 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const row = data?.rows.find((r) => selectedId?.startsWith(cellId(r.key, "")));
-  const column = data?.columns.find((c) => row && cellId(row.key, c.id) === selectedId);
   return (
     <div className="flex h-svh flex-col duration-200 animate-in fade-in zoom-in-[0.995] motion-reduce:animate-none">
       <AppBar
@@ -446,7 +462,7 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
         <Message title="This table didn't load" action={<Button variant="outline" size="sm" onClick={retry}>Try again</Button>} />
       ) : data && shown ? (
         <>
-          <FormulaBar table={data} onChanged={retry} selected={row && column ? { rowKey: row.key, column, cell: row.cells[column.id]!, status: cellStatus(row.cells[column.id]!, row.key, column.id, data.watch) } : undefined} />
+          <FormulaBar table={data} onChanged={retry} selected={selectedCell(data, selectedId)} />
           <Grid
             table={shown}
             selectedId={selectedId}

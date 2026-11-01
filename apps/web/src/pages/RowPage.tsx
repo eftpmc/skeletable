@@ -10,7 +10,7 @@ import { Page } from "@/components/Shell";
 import { Button } from "@/components/ui/button";
 import { useJson } from "@/lib/api";
 import { accountName, cellId, day, display, ownerLabel, rowPath } from "@/lib/cells";
-import { cellStatus, type PublishedTable } from "@/lib/status";
+import { cellStatus, statuses, type PublishedTable } from "@/lib/status";
 
 const isFound = (cell: PublishedTable["rows"][number]["cells"][string]): cell is FoundCell => !("missing" in cell);
 
@@ -34,20 +34,21 @@ function RowDetails({ table, rowKey, onChanged }: { table: PublishedTable; rowKe
       <List label={`Values for ${rowKey}`}>
         {table.columns.map((column) => {
           const cell = row.cells[column.id]!;
+          const status = cellStatus(cell, rowKey, column.id, table.watch);
           return (
             <li key={column.id} className="space-y-2 px-4 py-3">
               <div className="flex flex-wrap items-baseline justify-between gap-x-3">
                 <h2 className="font-medium">{column.label}</h2>
-                <p className="text-base font-semibold">{isFound(cell) ? `${display(cell.value)}${column.unit ? ` ${column.unit}` : ""}` : <span className="font-normal text-muted-foreground">Not stated</span>}</p>
+                <p className="text-base font-semibold">{isFound(cell) ? `${display(cell.value)}${column.unit ? ` ${column.unit}` : ""}` : <span className="font-normal text-muted-foreground">{statuses[status].label}</span>}</p>
               </div>
               <p className="text-xs text-muted-foreground">{column.rule}</p>
               {isFound(cell) ? (
                 <>
-                  <ProofDetails cell={cell} status={cellStatus(cell, rowKey, column.id, table.watch)} title={table.title} url={url} />
+                  <ProofDetails cell={cell} status={status} title={table.title} url={url} />
                   <p className="text-xs text-muted-foreground">Read {day(cell.read)}</p>
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground">No source we could use stated this. A blank never means no.</p>
+                <p className="text-sm text-muted-foreground">{cell.absent ? `${statuses[status].detail}.` : `${statuses[status].detail}. A blank never means no.`}</p>
               )}
             </li>
           );

@@ -1,5 +1,5 @@
 import type { Cell, Column, FoundCell } from "@skeleton/tables/format";
-import { inlineParts } from "@skeleton/tables/share";
+import { emptyLabel, inlineParts } from "@skeleton/tables/share";
 import { useEffect } from "react";
 import { Link } from "wouter";
 import { Content, EmptyState, List, LoadFailed, LoadingList, PageHeader } from "@/components/Layout";
@@ -68,7 +68,7 @@ function LiveCell({ block, url }: { block: Extract<Block, { type: "cell" }>; url
     <figure className="space-y-2 rounded-xl border p-4">
       <figcaption className="flex flex-wrap items-baseline justify-between gap-x-3">
         <Link href={path} className="font-medium hover:underline">{rowKey} · {column.label}</Link>
-        <span className="text-base font-semibold">{isFound(cell) ? `${display(cell.value)}${column.unit ? ` ${column.unit}` : ""}` : <span className="font-normal text-muted-foreground">Not stated</span>}</span>
+        <span className="text-base font-semibold">{isFound(cell) ? `${display(cell.value)}${column.unit ? ` ${column.unit}` : ""}` : <span className="font-normal text-muted-foreground">{emptyLabel(cell)}</span>}</span>
       </figcaption>
       {isFound(cell) && <ProofDetails cell={cell} title={rowKey} url={url} />}
     </figure>

@@ -19,6 +19,19 @@ export function rowSlugs(table: { rows: { key: string }[] }) {
   }));
 }
 
+/** What an empty cell says: the source has no such value, we looked and couldn't find one, or nobody has looked. */
+export const emptyLabel = (cell: Cell | undefined) => (cell && "missing" in cell && cell.absent ? "None stated" : cell && "missing" in cell && cell.checked.length ? "Not found" : "Not looked at yet");
+
+const fragment = (text: string) => encodeURIComponent(text).replace(/-/g, "%2D");
+
+/** A source's address that opens at its quote, highlighted, where the browser can. Elsewhere it's just the page. */
+export function quoteLink(source: string, quote: string) {
+  if (/\.pdf(?:$|[?#])/i.test(source)) return source;
+  const words = quote.trim().split(/\s+/);
+  const text = words.length > 12 ? `${fragment(words.slice(0, 5).join(" "))},${fragment(words.slice(-5).join(" "))}` : fragment(words.join(" "));
+  return `${source}${source.includes("#") ? "" : "#"}:~:text=${text}`;
+}
+
 /** Text split around `[words](address)` links. Only web and site addresses become links. */
 export function inlineParts(text: string) {
   const parts: { text: string; href?: string }[] = [];
