@@ -48,8 +48,8 @@ Conflicts and past values follow the same rules as any value, so a summary's cla
 | 3 | AI model API prices | AI | Built and blind checked |
 | 4 | E-readers | Consumer tech | Built and checked |
 | 5 | Home batteries: capacity and warranty | Home energy | Built and checked |
-| 6 | Password managers: plans and prices | Software | Deferred |
+| 6 | Password managers: plans and prices | Software | Deferred: two of four makers show no prices to our reader |
 | 7 | Right-to-repair laws by US state | Law | Built, check incomplete |
 | 8 | Data breach notification deadlines by US state | Law | Deferred |
-| 9 | Entrance fees at the most visited US national parks | Travel | Deferred |
+| 9 | Entrance fees at the most visited US national parks | Travel | Built, read once |
 | 10 | EVs on sale in the US: EPA range | Cars | Deferred |

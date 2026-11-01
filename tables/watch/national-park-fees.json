@@ -1,0 +1,142 @@
+{
+  "slug": "national-park-fees",
+  "ran": "2026-11-01",
+  "cells": {
+    "Grand Canyon/vehicle_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Grand Canyon/motorcycle_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Grand Canyon/person_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Grand Canyon/annual_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Grand Canyon/nonresident_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Zion/vehicle_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Zion/motorcycle_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Zion/person_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Zion/annual_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Zion/nonresident_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Yellowstone/vehicle_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Yellowstone/motorcycle_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Yellowstone/person_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Yellowstone/annual_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Yellowstone/nonresident_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Rocky Mountain/vehicle_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Rocky Mountain/motorcycle_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Rocky Mountain/person_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Rocky Mountain/annual_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Rocky Mountain/nonresident_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Acadia/vehicle_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Acadia/motorcycle_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Acadia/person_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Acadia/annual_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Acadia/nonresident_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Yosemite/vehicle_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Yosemite/motorcycle_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Yosemite/person_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Yosemite/annual_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Yosemite/nonresident_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Olympic/vehicle_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Olympic/motorcycle_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Olympic/person_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    },
+    "Olympic/annual_usd": {
+      "status": "found",
+      "seen": "2026-11-01"
+    }
+  }
+}

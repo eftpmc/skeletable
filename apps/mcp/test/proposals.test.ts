@@ -177,6 +177,8 @@ describe.skipIf(!url)("proposals, history and tokens", () => {
 
   describe("daily watch", () => {
     it("saves a watch for each table once a day", async () => {
+      await sql`update data_tables set watch = null`;
+      await refresh();
       const today = new Date().toISOString().slice(0, 10);
       const pagesRead: string[] = [];
       const watched = await watchDueTables(sql, tables, async (address) => {

@@ -1,0 +1,368 @@
+{
+  "format": 1,
+  "owner": "skeletable",
+  "slug": "national-park-fees",
+  "topic": "Travel",
+  "title": "US national park entrance fees",
+  "question": "What does it cost to enter the most visited US national parks?",
+  "scope": "Eight heavily visited national parks, using each park's own fees page on nps.gov. Prices are the standard seven-day passes in US dollars, plus each park's own annual pass. Great Smoky Mountains states no entrance fee and uses parking tags instead, which aren't entrance fees, so its cells are empty. Some parks also sell other passes or require vehicle reservations, and fees can change, so check the park's page before you travel. Not a complete list of parks.",
+  "columns": [
+    {
+      "id": "vehicle_usd",
+      "label": "Private vehicle",
+      "type": "number",
+      "unit": "USD",
+      "rule": "The seven-day pass for a private, non-commercial vehicle, as the park states it."
+    },
+    {
+      "id": "motorcycle_usd",
+      "label": "Motorcycle",
+      "type": "number",
+      "unit": "USD",
+      "rule": "The seven-day motorcycle pass, as the park states it."
+    },
+    {
+      "id": "person_usd",
+      "label": "Per person",
+      "type": "number",
+      "unit": "USD",
+      "rule": "The seven-day pass for someone entering on foot or by bicycle, as the park states it."
+    },
+    {
+      "id": "annual_usd",
+      "label": "Park annual pass",
+      "type": "number",
+      "unit": "USD",
+      "rule": "The annual pass for this park alone, as the park states it."
+    },
+    {
+      "id": "nonresident_usd",
+      "label": "Non-US resident fee",
+      "type": "number",
+      "unit": "USD",
+      "rule": "The additional per-person fee for non-US residents, as the park states it."
+    }
+  ],
+  "rows": [
+    {
+      "key": "Great Smoky Mountains",
+      "cells": {
+        "vehicle_usd": {
+          "missing": true,
+          "checked": [
+            "https://www.nps.gov/grsm/planyourvisit/fees.htm"
+          ],
+          "read": "2026-11-01"
+        },
+        "motorcycle_usd": {
+          "missing": true,
+          "checked": [
+            "https://www.nps.gov/grsm/planyourvisit/fees.htm"
+          ],
+          "read": "2026-11-01"
+        },
+        "person_usd": {
+          "missing": true,
+          "checked": [
+            "https://www.nps.gov/grsm/planyourvisit/fees.htm"
+          ],
+          "read": "2026-11-01"
+        },
+        "annual_usd": {
+          "missing": true,
+          "checked": [
+            "https://www.nps.gov/grsm/planyourvisit/fees.htm"
+          ],
+          "read": "2026-11-01"
+        },
+        "nonresident_usd": {
+          "missing": true,
+          "checked": [
+            "https://www.nps.gov/grsm/planyourvisit/fees.htm"
+          ],
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "Grand Canyon",
+      "cells": {
+        "vehicle_usd": {
+          "value": 35,
+          "source": "https://www.nps.gov/grca/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "private vehicle$35.00admits one single, private, non-commercial vehicle and all its passeng",
+          "read": "2026-11-01"
+        },
+        "motorcycle_usd": {
+          "value": 30,
+          "source": "https://www.nps.gov/grca/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "motorcycle$30.00valid for 7 days. admits up to 2 private, non-commercial motorcycles w",
+          "read": "2026-11-01"
+        },
+        "person_usd": {
+          "value": 20,
+          "source": "https://www.nps.gov/grca/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "per person$20.00individual ($20 valid for 7 days): for bicyclists, hikers, and pedestr",
+          "read": "2026-11-01"
+        },
+        "annual_usd": {
+          "value": 70,
+          "source": "https://www.nps.gov/grca/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "annual entrance - park$70.00",
+          "read": "2026-11-01"
+        },
+        "nonresident_usd": {
+          "value": 100,
+          "source": "https://www.nps.gov/grca/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "non-us residents must pay a $100 per person fee",
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "Zion",
+      "cells": {
+        "vehicle_usd": {
+          "value": 35,
+          "source": "https://www.nps.gov/zion/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "private vehicle$35.00admits private, non-commercial vehicle (15 passenger capacity or less)",
+          "read": "2026-11-01"
+        },
+        "motorcycle_usd": {
+          "value": 30,
+          "source": "https://www.nps.gov/zion/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "motorcycle$30.00valid for 7 days. admits up to 2 private, non-commercial motorcycles w",
+          "read": "2026-11-01"
+        },
+        "person_usd": {
+          "value": 20,
+          "source": "https://www.nps.gov/zion/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "per person$20.00admits one individual with no car to zion national park. typically use",
+          "read": "2026-11-01"
+        },
+        "annual_usd": {
+          "value": 70,
+          "source": "https://www.nps.gov/zion/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "annual entrance - park$70.00",
+          "read": "2026-11-01"
+        },
+        "nonresident_usd": {
+          "value": 100,
+          "source": "https://www.nps.gov/zion/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "non-us residents must pay a $100 per person fee",
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "Yellowstone",
+      "cells": {
+        "vehicle_usd": {
+          "value": 35,
+          "source": "https://www.nps.gov/yell/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "private vehicle$35.00unlimited entry for one vehicle and all passengers for seven consecuti",
+          "read": "2026-11-01"
+        },
+        "motorcycle_usd": {
+          "value": 30,
+          "source": "https://www.nps.gov/yell/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "motorcycle$30.00valid for 7 days. admits up to 2 private, non-commercial motorcycles w",
+          "read": "2026-11-01"
+        },
+        "person_usd": {
+          "value": 20,
+          "source": "https://www.nps.gov/yell/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "per person$20.00entry for visitors on foot, bicycle, ski, etc., when 16 years of age o",
+          "read": "2026-11-01"
+        },
+        "annual_usd": {
+          "value": 70,
+          "source": "https://www.nps.gov/yell/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "annual entrance - park$70.00",
+          "read": "2026-11-01"
+        },
+        "nonresident_usd": {
+          "value": 100,
+          "source": "https://www.nps.gov/yell/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "non-us residents must pay a $100 per person fee",
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "Rocky Mountain",
+      "cells": {
+        "vehicle_usd": {
+          "value": 35,
+          "source": "https://www.nps.gov/romo/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "private vehicle$35.00",
+          "read": "2026-11-01"
+        },
+        "motorcycle_usd": {
+          "value": 30,
+          "source": "https://www.nps.gov/romo/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "motorcycle$30.00valid for 7 days. admits up to 2 private, non-commercial motorcycles w",
+          "read": "2026-11-01"
+        },
+        "person_usd": {
+          "value": 20,
+          "source": "https://www.nps.gov/romo/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "per person$20.00",
+          "read": "2026-11-01"
+        },
+        "annual_usd": {
+          "value": 70,
+          "source": "https://www.nps.gov/romo/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "annual entrance - park$70.00",
+          "read": "2026-11-01"
+        },
+        "nonresident_usd": {
+          "value": 100,
+          "source": "https://www.nps.gov/romo/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "non-us residents must pay a $100 per person fee",
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "Acadia",
+      "cells": {
+        "vehicle_usd": {
+          "value": 35,
+          "source": "https://www.nps.gov/acad/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "private vehicle$35.00valid for seven days. admits private, non-commercial vehicle (15 passe",
+          "read": "2026-11-01"
+        },
+        "motorcycle_usd": {
+          "value": 30,
+          "source": "https://www.nps.gov/acad/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "motorcycle$30.00valid for 7 days. admits up to 2 private, non-commercial motorcycles w",
+          "read": "2026-11-01"
+        },
+        "person_usd": {
+          "value": 20,
+          "source": "https://www.nps.gov/acad/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "per person$20.00valid for seven days. admits one individual with no car (bicyclist, hi",
+          "read": "2026-11-01"
+        },
+        "annual_usd": {
+          "value": 70,
+          "source": "https://www.nps.gov/acad/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "annual entrance - park$70.00",
+          "read": "2026-11-01"
+        },
+        "nonresident_usd": {
+          "value": 100,
+          "source": "https://www.nps.gov/acad/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "non-us residents must pay a $100 per person fee",
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "Yosemite",
+      "cells": {
+        "vehicle_usd": {
+          "value": 35,
+          "source": "https://www.nps.gov/yose/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "private vehicle$35.00this fee is valid for seven consecutive days for a non-commercial car,",
+          "read": "2026-11-01"
+        },
+        "motorcycle_usd": {
+          "value": 30,
+          "source": "https://www.nps.gov/yose/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "motorcycle$30.00valid for 7 days. admits up to 2 private, non-commercial motorcycles w",
+          "read": "2026-11-01"
+        },
+        "person_usd": {
+          "value": 20,
+          "source": "https://www.nps.gov/yose/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "per person$20.00this fee is valid for seven consecutive days for people entering on fo",
+          "read": "2026-11-01"
+        },
+        "annual_usd": {
+          "value": 70,
+          "source": "https://www.nps.gov/yose/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "annual entrance - park$70.00",
+          "read": "2026-11-01"
+        },
+        "nonresident_usd": {
+          "value": 100,
+          "source": "https://www.nps.gov/yose/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "non-us residents must pay a $100 per person fee",
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "Olympic",
+      "cells": {
+        "vehicle_usd": {
+          "value": 30,
+          "source": "https://www.nps.gov/olym/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "private vehicle$30.00valid for seven consecutive days. applies to private, non-commercial v",
+          "read": "2026-11-01"
+        },
+        "motorcycle_usd": {
+          "value": 25,
+          "source": "https://www.nps.gov/olym/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "motorcycle$25.00valid for 7 days. admits up to 2 private, non-commercial motorcycles w",
+          "read": "2026-11-01"
+        },
+        "person_usd": {
+          "value": 15,
+          "source": "https://www.nps.gov/olym/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "per person$15.00valid for seven consecutive days. this fee admits one person without a",
+          "read": "2026-11-01"
+        },
+        "annual_usd": {
+          "value": 55,
+          "source": "https://www.nps.gov/olym/planyourvisit/fees.htm",
+          "kind": "first-hand",
+          "quote": "annual entrance - park$55.00",
+          "read": "2026-11-01"
+        },
+        "nonresident_usd": {
+          "missing": true,
+          "checked": [
+            "https://www.nps.gov/olym/planyourvisit/fees.htm"
+          ],
+          "read": "2026-11-01"
+        }
+      }
+    }
+  ]
+}
