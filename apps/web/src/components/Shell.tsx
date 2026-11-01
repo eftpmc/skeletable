@@ -1,4 +1,4 @@
-import { Home, Menu, PanelLeft, Table2, X, type LucideIcon } from "lucide-react";
+import { Home, Menu, PanelLeft, Settings, Table2, X, type LucideIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { AccountButton, AgentButton, Logo, ThemeButton } from "@/components/Chrome";
@@ -27,7 +27,7 @@ const Brand = () => (
 function useNavItems() {
   const { user } = useMe();
   const items: { href: string; label: string; icon: LucideIcon }[] = [{ href: "/explore", label: "Browse tables", icon: Table2 }];
-  return user ? [{ href: "/", label: "Your tables", icon: Home }, ...items] : items;
+  return user ? [{ href: "/", label: "Your tables", icon: Home }, ...items, { href: "/settings", label: "Settings", icon: Settings }] : items;
 }
 
 function NavLinks({ onNavigate, size = "normal" }: { onNavigate?: () => void; size?: "icons" | "normal" | "large" }) {

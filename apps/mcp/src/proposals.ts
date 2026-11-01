@@ -42,7 +42,7 @@ export async function submitProposal(sql: Sql, tables: Table[], input: ProposalI
   const archived = /(^|\/\/)web\.archive\.org\//.test(input.source);
   const cell: FoundCell = { value, source: input.source.trim(), kind: archived ? "archived" : "first-hand", quote: input.quote.trim(), read: today() };
   const { problems } = validateTable({ ...table, rows: [{ key: row.key, cells: { ...row.cells, [column.id]: cell } }] });
-  if (problems.length) return { error: problems[0]!.replace(`${row.key}.${column.id}: `, "") };
+  if (problems.length) return { error: "The quote has to state that exact value, word for word." };
 
   const [check] = await verifyTable({ ...table, columns: [column], rows: [{ key: row.key, cells: { [column.id]: cell } }] }, fetcher, 0);
   if (check!.status === "not-on-page") return { error: "That quote isn't on that page." };

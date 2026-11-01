@@ -4,10 +4,10 @@ Tables you can trust. Every value links to the source that states it, or says wh
 
 ## Connect
 
-The server takes MCP over HTTP at `/mcp`, needs no account, and only reads.
+The server takes MCP over HTTP at `/mcp`. Reading needs no account. Proposing a change needs a token from Settings, sent as a Bearer token.
 
 ```sh
-claude mcp add --transport http skeletable https://mcp-production-7f68.up.railway.app/mcp
+claude mcp add --transport http skeletable https://skeletable.com/mcp
 ```
 
 | Tool | What it does |
@@ -15,6 +15,7 @@ claude mcp add --transport http skeletable https://mcp-production-7f68.up.railwa
 | `list_tables` | Find a table by what it covers |
 | `get_table` | Read a table: its scope, columns and rows |
 | `get_cell` | One value's source, exact quote and date, or where we looked |
+| `propose_change` | Suggest a new value with its proof, for the owner to review |
 
 ## What's here
 

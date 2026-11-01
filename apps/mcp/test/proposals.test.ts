@@ -10,6 +10,8 @@ import { watchDueTables } from "../src/watcher.js";
 const url = process.env.TEST_DATABASE_URL;
 const files = await loadTables(fileURLToPath(new URL("../../../tables", import.meta.url)));
 
+type Listed = Record<string, unknown> & { cell: { value: number }; current: { value: number }; previous: { value: number } };
+
 const proposal = { row: "Tesla Powerwall 3", column: "warranty_years", value: "12", source: "https://maker.example/warranty", quote: "Now covered for 12 years" };
 
 describe.skipIf(!url)("proposals, history and tokens", () => {
@@ -54,7 +56,7 @@ describe.skipIf(!url)("proposals, history and tokens", () => {
   it("takes a proposal whose quote is on its page", async () => {
     const response = await propose(await person("a@example.com", "a"));
     expect(response.status).toBe(201);
-    const [listed] = (await (await app.request("/api/tables/skeletable/home-batteries/proposals")).json()) as Record<string, any>[];
+    const [listed] = (await (await app.request("/api/tables/skeletable/home-batteries/proposals")).json()) as Listed[];
     expect(listed).toMatchObject({ status: "open", check: "found", author: "a", via: "site", row: proposal.row });
     expect(listed!.cell.value).toBe(12);
     expect(listed!.current.value).toBe(10);
@@ -67,7 +69,7 @@ describe.skipIf(!url)("proposals, history and tokens", () => {
   it("refuses a value its quote doesn't state", async () => {
     const response = await propose(await person("a@example.com", "a"), { ...proposal, value: "14" });
     expect(response.status).toBe(400);
-    expect(await response.json()).toEqual({ error: "14 isn't in its quote" });
+    expect(await response.json()).toEqual({ error: "The quote has to state that exact value, word for word." });
   });
 
   it("refuses a quote that isn't on the page", async () => {
@@ -111,7 +113,7 @@ describe.skipIf(!url)("proposals, history and tokens", () => {
     const cell = table.rows[0]!.cells.warranty_years as Record<string, unknown>;
     expect(cell.value).toBe(12);
     expect(cell.confirmed).toBeUndefined();
-    const [change] = (await (await app.request("/api/tables/skeletable/home-batteries/history")).json()) as Record<string, any>[];
+    const [change] = (await (await app.request("/api/tables/skeletable/home-batteries/history")).json()) as Listed[];
     expect(change).toMatchObject({ row: proposal.row, column: "warranty_years", author: "a" });
     expect(change!.previous.value).toBe(10);
     expect(change!.cell.value).toBe(12);
@@ -159,7 +161,7 @@ describe.skipIf(!url)("proposals, history and tokens", () => {
       const created = (await (await app.request("/api/tokens", { method: "POST", headers, body: JSON.stringify({ name: "Laptop" }) })).json()) as { token: string; id: string };
       expect(created.token).toMatch(/^skt_/);
       expect((await call("propose_change", args, created.token)).isError).toBeUndefined();
-      const [listed] = (await (await app.request("/api/tables/skeletable/home-batteries/proposals")).json()) as Record<string, any>[];
+      const [listed] = (await (await app.request("/api/tables/skeletable/home-batteries/proposals")).json()) as Listed[];
       expect(listed).toMatchObject({ via: "agent", author: "a" });
       await app.request(`/api/tokens/${created.id}`, { method: "DELETE", headers });
       expect((await call("propose_change", args, created.token)).isError).toBe(true);

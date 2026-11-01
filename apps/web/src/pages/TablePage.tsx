@@ -11,15 +11,16 @@ import { accountName, day, host } from "@/lib/cells";
 import { statusCounts, statuses, type CellStatus, type PublishedTable } from "@/lib/status";
 import { Message } from "@/pages/Message";
 import { Grid } from "@/pages/Sheet";
+import { HistoryTab, ProposalsTab } from "@/pages/TableActivity";
 
 const PREVIEW_ROWS = 6;
 
 export const tableTabs = ["proposals", "history", "settings"] as const;
 export type TableTab = (typeof tableTabs)[number];
 
-const Section = ({ title, children }: { title: string; children: ReactNode }) => (
-  <section>
-    <h2 className="mb-3 font-medium">{title}</h2>
+const SideSection = ({ title, children }: { title: string; children: ReactNode }) => (
+  <section className="border-b pb-5 last:border-b-0">
+    <h2 className="mb-2.5 text-sm font-semibold">{title}</h2>
     {children}
   </section>
 );
@@ -81,19 +82,27 @@ function About({ table }: { table: PublishedTable }) {
   const cells = table.rows.flatMap((row) => Object.values(row.cells));
   const filled = cells.filter((cell) => !("missing" in cell));
   const lastChecked = table.watch?.ran ?? filled.reduce((latest, cell) => (cell.read > latest ? cell.read : latest), "");
+  const facts: [string, string | number][] = [
+    ["Topic", table.topic],
+    ["Rows", table.rows.length],
+    ["Columns", table.columns.length],
+    ["Filled", `${Math.round((filled.length / cells.length) * 100)}%`],
+    ["Last checked", day(lastChecked)],
+  ];
   return (
-    <aside className="space-y-6 md:order-last">
-      <Section title="About">
-        <p className="text-sm text-muted-foreground">{table.question}</p>
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          <Badge variant="secondary">{table.topic}</Badge>
-          <Badge variant="outline">{table.rows.length} rows</Badge>
-          <Badge variant="outline">{Math.round((filled.length / cells.length) * 100)}% filled</Badge>
-        </div>
-        <p className="mt-3 text-xs text-muted-foreground">Last checked {day(lastChecked)}</p>
-      </Section>
-      <Section title="How it's checked"><Health table={table} /></Section>
-      <Section title="Sources"><Sources table={table} /></Section>
+    <aside className="space-y-5">
+      <SideSection title="About">
+        <dl className="space-y-1.5 text-sm">
+          {facts.map(([label, value]) => (
+            <div key={label} className="flex items-center justify-between gap-3">
+              <dt className="text-muted-foreground">{label}</dt>
+              <dd className="font-medium tabular-nums">{value}</dd>
+            </div>
+          ))}
+        </dl>
+      </SideSection>
+      <SideSection title="How it's checked"><Health table={table} /></SideSection>
+      <SideSection title="Sources"><Sources table={table} /></SideSection>
     </aside>
   );
 }
@@ -102,47 +111,52 @@ function Overview({ table }: { table: PublishedTable }) {
   const [, navigate] = useLocation();
   const sheet = `/${table.owner}/${table.slug}/sheet`;
   return (
-    <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_16rem]">
-      <About table={table} />
-      <div className="min-w-0 space-y-8">
-        <div className="flex flex-col overflow-hidden rounded-xl border">
+    <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_15rem]">
+      <div className="min-w-0 space-y-6">
+        <section className="flex flex-col overflow-hidden rounded-xl border">
+          <header className="flex items-center justify-between gap-3 border-b bg-muted px-3 py-2 text-sm">
+            <span className="text-muted-foreground">Showing {Math.min(PREVIEW_ROWS, table.rows.length)} of {table.rows.length} rows</span>
+            <Link href={sheet} className="flex items-center gap-1 font-medium hover:underline">
+              Open full sheet
+              <ArrowRight className="size-3.5" />
+            </Link>
+          </header>
           <Grid table={{ ...table, rows: table.rows.slice(0, PREVIEW_ROWS) }} selectedId={null} select={(id) => id && navigate(`${sheet}?cell=${id}`)} emptyRows={0} />
-        </div>
-        <Section title="What's in it">
-          <ul className="divide-y rounded-xl border text-sm">
-            {table.columns.map((column) => (
-              <li key={column.id} className="px-3 py-2">
-                <p className="font-medium">{column.label}{column.unit ? ` (${column.unit})` : ""}</p>
-                <p className="text-muted-foreground">{column.rule}</p>
-              </li>
-            ))}
-          </ul>
-        </Section>
-        <Section title="What it covers"><p className="text-sm text-muted-foreground">{table.scope}</p></Section>
+        </section>
+        <section className="overflow-hidden rounded-xl border">
+          <h2 className="border-b bg-muted px-3 py-2 text-sm font-medium">About this data</h2>
+          <div className="space-y-5 p-4">
+            <p className="text-sm leading-relaxed">{table.scope}</p>
+            <div>
+              <h3 className="mb-2 text-sm font-semibold">Columns</h3>
+              <dl className="divide-y text-sm">
+                {table.columns.map((column) => (
+                  <div key={column.id} className="grid gap-x-4 gap-y-0.5 py-2 sm:grid-cols-[10rem_1fr]">
+                    <dt className="font-medium">{column.label}{column.unit ? <span className="font-normal text-muted-foreground"> ({column.unit})</span> : null}</dt>
+                    <dd className="text-muted-foreground">{column.rule}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          </div>
+        </section>
       </div>
+      <About table={table} />
     </div>
   );
 }
 
-const Empty = ({ icon: Icon, title, body }: { icon: LucideIcon; title: string; body: string }) => (
-  <div className="rounded-xl border py-14 text-center">
-    <Icon className="mx-auto size-6 text-muted-foreground" />
-    <p className="mt-3 font-medium">{title}</p>
-    <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">{body}</p>
-  </div>
-);
-
-function Tabs({ table, tab, canManage }: { table: PublishedTable; tab?: TableTab; canManage: boolean }) {
+function Tabs({ table, tab, canManage, proposals }: { table: PublishedTable; tab?: TableTab; canManage: boolean; proposals: number }) {
   const base = `/${table.owner}/${table.slug}`;
-  const items: { href: string; label: string; icon: LucideIcon; active: boolean }[] = [
+  const items: { href: string; label: string; icon: LucideIcon; active: boolean; count?: number }[] = [
     { href: base, label: "Overview", icon: LayoutList, active: !tab },
-    { href: `${base}/proposals`, label: "Proposals", icon: GitPullRequestArrow, active: tab === "proposals" },
+    { href: `${base}/proposals`, label: "Proposals", icon: GitPullRequestArrow, active: tab === "proposals", count: proposals },
     { href: `${base}/history`, label: "History", icon: History, active: tab === "history" },
     ...(canManage ? [{ href: `${base}/settings`, label: "Settings", icon: Settings, active: tab === "settings" }] : []),
   ];
   return (
-    <nav aria-label="Table" className="-mx-4 mt-5 mb-6 flex gap-1 overflow-x-auto overflow-y-hidden border-b px-4 sm:mx-0 sm:px-0">
-      {items.map(({ href, label, icon: Icon, active }) => (
+    <nav aria-label="Table" className="-mx-4 mt-4 mb-6 flex gap-1 overflow-x-auto overflow-y-hidden border-b px-4 sm:mx-0 sm:px-0">
+      {items.map(({ href, label, icon: Icon, active, count }) => (
         <Link
           key={href}
           href={href}
@@ -151,6 +165,7 @@ function Tabs({ table, tab, canManage }: { table: PublishedTable; tab?: TableTab
         >
           <Icon className="size-4" />
           {label}
+          {count ? <Badge variant="secondary" className="px-1.5">{count}</Badge> : null}
         </Link>
       ))}
     </nav>
@@ -160,6 +175,7 @@ function Tabs({ table, tab, canManage }: { table: PublishedTable; tab?: TableTab
 function TableDetails({ table, tab }: { table: PublishedTable; tab?: TableTab }) {
   const { user } = useMe();
   const canManage = !!user?.accounts.includes(table.owner);
+  const { data: proposals } = useJson<{ status: string }[]>(`/api/tables/${table.owner}/${table.slug}/proposals`);
 
   useEffect(() => {
     document.title = `${table.title} · Skeletable`;
@@ -170,12 +186,16 @@ function TableDetails({ table, tab }: { table: PublishedTable; tab?: TableTab })
   return (
     <>
       <section className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
-        <div className="min-w-0">
-          <h1 className="text-xl tracking-tight sm:text-2xl">
-            <Link href={`/${table.owner}`} className="text-muted-foreground hover:text-foreground hover:underline">{accountName(table.owner)}</Link>
-            <span className="mx-1.5 text-muted-foreground">/</span>
-            <span className="font-semibold">{table.title}</span>
-          </h1>
+        <div className="min-w-0 flex-1 basis-96">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <h1 className="text-xl tracking-tight sm:text-2xl">
+              <Link href={`/${table.owner}`} className="text-muted-foreground hover:text-foreground hover:underline">{accountName(table.owner)}</Link>
+              <span className="mx-1.5 text-muted-foreground">/</span>
+              <span className="font-semibold">{table.title}</span>
+            </h1>
+            <Badge variant="outline">Public</Badge>
+          </div>
+          <p className="mt-1.5 max-w-2xl text-muted-foreground">{table.question}</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <AgentButton label="Connect an agent" />
@@ -187,11 +207,11 @@ function TableDetails({ table, tab }: { table: PublishedTable; tab?: TableTab })
           </Button>
         </div>
       </section>
-      <Tabs table={table} tab={tab} canManage={canManage} />
+      <Tabs table={table} tab={tab} canManage={canManage} proposals={proposals?.filter((proposal) => proposal.status === "open").length ?? 0} />
       {!tab && <Overview table={table} />}
-      {tab === "proposals" && <Empty icon={GitPullRequestArrow} title="No proposals yet" body="Suggested changes to this table will appear here, each with its source and quote." />}
-      {tab === "history" && <Empty icon={History} title="No changes yet" body="Every change to a value will be listed here, so you can see what it used to say and why it moved." />}
-      {tab === "settings" && <Empty icon={Settings} title="Nothing to set yet" body="Table settings will live here as they're added." />}
+      {tab === "proposals" && <ProposalsTab table={table} canDecide={canManage} />}
+      {tab === "history" && <HistoryTab table={table} />}
+      {tab === "settings" && <p className="rounded-xl border py-14 text-center text-sm text-muted-foreground">Table settings will live here as they're added.</p>}
     </>
   );
 }

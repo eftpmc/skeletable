@@ -1,13 +1,14 @@
 import type { Cell, Column, FoundCell } from "@skeleton/tables/format";
-import { ExternalLink, Info, ScanLine } from "lucide-react";
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { ExternalLink, Info, Pencil, ScanLine } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { Link, useLocation, useSearch } from "wouter";
+import { Input } from "@/components/ui/input";
 import { AccountButton, Logo } from "@/components/Chrome";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useJson } from "@/lib/api";
+import { postJson, useJson, useMe } from "@/lib/api";
 import { accountName, cellId, day, display, host, place, splitQuote } from "@/lib/cells";
 import { cellStatus, statusCounts, statuses, type CellStatus, type PublishedTable } from "@/lib/status";
 import { Message } from "@/pages/Message";
@@ -44,6 +45,51 @@ function Quote({ cell }: { cell: FoundCell }) {
 }
 
 export type Selected = { rowKey: string; column: Column; cell: Cell; status?: CellStatus };
+
+function SuggestButton({ onSuggest }: { onSuggest: () => void }) {
+  const { canSignIn, user } = useMe();
+  if (!canSignIn) return null;
+  if (!user) {
+    return (
+      <Button variant="ghost" size="xs" asChild>
+        <a href="/auth/google"><Pencil />Sign in to suggest</a>
+      </Button>
+    );
+  }
+  return <Button variant="ghost" size="xs" onClick={onSuggest}><Pencil />Suggest a change</Button>;
+}
+
+/** Propose a new value with its proof, which the server tests before anyone reviews it. */
+function SuggestForm({ table, selected, onDone }: { table: PublishedTable; selected: Selected; onDone: (sent: boolean) => void }) {
+  const [form, setForm] = useState({ value: "", source: "", quote: "" });
+  const [error, setError] = useState<string>();
+  const [sending, setSending] = useState(false);
+  const field = (name: keyof typeof form) => ({ value: form[name], onChange: (event: { target: { value: string } }) => setForm({ ...form, [name]: event.target.value }) });
+  const send = async (event: FormEvent) => {
+    event.preventDefault();
+    setSending(true);
+    setError(undefined);
+    const { ok, data } = await postJson<{ error?: string }>(`/api/tables/${table.owner}/${table.slug}/proposals`, { ...form, row: selected.rowKey, column: selected.column.id });
+    setSending(false);
+    if (ok) onDone(true);
+    else setError(data.error ?? "That didn't send. Try again.");
+  };
+  return (
+    <form onSubmit={send} onKeyDown={(event) => event.stopPropagation()} className="space-y-2 border-t px-3 py-2 text-sm duration-150 animate-in fade-in slide-in-from-top-1">
+      <p className="text-xs text-muted-foreground">{selected.column.rule}</p>
+      <div className="grid gap-2 sm:grid-cols-[10rem_1fr]">
+        <Input aria-label="New value" placeholder={`New value${selected.column.unit ? ` (${selected.column.unit})` : ""}`} required {...field("value")} />
+        <Input aria-label="Source link" type="url" placeholder="Link to the page that states it" required {...field("source")} />
+      </div>
+      <Input aria-label="Exact quote" placeholder="The exact words on that page" required maxLength={400} {...field("quote")} />
+      <div className="flex items-center gap-2">
+        <Button type="submit" size="sm" disabled={sending}>{sending ? "Checking the page..." : "Send proposal"}</Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => onDone(false)}>Cancel</Button>
+        {error && <span role="alert" className="text-xs text-destructive">{error}</span>}
+      </div>
+    </form>
+  );
+}
 
 function StatusBadge({ status }: { status: CellStatus }) {
   const { label, detail, icon: Icon } = statuses[status];
@@ -107,7 +153,9 @@ function StatusBar({ table, xray, onXray }: { table: PublishedTable; xray: boole
 }
 
 /** Above the grid, like a spreadsheet's: one line until a cell is selected, then its evidence opens beneath. */
-export function FormulaBar({ selected }: { selected?: Selected }) {
+export function FormulaBar({ selected, table }: { selected?: Selected; table?: PublishedTable }) {
+  const [suggesting, setSuggesting] = useState(false);
+  const [sent, setSent] = useState(false);
   const cell = selected?.cell;
   const value = !selected || !cell ? undefined : isFound(cell) ? `${display(cell.value)}${selected.column.unit ? ` ${selected.column.unit}` : ""}` : "Not stated";
   return (
@@ -119,7 +167,18 @@ export function FormulaBar({ selected }: { selected?: Selected }) {
         <span className="px-3 font-serif text-muted-foreground italic" aria-hidden="true">fx</span>
         <p className={`min-w-0 flex-1 truncate pr-3 ${value ? "font-medium" : "text-muted-foreground"}`}>{value ?? "Select a cell to see its source"}</p>
       </div>
-      {cell && (
+      {cell && table && suggesting && (
+        <SuggestForm
+          key={selected.rowKey + selected.column.id}
+          table={table}
+          selected={selected}
+          onDone={(done) => {
+            setSuggesting(false);
+            setSent(done);
+          }}
+        />
+      )}
+      {cell && !suggesting && (
         <div key={selected.rowKey + selected.column.id} className="max-h-36 space-y-1.5 overflow-y-auto border-t px-3 py-2 text-sm duration-150 animate-in fade-in slide-in-from-top-1">
           {isFound(cell) ? (
             <>
@@ -128,6 +187,7 @@ export function FormulaBar({ selected }: { selected?: Selected }) {
                 <SourceLink url={cell.source} label={host(cell.source)} />
                 <Badge variant="secondary">{kindLabels[cell.kind]}</Badge>
                 {selected.status && <StatusBadge status={selected.status} />}
+                {table && <SuggestButton onSuggest={() => setSuggesting(true)} />}
                 <Badge variant="outline">Read {day(cell.read)}</Badge>
               </div>
             </>
@@ -136,8 +196,14 @@ export function FormulaBar({ selected }: { selected?: Selected }) {
               <p className="text-muted-foreground">No source we could use stated this. We looked here on {day(cell.read)}:</p>
               <div className="flex flex-wrap gap-1.5">
                 {cell.checked.map((url) => <SourceLink key={url} url={url} label={place(url)} />)}
+                {table && <SuggestButton onSuggest={() => setSuggesting(true)} />}
               </div>
             </>
+          )}
+          {sent && table && (
+            <p role="status" className="text-xs text-muted-foreground">
+              Thanks, it's in <Link href={`/${table.owner}/${table.slug}/proposals`} className="underline">Proposals</Link> for the owner to review.
+            </p>
           )}
         </div>
       )}
@@ -287,7 +353,7 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
         <Message title="This table didn't load" action={<Button variant="outline" size="sm" onClick={retry}>Try again</Button>} />
       ) : data ? (
         <>
-          <FormulaBar selected={row && column ? { rowKey: row.key, column, cell: row.cells[column.id]!, status: cellStatus(row.cells[column.id]!, row.key, column.id, data.watch) } : undefined} />
+          <FormulaBar table={data} selected={row && column ? { rowKey: row.key, column, cell: row.cells[column.id]!, status: cellStatus(row.cells[column.id]!, row.key, column.id, data.watch) } : undefined} />
           <Grid table={data} selectedId={selectedId} select={(id) => navigate(id ? `${path}?cell=${id}` : path, { replace: true })} xray={xray} />
           <StatusBar table={data} xray={xray} onXray={() => setXray(!xray)} />
         </>

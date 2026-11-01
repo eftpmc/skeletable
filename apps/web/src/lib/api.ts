@@ -21,6 +21,12 @@ export const useMe = () => useContext(MeContext);
 
 type Loaded<T> = { data?: T; status: "loading" | "ready" | "missing" | "failed"; retry: () => void };
 
+/** Sends JSON to the server, and hands back what it says either way. */
+export async function postJson<T>(url: string, body?: unknown): Promise<{ ok: boolean; data: T }> {
+  const response = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body ?? {}) });
+  return { ok: response.ok, data: (await response.json().catch(() => ({}))) as T };
+}
+
 /** Reads JSON from the server, and keeps the last answer on screen while the next one loads. */
 export function useJson<T>(url: string): Loaded<T> {
   const [attempt, setAttempt] = useState(0);
