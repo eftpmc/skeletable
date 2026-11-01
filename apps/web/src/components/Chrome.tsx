@@ -5,16 +5,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useMe } from "@/lib/api";
 import { useTheme } from "@/lib/theme";
 
-/** The product's mark: a green sheet with one cell left open. */
-export const Logo = ({ className = "size-8" }: { className?: string }) => (
-  <svg viewBox="0 0 32 32" className={className} aria-hidden="true">
-    <rect width="32" height="32" rx="8" fill="#16a34a" />
-    <rect x="7" y="7" width="8" height="8" rx="2" fill="#fff" />
-    <rect x="17" y="7" width="8" height="8" rx="2" fill="#fff" />
-    <rect x="7" y="17" width="8" height="8" rx="2" fill="#fff" />
-    <rect x="18" y="18" width="6" height="6" rx="1.5" fill="none" stroke="#fff" strokeWidth="2" />
-  </svg>
-);
+/** The product's mark: a skull built from a sheet's cells, on its own tile so it reads on any background. */
+export const Logo = ({ className = "size-8" }: { className?: string }) => <img src="/logo.svg" alt="" className={className} />;
 
 export function ThemeButton() {
   const { dark, toggle } = useTheme();

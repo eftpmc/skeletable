@@ -128,3 +128,8 @@
     @apply font-sans;
     }
 }
+
+/* Scrollbars and form controls follow the theme. */
+.dark {
+  color-scheme: dark;
+}
