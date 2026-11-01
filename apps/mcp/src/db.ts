@@ -135,6 +135,17 @@ const migrations = [
   );
   create index team_invites_by_email on team_invites (email);
   `,
+  `
+  alter table data_tables add column private boolean not null default false;
+  create table table_access (
+    id bigint generated always as identity primary key,
+    table_id bigint not null references data_tables on delete cascade,
+    email text not null,
+    created_at timestamptz not null default now(),
+    unique (table_id, email)
+  );
+  create index table_access_by_email on table_access (email);
+  `,
 ];
 
 /** Run whatever hasn't run yet. The lock keeps two servers starting together from racing. */
@@ -202,8 +213,8 @@ export async function importTables(sql: Sql, tables: PublishedTable[]) {
         continue;
       }
       const [created] = await tx`
-        insert into data_tables (account_id, slug, topic, title, question, scope, watch)
-        values (${account!.id}, ${table.slug}, ${table.topic}, ${table.title}, ${table.question}, ${table.scope}, ${watch})
+        insert into data_tables (account_id, slug, topic, title, question, scope, watch, private)
+        values (${account!.id}, ${table.slug}, ${table.topic}, ${table.title}, ${table.question}, ${table.scope}, ${watch}, ${table.private ?? false})
         returning id`;
       for (const [position, column] of table.columns.entries()) {
         await tx`
@@ -218,7 +229,7 @@ export async function importTables(sql: Sql, tables: PublishedTable[]) {
 /** Every table with the newest version of each cell, held to the same checks as a table on disk. */
 export async function readTables(sql: Sql): Promise<PublishedTable[]> {
   const tables = await sql`
-    select t.id, a.handle as owner, a.name as owner_name, a.team, t.slug, t.topic, t.title, t.question, t.scope, t.watch
+    select t.id, a.handle as owner, a.name as owner_name, a.team, t.slug, t.topic, t.title, t.question, t.scope, t.watch, t.private
     from data_tables t join accounts a on a.id = t.account_id
     order by a.handle, t.slug`;
   const columns = await sql`select * from table_columns order by table_id, position`;
@@ -246,7 +257,7 @@ export async function readTables(sql: Sql): Promise<PublishedTable[]> {
     });
     if (!checked || problems.length) throw new Error(`${table.owner}/${table.slug}: ${problems.join("; ")}`);
     // A person's account name can be the name they signed in with, so only a team's goes out with its tables.
-    return { ...checked, ...(table.team && { ownerName: table.owner_name as string }), ...(table.watch && { watch: watchFileSchema.parse(table.watch) }) };
+    return { ...checked, ...(table.team && { ownerName: table.owner_name as string }), ...(table.private && { private: true }), ...(table.watch && { watch: watchFileSchema.parse(table.watch) }) };
   });
 }
 

@@ -19,6 +19,7 @@ export function NewTable() {
   const [, navigate] = useLocation();
   const [details, setDetails] = useState({ title: "", question: "", topic: "", scope: "" });
   const [owner, setOwner] = useState(user?.handle ?? "");
+  const [isPrivate, setIsPrivate] = useState(false);
   const [columns, setColumns] = useState<NewColumn[]>([blankColumn()]);
   const [rows, setRows] = useState("");
   const [error, setError] = useState<string>();
@@ -46,6 +47,7 @@ export function NewTable() {
     const { ok, data } = await postJson<{ owner: string; slug: string; error?: string }>("/api/tables", {
       ...details,
       ...(owner && { owner }),
+      private: isPrivate,
       columns: columns.map(({ unit, ...column }) => ({ ...column, ...(unit.trim() && { unit }) })),
       rows: rows.split("\n").map((row) => row.trim()).filter(Boolean),
     });
@@ -116,6 +118,18 @@ export function NewTable() {
               className="mt-1.5 w-full rounded-lg border bg-transparent px-2.5 py-1.5 text-sm font-normal outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
             />
           </label>
+
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium">Who can see it</legend>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="radio" name="visibility" className="size-4 accent-green-600" checked={!isPrivate} onChange={() => setIsPrivate(false)} />
+              Public: anyone, and it shows up in Browse
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="radio" name="visibility" className="size-4 accent-green-600" checked={isPrivate} onChange={() => setIsPrivate(true)} />
+              Private: only this account and people you add
+            </label>
+          </fieldset>
 
           <div className="flex items-center gap-3">
             <Button type="submit" size="lg" disabled={sending}>{sending ? "Creating..." : "Create table"}</Button>

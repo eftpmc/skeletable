@@ -136,7 +136,7 @@ export function AccountButton() {
       <Dialog open={agent} onOpenChange={setAgent}>
         <DialogContent>
           <DialogTitle>Use these from an agent</DialogTitle>
-          <DialogDescription>A read-only MCP server. To let an agent propose changes, make a token in Settings.</DialogDescription>
+          <DialogDescription>A read-only MCP server for public tables. To let an agent read your private tables or propose changes, make a token in Settings.</DialogDescription>
           <AgentCommand />
         </DialogContent>
       </Dialog>

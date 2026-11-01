@@ -41,7 +41,7 @@ export function Account({ owner }: { owner: string }) {
             {tables?.length === 0 ? (
               <div className="rounded-xl border p-8 text-center">
                 <p className="font-medium">This is your public page</p>
-                <p className="mt-1 mb-4 text-sm text-muted-foreground">Tables you publish show up here for anyone to see.</p>
+                <p className="mt-1 mb-4 text-sm text-muted-foreground">Public tables show up here for anyone to see. Private ones only show to people who can open them.</p>
                 <Button size="sm" asChild><Link href="/new">New table</Link></Button>
               </div>
             ) : (

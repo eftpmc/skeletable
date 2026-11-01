@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 export type TableSummary = {
   owner: string;
   ownerName?: string;
+  private?: boolean;
   slug: string;
   topic: string;
   title: string;

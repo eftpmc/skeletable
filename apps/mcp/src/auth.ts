@@ -3,6 +3,7 @@ import { Hono, type Context } from "hono";
 import { z } from "zod";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import type { Fetcher } from "@skeleton/tables";
+import { accessRoutes, canRead, everyone, readable, sharedWith, type Viewer } from "./access.js";
 import { accountRoutes, ensureAccount, runsTable } from "./accounts.js";
 import { OFFICIAL_ACCOUNT, type Sql } from "./db.js";
 import { notifyOwners, type Mailer } from "./email.js";
@@ -29,6 +30,7 @@ export type AuthConfig = {
 
 const SESSION_COOKIE = "session";
 const STATE_COOKIE = "auth_state";
+const NEXT_COOKIE = "auth_next";
 const SESSION_DAYS = 30;
 
 // Each proposal opens a web page, so these are far fewer than other requests.
@@ -59,8 +61,14 @@ async function currentUser(sql: Sql, token: string | undefined) {
   if (!user) return null;
   const accounts = await sql`
     select a.handle from account_members m join accounts a on a.id = m.account_id where m.user_id = ${user.id} order by a.handle`;
-  return { id: user.id as string, email: user.email as string, name: user.name as string | null, handle: user.handle as string | null, emailUpdates: user.email_updates as boolean, accounts: accounts.map((account) => account.handle as string) };
+  return { id: user.id as string, email: user.email as string, name: user.name as string | null, handle: user.handle as string | null, emailUpdates: user.email_updates as boolean, accounts: accounts.map((account) => account.handle as string), shared: await sharedWith(sql, user.email as string) };
 }
+
+/** Who a request is from, for reading tables. */
+export const sessionViewer = async (sql: Sql, c: Context): Promise<Viewer> => (await currentUser(sql, getCookie(c, SESSION_COOKIE))) ?? everyone;
+
+/** Where to land after signing in. Only an address on this site counts, so a link can't send you elsewhere. */
+const landing = (next: string | undefined) => (next && /^\/(?![/\\])[^\s\\]*$/.test(next) ? next : "/");
 
 /** Sign in with Google. People only ever sign in here: there are no passwords to look after. */
 export function authRoutes({ sql, clientId, clientSecret, publicUrl, ownerEmail, fetcher = fetch, tables, refresh, pages, mail }: AuthConfig) {
@@ -71,6 +79,7 @@ export function authRoutes({ sql, clientId, clientSecret, publicUrl, ownerEmail,
   app.get("/auth/google", (c) => {
     const state = randomBytes(32).toString("base64url");
     setCookie(c, STATE_COOKIE, state, { ...cookie, maxAge: 600 });
+    setCookie(c, NEXT_COOKIE, landing(c.req.query("next")), { ...cookie, maxAge: 600 });
     const query = new URLSearchParams({ client_id: clientId, redirect_uri: redirectUri, response_type: "code", scope: "openid email profile", state });
     return c.redirect(`${authorizeUrl}?${query}`);
   });
@@ -78,7 +87,9 @@ export function authRoutes({ sql, clientId, clientSecret, publicUrl, ownerEmail,
   app.get("/auth/google/callback", async (c) => {
     const failed = () => c.redirect("/?signin=failed");
     const state = getCookie(c, STATE_COOKIE);
+    const next = landing(getCookie(c, NEXT_COOKIE));
     deleteCookie(c, STATE_COOKIE, cookie);
+    deleteCookie(c, NEXT_COOKIE, cookie);
     const code = c.req.query("code");
     if (!code || !state || c.req.query("state") !== state) return failed();
 
@@ -109,7 +120,7 @@ export function authRoutes({ sql, clientId, clientSecret, publicUrl, ownerEmail,
     const token = randomBytes(32).toString("base64url");
     await sql`insert into sessions (token_hash, user_id, expires_at) values (${hash(token)}, ${user!.id}, now() + ${`${SESSION_DAYS} days`}::interval)`;
     setCookie(c, SESSION_COOKIE, token, { ...cookie, maxAge: SESSION_DAYS * 86_400 });
-    return c.redirect("/");
+    return c.redirect(next);
   });
 
   app.post("/auth/logout", async (c) => {
@@ -124,7 +135,7 @@ export function authRoutes({ sql, clientId, clientSecret, publicUrl, ownerEmail,
   app.get("/api/me", async (c) => {
     const user = await signedIn(c);
     if (!user) return c.json({ canSignIn: true, user: null });
-    const { id: _id, ...visible } = user;
+    const { id: _id, shared: _shared, ...visible } = user;
     const teams = await sql`
       select a.handle, a.name, m.role from account_members m join accounts a on a.id = m.account_id
       where m.user_id = ${user.id} and a.team order by a.name`;
@@ -132,16 +143,29 @@ export function authRoutes({ sql, clientId, clientSecret, publicUrl, ownerEmail,
     return c.json({ canSignIn: true, user: { ...visible, teams, invites: waiting!.invites as number } });
   });
 
-  app.get("/api/tables/:owner/:slug/history", async (c) => c.json(await tableHistory(sql, c.req.param("owner"), c.req.param("slug"))));
-  app.get("/api/tables/:owner/:slug/proposals", async (c) => c.json(await listProposals(sql, c.req.param("owner"), c.req.param("slug"))));
+  const hidden = (c: Context, viewer: Viewer) => {
+    const table = tables.find((t) => t.owner === c.req.param("owner") && t.slug === c.req.param("slug"));
+    return !table || !canRead(table, viewer);
+  };
+  const noTable = { error: "No such table" };
+
+  app.get("/api/tables/:owner/:slug/history", async (c) => {
+    if (hidden(c, (await signedIn(c)) ?? everyone)) return c.json(noTable, 404);
+    return c.json(await tableHistory(sql, c.req.param("owner"), c.req.param("slug")));
+  });
+  app.get("/api/tables/:owner/:slug/proposals", async (c) => {
+    if (hidden(c, (await signedIn(c)) ?? everyone)) return c.json(noTable, 404);
+    return c.json(await listProposals(sql, c.req.param("owner"), c.req.param("slug")));
+  });
 
   app.post("/api/tables/:owner/:slug/proposals", rateLimit(PROPOSALS_PER_MINUTE), async (c) => {
     const user = await signedIn(c);
     if (!user) return c.json({ error: "Sign in to suggest a change." }, 401);
+    if (hidden(c, user)) return c.json(noTable, 404);
     const body = proposalBody.safeParse(await c.req.json().catch(() => null));
     if (!body.success) return c.json({ error: "Add a value, a source link and the exact quote." }, 400);
     const owner = c.req.param("owner");
-    const result = await submitProposal(sql, tables, { ...body.data, owner, slug: c.req.param("slug") }, user.id, "site", pages);
+    const result = await submitProposal(sql, readable(tables, user), { ...body.data, owner, slug: c.req.param("slug") }, user.id, "site", pages);
     if ("error" in result) return c.json(result, 400);
     // Someone running the table doesn't need to review their own edit, and it still passed every check.
     if (runsTable(user, owner)) {
@@ -185,6 +209,7 @@ export function authRoutes({ sql, clientId, clientSecret, publicUrl, ownerEmail,
 
   accountRoutes(app, sql, tables, signedIn, refresh);
   teamRoutes(app, sql, signedIn, { mail, publicUrl, refresh });
+  accessRoutes(app, sql, signedIn, { tables, mail, publicUrl, refresh });
 
   return app;
 }

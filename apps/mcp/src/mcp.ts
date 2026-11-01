@@ -1,8 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
-import type { Table } from "@skeleton/tables/format";
 import { z } from "zod";
-import { findCell, searchTables, summarize, tableValues } from "./library.js";
+import { findCell, searchTables, summarize, tableValues, type PublishedTable } from "./library.js";
 import type { ProposalInput } from "./proposals.js";
 
 const text = (value: unknown) => ({ content: [{ type: "text" as const, text: JSON.stringify(value, null, 2) }] });
@@ -15,11 +14,12 @@ const instructions =
 
 export type Propose = (input: ProposalInput) => Promise<{ id: string; check: string } | { error: string }>;
 
-/** The library as MCP tools for anyone's agent. Reading needs no account, and proposing needs a token. */
-export function tablesMcpServer(tables: Table[], propose?: Propose) {
+/** The library as MCP tools for anyone's agent. It only gets the tables this caller may read. Reading public tables needs no account, and proposing needs a token. */
+export function tablesMcpServer(tables: PublishedTable[], propose?: Propose) {
   const server = new McpServer({ name: "skeletable", version: "1.0.0" }, { instructions });
   const readOnly = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false };
-  const bySlug = (slug: string) => tables.find((table) => table.slug === slug);
+  // An agent with a token can see more than one table of the same name, so "owner/slug" picks one.
+  const bySlug = (slug: string) => tables.find((table) => `${table.owner}/${table.slug}` === slug) ?? tables.find((table) => table.slug === slug);
 
   server.registerTool(
     "list_tables",
@@ -85,7 +85,7 @@ export function tablesMcpServer(tables: Table[], propose?: Propose) {
       async ({ slug, ...input }) => {
         const table = bySlug(slug);
         if (!table) return refuse(`No table called ${slug}. Use list_tables to see what exists.`);
-        const result = await propose({ ...input, owner: table.owner, slug });
+        const result = await propose({ ...input, owner: table.owner, slug: table.slug });
         return "error" in result ? refuse(result.error) : text({ proposed: true, ...result });
       },
     );
@@ -95,7 +95,7 @@ export function tablesMcpServer(tables: Table[], propose?: Propose) {
 }
 
 /** Answer one MCP request statelessly: a fresh server and transport per request, so nothing carries between callers. */
-export async function handleMcp(tables: Table[], request: Request, propose?: Propose): Promise<Response> {
+export async function handleMcp(tables: PublishedTable[], request: Request, propose?: Propose): Promise<Response> {
   const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
   await tablesMcpServer(tables, propose).connect(transport);
   return transport.handleRequest(request);

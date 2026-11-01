@@ -1,10 +1,10 @@
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { serveStatic } from "@hono/node-server/serve-static";
-import type { Table } from "@skeleton/tables/format";
-import { Hono } from "hono";
-import { authRoutes, type AuthConfig } from "./auth.js";
-import { checkCounts, searchTables, summarize } from "./library.js";
+import { Hono, type Context } from "hono";
+import { canRead, everyone, readable, viewerFor } from "./access.js";
+import { authRoutes, sessionViewer, type AuthConfig } from "./auth.js";
+import { checkCounts, searchTables, summarize, type PublishedTable } from "./library.js";
 import { notifyOwners } from "./email.js";
 import { handleMcp, type Propose } from "./mcp.js";
 import { pageRoutes } from "./pages.js";
@@ -17,14 +17,15 @@ const API_PER_MINUTE = 240;
 const SIGN_IN_PER_MINUTE = 20;
 
 /** The server: the MCP endpoint, the JSON the site reads, a health check, and the built site when there is one. */
-export function createApp(tables: Table[], webDir?: string, auth?: AuthConfig) {
+export function createApp(tables: PublishedTable[], webDir?: string, auth?: AuthConfig) {
   const app = new Hono();
+  const viewerOf = (c: Context) => (auth ? sessionViewer(auth.sql, c) : Promise.resolve(everyone));
   app.use("*", async (c, next) => {
     const url = new URL(c.req.url);
     if (!url.hostname.startsWith("www.")) return next();
     return c.redirect(`https://${url.host.slice(4)}${url.pathname}${url.search}`, 301);
   });
-  app.get("/health", (c) => c.json({ ok: true, tables: tables.length }));
+  app.get("/health", (c) => c.json({ ok: true, tables: readable(tables, everyone).length }));
   if (auth) {
     // Counts only, with no address or identity, so we can see if anyone's here.
     app.use("*", async (c, next) => {
@@ -37,24 +38,32 @@ export function createApp(tables: Table[], webDir?: string, auth?: AuthConfig) {
   }
   app.use("/mcp", rateLimit(MCP_PER_MINUTE));
   app.use("/api/*", rateLimit(API_PER_MINUTE));
+  // A signed-in answer can hold private tables, so no cache along the way may keep it.
+  app.use("/api/*", async (c, next) => {
+    await next();
+    if (c.req.header("cookie")) c.header("cache-control", "private, no-store");
+  });
   app.use("/auth/*", rateLimit(SIGN_IN_PER_MINUTE));
-  app.all("/mcp", (c) => {
-    if (!auth) return handleMcp(tables, c.req.raw);
+  app.all("/mcp", async (c) => {
+    if (!auth) return handleMcp(readable(tables, everyone), c.req.raw);
+    // A token lets an agent see what its person can. Without one, it's the public library.
+    const userId = await tokenUser(auth.sql, c.req.header("authorization"));
+    const visible = readable(tables, userId ? await viewerFor(auth.sql, userId) : everyone);
     const propose: Propose = async (input) => {
-      const userId = await tokenUser(auth.sql, c.req.header("authorization"));
       if (!userId) return { error: "Proposing needs a token. Create one in Skeletable under Settings, and send it as a Bearer token." };
-      const result = await submitProposal(auth.sql, tables, input, userId, "agent", auth.pages);
+      const result = await submitProposal(auth.sql, visible, input, userId, "agent", auth.pages);
       if ("id" in result) await notifyOwners(auth.sql, auth.mail, auth.publicUrl, result.id);
       return result;
     };
-    return handleMcp(tables, c.req.raw, propose);
+    return handleMcp(visible, c.req.raw, propose);
   });
   if (auth) app.route("/", authRoutes(auth));
   else app.get("/api/me", (c) => c.json({ canSignIn: false, user: null }));
-  app.get("/api/tables", (c) => c.json(searchTables(tables, c.req.query("q")).map((table) => ({ ...summarize(table), checks: checkCounts(table) }))));
-  app.get("/api/tables/:owner/:slug", (c) => {
+  app.get("/api/tables", async (c) => c.json(searchTables(readable(tables, await viewerOf(c)), c.req.query("q")).map((table) => ({ ...summarize(table), checks: checkCounts(table) }))));
+  // A table you can't read is just a missing one.
+  app.get("/api/tables/:owner/:slug", async (c) => {
     const table = tables.find((t) => t.owner === c.req.param("owner") && t.slug === c.req.param("slug"));
-    return table ? c.json(table) : c.json({ error: "No such table" }, 404);
+    return table && canRead(table, await viewerOf(c)) ? c.json(table) : c.json({ error: "No such table" }, 404);
   });
   app.all("/api/*", (c) => c.json({ error: "Not found" }, 404));
   if (webDir && existsSync(join(resolve(webDir), "index.html"))) {

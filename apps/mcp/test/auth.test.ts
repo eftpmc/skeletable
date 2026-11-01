@@ -66,6 +66,18 @@ describe.skipIf(!url)("sign-in", () => {
     expect(me).toEqual({ canSignIn: true, user: { email: "someone@example.com", name: "Someone", handle: "someone", emailUpdates: true, accounts: ["someone"], teams: [], invites: 0 } });
   });
 
+  it("takes you back to the page you came from, but only on this site", async () => {
+    const landing = async (next: string) => {
+      const app = site();
+      const start = await app.request(`/auth/google?next=${encodeURIComponent(next)}`);
+      const state = new URL(start.headers.get("location")!).searchParams.get("state")!;
+      const cookie = [cookieFrom(start, "auth_state"), cookieFrom(start, "auth_next")].join("; ");
+      return (await app.request(`/auth/google/callback?code=abc&state=${state}`, { headers: { cookie } })).headers.get("location");
+    };
+    expect(await landing("/pat/plans/sheet?sort=price&f=plan:Pro")).toBe("/pat/plans/sheet?sort=price&f=plan:Pro");
+    for (const elsewhere of ["https://evil.example", "//evil.example", "/\\evil.example", "/\tevil.example", "evil.example"]) expect(await landing(elsewhere)).toBe("/");
+  });
+
   it("keeps only a hash of the session", async () => {
     const { session } = await signIn();
     const [stored] = await sql`select token_hash from sessions`;

@@ -2,6 +2,7 @@ import { ArrowRight, ExternalLink } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { AgentButton } from "@/components/Chrome";
+import { NoTable } from "@/components/NoTable";
 import { ShareButton } from "@/components/Share";
 import { Page } from "@/components/Shell";
 import { Badge } from "@/components/ui/badge";
@@ -147,7 +148,7 @@ function Overview({ table, canDecide }: { table: PublishedTable; canDecide: bool
   );
 }
 
-function TableDetails({ table, view }: { table: PublishedTable; view?: TableView }) {
+function TableDetails({ table, view, onChanged }: { table: PublishedTable; view?: TableView; onChanged: () => void }) {
   const { user } = useMe();
   const canManage = !!user?.accounts.includes(table.owner);
 
@@ -168,12 +169,12 @@ function TableDetails({ table, view }: { table: PublishedTable; view?: TableView
               <span className="mx-1.5 text-muted-foreground">/</span>
               <span className="font-semibold">{table.title}</span>
             </h1>
-            <Badge variant="outline">Public</Badge>
+            <Badge variant="outline">{table.private ? "Private" : "Public"}</Badge>
           </div>
           <p className="mt-1.5 max-w-2xl text-muted-foreground">{table.question}</p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
-          <ShareButton title={table.title} path={`/${table.owner}/${table.slug}`} />
+          <ShareButton table={table} path={`/${table.owner}/${table.slug}`} onChanged={onChanged} />
           <AgentButton label="Connect an agent" />
           <Button size="lg" asChild>
             <Link href={`/${table.owner}/${table.slug}/sheet`}>
@@ -195,11 +196,11 @@ export function TablePage({ owner, slug, view }: { owner: string; slug: string; 
     <Page>
       <main className="mx-auto max-w-6xl px-4 pt-6 pb-16 sm:px-6">
         {status === "missing" ? (
-          <Message title="There's no table here" />
+          <NoTable />
         ) : status === "failed" ? (
           <Message title="This table didn't load" action={<Button variant="outline" size="sm" onClick={retry}>Try again</Button>} />
         ) : data ? (
-          <TableDetails table={data} view={view} />
+          <TableDetails table={data} view={view} onChanged={retry} />
         ) : (
           <div className="space-y-4" aria-label="Loading table">
             <Skeleton className="h-9 w-2/3" />

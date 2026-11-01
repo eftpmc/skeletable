@@ -1,5 +1,8 @@
 import { Home, Settings, UserRound, Users, type LucideIcon } from "lucide-react";
-import type { Team } from "@/lib/api";
+import type { Me, Team } from "@/lib/api";
+
+/** Whether this person can decide who sees an account's tables. */
+export const ownsAccount = (user: Me["user"], owner: string) => !!user && (user.handle === owner || user.teams.some((team) => team.handle === owner && team.role === "owner"));
 
 export type AccountLink = { href: string; label: string; icon: LucideIcon };
 

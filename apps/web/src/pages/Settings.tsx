@@ -144,7 +144,7 @@ export function Settings() {
         <section className="space-y-3 border-t pt-5">
           <div>
             <h2 className="font-medium">Agent tokens</h2>
-            <p className="text-sm text-muted-foreground">Reading needs no token. A token lets an agent propose changes in your name, and owners still approve them.</p>
+            <p className="text-sm text-muted-foreground">Reading public tables needs no token. A token lets an agent read every private table you can, and propose changes in your name, which owners still approve. Treat it like a password.</p>
           </div>
           <form onSubmit={create} className="flex gap-2">
             <Input aria-label="Token name" placeholder="Name it, like Laptop" value={name} onChange={(event) => setName(event.target.value)} maxLength={80} />

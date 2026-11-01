@@ -22,9 +22,11 @@ export function Explore() {
   const { data, status, retry } = useJson<TableSummary[]>(`/api/tables?q=${encodeURIComponent(query)}`);
   const all = useJson<TableSummary[]>("/api/tables");
   const [sort, setSort] = useState<keyof typeof sorts>("checked");
-  const topicCount = (name: string) => all.data?.filter((table) => table.topic === name).length ?? 0;
-  const topics = [...new Set(all.data?.map((table) => table.topic))].sort();
-  const shown = data?.filter((table) => !topic || table.topic === topic).sort(sorts[sort].order);
+  // Browse is the public library, even when you can also see private tables.
+  const library = all.data?.filter((table) => !table.private);
+  const topicCount = (name: string) => library?.filter((table) => table.topic === name).length ?? 0;
+  const topics = [...new Set(library?.map((table) => table.topic))].sort();
+  const shown = data?.filter((table) => !table.private && (!topic || table.topic === topic)).sort(sorts[sort].order);
 
   useEffect(() => {
     document.title = "Browse tables · Skeletable";
@@ -51,7 +53,7 @@ export function Explore() {
             {[undefined, ...topics].map((name) => (
               <Button key={name ?? "all"} variant={topic === name ? "default" : "outline"} size="xs" aria-pressed={topic === name} onClick={() => setTopic(name)}>
                 {name ?? "All"}
-                <span className="opacity-60 tabular-nums">{name ? topicCount(name) : all.data?.length}</span>
+                <span className="opacity-60 tabular-nums">{name ? topicCount(name) : library?.length}</span>
               </Button>
             ))}
           </div>

@@ -35,9 +35,9 @@ export const Terms = () => (
     <h2>Your account</h2>
     <p>You sign in with Google. You're responsible for what happens under your account and its agent tokens. You can delete your account in Settings at any time.</p>
     <h2>What you add</h2>
-    <p>You keep what rights you have in what you add. You give Skeletable and its users permission to host, show, copy and adapt it, including under the data licence below. Only add material you're allowed to share, keep quotes short, and don't add anything unlawful, misleading, abusive or private about someone else.</p>
+    <p>You keep what rights you have in what you add. For public tables, you give Skeletable and its users permission to host, show, copy and adapt it, including under the data licence below. For private tables, you give Skeletable permission to host it and show it to the people with access. Only add material you're allowed to share, keep quotes short, and don't add anything unlawful, misleading, abusive or private about someone else.</p>
     <h2>Data licence</h2>
-    <p>Tables are offered under the Creative Commons Attribution 4.0 licence (CC BY 4.0), so you can reuse them if you credit Skeletable and link back. Quotes belong to their sources and are included as short excerpts for reference.</p>
+    <p>Public tables are offered under the Creative Commons Attribution 4.0 licence (CC BY 4.0), so you can reuse them if you credit Skeletable and link back. Quotes belong to their sources and are included as short excerpts for reference.</p>
     <h2>Acceptable use</h2>
     <p>Don't try to break, overload or get around the limits of the service. We can remove content or block accounts that break these terms.</p>
     <h2>Limit of liability</h2>
@@ -53,7 +53,9 @@ export const Privacy = () => (
     <h2>What we store</h2>
     <p>When you sign in with Google, we store your email address and name, a session so you stay signed in, and hashes of any agent tokens you create. We also store the tables and proposals you create, with your public name beside them.</p>
     <h2>What's public</h2>
-    <p>Your account name, your public tables, and your name on proposals and changes are public. Your email address isn't.</p>
+    <p>Your account name, your public tables, and your name on proposals and changes to public tables are public. Your email address isn't, though people on a team you join can see it.</p>
+    <h2>Private tables</h2>
+    <p>A private table can only be opened by the people on its account and the addresses added to it. Our servers still store it, read the source pages it links to and check its quotes each day, and anyone with access can see it. If you add someone's email address to a table or team, we store that address, and we may email them about it.</p>
     <h2>Usage</h2>
     <p>We count page visits and agent requests per day, with no address or identity attached. To limit abuse, we hold visitors' network addresses briefly in memory, and our host keeps standard server logs. We don't use advertising trackers or sell data.</p>
     <h2>Who handles your data</h2>

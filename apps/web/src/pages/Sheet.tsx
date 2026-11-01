@@ -1,10 +1,11 @@
 import type { Cell, Column, FoundCell } from "@skeleton/tables/format";
-import { ArrowDown, ArrowUp, ExternalLink, Info, Pencil, Plus, ScanLine, Search } from "lucide-react";
+import { ArrowDown, ArrowUp, ExternalLink, Info, Lock, Pencil, Plus, ScanLine, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
 import { Link, useLocation, useSearch } from "wouter";
 import { Input } from "@/components/ui/input";
 import { AccountButton, Logo } from "@/components/Chrome";
 import { FilterButton } from "@/components/Filter";
+import { NoTable } from "@/components/NoTable";
 import { ShareButton } from "@/components/Share";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -406,7 +407,7 @@ export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - t
   );
 }
 
-function TopBar({ table, owner, link }: { table?: PublishedTable; owner: string; link: string }) {
+function TopBar({ table, owner, link, onChanged }: { table?: PublishedTable; owner: string; link: string; onChanged: () => void }) {
   const cells = table?.rows.flatMap((row) => Object.values(row.cells)) ?? [];
   const found = cells.filter(isFound);
   const lastRead = found.reduce((latest, cell) => (cell.read > latest ? cell.read : latest), "");
@@ -418,7 +419,7 @@ function TopBar({ table, owner, link }: { table?: PublishedTable; owner: string;
       <div className="min-w-0 flex-1">
         {table ? (
           <>
-            <h1 className="truncate text-lg leading-6">{table.title}</h1>
+            <h1 className="truncate text-lg leading-6">{table.private && <Lock aria-label="Private" className="mr-1.5 inline size-3.5 align-[-1px] text-muted-foreground" />}{table.title}</h1>
             <p className="truncate text-xs text-muted-foreground">
               by <Link href={`/${owner}`} className="hover:text-foreground hover:underline">{ownerLabel(table)}</Link> · {found.length} of {cells.length} cells · Read {day(lastRead)}
             </p>
@@ -427,7 +428,7 @@ function TopBar({ table, owner, link }: { table?: PublishedTable; owner: string;
           <p className="text-lg leading-6">Skeletable</p>
         )}
       </div>
-      {table && <ShareButton title={table.title} path={link} size="sm" />}
+      {table && <ShareButton table={table} path={link} size="sm" onChanged={onChanged} />}
       <AccountButton />
     </header>
   );
@@ -465,9 +466,9 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
   const column = data?.columns.find((c) => row && cellId(row.key, c.id) === selectedId);
   return (
     <div className="flex h-svh flex-col duration-200 animate-in fade-in zoom-in-[0.995] motion-reduce:animate-none">
-      <TopBar table={data} owner={owner} link={`${path}${viewSearch(view, selectedId)}`} />
+      <TopBar table={data} owner={owner} link={`${path}${viewSearch(view, selectedId)}`} onChanged={retry} />
       {status === "missing" ? (
-        <Message title="There's no table here" />
+        <NoTable />
       ) : status === "failed" ? (
         <Message title="This table didn't load" action={<Button variant="outline" size="sm" onClick={retry}>Try again</Button>} />
       ) : data && shown ? (

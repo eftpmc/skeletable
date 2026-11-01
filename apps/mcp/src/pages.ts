@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Table } from "@skeleton/tables/format";
 import type { Hono } from "hono";
+import { everyone, readable } from "./access.js";
+import type { PublishedTable } from "./library.js";
 
 const description = "A public library of tables, where each cell links to the exact words that prove it.";
 
@@ -30,8 +32,10 @@ const tableText = (table: Table) =>
   `<main><h1>${escape(table.title)}</h1><p>${escape(table.question)}</p><p>${escape(table.scope)}</p><ul>${table.rows.map((row) => `<li>${escape(row.key)}</li>`).join("")}</ul></main>`;
 
 /** Serve the app's page with the right title and description for its address, plus the files crawlers ask for. */
-export function pageRoutes(app: Hono, tables: Table[], webDir: string, publicUrl: string) {
+export function pageRoutes(app: Hono, tables: PublishedTable[], webDir: string, publicUrl: string) {
   const template = readFileSync(join(webDir, "index.html"), "utf8");
+  // Pages go out before we know who's asking, so only public tables reach them.
+  const open = () => readable(tables, everyone);
 
   const render = (head: string, body = "") =>
     template.replace(/<title>.*?<\/title>/, head).replace('<div id="root"></div>', `<div id="root">${body}</div>`);
@@ -51,7 +55,7 @@ export function pageRoutes(app: Hono, tables: Table[], webDir: string, publicUrl
   app.get("/robots.txt", (c) => c.text(`User-agent: *\nDisallow: /api/\nDisallow: /auth/\nDisallow: /settings\nSitemap: ${publicUrl}/sitemap.xml\n`));
 
   app.get("/sitemap.xml", (c) => {
-    const paths = ["/", "/explore", ...tables.map((table) => `/${table.owner}/${table.slug}`)];
+    const paths = ["/", "/explore", ...open().map((table) => `/${table.owner}/${table.slug}`)];
     c.header("content-type", "application/xml");
     return c.body(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${paths.map((path) => `<url><loc>${escape(publicUrl + path)}</loc></url>`).join("")}</urlset>`);
   });
@@ -59,7 +63,7 @@ export function pageRoutes(app: Hono, tables: Table[], webDir: string, publicUrl
   // The sheet is the address people share, so its link previews name the table too.
   for (const path of ["/:owner/:slug", "/:owner/:slug/sheet"]) {
     app.get(path, (c, next) => {
-      const table = tables.find((t) => t.owner === c.req.param("owner") && t.slug === c.req.param("slug"));
+      const table = open().find((t) => t.owner === c.req.param("owner") && t.slug === c.req.param("slug"));
       if (!table) return next();
       const url = `${publicUrl}/${table.owner}/${table.slug}`;
       const data = { "@context": "https://schema.org", "@type": "Dataset", name: table.title, description: table.question, url, creator: { "@type": "Organization", name: table.owner } };

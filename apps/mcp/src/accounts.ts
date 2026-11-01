@@ -59,6 +59,7 @@ const columnBody = z.object({
 
 const tableBody = z.object({
   owner: z.string().trim().optional(),
+  private: z.boolean().default(false),
   title: z.string().trim().min(1).max(120),
   question: z.string().trim().min(1).max(300),
   topic: z.string().trim().min(1).max(40),
@@ -122,6 +123,7 @@ export function accountRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sig
     await sql.begin(async (tx) => {
       const [own] = await tx`select account_id from users where id = ${user.id}`;
       await tx`delete from team_invites where email = ${user.email}`;
+      await tx`delete from table_access where email = ${user.email}`;
       await tx`delete from sessions where user_id = ${user.id}`;
       await tx`delete from api_tokens where user_id = ${user.id}`;
       await tx`delete from account_members where user_id = ${user.id}`;
@@ -165,7 +167,7 @@ export function accountRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sig
     };
     const { problems } = validateTable(table);
     if (problems.length) return c.json({ error: "That table isn't valid. Check its columns and rows." }, 400);
-    await importTables(sql, [table]);
+    await importTables(sql, [{ ...table, private: body.data.private }]);
     await refresh?.();
     return c.json({ owner, slug }, 201);
   });
