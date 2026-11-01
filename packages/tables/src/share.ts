@@ -45,6 +45,23 @@ export function inlineParts(text: string) {
   return parts;
 }
 
+/** What a draft still needs. Values with no proof don't hold up publishing: they're left out of it. */
+export function draftChecklist(table: Pick<Table, "question" | "topic" | "scope" | "columns" | "rows">) {
+  const cells = table.rows.flatMap((row) => Object.values(row.cells));
+  const unruled = table.columns.filter((column) => !column.rule).length;
+  const proven = cells.filter((cell) => !("missing" in cell) || cell.absent).length;
+  return {
+    items: [
+      { label: "Say what question it answers", done: !!table.question },
+      { label: "Give it a topic", done: !!table.topic },
+      { label: "Say what belongs in it", done: !!table.scope },
+      { label: unruled ? `Write what counts for ${unruled} ${unruled === 1 ? "column" : "columns"}` : "Write what counts for each column", done: !unruled },
+      { label: "Prove at least one value", done: proven > 0 },
+    ],
+    unproven: cells.filter((cell) => "missing" in cell && cell.unproven !== undefined).length,
+  };
+}
+
 /** A spreadsheet runs text starting with these as a formula, so a value from a page can't reach it as one. */
 const safe = (text: string) => (/^[=+\-@\t\r]/.test(text) ? `'${text}` : text);
 

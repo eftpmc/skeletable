@@ -2,6 +2,8 @@ const shortcuts = [
   ["/", "Find in the table"],
   ["F", "Open filters"],
   ["X", "Turn X-ray on or off"],
+  ["N", "Go to the next cell that needs proof"],
+  ["Enter", "Add or change the selected value"],
   ["?", "Show these shortcuts"],
   ["Arrow keys", "Move between cells"],
   ["Ctrl or ⌘ + C", "Copy the selected value"],

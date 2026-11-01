@@ -4,6 +4,7 @@ import { z } from "zod";
 import { everyone, readable } from "./access.js";
 import { OFFICIAL_ACCOUNT, importTables, type Sql } from "./db.js";
 import type { PublishedTable } from "./library.js";
+import { asValue } from "./proposals.js";
 import { rateLimit } from "./rate-limit.js";
 
 export type SignedIn = (c: Context) => Promise<{ id: string; email: string; accounts: string[]; shared: string[] } | null>;
@@ -58,19 +59,60 @@ export const columnBody = z.object({
   label: z.string().trim().min(1).max(80),
   type: z.enum(["text", "number", "boolean"]),
   unit: z.string().trim().max(30).optional(),
-  rule: z.string().trim().min(1).max(500),
+  rule: z.string().trim().max(500).default(""),
 });
 
-const tableBody = z.object({
+export const tableBody = z.object({
   owner: z.string().trim().optional(),
   private: z.boolean().default(false),
+  draft: z.boolean().default(false),
   title: z.string().trim().min(1).max(120),
-  question: z.string().trim().min(1).max(300),
-  topic: z.string().trim().min(1).max(40),
-  scope: z.string().trim().min(1).max(800),
+  question: z.string().trim().max(300).default(""),
+  topic: z.string().trim().max(40).default(""),
+  scope: z.string().trim().max(800).default(""),
   columns: z.array(columnBody).min(1).max(MAX_COLUMNS),
   rows: z.array(z.string().trim().min(1).max(120)).min(1).max(MAX_ROWS),
+  // What was typed or pasted into a draft, one list per row in column order. None of it counts until it's proved.
+  values: z.array(z.array(z.string().trim().max(300))).max(MAX_ROWS).optional(),
 });
+
+type NewTable = z.infer<typeof tableBody>;
+
+/** A new table's starting cells: blank, or holding what someone typed into a draft. */
+const startingCell = (body: NewTable, row: number, column: number): Cell => {
+  const raw = body.draft ? body.values?.[row]?.[column] : undefined;
+  const value = raw ? asValue(body.columns[column]!, raw) : undefined;
+  return value === undefined ? emptyCell() : { ...emptyCell(), unproven: value };
+};
+
+/** Why a table can't be made yet. Only a draft can leave its details for later. */
+const unfinished = ({ draft, question, topic, scope, columns }: NewTable) => !draft && (!question || !topic || !scope || columns.some((column) => !column.rule));
+
+/** Make a table for this owner, at the first free address near its title. */
+export async function createTable(sql: Sql, tables: PublishedTable[], owner: string, body: NewTable) {
+  const base = slugOf(body.title) || "table";
+  let slug = base;
+  for (let n = 2; tables.some((t) => t.owner === owner && t.slug === slug); n++) slug = `${base}-${n}`;
+  const ids = columnIds(body.columns.map((column) => column.label));
+  const { title, question, topic, scope, columns, rows, draft } = body;
+  const table: Table = {
+    format: TABLE_FORMAT,
+    owner,
+    slug,
+    ...(draft && { draft }),
+    topic,
+    title,
+    question,
+    scope,
+    columns: columns.map(({ unit, ...column }, index) => ({ ...column, id: ids[index]!, ...(unit && { unit }) })),
+    rows: rows.map((key, row) => ({ key, cells: Object.fromEntries(ids.map((id, column) => [id, startingCell(body, row, column)])) })),
+  };
+  const { problems } = validateTable(table);
+  if (problems.length) return undefined;
+  // A draft is private until someone publishes it.
+  await importTables(sql, [{ ...table, private: draft || body.private }]);
+  return { owner, slug };
+}
 
 export const emptyCell = (): Cell => ({ missing: true, checked: [], read: today() });
 
@@ -166,34 +208,16 @@ export function accountRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sig
     const user = await signedIn(c);
     if (!user) return c.json({ error: "Sign in to create a table." }, 401);
     const body = tableBody.safeParse(await c.req.json().catch(() => null));
-    if (!body.success) return c.json({ error: "Fill in every field, with at least one column and one row." }, 400);
+    if (!body.success || unfinished(body.data)) return c.json({ error: "Fill in every field, with at least one column and one row." }, 400);
     const [account] = await sql`select a.handle from accounts a join users u on u.account_id = a.id where u.id = ${user.id}`;
     if (!account) return c.json({ error: "Your account isn't set up." }, 400);
     const owner = body.data.owner ?? (account.handle as string);
     if (!runsTable(user, owner)) return c.json({ error: "You can't add tables to that account." }, 403);
-    const { title, question, topic, scope, columns, rows } = body.data;
-    if (new Set(rows).size !== rows.length) return c.json({ error: "Each row needs its own name." }, 400);
-
-    const base = slugOf(title) || "table";
-    let slug = base;
-    for (let n = 2; tables.some((t) => t.owner === owner && t.slug === slug); n++) slug = `${base}-${n}`;
-    const ids = columnIds(columns.map((column) => column.label));
-    const table: Table = {
-      format: TABLE_FORMAT,
-      owner,
-      slug,
-      topic,
-      title,
-      question,
-      scope,
-      columns: columns.map(({ unit, ...column }, index) => ({ ...column, id: ids[index]!, ...(unit && { unit }) })),
-      rows: rows.map((key) => ({ key, cells: Object.fromEntries(ids.map((id) => [id, emptyCell()])) })),
-    };
-    const { problems } = validateTable(table);
-    if (problems.length) return c.json({ error: "That table isn't valid. Check its columns and rows." }, 400);
-    await importTables(sql, [{ ...table, private: body.data.private }]);
+    if (new Set(body.data.rows).size !== body.data.rows.length) return c.json({ error: "Each row needs its own name." }, 400);
+    const created = await createTable(sql, tables, owner, body.data);
+    if (!created) return c.json({ error: "That table isn't valid. Check its columns and rows." }, 400);
     await refresh?.();
-    return c.json({ owner, slug }, 201);
+    return c.json(created, 201);
   });
 
   app.post("/api/tables/:owner/:slug/rows", rateLimit(CREATIONS_PER_MINUTE * 3), async (c) => {

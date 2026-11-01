@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEven
 import { toast } from "sonner";
 import { Link, useLocation, useSearch } from "wouter";
 import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
 import { DownloadButton } from "@/components/Download";
 import { FilterButton } from "@/components/Filter";
 import { NoTable } from "@/components/NoTable";
@@ -52,12 +53,37 @@ function SuggestButton({ onSuggest, canEdit }: { onSuggest: () => void; canEdit:
   return <Button variant="ghost" size="xs" onClick={onSuggest}><Pencil />{canEdit ? "Edit value" : "Suggest a change"}</Button>;
 }
 
+type QuoteSearch = { quotes: string[]; blocked?: "robots" | "unreadable" };
+
+const QUOTE_SEARCH_WAIT_MS = 500;
+
+/** Looks through a source for the words that state a value, once both have settled. */
+function useQuoteSearch(table: PublishedTable, column: string, value: string, source: string) {
+  const [found, setFound] = useState<{ key: string; result: QuoteSearch }>();
+  const key = URL.canParse(source) && value.trim() ? `${value}|${source}` : "";
+  useEffect(() => {
+    if (!key) return;
+    const timer = setTimeout(() => {
+      void postJson<QuoteSearch>(`/api/tables/${table.owner}/${table.slug}/quotes`, { column, value, source }).then(({ ok, data }) => ok && setFound({ key, result: data }));
+    }, QUOTE_SEARCH_WAIT_MS);
+    return () => clearTimeout(timer);
+  }, [key, table.owner, table.slug, column, value, source]);
+  const result = found?.key === key ? found.result : undefined;
+  if (!key) return { quotes: [] };
+  if (!result) return { quotes: [], message: "Looking for those words on the page..." };
+  if (result.blocked === "robots") return { quotes: [], message: "This site asks bots not to read it, so paste the words yourself." };
+  if (result.blocked) return { quotes: [], message: "We couldn't read that page, so paste the words yourself." };
+  return { quotes: result.quotes, message: result.quotes.length ? "Pick the sentence that states it:" : "We didn't find that value on the page. Paste the words that show it." };
+}
+
 /** Propose a new value with its proof, which the server tests before anyone reviews it. */
-function SuggestForm({ table, selected, canEdit, onDone }: { table: PublishedTable; selected: Selected; canEdit: boolean; onDone: (sent: boolean) => void }) {
-  const [form, setForm] = useState({ value: "", source: "", quote: "" });
+function SuggestForm({ table, selected, canEdit, source, onDone }: { table: PublishedTable; selected: Selected; canEdit: boolean; source: string; onDone: (sent: boolean, source: string) => void }) {
+  const unproven = "missing" in selected.cell ? selected.cell.unproven : undefined;
+  const [form, setForm] = useState({ value: unproven === undefined ? "" : display(unproven), source, quote: "" });
   const [error, setError] = useState<string>();
   const [sending, setSending] = useState(false);
   const field = (name: keyof typeof form) => ({ value: form[name], onChange: (event: { target: { value: string } }) => setForm({ ...form, [name]: event.target.value }) });
+  const search = useQuoteSearch(table, selected.column.id, form.value, form.source);
   const send = async (event: FormEvent) => {
     event.preventDefault();
     setSending(true);
@@ -66,19 +92,31 @@ function SuggestForm({ table, selected, canEdit, onDone }: { table: PublishedTab
     setSending(false);
     if (!ok) return setError(data.error ?? "That didn't send. Try again.");
     toast.success(canEdit ? "Value saved" : "Proposal sent");
-    onDone(true);
+    onDone(true, form.source);
   };
   return (
-    <form onSubmit={send} onKeyDown={(event) => event.stopPropagation()} className="space-y-2 border-t px-3 py-2 text-sm duration-150 animate-in fade-in slide-in-from-top-1">
+    <form onSubmit={send} onKeyDown={(event) => { event.stopPropagation(); if (event.key === "Escape") onDone(false, form.source); }} className="space-y-2 border-t px-3 py-2 text-sm duration-150 animate-in fade-in slide-in-from-top-1">
       <p className="text-xs text-muted-foreground">{selected.column.rule}</p>
       <div className="grid gap-2 sm:grid-cols-[10rem_1fr]">
-        <Input aria-label="New value" placeholder={`New value${selected.column.unit ? ` (${selected.column.unit})` : ""}`} required {...field("value")} />
-        <Input aria-label="Source link" type="url" placeholder="Link to the page that states it" required {...field("source")} />
+        <Input aria-label="New value" autoFocus={!form.value} placeholder={`New value${selected.column.unit ? ` (${selected.column.unit})` : ""}`} required {...field("value")} />
+        <Input aria-label="Source link" type="url" autoFocus={!!form.value && !form.source} placeholder="Link to the page that states it" required {...field("source")} />
       </div>
       <Input aria-label="Exact quote" placeholder="The exact words on that page" required maxLength={400} {...field("quote")} />
+      {search.message && <p role="status" className="text-xs text-muted-foreground">{search.message}</p>}
+      {search.quotes.length > 0 && !form.quote && (
+        <ul className="space-y-1" aria-label="Sentences on that page that state this value">
+          {search.quotes.map((quote) => (
+            <li key={quote}>
+              <button type="button" onClick={() => setForm({ ...form, quote })} className="w-full rounded-md border px-2 py-1 text-left text-xs transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none">
+                <Quote cell={{ value: selected.column.type === "number" ? Number(form.value.replace(/,/g, "")) : form.value, quote }} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
       <div className="flex items-center gap-2">
         <Button type="submit" size="sm" disabled={sending}>{sending ? "Checking the page..." : canEdit ? "Save value" : "Send proposal"}</Button>
-        <Button type="button" variant="ghost" size="sm" onClick={() => onDone(false)}>Cancel</Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => onDone(false, form.source)}>Cancel</Button>
         {error && <span role="alert" className="text-xs text-destructive">{error}</span>}
       </div>
     </form>
@@ -137,6 +175,44 @@ function AddRow({ table, onAdded }: { table: PublishedTable; onAdded: () => void
   );
 }
 
+/** Lets the people building a draft add a column as they go. */
+function AddColumn({ table, onAdded }: { table: PublishedTable; onAdded: () => void }) {
+  const { user } = useMe();
+  const [form, setForm] = useState({ label: "", type: "text" });
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string>();
+  if (!table.draft || !user?.accounts.includes(table.owner)) return null;
+  const add = async (event: FormEvent) => {
+    event.preventDefault();
+    const { ok, data } = await postJson<{ error?: string }>(`/api/tables/${table.owner}/${table.slug}/columns`, { ...form, rule: "" });
+    if (!ok) return setError(data.error ?? "That didn't save.");
+    toast.success("Column added");
+    setForm({ label: "", type: "text" });
+    setError(undefined);
+    setOpen(false);
+    onAdded();
+  };
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="xs" className="shrink-0 text-muted-foreground"><Plus />Add column</Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-80 gap-2 p-3">
+        <form onSubmit={add} className="flex gap-2">
+          <Input aria-label="New column name" placeholder="Column name" required maxLength={80} value={form.label} onChange={(event) => setForm({ ...form, label: event.target.value })} />
+          <NativeSelect aria-label="New column type" value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value })}>
+            <option value="text">Text</option>
+            <option value="number">Number</option>
+            <option value="boolean">Yes or no</option>
+          </NativeSelect>
+          <Button type="submit" size="sm">Add</Button>
+        </form>
+        {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 /** Along the bottom of the sheet, like a spreadsheet's: the table's tools, out of the way of the data. */
 function StatusBar({ table, xray, onXray, onChanged, find, onFind, findInput, filters, onFilters, filtering, onFiltering, shown }: { table: PublishedTable; xray: boolean; onXray: () => void; onChanged: () => void; find: string; onFind: (find: string) => void; findInput: RefObject<HTMLInputElement | null>; filters: SheetFilters; onFilters: (filters: SheetFilters) => void; filtering: boolean; onFiltering: (open: boolean) => void; shown: number }) {
   return (
@@ -160,6 +236,7 @@ function StatusBar({ table, xray, onXray, onChanged, find, onFind, findInput, fi
       </Button>
       {xray && <XrayReading table={table} />}
       <AddRow table={table} onAdded={onChanged} />
+      <AddColumn table={table} onAdded={onChanged} />
       <SheetFacts table={table} />
       <Popover>
         <PopoverTrigger asChild>
@@ -177,14 +254,24 @@ function StatusBar({ table, xray, onXray, onChanged, find, onFind, findInput, fi
   );
 }
 
+/** The page that already proves something else in this row, as a start for the next value. */
+function rowSource(table: PublishedTable, rowKey: string) {
+  const row = table.rows.find((candidate) => candidate.key === rowKey);
+  return Object.values(row?.cells ?? {}).find(isFound)?.source ?? "";
+}
+
 /** Above the grid, like a spreadsheet's: one line until a cell is selected, then its evidence opens beneath. */
-export function FormulaBar({ selected, table, onChanged }: { selected?: Selected; table?: PublishedTable; onChanged?: () => void }) {
+export function FormulaBar({ selected, table, onChanged, editing, onEditing, onNext }: { selected?: Selected; table?: PublishedTable; onChanged?: () => void; editing?: boolean; onEditing?: (editing: boolean) => void; onNext?: () => void }) {
   const { user } = useMe();
   const canEdit = !!table && !!user?.accounts.includes(table.owner);
-  const [suggesting, setSuggesting] = useState(false);
+  const [ownEditing, setOwnEditing] = useState(false);
+  const suggesting = editing ?? ownEditing;
+  const setSuggesting = onEditing ?? setOwnEditing;
   const [sent, setSent] = useState(false);
+  // The last page used, because one page often fills several cells.
+  const lastSource = useRef("");
   const cell = selected?.cell;
-  const value = !selected || !cell ? undefined : isFound(cell) ? `${display(cell.value)}${selected.column.unit ? ` ${selected.column.unit}` : ""}` : statuses[selected.status].label;
+  const value = !selected || !cell ? undefined : isFound(cell) ? `${display(cell.value)}${selected.column.unit ? ` ${selected.column.unit}` : ""}` : cell.unproven !== undefined ? `${display(cell.unproven)}${selected.column.unit ? ` ${selected.column.unit}` : ""}` : statuses[selected.status].label;
   return (
     <section className="shrink-0 border-y" aria-live="polite" aria-label="Selected cell">
       <div className="flex h-9 items-center text-sm">
@@ -200,10 +287,14 @@ export function FormulaBar({ selected, table, onChanged }: { selected?: Selected
           table={table}
           selected={selected}
           canEdit={canEdit}
-          onDone={(done) => {
-            setSuggesting(false);
+          source={lastSource.current || rowSource(table, selected.rowKey)}
+          onDone={(done, source) => {
+            lastSource.current = source;
             setSent(done && !canEdit);
             if (done) onChanged?.();
+            // While building a draft, saving moves straight on to the next cell.
+            if (done && table.draft && canEdit && onNext) onNext();
+            else setSuggesting(false);
           }}
         />
       )}
@@ -223,7 +314,7 @@ export function FormulaBar({ selected, table, onChanged }: { selected?: Selected
             </>
           ) : (
             <>
-              <p className="text-muted-foreground">{cell.absent ? `We read this source on ${day(cell.read)} and it gives no such value.` : cell.checked.length ? `No source we could use stated this. We looked here on ${day(cell.read)}:` : "Nobody has looked for this yet."}</p>
+              <p className="text-muted-foreground">{cell.unproven !== undefined ? "This has no proof yet, so it doesn't count. Add the page that states it." : cell.absent ? `We read this source on ${day(cell.read)} and it gives no such value.` : cell.checked.length ? `No source we could use stated this. We looked here on ${day(cell.read)}:` : "Nobody has looked for this yet."}</p>
               <div className="flex flex-wrap gap-1.5">
                 {cell.checked.map((url) => <SourceLink key={url} url={url} label={place(url)} />)}
                 {table && <SuggestButton onSuggest={() => setSuggesting(true)} canEdit={canEdit} />}
@@ -256,6 +347,7 @@ type GridProps = {
   widths?: Record<string, number>;
   onResize?: (column: string, width: number) => void;
   onCopy?: (text: string) => void;
+  onEnter?: () => void;
   rowHref?: (key: string) => string;
 };
 
@@ -291,7 +383,7 @@ function HeaderContent({ column, label, sort, onSort, onResize }: { column: stri
   );
 }
 
-export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - table.rows.length, focusOnLoad = true, xray = false, sort, onSort, widths, onResize, onCopy, rowHref }: GridProps) {
+export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - table.rows.length, focusOnLoad = true, xray = false, sort, onSort, widths, onResize, onCopy, onEnter, rowHref }: GridProps) {
   const grid = useRef<HTMLTableElement>(null);
   const focused = useRef(focusOnLoad ? null : selectedId);
 
@@ -302,6 +394,10 @@ export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - t
 
   const onKeyDown = (event: KeyboardEvent, rowIndex: number, columnIndex: number) => {
     if (event.key === "Escape") return select(null);
+    if (event.key === "Enter" && onEnter) {
+      event.preventDefault();
+      return onEnter();
+    }
     if (event.key.toLowerCase() === "c" && (event.ctrlKey || event.metaKey) && onCopy) {
       const cell = table.rows[rowIndex]!.cells[table.columns[columnIndex]!.id]!;
       return onCopy(isFound(cell) ? display(cell.value) : "");
@@ -375,6 +471,8 @@ export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - t
                     {!xray && status.corner && <span aria-hidden="true" className={`absolute top-0 right-0 size-0 border-t-[7px] border-l-[7px] border-l-transparent ${status.corner}`} />}
                     {isFound(cell) ? (
                       display(cell.value)
+                    ) : cell.unproven !== undefined ? (
+                      <span className="text-sm italic">{display(cell.unproven)}</span>
                     ) : statusName === "blank" && !xray ? (
                       <>
                         <span className="sr-only">{status.label}</span>
@@ -416,6 +514,7 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
   const [widths, setWidths] = useState<Record<string, number>>({});
   const [filtering, setFiltering] = useState(false);
   const [helping, setHelping] = useState(false);
+  const [editing, setEditing] = useState(false);
   const findInput = useRef<HTMLInputElement>(null);
   const [path, navigate] = useLocation();
   const search = useSearch();
@@ -430,11 +529,28 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
 
   const shown = useMemo(() => (data ? { ...data, rows: sortedRows(data, filteredRows(data, matchingRows(data, find), filters), sort) } : undefined), [data, find, filters, sort]);
 
+  /** The next cell along that still needs a value or its proof, starting again from the top at the end. */
+  const nextOpen = () => {
+    if (!shown) return undefined;
+    const cells = shown.rows.flatMap((candidate) => shown.columns.map((column) => {
+      const name = cellStatus(candidate.cells[column.id]!, candidate.key, column.id, shown.watch);
+      return { id: cellId(candidate.key, column.id), open: name === "blank" || name === "unproven" };
+    }));
+    const at = cells.findIndex((cell) => cell.id === selectedId);
+    return [...cells.slice(at + 1), ...cells.slice(0, Math.max(at, 0))].find((cell) => cell.open)?.id;
+  };
+  const goNext = useRef(() => {});
+  goNext.current = () => {
+    const next = nextOpen();
+    if (next) show({}, next);
+    else setEditing(false);
+  };
+
   // Letters only act as shortcuts outside anything you can type in or choose from.
   useEffect(() => {
     const onKey = (event: globalThis.KeyboardEvent) => {
-      if (event.ctrlKey || event.metaKey || event.altKey || (event.target as HTMLElement).closest("input, textarea, select, [role=dialog], [role=menu]")) return;
-      const action = { "/": () => findInput.current?.focus(), f: () => setFiltering(true), x: () => setXray((on) => !on), "?": () => setHelping(true) }[event.key];
+      if (event.ctrlKey || event.metaKey || event.altKey || (event.target as HTMLElement).closest?.("input, textarea, select, [role=dialog], [role=menu]")) return;
+      const action = { "/": () => findInput.current?.focus(), f: () => setFiltering(true), n: () => goNext.current(), x: () => setXray((on) => !on), "?": () => setHelping(true) }[event.key];
       if (!action) return;
       event.preventDefault();
       action();
@@ -462,7 +578,7 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
         <Message title="This table didn't load" action={<Button variant="outline" size="sm" onClick={retry}>Try again</Button>} />
       ) : data && shown ? (
         <>
-          <FormulaBar table={data} onChanged={retry} selected={selectedCell(data, selectedId)} />
+          <FormulaBar table={data} onChanged={retry} selected={selectedCell(data, selectedId)} editing={editing} onEditing={setEditing} onNext={() => goNext.current()} />
           <Grid
             table={shown}
             selectedId={selectedId}
@@ -473,6 +589,7 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
             widths={widths}
             onResize={(column, width) => setWidths((current) => ({ ...current, [column]: width }))}
             onCopy={(text) => void copyText(text)}
+            onEnter={() => setEditing(true)}
             rowHref={(key) => rowPath(data, key)}
           />
           <StatusBar table={data} xray={xray} onXray={() => setXray(!xray)} onChanged={retry} find={find} onFind={(next) => show({ find: next })} findInput={findInput} filters={filters} onFilters={(next) => show({ filters: next })} filtering={filtering} onFiltering={setFiltering} shown={shown.rows.length} />

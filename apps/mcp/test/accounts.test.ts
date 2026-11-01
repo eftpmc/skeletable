@@ -112,6 +112,45 @@ describe.skipIf(!url)("accounts and creating tables", () => {
     expect(tables.find((t) => t.owner === "pat")!.rows[0]!.cells.weight).toMatchObject({ value: 900 });
   });
 
+  it("keeps a draft to its people, and leaves unproven values out when it's published", async () => {
+    const owner = await person("pat@example.com", "a");
+    const stranger = await person("sam@example.com", "b");
+    const body = { title: "Sketch", draft: true, columns: [{ label: "Weight", type: "number", unit: "g" }], rows: ["Alpha", "Beta"], values: [["900"], ["850"]] };
+    expect((await send("/api/tables", "POST", owner, body)).status).toBe(201);
+    const held = () => tables.find((t) => t.owner === "pat" && t.slug === "sketch")!;
+    expect(held()).toMatchObject({ draft: true, private: true });
+    expect(held().rows[1]!.cells.weight).toMatchObject({ missing: true, unproven: 850 });
+    expect((await app.request("/api/tables/pat/sketch", { headers: stranger })).status).toBe(404);
+
+    expect((await send("/api/tables/pat/sketch/publish", "POST", owner, { private: false })).status).toBe(400);
+    await send("/api/tables/pat/sketch", "PATCH", owner, { title: "Sketch", question: "How heavy?", topic: "Tech", scope: "These two." });
+    await send("/api/tables/pat/sketch/columns/weight", "PATCH", owner, { label: "Weight", unit: "g", rule: "As stated." });
+    await send("/api/tables/pat/sketch/proposals", "POST", owner, { row: "Alpha", column: "weight", value: "900", source: "https://maker.example/a", quote: "Weighs 900 g" });
+    expect((await send("/api/tables/pat/sketch/publish", "POST", stranger, { private: false })).status).toBe(403);
+    expect((await send("/api/tables/pat/sketch/publish", "POST", owner, { private: false })).status).toBe(200);
+
+    expect(held().draft).toBeUndefined();
+    expect(held().rows[0]!.cells.weight).toMatchObject({ value: 900 });
+    expect(held().rows[1]!.cells.weight).not.toHaveProperty("unproven");
+    expect((await app.request("/api/tables/pat/sketch", { headers: stranger })).status).toBe(200);
+    expect((await send("/api/tables/pat/sketch/publish", "POST", owner, { private: false })).status).toBe(409);
+  });
+
+  it("won't take a published table without its details", async () => {
+    const headers = await person("pat@example.com", "a");
+    expect((await send("/api/tables", "POST", headers, { ...newTable, scope: "" })).status).toBe(400);
+    expect((await send("/api/tables", "POST", headers, { ...newTable, columns: [{ label: "Weight", type: "text" }] })).status).toBe(400);
+  });
+
+  it("finds the words on a page that state a value", async () => {
+    const owner = await person("pat@example.com", "a");
+    await send("/api/tables", "POST", owner, newTable);
+    const search = async (value: string) => (await send("/api/tables/pat/my-keyboards/quotes", "POST", owner, { column: "weight", value, source: "https://maker.example/a" })).json();
+    expect(await search("900")).toEqual({ quotes: ["Weighs 900 g"] });
+    expect(await search("901")).toEqual({ quotes: [] });
+    expect(await search("not a number")).toEqual({ quotes: [] });
+  });
+
   it("lets only the owner add a row, once", async () => {
     const owner = await person("pat@example.com", "a");
     const stranger = await person("sam@example.com", "b");

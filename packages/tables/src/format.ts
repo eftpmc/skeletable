@@ -16,8 +16,8 @@ export const columnSchema = z.object({
   label: text(80),
   type: z.enum(["text", "number", "boolean"]),
   unit: text(30).optional(),
-  // What counts as this value, so two readers would fill it in the same way.
-  rule: text(500),
+  // What counts as this value, so two readers would fill it in the same way. Only a draft can leave it empty.
+  rule: z.string().trim().max(500),
 });
 
 /**
@@ -57,6 +57,8 @@ export const missingCellSchema = z.object({
   read: day,
   // The source was read in full and gives no such value, which is an answer rather than a gap.
   absent: z.literal(true).optional(),
+  // A value typed or pasted into a draft, with no proof yet. It never counts and never gets published.
+  unproven: z.union([z.string().trim().min(1).max(300), z.number(), z.boolean()]).optional(),
 });
 
 export const cellSchema = z.union([foundCellSchema, missingCellSchema]);
@@ -91,12 +93,14 @@ export const tableSchema = z.object({
   // The account the table belongs to. A table's address is its owner and slug.
   owner: z.string().regex(/^[a-z0-9-]+$/),
   slug: z.string().regex(/^[a-z0-9-]+$/),
+  // Still being built, so only its people can see it, and its details can wait until it's published.
+  draft: z.boolean().optional(),
   // A broad subject, for browsing.
-  topic: text(40),
+  topic: z.string().trim().max(40),
   title: text(120),
-  question: text(300),
+  question: z.string().trim().max(300),
   // What belongs in the table and what doesn't. Completeness is judged against this.
-  scope: text(800),
+  scope: z.string().trim().max(800),
   columns: z.array(columnSchema).min(1).max(20),
   rows: z.array(rowSchema).min(1),
 });
@@ -180,6 +184,10 @@ export function validateTable(input: unknown): { table?: Table; problems: string
   if (!parsed.success) return { problems: parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`) };
   const table = parsed.data;
   const problems: string[] = [];
+  if (!table.draft) {
+    for (const field of ["topic", "question", "scope"] as const) if (!table[field]) problems.push(`${field}: empty`);
+    for (const column of table.columns) if (!column.rule) problems.push(`${column.id}: has no rule`);
+  }
   const seen = new Set<string>();
   for (const row of table.rows) {
     if (seen.has(row.key)) problems.push(`${row.key}: appears twice`);
@@ -199,6 +207,8 @@ export function validateTable(input: unknown): { table?: Table; problems: string
         }
       } else if (cell.absent && !cell.checked.length) {
         problems.push(`${at}: says its source has no value, without naming the source`);
+      } else if (cell.unproven !== undefined && !table.draft) {
+        problems.push(`${at}: has a value with no proof`);
       }
     }
   }

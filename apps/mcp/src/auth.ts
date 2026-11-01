@@ -2,14 +2,14 @@ import { createHash, randomBytes } from "node:crypto";
 import { Hono, type Context } from "hono";
 import { z } from "zod";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
-import type { Fetcher } from "@skeleton/tables";
+import { findQuotes, liveFetcher, type Fetcher } from "@skeleton/tables";
 import { accessRoutes, canRead, everyone, readable, sharedWith, type Viewer } from "./access.js";
 import { accountRoutes, ensureAccount, runsTable } from "./accounts.js";
 import { OFFICIAL_ACCOUNT, type Sql } from "./db.js";
 import { notifyOwners, type Mailer } from "./email.js";
 import type { PublishedTable } from "./library.js";
 import { manageRoutes } from "./manage.js";
-import { createToken, decideProposal, deleteToken, listProposals, listTokens, submitProposal, tableHistory } from "./proposals.js";
+import { asValue, createToken, decideProposal, deleteToken, listProposals, listTokens, submitProposal, tableHistory } from "./proposals.js";
 import { rateLimit } from "./rate-limit.js";
 import { teamRoutes } from "./teams.js";
 
@@ -36,6 +36,7 @@ const SESSION_DAYS = 30;
 
 // Each proposal opens a web page, so these are far fewer than other requests.
 const PROPOSALS_PER_MINUTE = 10;
+const QUOTE_SEARCHES_PER_MINUTE = 30;
 
 const proposalBody = z.object({
   row: z.string().max(200),
@@ -45,6 +46,8 @@ const proposalBody = z.object({
   quote: z.string().min(1).max(400),
   note: z.string().max(500).optional(),
 });
+
+const quoteSearchBody = z.object({ column: z.string().max(80), value: z.string().trim().min(1).max(300), source: z.string().url().max(2000) });
 
 const authorizeUrl = "https://accounts.google.com/o/oauth2/v2/auth";
 const tokenUrl = "https://oauth2.googleapis.com/token";
@@ -176,6 +179,19 @@ export function authRoutes({ sql, clientId, clientSecret, publicUrl, ownerEmail,
     }
     await notifyOwners(sql, mail, publicUrl, result.id);
     return c.json(result, 201);
+  });
+
+  // Saves typing the exact words: the sentences on a page that state this value, read the same way a proposal is.
+  app.post("/api/tables/:owner/:slug/quotes", rateLimit(QUOTE_SEARCHES_PER_MINUTE), async (c) => {
+    const user = await signedIn(c);
+    if (!user) return c.json({ error: "Sign in first." }, 401);
+    if (hidden(c, user)) return c.json(noTable, 404);
+    const body = quoteSearchBody.safeParse(await c.req.json().catch(() => null));
+    const table = tables.find((t) => t.owner === c.req.param("owner") && t.slug === c.req.param("slug"));
+    const column = table?.columns.find((candidate) => candidate.id === body.data?.column);
+    if (!body.success || !column) return c.json({ error: "Add a value and a link first." }, 400);
+    const value = asValue(column, body.data.value);
+    return c.json(value === undefined ? { quotes: [] } : await findQuotes(body.data.source, value, pages ?? liveFetcher()));
   });
 
   for (const [action, accept] of [["accept", true], ["reject", false]] as const) {

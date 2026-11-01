@@ -156,6 +156,9 @@ const migrations = [
   `
   alter table table_rows add column former_slugs text[] not null default '{}';
   `,
+  `
+  alter table data_tables add column draft boolean not null default false;
+  `,
 ];
 
 /** Run whatever hasn't run yet. The lock keeps two servers starting together from racing. */
@@ -226,8 +229,8 @@ export async function importTables(sql: Sql, tables: PublishedTable[], { managed
         continue;
       }
       const [created] = await tx`
-        insert into data_tables (account_id, slug, topic, title, question, scope, watch, private, managed)
-        values (${account!.id}, ${table.slug}, ${table.topic}, ${table.title}, ${table.question}, ${table.scope}, ${watch}, ${table.private ?? false}, ${managed})
+        insert into data_tables (account_id, slug, topic, title, question, scope, watch, private, managed, draft)
+        values (${account!.id}, ${table.slug}, ${table.topic}, ${table.title}, ${table.question}, ${table.scope}, ${watch}, ${table.private ?? false}, ${managed}, ${table.draft ?? false})
         returning id`;
       for (const [position, column] of table.columns.entries()) {
         await tx`
@@ -242,7 +245,7 @@ export async function importTables(sql: Sql, tables: PublishedTable[], { managed
 /** Every table with the newest version of each cell, held to the same checks as a table on disk. */
 export async function readTables(sql: Sql): Promise<PublishedTable[]> {
   const tables = await sql`
-    select t.id, a.handle as owner, a.name as owner_name, a.team, t.slug, t.topic, t.title, t.question, t.scope, t.watch, t.private, t.managed
+    select t.id, a.handle as owner, a.name as owner_name, a.team, t.slug, t.topic, t.title, t.question, t.scope, t.watch, t.private, t.managed, t.draft
     from data_tables t join accounts a on a.id = t.account_id
     order by a.handle, t.slug`;
   // Removed rows and columns stay for the history, out of the table.
@@ -256,6 +259,7 @@ export async function readTables(sql: Sql): Promise<PublishedTable[]> {
       format: 1,
       owner: table.owner,
       slug: table.slug,
+      ...(table.draft && { draft: true }),
       topic: table.topic,
       title: table.title,
       question: table.question,

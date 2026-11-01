@@ -27,6 +27,8 @@ Rules: a value must be tied to that exact row, everything a value says must be i
 
 A cell with no acceptable source stays missing and counts against the table. One whose `checked` source was read in full and gives no such value can say `absent`, which is an answer and needs that reading to have been done: a partial page or a summary doesn't count.
 
+A table made on the site starts as a private `draft`. Its question, topic, scope and column rules can wait, and a cell can hold `unproven`: a value someone typed or pasted, with no source yet. It never counts, and publishing leaves it out. Files in this folder are never drafts.
+
 A cell can also record more about itself:
 
 | Field | Meaning |

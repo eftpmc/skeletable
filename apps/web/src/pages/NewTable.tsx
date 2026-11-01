@@ -1,28 +1,24 @@
-import { Plus, Trash2 } from "lucide-react";
+import { ListPlus } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { useLocation } from "wouter";
+import { DraftGrid } from "@/components/DraftGrid";
 import { Content, Field, FormError, PageHeader, SignInLink } from "@/components/Layout";
 import { Page } from "@/components/Shell";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
-import { Textarea } from "@/components/ui/textarea";
 import { postJson, useMe } from "@/lib/api";
+import { blankDraft, draftBody, pasteInto, rowSets } from "@/lib/draft";
 import { Message } from "@/pages/Message";
 
-type NewColumn = { label: string; type: "text" | "number" | "boolean"; unit: string; rule: string };
-
-const blankColumn = (): NewColumn => ({ label: "", type: "text", unit: "", rule: "" });
-
-/** Start a table: what it answers, what it measures, and what it covers. Values and their proof come next, in the sheet. */
+/** Start a table the way you'd start a sheet. It's a private draft until its details and proof are in, and then it's published. */
 export function NewTable() {
   const { user } = useMe();
   const [, navigate] = useLocation();
-  const [details, setDetails] = useState({ title: "", question: "", topic: "", scope: "" });
+  const [title, setTitle] = useState("");
   const [owner, setOwner] = useState(user?.handle ?? "");
-  const [isPrivate, setIsPrivate] = useState(false);
-  const [columns, setColumns] = useState<NewColumn[]>([blankColumn()]);
-  const [rows, setRows] = useState("");
+  const [draft, setDraft] = useState(blankDraft);
   const [error, setError] = useState<string>();
   const [sending, setSending] = useState(false);
 
@@ -38,20 +34,13 @@ export function NewTable() {
     );
   }
 
-  const detail = (name: keyof typeof details) => ({ value: details[name], onChange: (event: { target: { value: string } }) => setDetails({ ...details, [name]: event.target.value }) });
-  const setColumn = (index: number, change: Partial<NewColumn>) => setColumns(columns.map((column, at) => (at === index ? { ...column, ...change } : column)));
-
   const submit = async (event: FormEvent) => {
     event.preventDefault();
+    const body = draftBody(draft);
+    if ("error" in body) return setError(body.error);
     setSending(true);
     setError(undefined);
-    const { ok, data } = await postJson<{ owner: string; slug: string; error?: string }>("/api/tables", {
-      ...details,
-      ...(owner && { owner }),
-      private: isPrivate,
-      columns: columns.map(({ unit, ...column }) => ({ ...column, ...(unit.trim() && { unit }) })),
-      rows: rows.split("\n").map((row) => row.trim()).filter(Boolean),
-    });
+    const { ok, data } = await postJson<{ owner: string; slug: string; error?: string }>("/api/tables", { ...body, title, draft: true, ...(owner && { owner }) });
     setSending(false);
     if (ok) navigate(`/${data.owner}/${data.slug}/sheet`);
     else setError(data.error ?? "That didn't save. Try again.");
@@ -59,66 +48,30 @@ export function NewTable() {
 
   return (
     <Page crumbs={[{ label: "New table" }]}>
-      <Content size="narrow">
-        <PageHeader title="New table" description="Set up its shape here. You'll add each value with its source in the sheet." />
-        <form onSubmit={submit} className="space-y-6">
-          <div className="space-y-4">
+      <Content>
+        <PageHeader title="New table" description="Type or paste it in. Everything starts as a private draft, and values stay marked until they have proof." />
+        <form onSubmit={submit} className="space-y-4">
+          <div className="flex flex-wrap items-end gap-3">
             {user.teams.length > 0 && (
               <Field label="Owner">
-                <NativeSelect value={owner} onChange={(event) => setOwner(event.target.value)} className="w-full">
+                <NativeSelect value={owner} onChange={(event) => setOwner(event.target.value)}>
                   {user.handle && <option value={user.handle}>{user.name ?? user.handle}</option>}
                   {user.teams.map((team) => <option key={team.handle} value={team.handle}>{team.name}</option>)}
                 </NativeSelect>
               </Field>
             )}
-            <Field label="Title"><Input required maxLength={120} placeholder="Mechanical keyboards" {...detail("title")} /></Field>
-            <Field label="Question it answers"><Input required maxLength={300} placeholder="How do these keyboards compare on weight and switches?" {...detail("question")} /></Field>
-            <Field label="Topic"><Input required maxLength={40} placeholder="Consumer tech" {...detail("topic")} /></Field>
-            <Field label="What it covers"><Textarea required rows={2} maxLength={800} placeholder="Which things belong in this table, and which don't" {...detail("scope")} /></Field>
+            <div className="min-w-60 flex-1"><Field label="Title"><Input required maxLength={120} placeholder="Mechanical keyboards" value={title} onChange={(event) => setTitle(event.target.value)} /></Field></div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild><Button type="button" variant="outline"><ListPlus />Fill in rows</Button></DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {rowSets.map(({ label, rows }) => <DropdownMenuItem key={label} onSelect={() => setDraft(pasteInto(draft, rows.join("\n"), 1, 0))}>{label}</DropdownMenuItem>)}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-
-          <fieldset className="space-y-3">
-            <legend className="text-sm font-medium">Columns</legend>
-            {columns.map((column, index) => (
-              <div key={index} className="space-y-2 rounded-xl border p-3">
-                <div className="flex gap-2">
-                  <Input aria-label={`Column ${index + 1} name`} required maxLength={80} placeholder="Name, like Weight" value={column.label} onChange={(event) => setColumn(index, { label: event.target.value })} />
-                  <NativeSelect aria-label={`Column ${index + 1} type`} value={column.type} onChange={(event) => setColumn(index, { type: event.target.value as NewColumn["type"] })}>
-                    <option value="text">Text</option>
-                    <option value="number">Number</option>
-                    <option value="boolean">Yes or no</option>
-                  </NativeSelect>
-                  {columns.length > 1 && (
-                    <Button type="button" variant="ghost" size="icon" onClick={() => setColumns(columns.filter((_, at) => at !== index))} aria-label={`Remove column ${index + 1}`}><Trash2 /></Button>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  {column.type === "number" && <Input aria-label={`Column ${index + 1} unit`} className="w-24" maxLength={30} placeholder="Unit" value={column.unit} onChange={(event) => setColumn(index, { unit: event.target.value })} />}
-                  <Input aria-label={`Column ${index + 1} rule`} required maxLength={500} placeholder="What counts, like Weight as the maker states it" value={column.rule} onChange={(event) => setColumn(index, { rule: event.target.value })} />
-                </div>
-              </div>
-            ))}
-            <Button type="button" variant="outline" size="sm" onClick={() => setColumns([...columns, blankColumn()])} disabled={columns.length >= 20}><Plus />Add column</Button>
-          </fieldset>
-
-          <Field label="Rows, one per line">
-            <Textarea required rows={5} value={rows} onChange={(event) => setRows(event.target.value)} placeholder={"Keychron Q1\nNuPhy Air75"} />
-          </Field>
-
-          <fieldset className="space-y-2">
-            <legend className="text-sm font-medium">Who can see it</legend>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="radio" name="visibility" className="size-4 accent-green-600" checked={!isPrivate} onChange={() => setIsPrivate(false)} />
-              Public: anyone, and it shows up in Browse
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="radio" name="visibility" className="size-4 accent-green-600" checked={isPrivate} onChange={() => setIsPrivate(true)} />
-              Private: only this account and people you add
-            </label>
-          </fieldset>
-
+          <DraftGrid draft={draft} onChange={setDraft} />
+          <p className="text-sm text-muted-foreground">Paste a range from Excel or Google Sheets into any cell, and the first row becomes your headings.</p>
           <FormError error={error} />
-          <Button type="submit" size="lg" disabled={sending}>{sending ? "Creating..." : "Create table"}</Button>
+          <Button type="submit" size="lg" disabled={sending}>{sending ? "Creating..." : "Create draft"}</Button>
         </form>
       </Content>
     </Page>

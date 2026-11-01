@@ -12,7 +12,7 @@ const hash = (token: string) => createHash("sha256").update(token).digest("hex")
 const today = () => new Date().toISOString().slice(0, 10);
 
 /** Read typed text as the kind of value the column holds. */
-function asValue(column: Column, raw: string): FoundCell["value"] | undefined {
+export function asValue(column: Pick<Column, "type">, raw: string): FoundCell["value"] | undefined {
   const text = raw.trim();
   if (!text) return undefined;
   if (column.type === "text") return text;

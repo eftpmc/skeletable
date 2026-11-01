@@ -35,6 +35,7 @@ export function summarize(table: PublishedTable) {
     owner: table.owner,
     ...(table.ownerName && { ownerName: table.ownerName }),
     ...(table.private && { private: true }),
+    ...(table.draft && { draft: true }),
     slug: table.slug,
     topic: table.topic,
     title: table.title,

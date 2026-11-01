@@ -2,7 +2,7 @@ import { parse } from "node-html-parser";
 import { parseRobots, robotsAllows } from "./robots.js";
 import { safeFetch } from "./safe-fetch.js";
 import { extractText } from "unpdf";
-import { isFound, normalize, watchKey, type FoundCell, type Table, type WatchFile } from "./format.js";
+import { isFound, normalize, quoteStates, watchKey, wordsBeyondQuote, type FoundCell, type Table, type WatchFile } from "./format.js";
 
 export type Page = { status: number; contentType: string; body: string };
 export type Fetcher = (url: string) => Promise<Page>;
@@ -28,6 +28,47 @@ export function pageText(html: string): string {
   const root = parse(html);
   root.querySelectorAll("script, style, noscript, svg").forEach((node) => node.remove());
   return normalize(root.text);
+}
+
+const MAX_QUOTE = 400;
+const QUOTES_OFFERED = 5;
+
+/** A page's text as sentences, keeping its own capitals so a quote reads as it was written. */
+function sentencesOf(body: string, html: boolean) {
+  let text = body;
+  if (html) {
+    const root = parse(body);
+    root.querySelectorAll("script, style, noscript, svg").forEach((node) => node.remove());
+    text = root.structuredText;
+  }
+  return text.split("\n").flatMap((line) => line.replace(/\s+/g, " ").trim().split(/(?<=[.!?;])\s+(?=[A-Z0-9"“(])/)).filter(Boolean);
+}
+
+/** The part of a long sentence around what it states, cut between words. */
+function around(sentence: string, words: string) {
+  if (sentence.length <= MAX_QUOTE) return sentence;
+  const middle = Math.max(sentence.toLowerCase().indexOf(words.toLowerCase()), 0);
+  const start = sentence.lastIndexOf(" ", Math.max(middle - MAX_QUOTE / 2, 0)) + 1;
+  return sentence.slice(start, start + MAX_QUOTE).replace(/\s+\S*$/, "");
+}
+
+export type QuoteSearch = { quotes: string[]; blocked?: "robots" | "unreadable" };
+
+/** The sentences on a page that state a value, shortest first, held to the same test a cell's quote must pass. */
+export async function findQuotes(source: string, value: FoundCell["value"], fetcher: Fetcher): Promise<QuoteSearch> {
+  try {
+    const page = await fetcher(source);
+    if (page.status === ROBOTS_REFUSED) return { quotes: [], blocked: "robots" };
+    const html = /html/.test(page.contentType);
+    if (page.status >= 400 || !(html || /text\/plain/.test(page.contentType))) return { quotes: [], blocked: "unreadable" };
+    // A yes or no is shown by what a sentence means, so nothing here can pick it out.
+    if (typeof value === "boolean") return { quotes: [] };
+    const states = (sentence: string) => (typeof value === "number" ? quoteStates(value, sentence) : !wordsBeyondQuote(value, sentence).length);
+    const found = sentencesOf(page.body, html).filter(states).map((sentence) => around(sentence, String(value)));
+    return { quotes: [...new Set(found)].filter(states).sort((a, b) => a.length - b.length).slice(0, QUOTES_OFFERED) };
+  } catch {
+    return { quotes: [], blocked: "unreadable" };
+  }
 }
 
 /** The words a page uses to say it's an old version. An old page still holds its quotes, so finding them can't show this. */

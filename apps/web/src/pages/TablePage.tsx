@@ -5,6 +5,7 @@ import { Link } from "wouter";
 import { DownloadButton } from "@/components/Download";
 import { Content, LoadFailed } from "@/components/Layout";
 import { NoTable } from "@/components/NoTable";
+import { PublishDraft } from "@/components/Publish";
 import { ShareButton } from "@/components/Share";
 import { Page } from "@/components/Shell";
 import { Badge } from "@/components/ui/badge";
@@ -35,7 +36,7 @@ const SideSection = ({ title, children }: { title: string; children: ReactNode }
 function Health({ table }: { table: PublishedTable }) {
   const counts = statusCounts(table);
   const total = [...counts.values()].reduce((sum, count) => sum + count, 0);
-  const best = ["confirmed", "summary", "none", "once", "gone", "fracture", "gap", "blank"] satisfies CellStatus[];
+  const best = ["confirmed", "summary", "none", "once", "gone", "fracture", "unproven", "gap", "blank"] satisfies CellStatus[];
   const shown = best.filter((status) => counts.has(status));
   return (
     <>
@@ -129,6 +130,7 @@ function Overview({ table, canDecide, onChanged }: { table: PublishedTable; canD
       </section>
       <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_15rem]">
         <div className="min-w-0 space-y-6">
+          {table.draft && canDecide && <PublishDraft table={table} onChanged={onChanged} />}
           <Activity table={table} canDecide={canDecide} />
         <section className="overflow-hidden rounded-xl border">
           <h2 className="border-b bg-muted px-3 py-2 text-sm font-medium">About this data</h2>
@@ -172,12 +174,12 @@ function TableDetails({ table, view, onChanged }: { table: PublishedTable; view?
         <div className="min-w-0 flex-1 basis-96">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{table.title}</h1>
-            <Badge variant="outline">{table.private ? "Private" : "Public"}</Badge>
+            <Badge variant="outline">{table.draft ? "Draft" : table.private ? "Private" : "Public"}</Badge>
           </div>
           <p className="mt-1.5 max-w-2xl text-muted-foreground">{table.question}</p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
-          <ShareButton table={table} path={`/${table.owner}/${table.slug}`} onChanged={onChanged} />
+          {!table.draft && <ShareButton table={table} path={`/${table.owner}/${table.slug}`} onChanged={onChanged} />}
           <DownloadButton table={table} />
           {canManage && (
             <Button variant="outline" size="icon-lg" aria-label="Table settings" asChild>

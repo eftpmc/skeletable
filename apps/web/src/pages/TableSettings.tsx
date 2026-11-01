@@ -39,9 +39,9 @@ function Details({ table, onChanged }: Props) {
   return (
     <form onSubmit={(event: FormEvent) => { event.preventDefault(); void save("PATCH", "", form, "Details saved"); }} className="space-y-4">
       <Field label="Title" hint="The table's address stays the same, so links keep working."><Input required maxLength={120} {...field("title")} /></Field>
-      <Field label="Question it answers"><Input required maxLength={300} {...field("question")} /></Field>
-      <Field label="Topic"><Input required maxLength={40} {...field("topic")} /></Field>
-      <Field label="What it covers"><Textarea required rows={3} maxLength={800} {...field("scope")} /></Field>
+      <Field label="Question it answers"><Input required={!table.draft} maxLength={300} {...field("question")} /></Field>
+      <Field label="Topic"><Input required={!table.draft} maxLength={40} {...field("topic")} /></Field>
+      <Field label="What it covers"><Textarea required={!table.draft} rows={3} maxLength={800} {...field("scope")} /></Field>
       <FormError error={error} />
       <Button type="submit" variant="outline">Save</Button>
     </form>
@@ -65,7 +65,7 @@ function ColumnRow({ table, column, onSave }: { table: PublishedTable; column: P
             <Input aria-label="Column name" required maxLength={80} value={form.label} onChange={(event) => setForm({ ...form, label: event.target.value })} />
             {column.type === "number" && <Input aria-label="Unit" className="w-24" maxLength={30} placeholder="Unit" value={form.unit} onChange={(event) => setForm({ ...form, unit: event.target.value })} />}
           </div>
-          <Input aria-label="Rule" required maxLength={500} value={form.rule} onChange={(event) => setForm({ ...form, rule: event.target.value })} />
+          <Input aria-label="Rule" required={!table.draft} maxLength={500} value={form.rule} onChange={(event) => setForm({ ...form, rule: event.target.value })} />
           <div className="flex gap-2">
             <Button type="submit" size="sm">Save</Button>
             <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(false)}>Cancel</Button>
@@ -107,7 +107,7 @@ function Columns({ table, onChanged }: Props) {
           </NativeSelect>
           {form.type === "number" && <Input aria-label="New column unit" className="w-24" maxLength={30} placeholder="Unit" value={form.unit} onChange={(event) => setForm({ ...form, unit: event.target.value })} />}
         </div>
-        <Input aria-label="New column rule" required maxLength={500} placeholder="What counts, like Weight as the maker states it" value={form.rule} onChange={(event) => setForm({ ...form, rule: event.target.value })} />
+        <Input aria-label="New column rule" required={!table.draft} maxLength={500} placeholder="What counts, like Weight as the maker states it" value={form.rule} onChange={(event) => setForm({ ...form, rule: event.target.value })} />
         <Button type="submit" variant="outline" size="sm"><Plus />Add column</Button>
       </form>
       <FormError error={error} />

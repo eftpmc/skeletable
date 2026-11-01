@@ -35,7 +35,7 @@ function TableRow({ table }: { table: TableSummary }) {
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <h2 className="font-medium">{table.title}</h2>
             <Badge variant="secondary">{table.topic}</Badge>
-            {table.private && <Badge variant="outline">Private</Badge>}
+            {table.draft ? <Badge variant="outline">Draft</Badge> : table.private && <Badge variant="outline">Private</Badge>}
           </div>
           <p className="mt-0.5 text-sm text-muted-foreground">{table.question}</p>
           <p className="mt-1 text-xs text-muted-foreground">

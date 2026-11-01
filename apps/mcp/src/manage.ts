@@ -1,5 +1,5 @@
 import type { Context, Hono } from "hono";
-import { slugOfRow } from "@skeleton/tables/share";
+import { draftChecklist, slugOfRow } from "@skeleton/tables/share";
 import { z } from "zod";
 import { MAX_COLUMNS, columnBody, emptyCell, isOwner, runsTable, slugOf, type SignedIn } from "./accounts.js";
 import type { Sql } from "./db.js";
@@ -7,12 +7,13 @@ import type { PublishedTable } from "./library.js";
 
 const detailsBody = z.object({
   title: z.string().trim().min(1).max(120),
-  question: z.string().trim().min(1).max(300),
-  topic: z.string().trim().min(1).max(40),
-  scope: z.string().trim().min(1).max(800),
+  question: z.string().trim().max(300),
+  topic: z.string().trim().max(40),
+  scope: z.string().trim().max(800),
 });
 
-const columnChange = z.object({ label: z.string().trim().min(1).max(80), unit: z.string().trim().max(30).optional(), rule: z.string().trim().min(1).max(500) });
+const columnChange = z.object({ label: z.string().trim().min(1).max(80), unit: z.string().trim().max(30).optional(), rule: z.string().trim().max(500) });
+const publishBody = z.object({ private: z.boolean() });
 const rowName = z.string().trim().min(1).max(120);
 const rowChange = z.object({ key: rowName, to: rowName });
 const rowRemoval = z.object({ key: rowName });
@@ -42,9 +43,34 @@ export function manageRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sign
     const found = await editing(c);
     if (found instanceof Response) return found;
     const body = detailsBody.safeParse(await c.req.json().catch(() => null));
-    if (!body.success) return c.json({ error: "Fill in every field." }, 400);
+    if (!body.success || (!found.table.draft && !(body.data.question && body.data.topic && body.data.scope))) return c.json({ error: "Fill in every field." }, 400);
     const { title, question, topic, scope } = body.data;
     await sql`update data_tables set title = ${title}, question = ${question}, topic = ${topic}, scope = ${scope} where id = ${found.id}`;
+    return finish(c);
+  });
+
+  // Publishing leaves out values with no proof. They stay in the history as a past version.
+  app.post("/api/tables/:owner/:slug/publish", async (c) => {
+    const found = await editing(c);
+    if (found instanceof Response) return found;
+    if (!found.table.draft) return c.json({ error: "This table is already published." }, 409);
+    if (!(await isOwner(sql, found.userId, found.table.owner))) return c.json({ error: "Only this table's owners can publish it." }, 403);
+    const body = publishBody.safeParse(await c.req.json().catch(() => null));
+    if (!body.success) return c.json({ error: "Choose public or private." }, 400);
+    if (draftChecklist(found.table).items.some((item) => !item.done)) return c.json({ error: "Finish the checklist first." }, 400);
+    await sql.begin(async (tx) => {
+      const unproven = await tx`
+        select distinct on (v.row_id, v.column_id) v.row_id, v.column_id, v.cell
+        from cell_versions v join table_rows r on r.id = v.row_id
+        where r.table_id = ${found.id}
+        order by v.row_id, v.column_id, v.id desc`;
+      for (const { row_id: rowId, column_id: columnId, cell } of unproven) {
+        if (cell.unproven === undefined) continue;
+        const { unproven: _left, ...rest } = cell;
+        await tx`insert into cell_versions (row_id, column_id, cell, created_by) values (${rowId}, ${columnId}, ${tx.json(rest)}, ${found.userId})`;
+      }
+      await tx`update data_tables set draft = false, private = ${body.data.private} where id = ${found.id}`;
+    });
     return finish(c);
   });
 
@@ -60,7 +86,7 @@ export function manageRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sign
     const found = await editing(c);
     if (found instanceof Response) return found;
     const body = columnBody.safeParse(await c.req.json().catch(() => null));
-    if (!body.success) return c.json({ error: "Give the column a name and a rule." }, 400);
+    if (!body.success || (!found.table.draft && !body.data.rule)) return c.json({ error: "Give the column a name and a rule." }, 400);
     if (found.table.columns.length >= MAX_COLUMNS) return c.json({ error: "This table has reached its column limit." }, 400);
     const { label, type, unit, rule } = body.data;
     await sql.begin(async (tx) => {
@@ -83,7 +109,7 @@ export function manageRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sign
     const found = await editing(c);
     if (found instanceof Response) return found;
     const body = columnChange.safeParse(await c.req.json().catch(() => null));
-    if (!body.success) return c.json({ error: "Give the column a name and a rule." }, 400);
+    if (!body.success || (!found.table.draft && !body.data.rule)) return c.json({ error: "Give the column a name and a rule." }, 400);
     const { label, unit, rule } = body.data;
     await sql`update table_columns set label = ${label}, unit = ${unit || null}, rule = ${rule} where table_id = ${found.id} and id = ${c.req.param("column")} and removed_at is null`;
     return finish(c);
