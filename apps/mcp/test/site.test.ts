@@ -36,12 +36,16 @@ it("answers wrong API addresses with a 404", async () => {
 
 it("serves the built site, and its page for any address it routes itself", async () => {
   const dir = await mkdtemp(join(tmpdir(), "web-"));
-  await writeFile(join(dir, "index.html"), "<title>site</title>");
-  await writeFile(join(dir, "app.js"), "ok");
+  await writeFile(join(dir, "index.html"), '<title>site</title><div id="root"></div>');
   const site = createApp(tables, dir);
-  expect(await (await site.request("/")).text()).toContain("site");
-  expect(await (await site.request("/app.js")).text()).toBe("ok");
-  expect(await (await site.request("/skeletable/e-readers")).text()).toContain("site");
+  expect(await (await site.request("/")).text()).toContain("Skeletable");
+  const page = await (await site.request("/skeletable/e-readers")).text();
+  expect(page).toContain("<title>E-readers · Skeletable</title>");
+  expect(page).toContain('"@type":"Dataset"');
+  expect(page).toContain("Kobo Sage");
+  expect(await (await site.request("/robots.txt")).text()).toContain("sitemap.xml");
+  expect(await (await site.request("/sitemap.xml")).text()).toContain("https://skeletable.com/skeletable/e-readers");
+  expect(await (await site.request("/settings")).text()).toContain('<div id="root"></div>');
   expect(((await (await site.request("/health")).json()) as { ok: boolean }).ok).toBe(true);
   expect((await site.request("/api/nope")).status).toBe(404);
   await rm(dir, { recursive: true });

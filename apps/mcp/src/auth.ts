@@ -3,8 +3,9 @@ import { Hono, type Context } from "hono";
 import { z } from "zod";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import type { Fetcher } from "@skeleton/tables";
-import type { Table } from "@skeleton/tables/format";
+import { accountRoutes, ensureAccount, runsTable } from "./accounts.js";
 import type { Sql } from "./db.js";
+import type { PublishedTable } from "./library.js";
 import { createToken, decideProposal, deleteToken, listProposals, listTokens, submitProposal, tableHistory } from "./proposals.js";
 import { rateLimit } from "./rate-limit.js";
 
@@ -16,7 +17,7 @@ export type AuthConfig = {
   // Whoever signs in with this email runs the official account.
   ownerEmail?: string;
   fetcher?: typeof fetch;
-  tables: Table[];
+  tables: PublishedTable[];
   refresh?: () => Promise<unknown>;
   // Reads a proposal's source. Only tests swap this.
   pages?: Fetcher;
@@ -50,12 +51,12 @@ const hash = (token: string) => createHash("sha256").update(token).digest("hex")
 async function currentUser(sql: Sql, token: string | undefined) {
   if (!token) return null;
   const [user] = await sql`
-    select u.id, u.email, u.name from sessions s join users u on u.id = s.user_id
-    where s.token_hash = ${hash(token)} and s.expires_at > now()`;
+    select u.id, u.email, u.name, a.handle from sessions s join users u on u.id = s.user_id left join accounts a on a.id = u.account_id
+    where s.token_hash = ${hash(token)} and s.expires_at > now() and u.blocked_at is null`;
   if (!user) return null;
   const accounts = await sql`
     select a.handle from account_members m join accounts a on a.id = m.account_id where m.user_id = ${user.id} order by a.handle`;
-  return { id: user.id as string, email: user.email as string, name: user.name as string | null, accounts: accounts.map((account) => account.handle as string) };
+  return { id: user.id as string, email: user.email as string, name: user.name as string | null, handle: user.handle as string | null, accounts: accounts.map((account) => account.handle as string) };
 }
 
 /** Sign in with Google. People only ever sign in here: there are no passwords to look after. */
@@ -93,7 +94,9 @@ export function authRoutes({ sql, clientId, clientSecret, publicUrl, ownerEmail,
     const email = profile.email.toLowerCase();
     const [user] = await sql`
       insert into users (email, name) values (${email}, ${profile.name ?? null})
-      on conflict (email) do update set name = excluded.name returning id`;
+      on conflict (email) do update set name = coalesce(users.name, excluded.name) returning id, blocked_at`;
+    if (user!.blocked_at) return failed();
+    await ensureAccount(sql, user!.id as string, email, profile.name ?? null);
     if (ownerEmail && email === ownerEmail.toLowerCase()) {
       await sql`
         insert into account_members (account_id, user_id)
@@ -130,8 +133,16 @@ export function authRoutes({ sql, clientId, clientSecret, publicUrl, ownerEmail,
     if (!user) return c.json({ error: "Sign in to suggest a change." }, 401);
     const body = proposalBody.safeParse(await c.req.json().catch(() => null));
     if (!body.success) return c.json({ error: "Add a value, a source link and the exact quote." }, 400);
-    const result = await submitProposal(sql, tables, { ...body.data, owner: c.req.param("owner"), slug: c.req.param("slug") }, user.id, "site", pages);
-    return c.json(result, "error" in result ? 400 : 201);
+    const owner = c.req.param("owner");
+    const result = await submitProposal(sql, tables, { ...body.data, owner, slug: c.req.param("slug") }, user.id, "site", pages);
+    if ("error" in result) return c.json(result, 400);
+    // Someone running the table doesn't need to review their own edit, and it still passed every check.
+    if (runsTable(user, owner)) {
+      await decideProposal(sql, result.id, user.id, true);
+      await refresh?.();
+      return c.json({ ...result, applied: true }, 201);
+    }
+    return c.json(result, 201);
   });
 
   for (const [action, accept] of [["accept", true], ["reject", false]] as const) {
@@ -163,6 +174,8 @@ export function authRoutes({ sql, clientId, clientSecret, publicUrl, ownerEmail,
     await deleteToken(sql, user.id, c.req.param("id"));
     return c.json({ ok: true });
   });
+
+  accountRoutes(app, sql, tables, signedIn, refresh);
 
   return app;
 }

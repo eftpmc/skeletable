@@ -106,6 +106,16 @@ const migrations = [
     created_at timestamptz not null default now()
   );
   `,
+  `
+  alter table users add column blocked_at timestamptz;
+  alter table users add column account_id bigint references accounts;
+  create table daily_counts (
+    day date not null,
+    name text not null,
+    count bigint not null default 0,
+    primary key (day, name)
+  );
+  `,
 ];
 
 /** Run whatever hasn't run yet. The lock keeps two servers starting together from racing. */

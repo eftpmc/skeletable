@@ -85,6 +85,17 @@ function PhoneMenu() {
   );
 }
 
+function Footer() {
+  const links = [["/about", "About"], ["/terms", "Terms"], ["/privacy", "Privacy"]];
+  return (
+    <footer className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-1 px-4 py-6 text-sm text-muted-foreground sm:px-6">
+      <span>Skeletable</span>
+      {links.map(([href, label]) => <Link key={href} href={href!} className="hover:text-foreground">{label}</Link>)}
+      <span className="sm:ml-auto">Tables under CC BY 4.0</span>
+    </footer>
+  );
+}
+
 const PhoneBar = () => (
   <header className={`${bar} md:hidden`}>
     <Brand />
@@ -136,6 +147,7 @@ function SignedInFrame({ children }: { children: ReactNode }) {
       <div className="min-w-0 flex-1">
         <PhoneBar />
         {children}
+        <Footer />
       </div>
     </div>
   );
@@ -158,6 +170,7 @@ function PublicFrame({ children }: { children: ReactNode }) {
         </div>
       </header>
       {children}
+      <Footer />
     </div>
   );
 }

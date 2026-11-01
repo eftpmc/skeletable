@@ -63,7 +63,7 @@ describe.skipIf(!url)("sign-in", () => {
     expect(callback.headers.get("location")).toBe("/");
     expect(callback.headers.getSetCookie().join()).toMatch(/session=.*HttpOnly.*Secure/i);
     const me = await (await app.request("/api/me", { headers: { cookie: session! } })).json();
-    expect(me).toEqual({ canSignIn: true, user: { email: "someone@example.com", name: "Someone", accounts: [] } });
+    expect(me).toEqual({ canSignIn: true, user: { email: "someone@example.com", name: "Someone", handle: "someone", accounts: ["someone"] } });
   });
 
   it("keeps only a hash of the session", async () => {
@@ -72,11 +72,11 @@ describe.skipIf(!url)("sign-in", () => {
     expect(stored!.token_hash).not.toBe(session!.split("=")[1]);
   });
 
-  it("gives the owner the official account, and nobody else", async () => {
+  it("gives the owner the official account as well as their own, and nobody else", async () => {
     profile = { email: "Owner@Example.com", email_verified: true };
     const { app, session } = await signIn();
     const me = (await (await app.request("/api/me", { headers: { cookie: session! } })).json()) as { user: { accounts: string[] } };
-    expect(me.user.accounts).toEqual(["skeletable"]);
+    expect(me.user.accounts).toEqual(["owner", "skeletable"]);
   });
 
   it("refuses a callback without the matching state", async () => {

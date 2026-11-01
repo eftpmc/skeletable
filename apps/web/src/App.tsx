@@ -1,32 +1,43 @@
 import { useRoute } from "wouter";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { MeContext, useJson, type Me } from "@/lib/api";
 import { Account } from "@/pages/Account";
 import { Explore } from "@/pages/Explore";
 import { Landing } from "@/pages/Landing";
-import { Message } from "@/pages/Message";
+import { About, Privacy, Terms } from "@/pages/Legal";
+import { NotFound } from "@/pages/Message";
+import { NewTable } from "@/pages/NewTable";
 import { Settings } from "@/pages/Settings";
 import { Sheet } from "@/pages/Sheet";
-import { TablePage, tableTabs, type TableTab } from "@/pages/TablePage";
+import { TablePage, tableViews, type TableView } from "@/pages/TablePage";
 import { YourHome } from "@/pages/YourHome";
 
 function Routes({ me }: { me: Me }) {
   const [isHome] = useRoute("/");
   const [isExplore] = useRoute("/explore");
   const [isSettings] = useRoute("/settings");
+  const [isNew] = useRoute("/new");
+  const [isAbout] = useRoute("/about");
+  const [isTerms] = useRoute("/terms");
+  const [isPrivacy] = useRoute("/privacy");
   const [isAccount, account] = useRoute("/:owner");
   const [isTable, table] = useRoute("/:owner/:slug");
   const [isSheet, sheet] = useRoute("/:owner/:slug/sheet");
-  const [isTab, tab] = useRoute("/:owner/:slug/:tab");
+  const [isView, view] = useRoute("/:owner/:slug/:view");
   if (isHome) return me.user ? <YourHome user={me.user} /> : <Landing />;
   if (isExplore) return <Explore />;
   if (isSettings) return <Settings />;
+  if (isNew) return <NewTable />;
+  if (isAbout) return <About />;
+  if (isTerms) return <Terms />;
+  if (isPrivacy) return <Privacy />;
   if (isAccount) return <Account key={account.owner} owner={account.owner} />;
   if (isTable) return <TablePage key={`${table.owner}/${table.slug}`} owner={table.owner} slug={table.slug} />;
   if (isSheet) return <Sheet key={`${sheet.owner}/${sheet.slug}`} owner={sheet.owner} slug={sheet.slug} />;
-  if (isTab && tableTabs.includes(tab.tab as TableTab)) {
-    return <TablePage key={`${tab.owner}/${tab.slug}/${tab.tab}`} owner={tab.owner} slug={tab.slug} tab={tab.tab as TableTab} />;
+  if (isView && tableViews.includes(view.view as TableView)) {
+    return <TablePage key={`${view.owner}/${view.slug}/${view.view}`} owner={view.owner} slug={view.slug} view={view.view as TableView} />;
   }
-  return <Message title="There's no page here" />;
+  return <NotFound />;
 }
 
 export function App() {
@@ -36,7 +47,9 @@ export function App() {
   const me = data ?? { canSignIn: false, user: null };
   return (
     <MeContext.Provider value={me}>
-      <Routes me={me} />
+      <ErrorBoundary>
+        <Routes me={me} />
+      </ErrorBoundary>
     </MeContext.Provider>
   );
 }

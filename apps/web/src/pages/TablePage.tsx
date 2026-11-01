@@ -1,4 +1,4 @@
-import { ArrowRight, ExternalLink, GitPullRequestArrow, History, LayoutList, Settings, type LucideIcon } from "lucide-react";
+import { ArrowRight, ExternalLink } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { AgentButton } from "@/components/Chrome";
@@ -11,12 +11,12 @@ import { accountName, day, host } from "@/lib/cells";
 import { statusCounts, statuses, type CellStatus, type PublishedTable } from "@/lib/status";
 import { Message } from "@/pages/Message";
 import { Grid } from "@/pages/Sheet";
-import { HistoryTab, ProposalsTab } from "@/pages/TableActivity";
+import { Activity, AllChanges, AllProposals } from "@/pages/TableActivity";
 
 const PREVIEW_ROWS = 6;
 
-export const tableTabs = ["proposals", "history", "settings"] as const;
-export type TableTab = (typeof tableTabs)[number];
+export const tableViews = ["proposals", "history"] as const;
+export type TableView = (typeof tableViews)[number];
 
 const SideSection = ({ title, children }: { title: string; children: ReactNode }) => (
   <section className="border-b pb-5 last:border-b-0">
@@ -107,7 +107,7 @@ function About({ table }: { table: PublishedTable }) {
   );
 }
 
-function Overview({ table }: { table: PublishedTable }) {
+function Overview({ table, canDecide }: { table: PublishedTable; canDecide: boolean }) {
   const [, navigate] = useLocation();
   const sheet = `/${table.owner}/${table.slug}/sheet`;
   return (
@@ -123,6 +123,7 @@ function Overview({ table }: { table: PublishedTable }) {
           </header>
           <Grid table={{ ...table, rows: table.rows.slice(0, PREVIEW_ROWS) }} selectedId={null} select={(id) => id && navigate(`${sheet}?cell=${id}`)} emptyRows={0} />
         </section>
+        <Activity table={table} canDecide={canDecide} />
         <section className="overflow-hidden rounded-xl border">
           <h2 className="border-b bg-muted px-3 py-2 text-sm font-medium">About this data</h2>
           <div className="space-y-5 p-4">
@@ -146,42 +147,16 @@ function Overview({ table }: { table: PublishedTable }) {
   );
 }
 
-function Tabs({ table, tab, canManage, proposals }: { table: PublishedTable; tab?: TableTab; canManage: boolean; proposals: number }) {
-  const base = `/${table.owner}/${table.slug}`;
-  const items: { href: string; label: string; icon: LucideIcon; active: boolean; count?: number }[] = [
-    { href: base, label: "Overview", icon: LayoutList, active: !tab },
-    { href: `${base}/proposals`, label: "Proposals", icon: GitPullRequestArrow, active: tab === "proposals", count: proposals },
-    { href: `${base}/history`, label: "History", icon: History, active: tab === "history" },
-    ...(canManage ? [{ href: `${base}/settings`, label: "Settings", icon: Settings, active: tab === "settings" }] : []),
-  ];
-  return (
-    <nav aria-label="Table" className="-mx-4 mt-4 mb-6 flex gap-1 overflow-x-auto overflow-y-hidden border-b px-4 sm:mx-0 sm:px-0">
-      {items.map(({ href, label, icon: Icon, active, count }) => (
-        <Link
-          key={href}
-          href={href}
-          aria-current={active ? "page" : undefined}
-          className="-mb-px flex shrink-0 items-center gap-1.5 border-b-2 border-transparent px-2.5 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground aria-[current=page]:border-green-600 aria-[current=page]:font-medium aria-[current=page]:text-foreground"
-        >
-          <Icon className="size-4" />
-          {label}
-          {count ? <Badge variant="secondary" className="px-1.5">{count}</Badge> : null}
-        </Link>
-      ))}
-    </nav>
-  );
-}
-
-function TableDetails({ table, tab }: { table: PublishedTable; tab?: TableTab }) {
+function TableDetails({ table, view }: { table: PublishedTable; view?: TableView }) {
   const { user } = useMe();
   const canManage = !!user?.accounts.includes(table.owner);
-  const { data: proposals } = useJson<{ status: string }[]>(`/api/tables/${table.owner}/${table.slug}/proposals`);
 
   useEffect(() => {
     document.title = `${table.title} · Skeletable`;
   }, [table.title]);
 
-  if (tab === "settings" && !canManage) return <Message title="Only this table's owner can open its settings" />;
+  if (view === "proposals") return <AllProposals table={table} canDecide={canManage} />;
+  if (view === "history") return <AllChanges table={table} />;
 
   return (
     <>
@@ -207,17 +182,13 @@ function TableDetails({ table, tab }: { table: PublishedTable; tab?: TableTab })
           </Button>
         </div>
       </section>
-      <Tabs table={table} tab={tab} canManage={canManage} proposals={proposals?.filter((proposal) => proposal.status === "open").length ?? 0} />
-      {!tab && <Overview table={table} />}
-      {tab === "proposals" && <ProposalsTab table={table} canDecide={canManage} />}
-      {tab === "history" && <HistoryTab table={table} />}
-      {tab === "settings" && <p className="rounded-xl border py-14 text-center text-sm text-muted-foreground">Table settings will live here as they're added.</p>}
+      <div className="mt-6"><Overview table={table} canDecide={canManage} /></div>
     </>
   );
 }
 
 /** A table's own page: what it is and how far to trust it, with the sheet one click away. */
-export function TablePage({ owner, slug, tab }: { owner: string; slug: string; tab?: TableTab }) {
+export function TablePage({ owner, slug, view }: { owner: string; slug: string; view?: TableView }) {
   const { data, status, retry } = useJson<PublishedTable>(`/api/tables/${owner}/${slug}`);
   return (
     <Page>
@@ -227,7 +198,7 @@ export function TablePage({ owner, slug, tab }: { owner: string; slug: string; t
         ) : status === "failed" ? (
           <Message title="This table didn't load" action={<Button variant="outline" size="sm" onClick={retry}>Try again</Button>} />
         ) : data ? (
-          <TableDetails table={data} tab={tab} />
+          <TableDetails table={data} view={view} />
         ) : (
           <div className="space-y-4" aria-label="Loading table">
             <Skeleton className="h-9 w-2/3" />

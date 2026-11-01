@@ -117,6 +117,9 @@ export const deleteToken = (sql: Sql, userId: string, id: string) => sql`delete 
 export async function tokenUser(sql: Sql, header: string | undefined) {
   const token = header?.match(/^Bearer (.+)$/i)?.[1];
   if (!token) return null;
-  const [row] = await sql`update api_tokens set last_used_at = now() where token_hash = ${hash(token)} returning user_id`;
+  const [row] = await sql`
+    update api_tokens t set last_used_at = now() from users u
+    where t.token_hash = ${hash(token)} and u.id = t.user_id and u.blocked_at is null
+    returning t.user_id`;
   return row ? (row.user_id as string) : null;
 }

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "wouter";
+import { Page } from "@/components/Shell";
 import { Button } from "@/components/ui/button";
 
 /** The page's place when there's nothing to show: a short message and a way on. */
@@ -15,3 +16,9 @@ export function Message({ title, action }: { title: string; action?: ReactNode }
     </div>
   );
 }
+
+export const NotFound = () => (
+  <Page>
+    <main className="px-4"><Message title="There's no page here" /></main>
+  </Page>
+);

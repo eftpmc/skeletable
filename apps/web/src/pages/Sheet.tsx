@@ -1,5 +1,5 @@
 import type { Cell, Column, FoundCell } from "@skeleton/tables/format";
-import { ExternalLink, Info, Pencil, ScanLine } from "lucide-react";
+import { ExternalLink, Info, Pencil, Plus, ScanLine } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { Link, useLocation, useSearch } from "wouter";
 import { Input } from "@/components/ui/input";
@@ -46,7 +46,7 @@ function Quote({ cell }: { cell: FoundCell }) {
 
 export type Selected = { rowKey: string; column: Column; cell: Cell; status?: CellStatus };
 
-function SuggestButton({ onSuggest }: { onSuggest: () => void }) {
+function SuggestButton({ onSuggest, canEdit }: { onSuggest: () => void; canEdit: boolean }) {
   const { canSignIn, user } = useMe();
   if (!canSignIn) return null;
   if (!user) {
@@ -56,11 +56,11 @@ function SuggestButton({ onSuggest }: { onSuggest: () => void }) {
       </Button>
     );
   }
-  return <Button variant="ghost" size="xs" onClick={onSuggest}><Pencil />Suggest a change</Button>;
+  return <Button variant="ghost" size="xs" onClick={onSuggest}><Pencil />{canEdit ? "Edit value" : "Suggest a change"}</Button>;
 }
 
 /** Propose a new value with its proof, which the server tests before anyone reviews it. */
-function SuggestForm({ table, selected, onDone }: { table: PublishedTable; selected: Selected; onDone: (sent: boolean) => void }) {
+function SuggestForm({ table, selected, canEdit, onDone }: { table: PublishedTable; selected: Selected; canEdit: boolean; onDone: (sent: boolean) => void }) {
   const [form, setForm] = useState({ value: "", source: "", quote: "" });
   const [error, setError] = useState<string>();
   const [sending, setSending] = useState(false);
@@ -83,7 +83,7 @@ function SuggestForm({ table, selected, onDone }: { table: PublishedTable; selec
       </div>
       <Input aria-label="Exact quote" placeholder="The exact words on that page" required maxLength={400} {...field("quote")} />
       <div className="flex items-center gap-2">
-        <Button type="submit" size="sm" disabled={sending}>{sending ? "Checking the page..." : "Send proposal"}</Button>
+        <Button type="submit" size="sm" disabled={sending}>{sending ? "Checking the page..." : canEdit ? "Save value" : "Send proposal"}</Button>
         <Button type="button" variant="ghost" size="sm" onClick={() => onDone(false)}>Cancel</Button>
         {error && <span role="alert" className="text-xs text-destructive">{error}</span>}
       </div>
@@ -120,8 +120,40 @@ function XrayReading({ table }: { table: PublishedTable }) {
   );
 }
 
+/** Lets an owner add a row from the status bar. */
+function AddRow({ table, onAdded }: { table: PublishedTable; onAdded: () => void }) {
+  const { user } = useMe();
+  const [key, setKey] = useState("");
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string>();
+  if (!user?.accounts.includes(table.owner)) return null;
+  const add = async (event: FormEvent) => {
+    event.preventDefault();
+    const { ok, data } = await postJson<{ error?: string }>(`/api/tables/${table.owner}/${table.slug}/rows`, { key });
+    if (!ok) return setError(data.error ?? "That didn't save.");
+    setKey("");
+    setError(undefined);
+    setOpen(false);
+    onAdded();
+  };
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="xs" className="shrink-0 text-muted-foreground"><Plus />Add row</Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-72 gap-2 p-3">
+        <form onSubmit={add} className="flex gap-2">
+          <Input aria-label="New row name" placeholder="Row name" required maxLength={120} value={key} onChange={(event) => setKey(event.target.value)} />
+          <Button type="submit" size="sm">Add</Button>
+        </form>
+        {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 /** Along the bottom of the sheet, like a spreadsheet's: the table's tools, out of the way of the data. */
-function StatusBar({ table, xray, onXray }: { table: PublishedTable; xray: boolean; onXray: () => void }) {
+function StatusBar({ table, xray, onXray, onChanged }: { table: PublishedTable; xray: boolean; onXray: () => void; onChanged: () => void }) {
   return (
     <footer className="flex h-8 shrink-0 items-center gap-3 border-t bg-muted px-2 text-xs">
       <Button
@@ -136,6 +168,7 @@ function StatusBar({ table, xray, onXray }: { table: PublishedTable; xray: boole
         X-ray
       </Button>
       {xray && <XrayReading table={table} />}
+      <AddRow table={table} onAdded={onChanged} />
       <Popover>
         <PopoverTrigger asChild>
           <Button variant="ghost" size="xs" className="ml-auto shrink-0 text-muted-foreground">
@@ -153,7 +186,9 @@ function StatusBar({ table, xray, onXray }: { table: PublishedTable; xray: boole
 }
 
 /** Above the grid, like a spreadsheet's: one line until a cell is selected, then its evidence opens beneath. */
-export function FormulaBar({ selected, table }: { selected?: Selected; table?: PublishedTable }) {
+export function FormulaBar({ selected, table, onChanged }: { selected?: Selected; table?: PublishedTable; onChanged?: () => void }) {
+  const { user } = useMe();
+  const canEdit = !!table && !!user?.accounts.includes(table.owner);
   const [suggesting, setSuggesting] = useState(false);
   const [sent, setSent] = useState(false);
   const cell = selected?.cell;
@@ -172,9 +207,11 @@ export function FormulaBar({ selected, table }: { selected?: Selected; table?: P
           key={selected.rowKey + selected.column.id}
           table={table}
           selected={selected}
+          canEdit={canEdit}
           onDone={(done) => {
             setSuggesting(false);
-            setSent(done);
+            setSent(done && !canEdit);
+            if (done) onChanged?.();
           }}
         />
       )}
@@ -187,16 +224,16 @@ export function FormulaBar({ selected, table }: { selected?: Selected; table?: P
                 <SourceLink url={cell.source} label={host(cell.source)} />
                 <Badge variant="secondary">{kindLabels[cell.kind]}</Badge>
                 {selected.status && <StatusBadge status={selected.status} />}
-                {table && <SuggestButton onSuggest={() => setSuggesting(true)} />}
+                {table && <SuggestButton onSuggest={() => setSuggesting(true)} canEdit={canEdit} />}
                 <Badge variant="outline">Read {day(cell.read)}</Badge>
               </div>
             </>
           ) : (
             <>
-              <p className="text-muted-foreground">No source we could use stated this. We looked here on {day(cell.read)}:</p>
+              <p className="text-muted-foreground">{cell.checked.length ? `No source we could use stated this. We looked here on ${day(cell.read)}:` : "Nothing has been added here yet."}</p>
               <div className="flex flex-wrap gap-1.5">
                 {cell.checked.map((url) => <SourceLink key={url} url={url} label={place(url)} />)}
-                {table && <SuggestButton onSuggest={() => setSuggesting(true)} />}
+                {table && <SuggestButton onSuggest={() => setSuggesting(true)} canEdit={canEdit} />}
               </div>
             </>
           )}
@@ -353,9 +390,9 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
         <Message title="This table didn't load" action={<Button variant="outline" size="sm" onClick={retry}>Try again</Button>} />
       ) : data ? (
         <>
-          <FormulaBar table={data} selected={row && column ? { rowKey: row.key, column, cell: row.cells[column.id]!, status: cellStatus(row.cells[column.id]!, row.key, column.id, data.watch) } : undefined} />
+          <FormulaBar table={data} onChanged={retry} selected={row && column ? { rowKey: row.key, column, cell: row.cells[column.id]!, status: cellStatus(row.cells[column.id]!, row.key, column.id, data.watch) } : undefined} />
           <Grid table={data} selectedId={selectedId} select={(id) => navigate(id ? `${path}?cell=${id}` : path, { replace: true })} xray={xray} />
-          <StatusBar table={data} xray={xray} onXray={() => setXray(!xray)} />
+          <StatusBar table={data} xray={xray} onXray={() => setXray(!xray)} onChanged={retry} />
         </>
       ) : (
         <div className="flex-1 space-y-2 p-3" aria-label="Loading table">

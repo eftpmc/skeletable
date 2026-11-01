@@ -52,7 +52,8 @@ export const foundCellSchema = statedSchema.extend({
 
 export const missingCellSchema = z.object({
   missing: z.literal(true),
-  checked: z.array(url).min(1).max(10),
+  // Empty when a new table hasn't been filled in yet, so nobody has looked anywhere.
+  checked: z.array(url).max(10),
   read: day,
 });
 

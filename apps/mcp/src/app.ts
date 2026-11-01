@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { serveStatic } from "@hono/node-server/serve-static";
 import type { Table } from "@skeleton/tables/format";
@@ -5,6 +6,7 @@ import { Hono } from "hono";
 import { authRoutes, type AuthConfig } from "./auth.js";
 import { searchTables, summarize } from "./library.js";
 import { handleMcp, type Propose } from "./mcp.js";
+import { pageRoutes } from "./pages.js";
 import { submitProposal, tokenUser } from "./proposals.js";
 import { rateLimit } from "./rate-limit.js";
 
@@ -22,6 +24,16 @@ export function createApp(tables: Table[], webDir?: string, auth?: AuthConfig) {
     return c.redirect(`https://${url.host.slice(4)}${url.pathname}${url.search}`, 301);
   });
   app.get("/health", (c) => c.json({ ok: true, tables: tables.length }));
+  if (auth) {
+    // Counts only, with no address or identity, so we can see if anyone's here.
+    app.use("*", async (c, next) => {
+      const name = c.req.path === "/mcp" ? "mcp" : c.req.path.startsWith("/api/") || c.req.path.startsWith("/assets/") || c.req.path === "/health" ? null : "page";
+      if (name) {
+        auth.sql`insert into daily_counts (day, name, count) values (current_date, ${name}, 1) on conflict (day, name) do update set count = daily_counts.count + 1`.catch(() => {});
+      }
+      await next();
+    });
+  }
   app.use("/mcp", rateLimit(MCP_PER_MINUTE));
   app.use("/api/*", rateLimit(API_PER_MINUTE));
   app.use("/auth/*", rateLimit(SIGN_IN_PER_MINUTE));
@@ -42,10 +54,15 @@ export function createApp(tables: Table[], webDir?: string, auth?: AuthConfig) {
     return table ? c.json(table) : c.json({ error: "No such table" }, 404);
   });
   app.all("/api/*", (c) => c.json({ error: "Not found" }, 404));
-  if (webDir) {
+  if (webDir && existsSync(join(resolve(webDir), "index.html"))) {
     const root = resolve(webDir);
-    app.use("/*", serveStatic({ root }));
-    app.get("*", serveStatic({ path: join(root, "index.html") }));
+    app.get("/assets/*", serveStatic({ root }));
+    app.get("/logo.*", serveStatic({ root }));
+    pageRoutes(app, tables, root, auth?.publicUrl ?? "https://skeletable.com");
   }
+  app.onError((error, c) => {
+    console.error(`${c.req.method} ${c.req.path}: ${error.stack ?? error}`);
+    return c.json({ error: "Something went wrong on our side." }, 500);
+  });
   return app;
 }
