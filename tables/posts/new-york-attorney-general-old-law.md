@@ -10,7 +10,7 @@ New York changed its breach law in late 2024. Businesses now have a hard limit f
 
 You wouldn't know that from the [attorney general's SHIELD Act page](https://ag.ny.gov/resources/organizations/data-breach-reporting/shield-act), which is where many businesses would look first. It describes the older standard, "the most expedient time possible, consistent with legitimate needs of law enforcement agencies", and gives no number of days for telling residents.
 
-[At least one 2026 guide](https://cyberriskpolicy.com/data-breach-notification-laws) has the same gap, listing New York as "Without unreasonable delay".
+At least one 2026 guide has the same gap, listing New York as "Without unreasonable delay".
 
 ## Official isn't the same as current
 

@@ -1,0 +1,1911 @@
+{
+  "format": 1,
+  "owner": "skeletable",
+  "slug": "state-ai-laws",
+  "topic": "Law",
+  "title": "State AI laws: enacted, with proof",
+  "question": "Which US states have enacted laws about AI systems, when do they start, who enforces them, and what is the penalty?",
+  "scope": "Enacted state statutes whose central subject is AI systems or AI-generated content: general AI acts, frontier models, companion and disclosure chatbots, AI in hiring, generative AI transparency and AI in mental health care. This first version holds 22 laws, not all of them: more 2026 chatbot and mental health laws are reported in other states and aren't rows yet. Left out: failed bills, city laws, executive orders, agency rules, resolutions, study commissions, government-only laws, deepfake and election laws, and likeness laws such as Tennessee's ELVIS Act, which never names AI. A blank means we couldn't find it in an official text, never that the answer is no. Connecticut's row shows only the act's AI companion part. This records what the laws say and isn't legal advice.",
+  "columns": [
+    {
+      "id": "state",
+      "label": "State",
+      "type": "text",
+      "rule": "The state whose legislature passed the law."
+    },
+    {
+      "id": "law",
+      "label": "Law",
+      "type": "text",
+      "rule": "The act's name, or its bill and chapter, as the state's own text gives it."
+    },
+    {
+      "id": "subject",
+      "label": "Subject",
+      "type": "text",
+      "rule": "A short label, in the text's own words, for what the law regulates."
+    },
+    {
+      "id": "signed",
+      "label": "Signed",
+      "type": "text",
+      "rule": "The date the governor signed, as the official record writes it. Dates are left in the form the source uses."
+    },
+    {
+      "id": "takes_effect",
+      "label": "Takes effect",
+      "type": "text",
+      "rule": "When the law says its duties begin, in its own words. Some laws start in stages, and the quote shows which duty the date belongs to. Blank if the text gives no date and no official page states one."
+    },
+    {
+      "id": "covers",
+      "label": "Applies to",
+      "type": "text",
+      "rule": "Who has duties, in the law's own words. A law with several parts shows the part named in its quote."
+    },
+    {
+      "id": "enforced_by",
+      "label": "Enforced by",
+      "type": "text",
+      "rule": "Who enforces it, as stated. Where the text only makes a violation part of another act, that act is shown. Blank if the text doesn't say."
+    },
+    {
+      "id": "max_penalty",
+      "label": "Maximum penalty",
+      "type": "text",
+      "rule": "The highest civil penalty stated, in the law's words. Blank if the text names no amount. Damages in a private suit and penalties set by another act don't count."
+    },
+    {
+      "id": "private_suit",
+      "label": "Private right of action",
+      "type": "boolean",
+      "rule": "Yes or no only where the text says so plainly. Blank otherwise, including where a law just points to a consumer protection act."
+    },
+    {
+      "id": "status_note",
+      "label": "Latest change",
+      "type": "text",
+      "rule": "The newest amendment, delay, repeal or replacement found in an official source. Blank with the places we looked if none was found, which doesn't prove there is none."
+    }
+  ],
+  "rows": [
+    {
+      "key": "California AB 2013",
+      "cells": {
+        "state": {
+          "value": "California",
+          "source": "https://web.archive.org/web/20260829000344/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202320240AB2013",
+          "kind": "archived",
+          "quote": "The people of the State of California do enact as follows",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "law": {
+          "value": "Assembly Bill No. 2013, Chapter 817",
+          "source": "https://web.archive.org/web/20260829000344/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202320240AB2013",
+          "kind": "archived",
+          "quote": "Assembly Bill No. 2013 CHAPTER 817",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "subject": {
+          "value": "generative artificial intelligence: training data transparency",
+          "source": "https://web.archive.org/web/20260829000344/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202320240AB2013",
+          "kind": "archived",
+          "quote": "AB-2013 Generative artificial intelligence: training data transparency",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "signed": {
+          "value": "September 28, 2024",
+          "source": "https://web.archive.org/web/20260829000344/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202320240AB2013",
+          "kind": "archived",
+          "quote": "Approved by Governor September 28, 2024",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "takes_effect": {
+          "value": "on or before January 1, 2026",
+          "source": "https://web.archive.org/web/20260829000344/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202320240AB2013",
+          "kind": "archived",
+          "quote": "3111. On or before January 1, 2026, and before each time thereafter that a generative artificial intelligence system or service",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "covers": {
+          "value": "a person, partnership, state or local government agency, or corporation that designs, codes, produces, or substantially modifies an artificial intelligence system or service for use by members of the public",
+          "source": "https://web.archive.org/web/20260829000344/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202320240AB2013",
+          "kind": "archived",
+          "quote": "“Developer” means a person, partnership, state or local government agency, or corporation that designs, codes, produces, or substantially modifies an artificial intelligence system or service for use by members of the public",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "enforced_by": {
+          "missing": true,
+          "checked": [
+            "https://web.archive.org/web/20260829000344/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202320240AB2013"
+          ],
+          "read": "2026-11-01"
+        },
+        "max_penalty": {
+          "missing": true,
+          "checked": [
+            "https://web.archive.org/web/20260829000344/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202320240AB2013"
+          ],
+          "read": "2026-11-01"
+        },
+        "private_suit": {
+          "missing": true,
+          "checked": [
+            "https://web.archive.org/web/20260829000344/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202320240AB2013"
+          ],
+          "read": "2026-11-01"
+        },
+        "status_note": {
+          "missing": true,
+          "checked": [
+            "https://web.archive.org/web/20260829000344/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202320240AB2013"
+          ],
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "California SB 243",
+      "cells": {
+        "state": {
+          "value": "California",
+          "source": "https://web.archive.org/web/20261005212541/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202520260SB243",
+          "kind": "archived",
+          "quote": "The people of the State of California do enact as follows",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "law": {
+          "value": "Senate Bill No. 243, Chapter 677",
+          "source": "https://web.archive.org/web/20261005212541/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202520260SB243",
+          "kind": "archived",
+          "quote": "Senate Bill No. 243 CHAPTER 677",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "subject": {
+          "value": "companion chatbots",
+          "source": "https://web.archive.org/web/20261005212541/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202520260SB243",
+          "kind": "archived",
+          "quote": "CHAPTER 22.6. Companion Chatbots",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "signed": {
+          "value": "October 13, 2025",
+          "source": "https://web.archive.org/web/20261005212541/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202520260SB243",
+          "kind": "archived",
+          "quote": "Approved by Governor October 13, 2025",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "takes_effect": {
+          "value": "effective January 1, 2026",
+          "source": "https://web.archive.org/web/20260518223134/https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=BPC&sectionNum=22605.",
+          "kind": "archived",
+          "quote": "(SB 243) Effective January 1, 2026",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "covers": {
+          "value": "a person who makes a companion chatbot platform available to a user in the state",
+          "source": "https://web.archive.org/web/20261005212541/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202520260SB243",
+          "kind": "archived",
+          "quote": "“Operator” means a person who makes a companion chatbot platform available to a user in the state",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "enforced_by": {
+          "value": "a person who suffers injury in fact",
+          "source": "https://web.archive.org/web/20260518223134/https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=BPC&sectionNum=22605.",
+          "kind": "archived",
+          "quote": "A person who suffers injury in fact as a result of a violation of this chapter may bring a civil action",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "max_penalty": {
+          "missing": true,
+          "checked": [
+            "https://web.archive.org/web/20261005212541/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202520260SB243",
+            "https://web.archive.org/web/20260518223134/https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=BPC&sectionNum=22605."
+          ],
+          "read": "2026-11-01"
+        },
+        "private_suit": {
+          "value": true,
+          "source": "https://web.archive.org/web/20260518223134/https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=BPC&sectionNum=22605.",
+          "kind": "archived",
+          "quote": "A person who suffers injury in fact as a result of a violation of this chapter may bring a civil action",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "status_note": {
+          "value": "Senate Bill No. 1119, Chapter 190, amend section 22602",
+          "source": "https://web.archive.org/web/20261005231223/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202520260SB1119",
+          "kind": "archived",
+          "quote": "Senate Bill No. 1119 CHAPTER 190 An act to amend Section 22602 of, and to add Chapter 11.6 (commencing with Section 21810) to Division 8 of, the Business and Professions Code",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        }
+      }
+    },
+    {
+      "key": "California SB 53",
+      "cells": {
+        "state": {
+          "value": "California",
+          "source": "https://web.archive.org/web/20261004042039/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202520260SB53",
+          "kind": "archived",
+          "quote": "The people of the State of California do enact as follows",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "law": {
+          "value": "Senate Bill No. 53, Chapter 138",
+          "source": "https://web.archive.org/web/20261004042039/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202520260SB53",
+          "kind": "archived",
+          "quote": "Senate Bill No. 53 CHAPTER 138",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "subject": {
+          "value": "Transparency in Frontier Artificial Intelligence Act",
+          "source": "https://web.archive.org/web/20261004042039/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202520260SB53",
+          "kind": "archived",
+          "quote": "This chapter shall be known as the Transparency in Frontier Artificial Intelligence Act",
+          "read": "2026-11-01"
+        },
+        "signed": {
+          "value": "September 29, 2025",
+          "source": "https://web.archive.org/web/20261004042039/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202520260SB53",
+          "kind": "archived",
+          "quote": "Approved by Governor September 29, 2025",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "takes_effect": {
+          "value": "effective January 1, 2026",
+          "source": "https://web.archive.org/web/20260616170532/https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=BPC&sectionNum=22757.12.",
+          "kind": "archived",
+          "quote": "(SB 53) Effective January 1, 2026",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "covers": {
+          "value": "large frontier developer: annual gross revenues in excess of five hundred million dollars ($500,000,000)",
+          "source": "https://web.archive.org/web/20261004042039/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202520260SB53",
+          "kind": "archived",
+          "quote": "“Large frontier developer” means a frontier developer that together with its affiliates collectively had annual gross revenues in excess of five hundred million dollars ($500,000,000) in the preceding calendar year",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "enforced_by": {
+          "value": "the attorney general",
+          "source": "https://web.archive.org/web/20261004042039/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202520260SB53",
+          "kind": "archived",
+          "quote": "A civil penalty described in this section shall be recovered in a civil action brought only by the Attorney General",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "max_penalty": {
+          "value": "one million dollars ($1,000,000) per violation",
+          "source": "https://web.archive.org/web/20261004042039/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202520260SB53",
+          "kind": "archived",
+          "quote": "does not exceed one million dollars ($1,000,000) per violation",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "private_suit": {
+          "missing": true,
+          "checked": [
+            "https://web.archive.org/web/20261004042039/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202520260SB53"
+          ],
+          "read": "2026-11-01"
+        },
+        "status_note": {
+          "missing": true,
+          "checked": [
+            "https://web.archive.org/web/20261004042039/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202520260SB53",
+            "https://web.archive.org/web/20260616170532/https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=BPC&sectionNum=22757.12.",
+            "https://web.archive.org/web/20260616170531/https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=BPC&sectionNum=22757.15."
+          ],
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "California SB 942",
+      "cells": {
+        "state": {
+          "value": "California",
+          "source": "https://web.archive.org/web/20261028042836/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202320240SB942",
+          "kind": "archived",
+          "quote": "The people of the State of California do enact as follows",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "law": {
+          "value": "Senate Bill No. 942, Chapter 291",
+          "source": "https://web.archive.org/web/20261028042836/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202320240SB942",
+          "kind": "archived",
+          "quote": "Senate Bill No. 942 CHAPTER 291",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "subject": {
+          "value": "California AI Transparency Act",
+          "source": "https://web.archive.org/web/20261028042836/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202320240SB942",
+          "kind": "archived",
+          "quote": "This chapter shall be known as the California AI Transparency Act",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "signed": {
+          "value": "September 19, 2024",
+          "source": "https://web.archive.org/web/20261028042836/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202320240SB942",
+          "kind": "archived",
+          "quote": "Approved by Governor September 19, 2024",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "takes_effect": {
+          "value": "August 2, 2026",
+          "source": "https://web.archive.org/web/20260929211636/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202520260AB853",
+          "kind": "archived",
+          "quote": "This chapter shall become operative on August 2, 2026",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "covers": {
+          "value": "a person that creates, codes, or otherwise produces a generative artificial intelligence system that is publicly accessible",
+          "source": "https://web.archive.org/web/20261002013335/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202520260SB1000",
+          "kind": "archived",
+          "quote": "“Covered provider” means a person that creates, codes, or otherwise produces a generative artificial intelligence system that is publicly accessible within the geographic boundaries of the state",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "enforced_by": {
+          "value": "the attorney general, a city attorney, or a county counsel",
+          "source": "https://web.archive.org/web/20261002013335/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202520260SB1000",
+          "kind": "archived",
+          "quote": "to be collected in a civil action filed by the Attorney General, a city attorney, or a county counsel",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "max_penalty": {
+          "value": "fifty thousand dollars ($50,000) per violation",
+          "source": "https://web.archive.org/web/20261002013335/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202520260SB1000",
+          "kind": "archived",
+          "quote": "A violator of subdivision (d) of Section 22757.3 shall be liable for a civil penalty in the amount of fifty thousand dollars ($50,000) per violation",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "private_suit": {
+          "missing": true,
+          "checked": [
+            "https://web.archive.org/web/20261028042836/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202320240SB942",
+            "https://web.archive.org/web/20260929211636/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202520260AB853",
+            "https://web.archive.org/web/20261002013335/https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202520260SB1000"
+          ],
+          "read": "2026-11-01"
+        },
+        "status_note": {
+          "value": "SB 1000 by Senator Josh Becker: California AI Transparency Act",
+          "source": "https://www.gov.ca.gov/2026/09/30/californias-nation-leading-ai-framework-just-got-stronger-governor-newsom-signs-more-first-in-the-nation-worker-protections-and-more/",
+          "kind": "first-hand",
+          "quote": "SB 1000 by Senator Josh Becker (D‑Menlo Park) — California AI Transparency Act",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        }
+      }
+    },
+    {
+      "key": "Colorado HB26-1263",
+      "cells": {
+        "state": {
+          "value": "Colorado",
+          "source": "https://web.archive.org/web/20261020060022/https://leg.colorado.gov/bill_files/116772/download",
+          "kind": "archived",
+          "quote": "Be it enacted by the General Assembly of the State of Colorado",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "law": {
+          "value": "House Bill 26-1263",
+          "source": "https://web.archive.org/web/20261020060022/https://leg.colorado.gov/bill_files/116772/download",
+          "kind": "archived",
+          "quote": "HOUSE BILL 26-1263 BY REPRESENTATIVE(S) Camacho",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "subject": {
+          "value": "conversational artificial intelligence service",
+          "source": "https://web.archive.org/web/20261020060022/https://leg.colorado.gov/bills/HB26-1263",
+          "kind": "archived",
+          "quote": "Concerning requirements for an operator of a conversational artificial intelligence service",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "signed": {
+          "value": "05/29/2026",
+          "source": "https://web.archive.org/web/20261020060022/https://leg.colorado.gov/bills/HB26-1263",
+          "kind": "archived",
+          "quote": "05/29/2026 Governor Governor Signed",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "takes_effect": {
+          "value": "January 1, 2027",
+          "source": "https://web.archive.org/web/20261020060022/https://leg.colorado.gov/bills/HB26-1263",
+          "kind": "archived",
+          "quote": "Effective January 1, 2027, the act creates requirements and prohibitions",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "covers": {
+          "value": "a person, partnership, corporation, or entity that develops and makes publicly available a conversational artificial intelligence service or offers a conversational artificial intelligence service to a consumer",
+          "source": "https://web.archive.org/web/20261020060022/https://leg.colorado.gov/bills/HB26-1263",
+          "kind": "archived",
+          "quote": "a person, partnership, corporation, or entity that develops and makes publicly available a conversational artificial intelligence service or offers a conversational artificial intelligence service to a consumer (operator)",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "enforced_by": {
+          "missing": true,
+          "checked": [
+            "https://web.archive.org/web/20261020060022/https://leg.colorado.gov/bill_files/116772/download",
+            "https://web.archive.org/web/20261020060022/https://leg.colorado.gov/bills/HB26-1263"
+          ],
+          "read": "2026-11-01"
+        },
+        "max_penalty": {
+          "missing": true,
+          "checked": [
+            "https://web.archive.org/web/20261020060022/https://leg.colorado.gov/bill_files/116772/download",
+            "https://web.archive.org/web/20261020060022/https://leg.colorado.gov/bills/HB26-1263"
+          ],
+          "read": "2026-11-01"
+        },
+        "private_suit": {
+          "missing": true,
+          "checked": [
+            "https://web.archive.org/web/20261020060022/https://leg.colorado.gov/bill_files/116772/download",
+            "https://web.archive.org/web/20261020060022/https://leg.colorado.gov/bills/HB26-1263"
+          ],
+          "read": "2026-11-01"
+        },
+        "status_note": {
+          "missing": true,
+          "checked": [
+            "https://web.archive.org/web/20261020060022/https://leg.colorado.gov/bills/HB26-1263"
+          ],
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "Colorado SB26-189",
+      "cells": {
+        "state": {
+          "value": "Colorado",
+          "source": "https://web.archive.org/web/20261022044930/https://leg.colorado.gov/bill_files/116489/download",
+          "kind": "archived",
+          "quote": "Be it enacted by the General Assembly of the State of Colorado",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "law": {
+          "value": "Senate Bill 26-189",
+          "source": "https://web.archive.org/web/20261022044930/https://leg.colorado.gov/bill_files/116489/download",
+          "kind": "archived",
+          "quote": "SENATE BILL 26-189 BY SENATOR(S) Rodriguez",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "subject": {
+          "value": "automated decision-making technology in consequential decisions",
+          "source": "https://web.archive.org/web/20261022044930/https://leg.colorado.gov/bill_files/116489/download",
+          "kind": "archived",
+          "quote": "PART 17 AUTOMATED DECISION-MAKING TECHNOLOGY IN CONSEQUENTIAL DECISIONS",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "signed": {
+          "value": "05/14/2026",
+          "source": "https://web.archive.org/web/20261022044930/https://leg.colorado.gov/bills/sb26-189",
+          "kind": "archived",
+          "quote": "05/14/2026 Governor Governor Signed",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "takes_effect": {
+          "value": "January 1, 2027",
+          "source": "https://web.archive.org/web/20261022044930/https://leg.colorado.gov/bill_files/116489/download",
+          "kind": "archived",
+          "quote": "this act takes effect January 1, 2027",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "covers": {
+          "value": "developers and deployers",
+          "source": "https://web.archive.org/web/20261022044930/https://leg.colorado.gov/bills/sb26-189",
+          "kind": "archived",
+          "quote": "Both developers and deployers are required to retain records necessary to demonstrate compliance with the act",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "enforced_by": {
+          "value": "the attorney general",
+          "source": "https://web.archive.org/web/20261022044930/https://leg.colorado.gov/bill_files/116489/download",
+          "kind": "archived",
+          "quote": "THE ATTORNEY GENERAL SHALL ENFORCE THIS PART 17 THROUGH THE \"COLORADO CONSUMER PROTECTION ACT\"",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "max_penalty": {
+          "missing": true,
+          "checked": [
+            "https://web.archive.org/web/20261022044930/https://leg.colorado.gov/bill_files/116489/download",
+            "https://web.archive.org/web/20261022044930/https://leg.colorado.gov/bill_files/117715/download"
+          ],
+          "read": "2026-11-01"
+        },
+        "private_suit": {
+          "value": false,
+          "source": "https://web.archive.org/web/20261022044930/https://leg.colorado.gov/bill_files/116489/download",
+          "kind": "archived",
+          "quote": "NOTHING IN THIS PART 17 CREATES A NEW PRIVATE RIGHT OF ACTION",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "status_note": {
+          "value": "U.S. District Court ordered the attorney general to not initiate enforcement of SB 24-205 or any legislation amending SB 24-205 until the attorney general completes rulemaking",
+          "source": "https://web.archive.org/web/20261022044930/https://leg.colorado.gov/bill_files/117715/download",
+          "kind": "archived",
+          "quote": "the Attorney General was ordered by U.S. District Court to not initiate enforcement of SB 24-205 or any legislation amending SB 24-205 until the Attorney General completes rulemaking",
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "Connecticut SB 5",
+      "cells": {
+        "state": {
+          "value": "Connecticut",
+          "source": "https://web.archive.org/web/20261008201904/https://www.cga.ct.gov/asp/cgabillstatus/cgabillstatus.asp?selBillType=Bill&which_year=2026&bill_num=5",
+          "kind": "archived",
+          "quote": "Connecticut General Assembly",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "law": {
+          "value": "Public Act No. 26-15",
+          "source": "https://web.archive.org/web/20261020203950/https://www.cga.ct.gov/2026/act/pa/pdf/2026PA-00015-R00SB-00005-PA.pdf",
+          "kind": "archived",
+          "quote": "Substitute Senate Bill No. 5 Public Act No. 26-15",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "subject": {
+          "value": "artificial intelligence companion",
+          "source": "https://web.archive.org/web/20261020203950/https://www.cga.ct.gov/2026/act/pa/pdf/2026PA-00015-R00SB-00005-PA.pdf",
+          "kind": "archived",
+          "quote": "\"Operator\" means any individual, business entity or affiliate, member, subsidiary or beneficial owner of a business entity who provides an artificial intelligence companion to, or operates an artificial intelligence companion for, a user",
+          "read": "2026-11-01"
+        },
+        "signed": {
+          "value": "May 27, 2026",
+          "source": "https://web.archive.org/web/20261020203950/https://www.cga.ct.gov/2026/act/pa/pdf/2026PA-00015-R00SB-00005-PA.pdf",
+          "kind": "archived",
+          "quote": "Governor's Action: Approved May 27, 2026",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "takes_effect": {
+          "value": "January 1, 2027",
+          "source": "https://web.archive.org/web/20261020203950/https://www.cga.ct.gov/2026/act/pa/pdf/2026PA-00015-R00SB-00005-PA.pdf",
+          "kind": "archived",
+          "quote": "Sec. 5. (NEW) (Effective January 1, 2027) (a) (1) No operator shall provide an artificial intelligence companion",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "covers": {
+          "value": "any individual, business entity or affiliate, member, subsidiary or beneficial owner of a business entity who provides an artificial intelligence companion",
+          "source": "https://web.archive.org/web/20261020203950/https://www.cga.ct.gov/2026/act/pa/pdf/2026PA-00015-R00SB-00005-PA.pdf",
+          "kind": "archived",
+          "quote": "\"Operator\" means any individual, business entity or affiliate, member, subsidiary or beneficial owner of a business entity who provides an artificial intelligence companion to, or operates an artificial intelligence companion for, a user",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "enforced_by": {
+          "value": "solely by the attorney general",
+          "source": "https://web.archive.org/web/20261020203950/https://www.cga.ct.gov/2026/act/pa/pdf/2026PA-00015-R00SB-00005-PA.pdf",
+          "kind": "archived",
+          "quote": "shall be enforced solely by the Attorney General",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "max_penalty": {
+          "missing": true,
+          "checked": [
+            "https://web.archive.org/web/20261020203950/https://www.cga.ct.gov/2026/act/pa/pdf/2026PA-00015-R00SB-00005-PA.pdf"
+          ],
+          "read": "2026-11-01"
+        },
+        "private_suit": {
+          "value": false,
+          "source": "https://web.archive.org/web/20261020203950/https://www.cga.ct.gov/2026/act/pa/pdf/2026PA-00015-R00SB-00005-PA.pdf",
+          "kind": "archived",
+          "quote": "Nothing in this section shall be construed as providing the basis for a private right of action",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "status_note": {
+          "missing": true,
+          "checked": [
+            "https://web.archive.org/web/20261020203950/https://www.cga.ct.gov/2026/act/pa/pdf/2026PA-00015-R00SB-00005-PA.pdf",
+            "https://web.archive.org/web/20261008201904/https://www.cga.ct.gov/asp/cgabillstatus/cgabillstatus.asp?selBillType=Bill&which_year=2026&bill_num=5"
+          ],
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "Illinois HB 1806",
+      "cells": {
+        "state": {
+          "value": "Illinois",
+          "source": "https://web.archive.org/web/20260819204625/https://www.ilga.gov/Documents/Legislation/PublicActs/104/PDF/104-0054.pdf",
+          "kind": "archived",
+          "quote": "Be it enacted by the People of the State of Illinois",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "law": {
+          "value": "Wellness and Oversight for Psychological Resources Act",
+          "source": "https://web.archive.org/web/20260819204625/https://www.ilga.gov/Documents/Legislation/PublicActs/104/PDF/104-0054.pdf",
+          "kind": "archived",
+          "quote": "This Act may be cited as the Wellness and Oversight for Psychological Resources Act",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "subject": {
+          "value": "therapy or psychotherapy services",
+          "source": "https://web.archive.org/web/20260819204625/https://www.ilga.gov/Documents/Legislation/PublicActs/104/PDF/104-0054.pdf",
+          "kind": "archived",
+          "quote": "Section 20. Prohibition on unauthorized therapy services. (a) An individual, corporation, or entity may not provide, advertise, or otherwise offer therapy or psychotherapy services",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "signed": {
+          "value": "8/01/2025",
+          "source": "https://web.archive.org/web/20260320001227/https://www.ilga.gov/Legislation/BillStatus?DocNum=1806&GAID=18&DocTypeID=HB&SessionID=114&GA=104",
+          "kind": "archived",
+          "quote": "8/01/2025 House Governor Approved",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "takes_effect": {
+          "value": "upon becoming law",
+          "source": "https://web.archive.org/web/20260819204625/https://www.ilga.gov/Documents/Legislation/PublicActs/104/PDF/104-0054.pdf",
+          "kind": "archived",
+          "quote": "This Act takes effect upon becoming law",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "covers": {
+          "value": "an individual, corporation, or entity",
+          "source": "https://web.archive.org/web/20260819204625/https://www.ilga.gov/Documents/Legislation/PublicActs/104/PDF/104-0054.pdf",
+          "kind": "archived",
+          "quote": "An individual, corporation, or entity may not provide, advertise, or otherwise offer therapy or psychotherapy services, including through the use of Internet-based artificial intelligence",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "enforced_by": {
+          "value": "the Department of Financial and Professional Regulation",
+          "source": "https://web.archive.org/web/20260819204625/https://www.ilga.gov/Documents/Legislation/PublicActs/104/PDF/104-0054.pdf",
+          "kind": "archived",
+          "quote": "\"Department\" means the Department of Financial and Professional Regulation",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "max_penalty": {
+          "value": "$10,000 per violation",
+          "source": "https://web.archive.org/web/20260819204625/https://www.ilga.gov/Documents/Legislation/PublicActs/104/PDF/104-0054.pdf",
+          "kind": "archived",
+          "quote": "shall pay a civil penalty to the Department in an amount not to exceed $10,000 per violation",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "private_suit": {
+          "missing": true,
+          "checked": [
+            "https://web.archive.org/web/20260819204625/https://www.ilga.gov/Documents/Legislation/PublicActs/104/PDF/104-0054.pdf"
+          ],
+          "read": "2026-11-01"
+        },
+        "status_note": {
+          "missing": true,
+          "checked": [
+            "https://web.archive.org/web/20260819204625/https://www.ilga.gov/Documents/Legislation/PublicActs/104/PDF/104-0054.pdf",
+            "https://web.archive.org/web/20260320001227/https://www.ilga.gov/Legislation/BillStatus?DocNum=1806&GAID=18&DocTypeID=HB&SessionID=114&GA=104"
+          ],
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "Illinois HB 3773",
+      "cells": {
+        "state": {
+          "value": "Illinois",
+          "source": "https://web.archive.org/web/20260910140712/https://www.ilga.gov/documents/legislation/publicacts/103/PDF/103-0804.pdf",
+          "kind": "archived",
+          "quote": "Be it enacted by the People of the State of Illinois",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "law": {
+          "value": "Public Act 103-0804",
+          "source": "https://web.archive.org/web/20260910140712/https://www.ilga.gov/documents/legislation/publicacts/103/PDF/103-0804.pdf",
+          "kind": "archived",
+          "quote": "HB3773 Enrolled LRB103 27562 SPS 53938 b Public Act 103-0804",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "subject": {
+          "value": "use of artificial intelligence",
+          "source": "https://web.archive.org/web/20260910140712/https://www.ilga.gov/documents/legislation/publicacts/103/PDF/103-0804.pdf",
+          "kind": "archived",
+          "quote": "(L) Use of artificial intelligence",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "signed": {
+          "value": "8/9/2024",
+          "source": "https://web.archive.org/web/20250628110749/https://www.ilga.gov/legislation/BillStatus.asp?DocNum=3773&GAID=17&DocTypeID=HB&SessionID=112&GA=103",
+          "kind": "archived",
+          "quote": "8/9/2024HouseGovernor Approved",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "takes_effect": {
+          "value": "January 1, 2026",
+          "source": "https://web.archive.org/web/20250628110749/https://www.ilga.gov/legislation/BillStatus.asp?DocNum=3773&GAID=17&DocTypeID=HB&SessionID=112&GA=103",
+          "kind": "archived",
+          "quote": "8/9/2024HouseEffective Date January 1, 2026",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "covers": {
+          "value": "an employer",
+          "source": "https://web.archive.org/web/20260910140712/https://www.ilga.gov/documents/legislation/publicacts/103/PDF/103-0804.pdf",
+          "kind": "archived",
+          "quote": "for an employer to use artificial intelligence that has the effect of subjecting employees to discrimination",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "enforced_by": {
+          "missing": true,
+          "checked": [
+            "https://web.archive.org/web/20260910140712/https://www.ilga.gov/documents/legislation/publicacts/103/PDF/103-0804.pdf"
+          ],
+          "read": "2026-11-01"
+        },
+        "max_penalty": {
+          "missing": true,
+          "checked": [
+            "https://web.archive.org/web/20260910140712/https://www.ilga.gov/documents/legislation/publicacts/103/PDF/103-0804.pdf"
+          ],
+          "read": "2026-11-01"
+        },
+        "private_suit": {
+          "missing": true,
+          "checked": [
+            "https://web.archive.org/web/20260910140712/https://www.ilga.gov/documents/legislation/publicacts/103/PDF/103-0804.pdf"
+          ],
+          "read": "2026-11-01"
+        },
+        "status_note": {
+          "missing": true,
+          "checked": [
+            "https://web.archive.org/web/20260910140712/https://www.ilga.gov/documents/legislation/publicacts/103/PDF/103-0804.pdf",
+            "https://web.archive.org/web/20250628110749/https://www.ilga.gov/legislation/BillStatus.asp?DocNum=3773&GAID=17&DocTypeID=HB&SessionID=112&GA=103"
+          ],
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "Illinois SB 315",
+      "cells": {
+        "state": {
+          "value": "Illinois",
+          "source": "https://web.archive.org/web/20261019084033/https://www.ilga.gov/Documents/Legislation/PublicActs/104/PDF/104-0538.pdf",
+          "kind": "archived",
+          "quote": "Be it enacted by the People of the State of Illinois",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "law": {
+          "value": "Artificial Intelligence Safety Measures Act",
+          "source": "https://web.archive.org/web/20261019084033/https://www.ilga.gov/Documents/Legislation/PublicActs/104/PDF/104-0538.pdf",
+          "kind": "archived",
+          "quote": "This Act may be cited as the Artificial Intelligence Safety Measures Act",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "subject": {
+          "value": "Artificial Intelligence Safety Measures",
+          "source": "https://web.archive.org/web/20261019084033/https://www.ilga.gov/Documents/Legislation/PublicActs/104/PDF/104-0538.pdf",
+          "kind": "archived",
+          "quote": "This Act may be cited as the Artificial Intelligence Safety Measures Act",
+          "read": "2026-11-01"
+        },
+        "signed": {
+          "value": "7/06/2026",
+          "source": "https://web.archive.org/web/20260929215838/https://www.ilga.gov/Legislation/BillStatus?DocNum=315&GAID=18&DocTypeID=SB&SessionID=114&GA=104",
+          "kind": "archived",
+          "quote": "7/06/2026 Senate Governor Approved",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "takes_effect": {
+          "value": "January 1, 2027",
+          "source": "https://web.archive.org/web/20261019084033/https://www.ilga.gov/Documents/Legislation/PublicActs/104/PDF/104-0538.pdf",
+          "kind": "archived",
+          "quote": "This Act takes effect January 1, 2027",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "covers": {
+          "value": "large frontier developer: annual gross revenues in excess of $500,000,000",
+          "source": "https://web.archive.org/web/20261019084033/https://www.ilga.gov/Documents/Legislation/PublicActs/104/PDF/104-0538.pdf",
+          "kind": "archived",
+          "quote": "\"Large frontier developer\" means a frontier developer that, together with its affiliates, collectively had annual gross revenues in excess of $500,000,000 in the preceding calendar year",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "enforced_by": {
+          "value": "the attorney general",
+          "source": "https://web.archive.org/web/20261019084033/https://www.ilga.gov/Documents/Legislation/PublicActs/104/PDF/104-0538.pdf",
+          "kind": "archived",
+          "quote": "shall be recovered in a civil action brought exclusively by the Attorney General",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "max_penalty": {
+          "value": "$3,000,000 per violation",
+          "source": "https://web.archive.org/web/20261019084033/https://www.ilga.gov/Documents/Legislation/PublicActs/104/PDF/104-0538.pdf",
+          "kind": "archived",
+          "quote": "For a subsequent violation, the civil penalty may not exceed $3,000,000 per violation",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "private_suit": {
+          "value": false,
+          "source": "https://web.archive.org/web/20261019084033/https://www.ilga.gov/Documents/Legislation/PublicActs/104/PDF/104-0538.pdf",
+          "kind": "archived",
+          "quote": "Nothing in this Act shall be construed to establish a private right of action",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "status_note": {
+          "missing": true,
+          "checked": [
+            "https://web.archive.org/web/20261019084033/https://www.ilga.gov/Documents/Legislation/PublicActs/104/PDF/104-0538.pdf",
+            "https://web.archive.org/web/20260929215838/https://www.ilga.gov/Legislation/BillStatus?DocNum=315&GAID=18&DocTypeID=SB&SessionID=114&GA=104"
+          ],
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "Maine LD 1727",
+      "cells": {
+        "state": {
+          "value": "Maine",
+          "source": "https://legislature.maine.gov/legis/bills/getPDF.asp?paper=HP1154&item=3&snum=132",
+          "kind": "first-hand",
+          "quote": "Be it enacted by the People of the State of Maine",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "law": {
+          "value": "Chapter 294 Public Law",
+          "source": "https://legislature.maine.gov/legis/bills/getPDF.asp?paper=HP1154&item=3&snum=132",
+          "kind": "first-hand",
+          "quote": "APPROVED JUNE 12, 2025 BY GOVERNOR CHAPTER 294 PUBLIC LAW",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "subject": {
+          "value": "artificial intelligence chatbot",
+          "source": "https://legislature.maine.gov/legis/bills/getPDF.asp?paper=HP1154&item=3&snum=132",
+          "kind": "first-hand",
+          "quote": "Required disclosure of use of artificial intelligence chatbot to engage in trade and commerce",
+          "read": "2026-11-01"
+        },
+        "signed": {
+          "value": "June 12, 2025",
+          "source": "https://legislature.maine.gov/legis/bills/getPDF.asp?paper=HP1154&item=3&snum=132",
+          "kind": "first-hand",
+          "quote": "APPROVED JUNE 12, 2025 BY GOVERNOR",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "takes_effect": {
+          "missing": true,
+          "checked": [
+            "https://legislature.maine.gov/legis/bills/getPDF.asp?paper=HP1154&item=3&snum=132",
+            "https://legislature.maine.gov/legis/bills/display_ps.asp?LD=1727&snum=132",
+            "https://legislature.maine.gov/statutes/10/title10sec1500-Y.html"
+          ],
+          "read": "2026-11-01"
+        },
+        "covers": {
+          "value": "a person",
+          "source": "https://legislature.maine.gov/legis/bills/getPDF.asp?paper=HP1154&item=3&snum=132",
+          "kind": "first-hand",
+          "quote": "A person may not use an artificial intelligence chatbot or any other computer technology to engage in trade and commerce with a consumer",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "enforced_by": {
+          "value": "Maine Unfair Trade Practices Act",
+          "source": "https://legislature.maine.gov/legis/bills/getPDF.asp?paper=HP1154&item=3&snum=132",
+          "kind": "first-hand",
+          "quote": "A violation of subsection 2 is a violation of the Maine Unfair Trade Practices Act",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "max_penalty": {
+          "missing": true,
+          "checked": [
+            "https://legislature.maine.gov/legis/bills/getPDF.asp?paper=HP1154&item=3&snum=132"
+          ],
+          "read": "2026-11-01"
+        },
+        "private_suit": {
+          "missing": true,
+          "checked": [
+            "https://legislature.maine.gov/legis/bills/getPDF.asp?paper=HP1154&item=3&snum=132"
+          ],
+          "read": "2026-11-01"
+        },
+        "status_note": {
+          "missing": true,
+          "checked": [
+            "https://legislature.maine.gov/legis/bills/display_ps.asp?LD=1727&snum=132",
+            "https://legislature.maine.gov/statutes/10/title10sec1500-Y.html"
+          ],
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "Nevada AB 406",
+      "cells": {
+        "state": {
+          "value": "Nevada",
+          "source": "https://www.leg.state.nv.us/Session/83rd2025/Bills/AB/AB406_EN.pdf",
+          "kind": "first-hand",
+          "quote": "THE PEOPLE OF THE STATE OF NEVADA",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "law": {
+          "value": "AB406, Chapter 283",
+          "source": "https://www.leg.state.nv.us/App/NELIS/REL/83rd2025/Bills/SignedByGovernor",
+          "kind": "first-hand",
+          "quote": "AB406 Makes various changes relating to health. (BDR 34-674) Chapter 283",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "subject": {
+          "value": "artificial intelligence systems and mental or behavioral health care",
+          "source": "https://www.leg.state.nv.us/Session/83rd2025/Bills/AB/AB406_EN.pdf",
+          "kind": "first-hand",
+          "quote": "imposing certain restrictions relating to the marketing and programming of artificial intelligence systems; prohibiting certain persons from representing themselves as qualified to provide mental or behavioral health care",
+          "read": "2026-11-01"
+        },
+        "signed": {
+          "value": "June 5, 2025",
+          "source": "https://www.leg.state.nv.us/Statutes/83rd2025/Stats202515.html",
+          "kind": "first-hand",
+          "quote": "CHAPTER 283 [Approved: June 5, 2025]",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "takes_effect": {
+          "value": "July 1, 2025",
+          "source": "https://www.leg.state.nv.us/Session/83rd2025/Bills/AB/AB406_EN.pdf",
+          "kind": "first-hand",
+          "quote": "On July 1, 2025, for all other purposes",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "covers": {
+          "value": "a person who operates or provides an artificial intelligence system",
+          "source": "https://www.leg.state.nv.us/Session/83rd2025/Bills/AB/AB406_EN.pdf",
+          "kind": "first-hand",
+          "quote": "“Artificial intelligence provider” means a person who operates or provides an artificial intelligence system",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "enforced_by": {
+          "value": "the division",
+          "source": "https://www.leg.state.nv.us/Session/83rd2025/Bills/AB/AB406_EN.pdf",
+          "kind": "first-hand",
+          "quote": "The Division: (a) May investigate potential violations of this section. (b) May bring an action to recover a civil penalty",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "max_penalty": {
+          "value": "$15,000 per violation",
+          "source": "https://www.leg.state.nv.us/Session/83rd2025/Bills/AB/AB406_EN.pdf",
+          "kind": "first-hand",
+          "quote": "is subject to a civil penalty not to exceed $15,000 per violation",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "private_suit": {
+          "missing": true,
+          "checked": [
+            "https://www.leg.state.nv.us/Session/83rd2025/Bills/AB/AB406_EN.pdf"
+          ],
+          "read": "2026-11-01"
+        },
+        "status_note": {
+          "missing": true,
+          "checked": [
+            "https://www.leg.state.nv.us/Session/83rd2025/Bills/AB/AB406_EN.pdf",
+            "https://www.leg.state.nv.us/App/NELIS/REL/83rd2025/Bills/SignedByGovernor"
+          ],
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "New York S3008-C",
+      "cells": {
+        "state": {
+          "value": "New York",
+          "source": "https://legislation.nysenate.gov/pdf/bills/2025/A3008C",
+          "kind": "first-hand",
+          "quote": "The People of the State of New York",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "law": {
+          "value": "Article 47 Artificial Intelligence Companion Models",
+          "source": "https://web.archive.org/web/20260915143929/https://www.nysenate.gov/legislation/laws/GBS/1701",
+          "kind": "archived",
+          "quote": "ARTICLE 47 Artificial Intelligence Companion Models",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "subject": {
+          "value": "AI companion",
+          "source": "https://web.archive.org/web/20260911183428/https://www.nysenate.gov/legislation/laws/GBS/1700",
+          "kind": "archived",
+          "quote": "\"AI companion\" means a system using artificial intelligence",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "signed": {
+          "value": "May 09, 2025",
+          "source": "https://web.archive.org/web/20260201014939/https://www.nysenate.gov/legislation/bills/2025/S3008/amendment/C",
+          "kind": "archived",
+          "quote": "May 09, 2025 signed chap.58",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "takes_effect": {
+          "value": "November 5th, 2025",
+          "source": "https://www.governor.ny.gov/sites/default/files/2025-11/Companion_AI_Letter.pdf",
+          "kind": "first-hand",
+          "quote": "Effective November 5th , 2025, companies providing companion AI bots must",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "covers": {
+          "value": "any person, partnership, association, firm, or business entity",
+          "source": "https://web.archive.org/web/20260911183428/https://www.nysenate.gov/legislation/laws/GBS/1700",
+          "kind": "archived",
+          "quote": "\"Operator\" means any person, partnership, association, firm, or business entity, or any member, affiliate, subsidiary or beneficial owner of any partnership, association, firm, or business entity who operates for or provides an AI companion to a user",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "enforced_by": {
+          "value": "the attorney general",
+          "source": "https://web.archive.org/web/20251124165044/https://www.nysenate.gov/legislation/laws/GBS/1703",
+          "kind": "archived",
+          "quote": "Whenever the attorney general shall believe from evidence satisfactory to them that an operator has engaged in",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "max_penalty": {
+          "value": "fifteen thousand dollars per day",
+          "source": "https://web.archive.org/web/20251124165044/https://www.nysenate.gov/legislation/laws/GBS/1703",
+          "kind": "archived",
+          "quote": "may seek civil penalties of up to fifteen thousand dollars per day",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "private_suit": {
+          "missing": true,
+          "checked": [
+            "https://web.archive.org/web/20251124165044/https://www.nysenate.gov/legislation/laws/GBS/1703"
+          ],
+          "read": "2026-11-01"
+        },
+        "status_note": {
+          "missing": true,
+          "checked": [
+            "https://web.archive.org/web/20260915143929/https://www.nysenate.gov/legislation/laws/GBS/1701",
+            "https://web.archive.org/web/20261002123547/https://www.nysenate.gov/legislation/laws/GBS/1702",
+            "https://web.archive.org/web/20251124165044/https://www.nysenate.gov/legislation/laws/GBS/1703"
+          ],
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "New York S6953-B",
+      "cells": {
+        "state": {
+          "value": "New York",
+          "source": "https://legislation.nysenate.gov/pdf/bills/2025/S8828",
+          "kind": "first-hand",
+          "quote": "The People of the State of New York",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "law": {
+          "value": "Responsible AI Safety and Education (RAISE) Act",
+          "source": "https://legislation.nysenate.gov/pdf/bills/2025/S8828",
+          "kind": "first-hand",
+          "quote": "ARTICLE 44-B 28 RESPONSIBLE AI SAFETY AND EDUCATION (RAISE) ACT",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "subject": {
+          "value": "artificial intelligence frontier models",
+          "source": "https://legislation.nysenate.gov/pdf/bills/2025/S8828",
+          "kind": "first-hand",
+          "quote": "transparency and safety requirements for developers of artificial intelligence frontier models",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "signed": {
+          "value": "Dec 19, 2025",
+          "source": "https://web.archive.org/web/20261017081017/https://www.nysenate.gov/legislation/bills/2025/S6953/amendment/B",
+          "kind": "archived",
+          "quote": "Dec 19, 2025 approval memo.76 signed chap.699",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "takes_effect": {
+          "value": "January 1, 2027",
+          "source": "https://legislation.nysenate.gov/pdf/bills/2025/S8828",
+          "kind": "first-hand",
+          "quote": "This act shall take effect [on the ninetieth day after it shall 32 ] .have become a law January 1, 2027",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "covers": {
+          "value": "large frontier developer: annual gross revenues in excess of five hundred million dollars",
+          "source": "https://legislation.nysenate.gov/pdf/bills/2025/S8828",
+          "kind": "first-hand",
+          "quote": "\"Large frontier developer\" means a frontier developer that togeth- 54 er with its affiliates collectively had annual gross revenues in excess 55 of five hundred million dollars",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "enforced_by": {
+          "value": "the attorney general",
+          "source": "https://legislation.nysenate.gov/pdf/bills/2025/S8828",
+          "kind": "first-hand",
+          "quote": "The attorney general may bring a civil action 8 to recover a civil penalty",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "max_penalty": {
+          "value": "three million dollars per subsequent violation",
+          "source": "https://legislation.nysenate.gov/pdf/bills/2025/S8828",
+          "kind": "first-hand",
+          "quote": "in an amount not to exceed three 10 million dollars per subsequent violation",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "private_suit": {
+          "value": false,
+          "source": "https://legislation.nysenate.gov/pdf/bills/2025/S8828",
+          "kind": "first-hand",
+          "quote": "Nothing in this article shall be construed to establish, authorize 18 or create a private right of action",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "status_note": {
+          "value": "Mar 27, 2026 signed chap.96",
+          "source": "https://web.archive.org/web/20261018224610/https://www.nysenate.gov/legislation/bills/2025/S8828",
+          "kind": "archived",
+          "quote": "Mar 27, 2026 signed chap.96",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        }
+      }
+    },
+    {
+      "key": "New York S9051-B",
+      "cells": {
+        "state": {
+          "value": "New York",
+          "source": "https://legislation.nysenate.gov/pdf/bills/2025/S9051B",
+          "kind": "first-hand",
+          "quote": "The People of the State of New York",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "law": {
+          "value": "Article 48",
+          "source": "https://legislation.nysenate.gov/pdf/bills/2025/S9051B",
+          "kind": "first-hand",
+          "quote": "The general business law is amended by adding a new article 2 48",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "subject": {
+          "value": "unsafe AI companion features for minors",
+          "source": "https://legislation.nysenate.gov/pdf/bills/2025/S9051B",
+          "kind": "first-hand",
+          "quote": "PROHIBITION ON UNSAFE AI COMPANION FEATURES FOR MINORS",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "signed": {
+          "value": "October 28, 2026",
+          "source": "https://www.governor.ny.gov/news/governor-hochul-signs-nation-leading-legislation-protect-kids-ai-chatbots-and-ensure-baby",
+          "kind": "first-hand",
+          "quote": "October 28, 2026 Albany, NY Governor Hochul Signs Nation-Leading Legislation to Protect Kids From AI Chatbots",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "takes_effect": {
+          "value": "January 1, 2027",
+          "source": "https://legislation.nysenate.gov/pdf/bills/2025/S9051B",
+          "kind": "first-hand",
+          "quote": "This act shall take effect January 1, 2027",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "covers": {
+          "value": "any person, partnership, association, firm, or business entity",
+          "source": "https://legislation.nysenate.gov/pdf/bills/2025/S9051B",
+          "kind": "first-hand",
+          "quote": "\"Operator\" shall mean any person, partnership, association, firm, 21 or business entity",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "enforced_by": {
+          "value": "the attorney general",
+          "source": "https://legislation.nysenate.gov/pdf/bills/2025/S9051B",
+          "kind": "first-hand",
+          "quote": "the attorney general 46 may bring an action or special proceeding in the name and on behalf of 47 the people of the state of New York",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "max_penalty": {
+          "value": "twenty-five thousand dollars per violation",
+          "source": "https://legislation.nysenate.gov/pdf/bills/2025/S9051B",
+          "kind": "first-hand",
+          "quote": "to 54 obtain civil penalties of up to twenty-five thousand dollars per 55 violation",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "private_suit": {
+          "missing": true,
+          "checked": [
+            "https://legislation.nysenate.gov/pdf/bills/2025/S9051B"
+          ],
+          "read": "2026-11-01"
+        },
+        "status_note": {
+          "missing": true,
+          "checked": [
+            "https://www.governor.ny.gov/news/governor-hochul-signs-nation-leading-legislation-protect-kids-ai-chatbots-and-ensure-baby",
+            "https://web.archive.org/web/20260911183408/https://www.nysenate.gov/legislation/bills/2025/S9051"
+          ],
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "Oregon SB 1546",
+      "cells": {
+        "state": {
+          "value": "Oregon",
+          "source": "https://olis.oregonlegislature.gov/liz/2026R1/Downloads/MeasureDocument/SB1546/Enrolled",
+          "kind": "first-hand",
+          "quote": "Be It Enacted by the People of the State of Oregon",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "law": {
+          "value": "Chapter 85",
+          "source": "https://www.oregonlegislature.gov/bills_laws/lawsstatutes/2026orLaw0085.pdf",
+          "kind": "first-hand",
+          "quote": "CHAPTER 85 AN ACT",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "subject": {
+          "value": "artificial intelligence companions",
+          "source": "https://www.oregonlegislature.gov/bills_laws/lawsstatutes/2026orLaw0085.pdf",
+          "kind": "first-hand",
+          "quote": "Relating to artificial intelligence companions",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "signed": {
+          "value": "March 31, 2026",
+          "source": "https://www.oregonlegislature.gov/bills_laws/lawsstatutes/2026orLaw0085.pdf",
+          "kind": "first-hand",
+          "quote": "Approved by the Governor March 31, 2026",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "takes_effect": {
+          "value": "January 1, 2027",
+          "source": "https://www.oregonlegislature.gov/bills_laws/lawsstatutes/2026orLaw0085.pdf",
+          "kind": "first-hand",
+          "quote": "Effective date January 1, 2027",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "covers": {
+          "value": "a person that controls or makes an artificial intelligence companion or artificial intelligence companion platform available to users in this state",
+          "source": "https://olis.oregonlegislature.gov/liz/2026R1/Downloads/MeasureDocument/SB1546/Enrolled",
+          "kind": "first-hand",
+          "quote": "“Operator” means a person that controls or makes an artificial intelligence compan- ion or artificial intelligence companion platform available to users in this state",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "enforced_by": {
+          "value": "an individual who suffers an ascertainable loss of money or property or other injury in fact",
+          "source": "https://olis.oregonlegislature.gov/liz/2026R1/Downloads/MeasureDocument/SB1546/Enrolled",
+          "kind": "first-hand",
+          "quote": "An individual who suffers an ascertainable loss of money or property or other injury in fact as a result of an operator’s violation of section 1 of this 2026 Act may bring an action",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "max_penalty": {
+          "missing": true,
+          "checked": [
+            "https://www.oregonlegislature.gov/bills_laws/lawsstatutes/2026orLaw0085.pdf",
+            "https://olis.oregonlegislature.gov/liz/2026R1/Downloads/MeasureDocument/SB1546/Enrolled"
+          ],
+          "read": "2026-11-01"
+        },
+        "private_suit": {
+          "value": true,
+          "source": "https://olis.oregonlegislature.gov/liz/2026R1/Downloads/MeasureDocument/SB1546/Enrolled",
+          "kind": "first-hand",
+          "quote": "An individual who suffers an ascertainable loss of money or property or other injury in fact as a result of an operator’s violation of section 1 of this 2026 Act may bring an action",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "status_note": {
+          "missing": true,
+          "checked": [
+            "https://www.oregonlegislature.gov/bills_laws/lawsstatutes/2026orLaw0085.pdf",
+            "https://olis.oregonlegislature.gov/liz/2026R1/Measures/Overview/SB1546"
+          ],
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "Tennessee SB 1580",
+      "cells": {
+        "state": {
+          "value": "Tennessee",
+          "source": "https://publications.tnsosfiles.com/acts/114/pub/pc0647.pdf",
+          "kind": "first-hand",
+          "quote": "BE IT ENACTED BY THE GENERAL ASSEMBLY OF THE STATE OF TENNESSEE",
+          "read": "2026-11-01"
+        },
+        "law": {
+          "value": "Public Chapter No. 647",
+          "source": "https://publications.tnsosfiles.com/acts/114/pub/pc0647.pdf",
+          "kind": "first-hand",
+          "quote": "PUBLIC CHAPTER NO. 647",
+          "read": "2026-11-01"
+        },
+        "subject": {
+          "value": "qualified mental health professional",
+          "source": "https://publications.tnsosfiles.com/acts/114/pub/pc0647.pdf",
+          "kind": "first-hand",
+          "quote": "shall not advertise or represent to the public that such system is or is able to act as a qualified mental health professional",
+          "read": "2026-11-01"
+        },
+        "signed": {
+          "missing": true,
+          "checked": [
+            "https://publications.tnsosfiles.com/acts/114/pub/pc0647.pdf",
+            "https://wapp.capitol.tn.gov/apps/BillInfo/Default?BillNumber=SB1580&ga=114",
+            "https://capitol.tn.gov/Archives/Joint/publications/PublicChapters/2026/PublicChapters_202607.pdf"
+          ],
+          "read": "2026-11-01"
+        },
+        "takes_effect": {
+          "value": "July 1, 2026",
+          "source": "https://publications.tnsosfiles.com/acts/114/pub/pc0647.pdf",
+          "kind": "first-hand",
+          "quote": "This act takes effect July 1, 2026",
+          "read": "2026-11-01"
+        },
+        "covers": {
+          "value": "a person who develops or deploys an artificial intelligence system",
+          "source": "https://publications.tnsosfiles.com/acts/114/pub/pc0647.pdf",
+          "kind": "first-hand",
+          "quote": "A person who develops or deploys an artificial intelligence system shall not advertise",
+          "read": "2026-11-01"
+        },
+        "enforced_by": {
+          "value": "Tennessee Consumer Protection Act of 1977",
+          "source": "https://publications.tnsosfiles.com/acts/114/pub/pc0647.pdf",
+          "kind": "first-hand",
+          "quote": "A violation of subsection (a) constitutes a violation of the Tennessee Consumer Protection Act of 1977",
+          "read": "2026-11-01"
+        },
+        "max_penalty": {
+          "value": "five thousand dollars ($5,000) per violation",
+          "source": "https://publications.tnsosfiles.com/acts/114/pub/pc0647.pdf",
+          "kind": "first-hand",
+          "quote": "a violation of subsection (a) is subject to a civil penalty of five thousand dollars ($5,000) per violation",
+          "read": "2026-11-01"
+        },
+        "private_suit": {
+          "missing": true,
+          "checked": [
+            "https://publications.tnsosfiles.com/acts/114/pub/pc0647.pdf"
+          ],
+          "read": "2026-11-01"
+        },
+        "status_note": {
+          "missing": true,
+          "checked": [
+            "https://publications.tnsosfiles.com/acts/114/pub/pc0647.pdf"
+          ],
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "Texas HB 149",
+      "cells": {
+        "state": {
+          "value": "Texas",
+          "source": "https://capitol.texas.gov/tlodocs/89R/billtext/html/HB00149F.htm",
+          "kind": "first-hand",
+          "quote": "BE IT ENACTED BY THE LEGISLATURE OF THE STATE OF TEXAS",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "law": {
+          "value": "Texas Responsible Artificial Intelligence Governance Act",
+          "source": "https://capitol.texas.gov/tlodocs/89R/billtext/html/HB00149F.htm",
+          "kind": "first-hand",
+          "quote": "This Act may be cited as the Texas Responsible Artificial Intelligence Governance Act",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "subject": {
+          "value": "regulation of the use of artificial intelligence systems",
+          "source": "https://capitol.texas.gov/tlodocs/89R/billtext/html/HB00149F.htm",
+          "kind": "first-hand",
+          "quote": "AN ACT relating to regulation of the use of artificial intelligence systems in this state",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "signed": {
+          "missing": true,
+          "checked": [
+            "https://capitol.texas.gov/tlodocs/89R/billtext/html/HB00149F.htm",
+            "https://lrl.texas.gov/legis/billsearch/BillDetails.cfm?legSession=89-0&billtypeDetail=HB&billNumberDetail=149",
+            "https://capitol.texas.gov/BillLookup/History.aspx?LegSess=89R&Bill=HB149"
+          ],
+          "read": "2026-11-01"
+        },
+        "takes_effect": {
+          "value": "January 1, 2026",
+          "source": "https://capitol.texas.gov/tlodocs/89R/billtext/html/HB00149F.htm",
+          "kind": "first-hand",
+          "quote": "This Act takes effect January 1, 2026",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "covers": {
+          "value": "a person who promotes, advertises, or conducts business in this state, produces a product or service used by residents of this state, or develops or deploys an artificial intelligence system in this state",
+          "source": "https://capitol.texas.gov/tlodocs/89R/billtext/html/HB00149F.htm",
+          "kind": "first-hand",
+          "quote": "This subtitle applies only to a person who: (1) promotes, advertises, or conducts business in this state; (2) produces a product or service used by residents of this state; or (3) develops or deploys an artificial intelligence system in this state",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "enforced_by": {
+          "value": "the attorney general",
+          "source": "https://capitol.texas.gov/tlodocs/89R/billtext/html/HB00149F.htm",
+          "kind": "first-hand",
+          "quote": "The attorney general has exclusive authority to enforce this chapter",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "max_penalty": {
+          "value": "not more than $200,000 for each violation the court determines to be uncurable",
+          "source": "https://capitol.texas.gov/tlodocs/89R/billtext/html/HB00149F.htm",
+          "kind": "first-hand",
+          "quote": "for each violation the court determines to be uncurable, not less than $80,000 and not more than $200,000",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "private_suit": {
+          "value": false,
+          "source": "https://capitol.texas.gov/tlodocs/89R/billtext/html/HB00149F.htm",
+          "kind": "first-hand",
+          "quote": "This chapter does not provide a basis for, and is not subject to, a private right of action",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "status_note": {
+          "missing": true,
+          "checked": [
+            "https://capitol.texas.gov/tlodocs/89R/billtext/html/HB00149F.htm",
+            "https://statutes.capitol.texas.gov/Docs/BC/htm/BC.552.htm",
+            "https://lrl.texas.gov/legis/billsearch/BillDetails.cfm?legSession=89-0&billtypeDetail=HB&billNumberDetail=149"
+          ],
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "Utah HB 452",
+      "cells": {
+        "state": {
+          "value": "Utah",
+          "source": "https://le.utah.gov/Session/2025/bills/enrolled/HB0452.pdf",
+          "kind": "first-hand",
+          "quote": "Be it enacted by the Legislature of the state of Utah",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "law": {
+          "value": "H.B. 452 Artificial Intelligence Amendments",
+          "source": "https://governor.utah.gov/press/gov-cox-vetoes-s-b-296-and-signs-200-bills-in-the-2025-general-legislative-session/",
+          "kind": "first-hand",
+          "quote": "H.B. 452 Artificial Intelligence Amendments",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "subject": {
+          "value": "mental health chatbot",
+          "source": "https://le.utah.gov/Session/2025/bills/enrolled/HB0452.pdf",
+          "kind": "first-hand",
+          "quote": "\"Mental health chatbot\" means an artificial intelligence technology",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "signed": {
+          "value": "March 25, 2025",
+          "source": "https://governor.utah.gov/press/gov-cox-vetoes-s-b-296-and-signs-200-bills-in-the-2025-general-legislative-session/",
+          "kind": "first-hand",
+          "quote": "SALT LAKE CITY (March 25, 2025) – Today, Gov. Cox vetoed S.B. 296, Judicial Amendments and signed 200 bills",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "takes_effect": {
+          "value": "May 7, 2025",
+          "source": "https://le.utah.gov/Session/2025/bills/enrolled/HB0452.pdf",
+          "kind": "first-hand",
+          "quote": "This bill takes effect on May 7, 2025",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "covers": {
+          "value": "a supplier of a mental health chatbot",
+          "source": "https://le.utah.gov/xcode/Title13/Chapter72A/C13-72a_2025050720250507.pdf",
+          "kind": "first-hand",
+          "quote": "A supplier of a mental health chatbot may not sell to or share with any third party",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "enforced_by": {
+          "value": "the division of consumer protection",
+          "source": "https://le.utah.gov/Session/2025/bills/enrolled/HB0452.pdf",
+          "kind": "first-hand",
+          "quote": "The division shall administer and enforce the provisions of this chapter in accordance 188 with Chapter 2, Division of Consumer Protection",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "max_penalty": {
+          "value": "$5,000 for each violation of an administrative or court order",
+          "source": "https://le.utah.gov/Session/2025/bills/enrolled/HB0452.pdf",
+          "kind": "first-hand",
+          "quote": "A court may impose a civil penalty of no more than $5,000 for each violation of an 212 administrative or court order",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "private_suit": {
+          "missing": true,
+          "checked": [
+            "https://le.utah.gov/Session/2025/bills/enrolled/HB0452.pdf"
+          ],
+          "read": "2026-11-01"
+        },
+        "status_note": {
+          "value": "Amended by Chapter 95, 2026 General Session",
+          "source": "https://le.utah.gov/xcode/Title13/Chapter72A/C13-72a_2025050720250507.pdf",
+          "kind": "first-hand",
+          "quote": "Amended by Chapter 95, 2026 General Session",
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "Utah SB 149",
+      "cells": {
+        "state": {
+          "value": "Utah",
+          "source": "https://le.utah.gov/~2024/bills/sbillenr/SB0149.pdf",
+          "kind": "first-hand",
+          "quote": "Be it enacted by the Legislature of the state of Utah",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "law": {
+          "value": "Artificial Intelligence Policy Act",
+          "source": "https://le.utah.gov/~2024/bills/sbillenr/SB0149.pdf",
+          "kind": "first-hand",
+          "quote": "This bill creates the Artificial Intelligence Policy Act",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "subject": {
+          "value": "artificial intelligence in consumer transactions and regulated services",
+          "source": "https://le.utah.gov/Session/2025/bills/enrolled/SB0226.pdf",
+          "kind": "first-hand",
+          "quote": "artificial intelligence in consumer 6 transactions and regulated services",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "signed": {
+          "value": "13 Mar 2024",
+          "source": "https://le.utah.gov/~2024/bills/static/SB0149.html",
+          "kind": "first-hand",
+          "quote": "Last Action: 13 Mar 2024, Governor Signed",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "takes_effect": {
+          "value": "May 1, 2024",
+          "source": "https://le.utah.gov/~2024/bills/sbillenr/SB0149.pdf",
+          "kind": "first-hand",
+          "quote": "This bill takes effect on May 1, 2024",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "covers": {
+          "value": "a supplier that uses generative artificial intelligence",
+          "source": "https://le.utah.gov/Session/2025/bills/enrolled/SB0226.pdf",
+          "kind": "first-hand",
+          "quote": "A supplier that uses generative artificial intelligence",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "enforced_by": {
+          "value": "the division of consumer protection",
+          "source": "https://le.utah.gov/Session/2025/bills/enrolled/SB0226.pdf",
+          "kind": "first-hand",
+          "quote": "The division shall administer and enforce this chapter in accordance with Chapter 2, 136 Division of Consumer Protection",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "max_penalty": {
+          "value": "$5,000 for each violation of an administrative or court order",
+          "source": "https://le.utah.gov/Session/2025/bills/enrolled/SB0226.pdf",
+          "kind": "first-hand",
+          "quote": "A person who violates an administrative or court order issued for a violation of 161 this chapter is subject to a civil penalty of up to $5,000 for each violation",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "private_suit": {
+          "missing": true,
+          "checked": [
+            "https://le.utah.gov/Session/2025/bills/enrolled/SB0226.pdf",
+            "https://le.utah.gov/~2024/bills/sbillenr/SB0149.pdf"
+          ],
+          "read": "2026-11-01"
+        },
+        "status_note": {
+          "value": "Artificial Intelligence Policy Act is repealed July 1, 2027; this bill repeals section 13-2-12",
+          "source": "https://le.utah.gov/Session/2025/bills/enrolled/SB0226.pdf",
+          "kind": "first-hand",
+          "quote": "Artificial Intelligence Policy Act, is repealed [May 1, 2025] July 1, 182 2027. 183 Section 8. Repealer. 184 This bill repeals: 185 Section 13-2-12",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        }
+      }
+    },
+    {
+      "key": "Washington HB 1170",
+      "cells": {
+        "state": {
+          "value": "Washington",
+          "source": "https://lawfilesext.leg.wa.gov/biennium/2025-26/Pdf/Bills/Session%20Laws/House/1170-S2.SL.pdf",
+          "kind": "first-hand",
+          "quote": "BE IT ENACTED BY THE LEGISLATURE OF THE STATE OF WASHINGTON",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "law": {
+          "value": "Chapter 167, Laws of 2026",
+          "source": "https://lawfilesext.leg.wa.gov/biennium/2025-26/Pdf/Bills/Session%20Laws/House/1170-S2.SL.pdf",
+          "kind": "first-hand",
+          "quote": "ENGROSSED SECOND SUBSTITUTE HOUSE BILL 1170 Chapter 167, Laws of 2026",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "subject": {
+          "value": "artificial intelligence-disclosures-content provenance",
+          "source": "https://lawfilesext.leg.wa.gov/biennium/2025-26/Pdf/Bills/Session%20Laws/House/1170-S2.SL.pdf",
+          "kind": "first-hand",
+          "quote": "ARTIFICIAL INTELLIGENCE—DISCLOSURES—CONTENT PROVENANCE",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "signed": {
+          "value": "March 24, 2026",
+          "source": "https://lawfilesext.leg.wa.gov/biennium/2025-26/Pdf/Bills/Session%20Laws/House/1170-S2.SL.pdf",
+          "kind": "first-hand",
+          "quote": "Approved March 24, 2026 10:04 AM",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "takes_effect": {
+          "value": "February 1, 2027",
+          "source": "https://lawfilesext.leg.wa.gov/biennium/2025-26/Pdf/Bills/Session%20Laws/House/1170-S2.SL.pdf",
+          "kind": "first-hand",
+          "quote": "This act takes effect February 1, 2027",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "covers": {
+          "value": "a person or entity that creates, codes, or otherwise produces a generative artificial intelligence system that has over 1,000,000 monthly users",
+          "source": "https://lawfilesext.leg.wa.gov/biennium/2025-26/Pdf/Bills/Session%20Laws/House/1170-S2.SL.pdf",
+          "kind": "first-hand",
+          "quote": "\"Covered provider\" means a person or entity that creates,15 codes, or otherwise produces a generative artificial intelligence16 system that has over 1,000,000 monthly users",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "enforced_by": {
+          "value": "the attorney general",
+          "source": "https://lawfilesext.leg.wa.gov/biennium/2025-26/Pdf/Bills/Session%20Laws/House/1170-S2.SL.pdf",
+          "kind": "first-hand",
+          "quote": "The attorney general may bring an action in the name of the8 state",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "max_penalty": {
+          "missing": true,
+          "checked": [
+            "https://lawfilesext.leg.wa.gov/biennium/2025-26/Pdf/Bills/Session%20Laws/House/1170-S2.SL.pdf"
+          ],
+          "read": "2026-11-01"
+        },
+        "private_suit": {
+          "missing": true,
+          "checked": [
+            "https://lawfilesext.leg.wa.gov/biennium/2025-26/Pdf/Bills/Session%20Laws/House/1170-S2.SL.pdf"
+          ],
+          "read": "2026-11-01"
+        },
+        "status_note": {
+          "missing": true,
+          "checked": [
+            "https://lawfilesext.leg.wa.gov/biennium/2025-26/Pdf/Bills/Session%20Laws/House/1170-S2.SL.pdf"
+          ],
+          "read": "2026-11-01"
+        }
+      }
+    },
+    {
+      "key": "Washington HB 2225",
+      "cells": {
+        "state": {
+          "value": "Washington",
+          "source": "https://lawfilesext.leg.wa.gov/biennium/2025-26/Pdf/Bills/Session%20Laws/House/2225-S.SL.pdf",
+          "kind": "first-hand",
+          "quote": "BE IT ENACTED BY THE LEGISLATURE OF THE STATE OF WASHINGTON",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "law": {
+          "value": "Chapter 168, Laws of 2026",
+          "source": "https://lawfilesext.leg.wa.gov/biennium/2025-26/Pdf/Bills/Session%20Laws/House/2225-S.SL.pdf",
+          "kind": "first-hand",
+          "quote": "ENGROSSED SUBSTITUTE HOUSE BILL 2225 Chapter 168, Laws of 2026",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "subject": {
+          "value": "artificial intelligence companion chatbots",
+          "source": "https://lawfilesext.leg.wa.gov/biennium/2025-26/Pdf/Bills/Session%20Laws/House/2225-S.SL.pdf",
+          "kind": "first-hand",
+          "quote": "ARTIFICIAL INTELLIGENCE COMPANION CHATBOTS EFFECTIVE DATE: January 1, 2027",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "signed": {
+          "value": "March 24, 2026",
+          "source": "https://lawfilesext.leg.wa.gov/biennium/2025-26/Pdf/Bills/Session%20Laws/House/2225-S.SL.pdf",
+          "kind": "first-hand",
+          "quote": "Approved March 24, 2026 10:08 AM",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "takes_effect": {
+          "value": "January 1, 2027",
+          "source": "https://lawfilesext.leg.wa.gov/biennium/2025-26/Pdf/Bills/Session%20Laws/House/2225-S.SL.pdf",
+          "kind": "first-hand",
+          "quote": "This act takes effect January 1, 2027",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "covers": {
+          "value": "any person, partnership, corporation, or entity that makes available or controls access to an AI companion chatbot for users in this state",
+          "source": "https://lawfilesext.leg.wa.gov/biennium/2025-26/Pdf/Bills/Session%20Laws/House/2225-S.SL.pdf",
+          "kind": "first-hand",
+          "quote": "\"Operator\" means any person, partnership, corporation, or19 entity that makes available or controls access to an AI companion20 chatbot for users in this state",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "enforced_by": {
+          "value": "consumer protection act, chapter 19.86 RCW",
+          "source": "https://lawfilesext.leg.wa.gov/biennium/2025-26/Pdf/Bills/Session%20Laws/House/2225-S.SL.pdf",
+          "kind": "first-hand",
+          "quote": "an24 unfair or deceptive act in trade or commerce and an unfair method of25 competition for the purpose of applying the consumer protection act,26 chapter 19.86 RCW",
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
+        },
+        "max_penalty": {
+          "missing": true,
+          "checked": [
+            "https://lawfilesext.leg.wa.gov/biennium/2025-26/Pdf/Bills/Session%20Laws/House/2225-S.SL.pdf"
+          ],
+          "read": "2026-11-01"
+        },
+        "private_suit": {
+          "missing": true,
+          "checked": [
+            "https://lawfilesext.leg.wa.gov/biennium/2025-26/Pdf/Bills/Session%20Laws/House/2225-S.SL.pdf"
+          ],
+          "read": "2026-11-01"
+        },
+        "status_note": {
+          "missing": true,
+          "checked": [
+            "https://lawfilesext.leg.wa.gov/biennium/2025-26/Pdf/Bills/Session%20Laws/House/2225-S.SL.pdf"
+          ],
+          "read": "2026-11-01"
+        }
+      }
+    }
+  ]
+}

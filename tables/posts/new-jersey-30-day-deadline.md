@@ -6,7 +6,7 @@ draft: true
 ---
 If you search for New Jersey's data breach deadline, you'll find a confident answer: 30 days.
 
-[One guide](https://www.darkwebiq.com/breach-laws/new-jersey) says "New Jersey has a 30-day hard deadline for breach notification." [Another](https://cyberriskpolicy.com/data-breach-notification-laws), marked "Statutes as of early 2026", lists 30 days in its table.
+One guide says "New Jersey has a 30-day hard deadline for breach notification." Another, marked "Statutes as of early 2026", lists 30 days in its table.
 
 We went looking for those words in New Jersey's own law. Here's what it says:
 
@@ -16,7 +16,7 @@ There's no number. [Two](https://pub.njleg.gov/Bills/2026/A2000/1852_I1.HTM) [bi
 
 ## Where it may have come from
 
-We can't say for certain. But [RecordingLaw's page on the same law](https://www.recordinglaw.com/us-laws/data-privacy-laws/new-jersey-data-privacy-laws/data-breach-notification/) has an unusually honest note. Its August 2026 update says: "Removed a fabricated 30-day/7-day breach notification deadline that does not appear in current New Jersey law."
+We can't say for certain. But one site's page on the same law has an unusually honest note. Its August 2026 update says: "Removed a fabricated 30-day/7-day breach notification deadline that does not appear in current New Jersey law."
 
 A bad number that gets written down once is easy to copy, and a summary of a summary looks just as confident as the law. Pages can cite each other until a mistake feels like a fact.
 

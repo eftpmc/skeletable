@@ -68,56 +68,64 @@
           "source": "https://acua.alabama.gov/PDF/law/AlabamaDataBreachNotificationAct.pdf",
           "kind": "first-hand",
           "quote": "Section 8-38-5 Notice of Security Breach",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_days": {
           "value": 45,
           "source": "https://acua.alabama.gov/PDF/law/AlabamaDataBreachNotificationAct.pdf",
           "kind": "first-hand",
           "quote": "shall provide notice within 45 days",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_standard": {
           "value": "as expeditiously as possible and without unreasonable delay",
           "source": "https://acua.alabama.gov/PDF/law/AlabamaDataBreachNotificationAct.pdf",
           "kind": "first-hand",
           "quote": "shall be made as expeditiously as possible and without unreasonable delay",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "ag_notice": {
           "value": true,
           "source": "https://acua.alabama.gov/PDF/law/AlabamaDataBreachNotificationAct.pdf",
           "kind": "first-hand",
           "quote": "the entity shall provide written notice of the breach to the Attorney General",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "ag_threshold": {
           "value": 1000,
           "source": "https://acua.alabama.gov/PDF/law/AlabamaDataBreachNotificationAct.pdf",
           "kind": "first-hand",
           "quote": "is required to notify under Section 8-38-5 exceeds 1,000",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "ag_days": {
           "value": 45,
           "source": "https://acua.alabama.gov/PDF/law/AlabamaDataBreachNotificationAct.pdf",
           "kind": "first-hand",
           "quote": "shall provide the notice within 45 days",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "encrypted_exempt": {
           "value": true,
           "source": "https://acua.alabama.gov/PDF/law/AlabamaDataBreachNotificationAct.pdf",
           "kind": "first-hand",
           "quote": "Information that is truncated, encrypted, secured, or modified by any other method",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "harm_exception": {
           "value": true,
           "source": "https://acua.alabama.gov/PDF/law/AlabamaDataBreachNotificationAct.pdf",
           "kind": "first-hand",
           "quote": "is reasonably likely to cause substantial harm to the individuals to whom the information relates, shall give notice",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         }
       }
     },
@@ -413,56 +421,64 @@
           "source": "https://leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf",
           "kind": "first-hand",
           "quote": "6-1-716. notification of security breach",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_days": {
           "value": 30,
           "source": "https://leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf",
           "kind": "first-hand",
           "quote": "not later than thirty days after the date of determination that a security breach occurred",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_standard": {
           "value": "in the most expedient time possible and without unreasonable delay",
           "source": "https://leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf",
           "kind": "first-hand",
           "quote": "notice must be made in the most expedient time possible and without unreasonable delay",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "ag_notice": {
           "value": true,
           "source": "https://leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf",
           "kind": "first-hand",
           "quote": "shall provide notice of any security breach to the colorado attorney general",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "ag_threshold": {
           "value": 500,
           "source": "https://leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf",
           "kind": "first-hand",
           "quote": "reasonably believed to have affected five hundred colorado residents or more",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "ag_days": {
           "value": 30,
           "source": "https://leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf",
           "kind": "first-hand",
           "quote": "but not later than thirty days after the date of determination that a security breach occurred, if the security breach is reasonably believed",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "encrypted_exempt": {
           "value": true,
           "source": "https://leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf",
           "kind": "first-hand",
           "quote": "the unauthorized acquisition of unencrypted computerized data",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "harm_exception": {
           "value": true,
           "source": "https://leg.colorado.gov/sites/default/files/images/olls/crs2024-title-06.pdf",
           "kind": "first-hand",
           "quote": "unless the investigation determines that the misuse of information about a colorado resident has not occurred and is not reasonably likely to occur",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         }
       }
     },
@@ -1021,42 +1037,48 @@
           "source": "https://iga.in.gov/ic/2026/Title_24/Article_4.9.pdf",
           "kind": "first-hand",
           "quote": "IC 24-4.9-3-1",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_days": {
           "value": 45,
           "source": "https://iga.in.gov/ic/2026/Title_24/Article_4.9.pdf",
           "kind": "first-hand",
           "quote": "not more than forty-five (45) days after the discovery of the breach",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_standard": {
           "value": "without unreasonable delay",
           "source": "https://iga.in.gov/ic/2026/Title_24/Article_4.9.pdf",
           "kind": "first-hand",
           "quote": "shall make the disclosure or notification without unreasonable delay",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "ag_notice": {
           "value": true,
           "source": "https://iga.in.gov/ic/2026/Title_24/Article_4.9.pdf",
           "kind": "first-hand",
           "quote": "the data base owner shall also disclose the breach to the attorney general",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "encrypted_exempt": {
           "value": true,
           "source": "https://iga.in.gov/ic/2026/Title_24/Article_4.9.pdf",
           "kind": "first-hand",
           "quote": "encrypted personal information was or may have been acquired by an unauthorized person with access to the encryption key",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "harm_exception": {
           "value": true,
           "source": "https://iga.in.gov/ic/2026/Title_24/Article_4.9.pdf",
           "kind": "first-hand",
           "quote": "has resulted in or could result in identity deception",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "ag_threshold": {
           "missing": true,
@@ -1084,49 +1106,56 @@
           "source": "https://www.legis.iowa.gov/docs/code/715C.2.pdf",
           "kind": "first-hand",
           "quote": "715c.2",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_standard": {
           "value": "in the most expeditious manner possible and without unreasonable delay",
           "source": "https://www.legis.iowa.gov/docs/code/715C.2.pdf",
           "kind": "first-hand",
           "quote": "shall be made in the most expeditious manner possible and without unreasonable delay",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "ag_notice": {
           "value": true,
           "source": "https://www.legis.iowa.gov/docs/code/715C.2.pdf",
           "kind": "first-hand",
           "quote": "to the director of the consumer protection division of the office of the attorney general",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "ag_threshold": {
           "value": 500,
           "source": "https://www.legis.iowa.gov/docs/code/715C.2.pdf",
           "kind": "first-hand",
           "quote": "more than five hundred residents of this state",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "ag_days": {
           "value": 5,
           "source": "https://www.legis.iowa.gov/docs/code/715C.2.pdf",
           "kind": "first-hand",
           "quote": "within five business days after giving notice of the breach of security to any consumer",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "encrypted_exempt": {
           "value": true,
           "source": "https://www.legis.iowa.gov/docs/code/715C.1.pdf",
           "kind": "first-hand",
           "quote": "if any of the data elements are not encrypted, redacted",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "harm_exception": {
           "value": true,
           "source": "https://www.legis.iowa.gov/docs/code/715C.2.pdf",
           "kind": "first-hand",
           "quote": "no reasonable likelihood of financial harm to the consumers",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_days": {
           "missing": true,
@@ -1214,28 +1243,32 @@
           "source": "https://apps.legislature.ky.gov/law/statutes/statute.aspx?id=43326",
           "kind": "first-hand",
           "quote": "365.732",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_standard": {
           "value": "in the most expedient time possible and without unreasonable delay",
           "source": "https://apps.legislature.ky.gov/law/statutes/statute.aspx?id=43326",
           "kind": "first-hand",
           "quote": "shall be made in the most expedient time possible and without unreasonable delay",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "encrypted_exempt": {
           "value": true,
           "source": "https://apps.legislature.ky.gov/law/statutes/statute.aspx?id=43326",
           "kind": "first-hand",
           "quote": "unauthorized acquisition of unencrypted and unredacted computerized data",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "harm_exception": {
           "value": true,
           "source": "https://apps.legislature.ky.gov/law/statutes/statute.aspx?id=43326",
           "kind": "first-hand",
           "quote": "leads the information holder to reasonably believe has caused or will cause",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_days": {
           "missing": true,
@@ -2167,49 +2200,56 @@
           "source": "https://www.nmlegis.gov/Sessions/17%20Regular/final/HB0015.pdf",
           "kind": "first-hand",
           "quote": "the Data Breach Notification Act",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_days": {
           "value": 45,
           "source": "https://www.nmlegis.gov/Sessions/17%20Regular/final/HB0015.pdf",
           "kind": "first-hand",
           "quote": "not later than forty-five calendar days following discovery of the security breach",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_standard": {
           "value": "most expedient time possible",
           "source": "https://www.nmlegis.gov/Sessions/17%20Regular/final/HB0015.pdf",
           "kind": "first-hand",
           "quote": "shall be made in the most expedient time possible",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "ag_notice": {
           "value": true,
           "source": "https://www.nmlegis.gov/Sessions/17%20Regular/final/HB0015.pdf",
           "kind": "first-hand",
           "quote": "shall notify the office of the attorney general",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "ag_threshold": {
           "value": 1000,
           "source": "https://www.nmlegis.gov/Sessions/17%20Regular/final/HB0015.pdf",
           "kind": "first-hand",
           "quote": "to more than one thousand New Mexico residents",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "encrypted_exempt": {
           "value": true,
           "source": "https://www.nmlegis.gov/Sessions/17%20Regular/final/HB0015.pdf",
           "kind": "first-hand",
           "quote": "the unauthorized acquisition of unencrypted computerized data",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "harm_exception": {
           "value": true,
           "source": "https://www.nmlegis.gov/Sessions/17%20Regular/final/HB0015.pdf",
           "kind": "first-hand",
           "quote": "does not give rise to a significant risk of identity theft or fraud",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "ag_days": {
           "missing": true,
@@ -2228,28 +2268,32 @@
           "source": "https://legislation.nysenate.gov/pdf/bills/2023/S2659B",
           "kind": "first-hand",
           "quote": "section 899-aa of the general business law",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_days": {
           "value": 30,
           "source": "https://legislation.nysenate.gov/pdf/bills/2023/S2659B",
           "kind": "first-hand",
           "quote": "within thirty days after the breach has been discovered",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_standard": {
           "value": "most expedient time possible",
           "source": "https://legislation.nysenate.gov/pdf/bills/2023/S2659B",
           "kind": "first-hand",
           "quote": "be made in the most expedient time possible",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "ag_notice": {
           "value": true,
           "source": "https://legislation.nysenate.gov/pdf/bills/2023/S2659B",
           "kind": "first-hand",
           "quote": "person or business shall notify the state attorney general",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "ag_threshold": {
           "missing": true,
@@ -2293,35 +2337,40 @@
           "source": "https://www.ncleg.gov/EnactedLegislation/Statutes/PDF/BySection/Chapter_75/GS_75-65.pdf",
           "kind": "first-hand",
           "quote": "75-65",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_standard": {
           "value": "without unreasonable delay",
           "source": "https://www.ncleg.gov/EnactedLegislation/Statutes/PDF/BySection/Chapter_75/GS_75-65.pdf",
           "kind": "first-hand",
           "quote": "the disclosure notification shall be made without unreasonable delay",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "ag_notice": {
           "value": true,
           "source": "https://www.ncleg.gov/EnactedLegislation/Statutes/PDF/BySection/Chapter_75/GS_75-65.pdf",
           "kind": "first-hand",
           "quote": "shall notify without unreasonable delay the consumer protection division of the attorney general's office",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "encrypted_exempt": {
           "value": true,
           "source": "https://www.ncleg.gov/EnactedLegislation/Statutes/PDF/BySection/Chapter_75/GS_75-61.pdf",
           "kind": "first-hand",
           "quote": "unauthorized access to and acquisition of unencrypted and unredacted records",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "harm_exception": {
           "value": true,
           "source": "https://www.ncleg.gov/EnactedLegislation/Statutes/PDF/BySection/Chapter_75/GS_75-61.pdf",
           "kind": "first-hand",
           "quote": "creates a material risk of harm to a consumer",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_days": {
           "missing": true,
@@ -2354,35 +2403,40 @@
           "source": "https://ndlegis.gov/cencode/t51c30.pdf",
           "kind": "first-hand",
           "quote": "51-30-02",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_standard": {
           "value": "in the most expedient time possible and without unreasonable delay",
           "source": "https://ndlegis.gov/cencode/t51c30.pdf",
           "kind": "first-hand",
           "quote": "The disclosure must be made in the most expedient time possible and without unreasonable delay",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "ag_notice": {
           "value": true,
           "source": "https://ndlegis.gov/cencode/t51c30.pdf",
           "kind": "first-hand",
           "quote": "shall disclose to the attorney general by mail or electronic mail",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "ag_threshold": {
           "value": 250,
           "source": "https://ndlegis.gov/cencode/t51c30.pdf",
           "kind": "first-hand",
           "quote": "exceeds two hundred fifty individuals",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "encrypted_exempt": {
           "value": true,
           "source": "https://ndlegis.gov/cencode/t51c30.pdf",
           "kind": "first-hand",
           "quote": "has not been secured by encryption",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_days": {
           "missing": true,
@@ -2887,21 +2941,24 @@
           "source": "https://publications.tnsosfiles.com/acts/110/pub/pc0091.pdf",
           "kind": "first-hand",
           "quote": "Section 47-18-2107",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_days": {
           "value": 45,
           "source": "https://publications.tnsosfiles.com/acts/110/pub/pc0091.pdf",
           "kind": "first-hand",
           "quote": "no later than forty-five (45) days from the discovery or notification of the breach of system security",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "encrypted_exempt": {
           "value": true,
           "source": "https://publications.tnsosfiles.com/acts/110/pub/pc0091.pdf",
           "kind": "first-hand",
           "quote": "Unencrypted computerized data",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_standard": {
           "missing": true,
@@ -2972,21 +3029,24 @@
           "source": "https://www.texasattorneygeneral.gov/consumer-protection/data-breach-reporting",
           "kind": "first-hand",
           "quote": "to report that breach to the office of the texas attorney general",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "ag_threshold": {
           "value": 250,
           "source": "https://www.texasattorneygeneral.gov/consumer-protection/data-breach-reporting",
           "kind": "first-hand",
           "quote": "that affects 250 or more texans",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "ag_days": {
           "value": 30,
           "source": "https://www.texasattorneygeneral.gov/consumer-protection/data-breach-reporting",
           "kind": "first-hand",
           "quote": "no later than 30 days after the discovery of the breach",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "encrypted_exempt": {
           "missing": true,
@@ -3417,21 +3477,24 @@
           "source": "https://wyoleg.gov/statutes/compress/title40.pdf",
           "kind": "first-hand",
           "quote": "40-12-502. Computer security breach",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_standard": {
           "value": "in the most expedient time possible and without unreasonable delay",
           "source": "https://wyoleg.gov/statutes/compress/title40.pdf",
           "kind": "first-hand",
           "quote": "Notice shall be made in the most expedient time possible and without unreasonable delay",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "harm_exception": {
           "value": true,
           "source": "https://wyoleg.gov/statutes/compress/title40.pdf",
           "kind": "first-hand",
           "quote": "If the investigation determines that the misuse of personal identifying information about a Wyoming resident has occurred or is reasonably likely to occur",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_days": {
           "missing": true,

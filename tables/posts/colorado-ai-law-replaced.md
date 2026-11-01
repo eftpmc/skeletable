@@ -10,16 +10,16 @@ That's a big change, and it's easy to check. It's also a good test of AI law tra
 
 ## What we found
 
-[One tracker](https://presenc.ai/research/us-state-ai-laws-tracker-2026), marked "Last updated: June 2026", lists the law as "Enacted, in force Feb 2026". That's after the replacement was signed.
+One tracker, marked "Last updated: June 2026", lists the law as "Enacted, in force Feb 2026". That's after the replacement was signed.
 
-[Another guide](https://www.layer3labs.io/guides/state-ai-laws-by-state), marked "Updated Oct 9, 2026", gives the most recent status as "enforcement paused April 27, 2026" and expects amendments "before June 30, 2026". That date had passed months before the page's own update date.
+Another guide, marked "Updated Oct 9, 2026", gives the most recent status as "enforcement paused April 27, 2026" and expects amendments "before June 30, 2026". That date had passed months before the page's own update date.
 
-Others got it right. [AI Compliance Atlas](https://aicomplianceatlas.com/guides/us-state-ai-regulation-overview) reports that SB 26-189 became law on May 14, 2026.
+Others got it right, so the change was there to find.
 
 ## An updated date isn't proof
 
 None of this is a surprise to anyone who maintains this kind of page. Laws change faster than articles, and a date at the top of a page tells you when someone last saved it, not that every line was rechecked.
 
-That's the reason Skeletable shows when each value was read, and links to the exact words behind it. A date on a single value means something a date on a page can't.
+That's the reason Skeletable shows when each value was read, and links to the exact words behind it. A date on a single value means something a date on a page can't. Our [state AI laws table](/skeletable/state-ai-laws) works the same way.
 
 This isn't legal advice. Colorado's rules are still moving, so check the source.

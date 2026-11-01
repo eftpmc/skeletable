@@ -54,6 +54,7 @@ A deploy gives a table the live server already has its new rows and scope. A cel
 | 5 | Home batteries: capacity and warranty | Home energy | Built and checked |
 | 6 | Password managers: plans and prices | Software | Deferred: two of four makers show no prices to our reader |
 | 7 | Right-to-repair laws by US state | Law | Built, check incomplete |
-| 8 | Data breach notification laws by US state | Law | All 51 rows built, checked and rechecked, 185 values blind read, 4 rows blank |
+| 8 | Data breach notification laws by US state | Law | All 51 rows built, checked and rechecked, 248 values blind read, 4 rows blank |
 | 9 | Entrance fees at the most visited US national parks | Travel | Built, read once |
 | 10 | EVs on sale in the US: EPA range | Cars | Deferred |
+| 11 | State AI laws: enacted, with proof | Law | First 22 laws built, 159 values blind read, more laws to add |
