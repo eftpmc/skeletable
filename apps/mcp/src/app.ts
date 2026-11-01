@@ -4,12 +4,14 @@ import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono, type Context } from "hono";
 import { canRead, everyone, readable, viewerFor } from "./access.js";
 import { authRoutes, sessionViewer, type AuthConfig } from "./auth.js";
+import { dataRoutes } from "./data.js";
 import { checkCounts, searchTables, summarize, type PublishedTable } from "./library.js";
 import { notifyOwners } from "./email.js";
 import { handleMcp, type Propose } from "./mcp.js";
 import { pageRoutes } from "./pages.js";
 import { submitProposal, tokenUser } from "./proposals.js";
 import { rateLimit } from "./rate-limit.js";
+import { visitNames } from "./visits.js";
 
 // Generous for a person or an agent reading tables, and a brake on anything hammering the server.
 const MCP_PER_MINUTE = 120;
@@ -29,8 +31,7 @@ export function createApp(tables: PublishedTable[], webDir?: string, auth?: Auth
   if (auth) {
     // Counts only, with no address or identity, so we can see if anyone's here.
     app.use("*", async (c, next) => {
-      const name = c.req.path === "/mcp" ? "mcp" : c.req.path.startsWith("/api/") || c.req.path.startsWith("/assets/") || c.req.path === "/health" ? null : "page";
-      if (name) {
+      for (const name of visitNames(c.req.path, c.req.header("user-agent"), c.req.header("referer"))) {
         auth.sql`insert into daily_counts (day, name, count) values (current_date, ${name}, 1) on conflict (day, name) do update set count = daily_counts.count + 1`.catch(() => {});
       }
       await next();
@@ -66,6 +67,7 @@ export function createApp(tables: PublishedTable[], webDir?: string, auth?: Auth
     return table && canRead(table, await viewerOf(c)) ? c.json(table) : c.json({ error: "No such table" }, 404);
   });
   app.all("/api/*", (c) => c.json({ error: "Not found" }, 404));
+  dataRoutes(app, tables, auth?.publicUrl ?? "https://skeletable.com");
   if (webDir && existsSync(join(resolve(webDir), "index.html"))) {
     const root = resolve(webDir);
     app.get("/assets/*", serveStatic({ root }));

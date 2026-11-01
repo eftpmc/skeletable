@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useJson, useMe } from "@/lib/api";
-import { accountName, day, host, ownerLabel } from "@/lib/cells";
+import { accountName, day, host, ownerLabel, rowPath } from "@/lib/cells";
 import { statusCounts, statuses, type CellStatus, type PublishedTable } from "@/lib/status";
 import { Grid } from "@/pages/Sheet";
 import { Activity, AllChanges, AllProposals } from "@/pages/TableActivity";
@@ -119,7 +119,7 @@ function Overview({ table, canDecide }: { table: PublishedTable; canDecide: bool
   return (
     <div className="space-y-8">
       <section className="flex flex-col overflow-hidden rounded-xl border shadow-sm">
-        <Grid table={{ ...table, rows: table.rows.slice(0, PREVIEW_ROWS) }} selectedId={null} select={(id) => id && navigate(`${sheet}?cell=${id}`)} emptyRows={0} />
+        <Grid table={{ ...table, rows: table.rows.slice(0, PREVIEW_ROWS) }} selectedId={null} select={(id) => id && navigate(`${sheet}?cell=${id}`)} emptyRows={0} rowHref={(key) => rowPath(table, key)} />
         <Link href={sheet} className="flex items-center justify-between gap-3 bg-muted px-3 py-2 text-sm transition-colors hover:bg-accent">
           <span className="min-w-0 truncate text-muted-foreground">{table.rows.length > PREVIEW_ROWS ? `Showing ${PREVIEW_ROWS} of ${table.rows.length} rows` : "Select any value to see its proof"}</span>
           <span className="flex shrink-0 items-center gap-1 font-medium">Open full sheet<ArrowRight className="size-3.5" /></span>

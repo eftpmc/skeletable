@@ -1,4 +1,5 @@
 import type { Context, Hono } from "hono";
+import { slugOfRow } from "@skeleton/tables/share";
 import { z } from "zod";
 import { MAX_COLUMNS, columnBody, emptyCell, isOwner, runsTable, slugOf, type SignedIn } from "./accounts.js";
 import type { Sql } from "./db.js";
@@ -109,7 +110,8 @@ export function manageRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sign
     if (key === to) return c.json({ ok: true });
     const [taken] = await sql`select 1 from table_rows where table_id = ${found.id} and key = ${to}`;
     if (taken) return c.json({ error: "A row has had that name already." }, 409);
-    await sql`update table_rows set key = ${to} where table_id = ${found.id} and key = ${key} and removed_at is null`;
+    // The old address stays with the row, so links to it keep working.
+    await sql`update table_rows set key = ${to}, former_slugs = array_append(former_slugs, ${slugOfRow(key)}) where table_id = ${found.id} and key = ${key} and removed_at is null`;
     return finish(c);
   });
 

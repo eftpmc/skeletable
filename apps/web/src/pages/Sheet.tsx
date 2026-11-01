@@ -1,5 +1,5 @@
 import type { Cell, Column, FoundCell } from "@skeleton/tables/format";
-import { ArrowDown, ArrowUp, ExternalLink, Info, Lock, Pencil, Plus, ScanLine, Search } from "lucide-react";
+import { ArrowDown, ArrowUp, Info, Lock, Pencil, Plus, ScanLine, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent, type PointerEvent, type ReactNode, type RefObject } from "react";
 import { toast } from "sonner";
 import { Link, useLocation, useSearch } from "wouter";
@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { DownloadButton } from "@/components/Download";
 import { FilterButton } from "@/components/Filter";
 import { NoTable } from "@/components/NoTable";
+import { Quote, SourceLink, StatusBadge, kindLabels } from "@/components/Proof";
 import { ShareButton } from "@/components/Share";
 import { AppBar } from "@/components/Shell";
 import { Shortcuts } from "@/components/Shortcuts";
@@ -17,42 +18,17 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Skeleton } from "@/components/ui/skeleton";
 import { signInHref } from "@/lib/account";
 import { postJson, useJson, useMe } from "@/lib/api";
-import { accountName, cellId, day, display, host, ownerLabel, place, splitQuote } from "@/lib/cells";
+import { accountName, cellId, day, display, host, ownerLabel, place } from "@/lib/cells";
 import { copyText } from "@/lib/copy";
+import { rowPath } from "@/lib/cells";
 import { NAME_COLUMN, filteredRows, matchingRows, nextSort, readView, sortedRows, viewSearch, type SheetFilters, type SheetSort, type SheetView } from "@/lib/sheet";
 import { cellStatus, statusCounts, statuses, type CellStatus, type PublishedTable } from "@/lib/status";
 import { Message } from "@/pages/Message";
-
-const kindLabels: Record<FoundCell["kind"], string> = {
-  "first-hand": "First-hand",
-  archived: "Archived copy",
-  "second-hand": "Second-hand",
-};
 
 const isFound = (cell: Cell): cell is FoundCell => !("missing" in cell);
 
 /** Empty rows carry the grid down the page, as in a spreadsheet. */
 const fullHeightRows = 30;
-
-const SourceLink = ({ url, label }: { url: string; label: string }) => (
-  <Button variant="outline" size="xs" className="max-w-full" asChild>
-    <a href={url} target="_blank" rel="noopener noreferrer">
-      <span className="truncate">{label}</span>
-      <ExternalLink />
-    </a>
-  </Button>
-);
-
-function Quote({ cell }: { cell: FoundCell }) {
-  const [before, match, after] = splitQuote(cell.value, cell.quote);
-  return (
-    <p className="break-words text-muted-foreground">
-      {before}
-      {match && <mark className="rounded-sm bg-brand/25 px-0.5 font-medium text-foreground">{match}</mark>}
-      {after}
-    </p>
-  );
-}
 
 export type Selected = { rowKey: string; column: Column; cell: Cell; status?: CellStatus };
 
@@ -99,16 +75,6 @@ function SuggestForm({ table, selected, canEdit, onDone }: { table: PublishedTab
         {error && <span role="alert" className="text-xs text-destructive">{error}</span>}
       </div>
     </form>
-  );
-}
-
-function StatusBadge({ status }: { status: CellStatus }) {
-  const { label, detail, icon: Icon } = statuses[status];
-  return (
-    <Badge variant="outline" title={detail}>
-      <Icon />
-      {label}
-    </Badge>
   );
 }
 
@@ -282,6 +248,7 @@ type GridProps = {
   widths?: Record<string, number>;
   onResize?: (column: string, width: number) => void;
   onCopy?: (text: string) => void;
+  rowHref?: (key: string) => string;
 };
 
 const MIN_COLUMN_WIDTH = 64;
@@ -316,7 +283,7 @@ function HeaderContent({ column, label, sort, onSort, onResize }: { column: stri
   );
 }
 
-export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - table.rows.length, focusOnLoad = true, xray = false, sort, onSort, widths, onResize, onCopy }: GridProps) {
+export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - table.rows.length, focusOnLoad = true, xray = false, sort, onSort, widths, onResize, onCopy, rowHref }: GridProps) {
   const grid = useRef<HTMLTableElement>(null);
   const focused = useRef(focusOnLoad ? null : selectedId);
 
@@ -372,7 +339,9 @@ export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - t
           {table.rows.map((row, rowIndex) => (
             <tr key={row.key}>
               <td className={`${edge} ${frozen} left-0 text-center text-xs text-muted-foreground transition-colors ${header(rowIndex === activeRow)}`}>{rowIndex + 1}</td>
-              <th scope="row" className={`${edge} sticky left-10 z-10 max-w-28 bg-background px-2 py-1 text-left font-medium sm:max-w-none sm:whitespace-nowrap`}>{row.key}</th>
+              <th scope="row" className={`${edge} sticky left-10 z-10 max-w-28 bg-background px-2 py-1 text-left font-medium sm:max-w-none sm:whitespace-nowrap`}>
+                {rowHref ? <Link href={rowHref(row.key)} className="hover:underline">{row.key}</Link> : row.key}
+              </th>
               {table.columns.map((column, columnIndex) => {
                 const cell = row.cells[column.id]!;
                 const id = cellId(row.key, column.id);
@@ -488,6 +457,7 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
             widths={widths}
             onResize={(column, width) => setWidths((current) => ({ ...current, [column]: width }))}
             onCopy={(text) => void copyText(text)}
+            rowHref={(key) => rowPath(data, key)}
           />
           <StatusBar table={data} xray={xray} onXray={() => setXray(!xray)} onChanged={retry} find={find} onFind={(next) => show({ find: next })} findInput={findInput} filters={filters} onFilters={(next) => show({ filters: next })} filtering={filtering} onFiltering={setFiltering} shown={shown.rows.length} />
         </>

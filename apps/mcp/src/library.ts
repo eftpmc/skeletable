@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { isFound, normalize, validateTable, watchFileSchema, watchKey, type Cell, type Table, type WatchFile } from "@skeleton/tables/format";
 
 /** A table as served, with what the last watch saw, if it's been watched, and its team's name if a team runs it. A private one must only go out through the rule in access.ts. */
-export type PublishedTable = Table & { watch?: WatchFile; ownerName?: string; private?: boolean; managed?: boolean };
+export type PublishedTable = Table & { watch?: WatchFile; ownerName?: string; private?: boolean; managed?: boolean; moved?: Record<string, string> };
 
 /** Every published table, read once at start. A table that doesn't pass its checks stops the server rather than going out unchecked. */
 export async function loadTables(dir: string): Promise<PublishedTable[]> {
@@ -27,7 +27,7 @@ function noWatchYet(error: NodeJS.ErrnoException) {
 const cells = (table: Table) => table.rows.flatMap((row) => Object.values(row.cells));
 
 /** The newest day any cell in the table was read. */
-const lastRead = (table: Table) => cells(table).reduce((latest, cell) => (cell.read > latest ? cell.read : latest), "");
+export const lastRead = (table: Table) => cells(table).reduce((latest, cell) => (cell.read > latest ? cell.read : latest), "");
 
 /** What a reader needs to choose a table, without its rows. */
 export function summarize(table: PublishedTable) {

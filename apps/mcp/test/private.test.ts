@@ -68,7 +68,7 @@ describe.skipIf(!url)("private tables", () => {
 
   /** Everything that can read a table, as this person sees it. */
   const sweep = async (headers: Headers, token?: string) => {
-    const addresses = ["/api/tables", `/api/tables?q=${SECRET}`, `/api/tables/${path}`, `/api/tables/${path}/history`, `/api/tables/${path}/proposals`, "/sitemap.xml", `/${path}`, `/${path}/sheet`, "/pat", "/health"];
+    const addresses = ["/api/tables", `/api/tables?q=${SECRET}`, `/api/tables/${path}`, `/api/tables/${path}/history`, `/api/tables/${path}/proposals`, "/sitemap.xml", "/llms.txt", `/data/${path}.json`, `/data/${path}.csv`, `/og/${path}.png`, `/${path}`, `/${path}/sheet`, `/${path}/row/row-${SECRET}`, "/pat", "/health"];
     const answers = await Promise.all(addresses.map(async (address) => [address, await (await app.request(address, { headers })).text()] as const));
     const tools = await Promise.all([
       mcp("list_tables", {}, token),
@@ -81,7 +81,8 @@ describe.skipIf(!url)("private tables", () => {
   };
 
   const leaks = (answers: (readonly [string, string])[]) =>
-    answers.filter(([, text]) => [SECRET, TITLE].some((word) => text.toLowerCase().includes(word.toLowerCase()))).map(([address]) => address);
+    // A page may repeat the address it was asked for, which tells the asker nothing new.
+    answers.filter(([address, text]) => [SECRET, TITLE].some((word) => text.replaceAll(address, "").toLowerCase().includes(word.toLowerCase()))).map(([address]) => address);
 
   beforeAll(async () => {
     sql = postgres(url!, { onnotice: () => {} });

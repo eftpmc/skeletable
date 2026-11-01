@@ -139,6 +139,46 @@ export function TokenSettings() {
   );
 }
 
+const visitGroups = [
+  { prefix: "bot:", title: "AI and search crawlers" },
+  { prefix: "from:", title: "Visits from AI tools" },
+  { prefix: "", title: "Everything" },
+];
+
+/** How the site is being found over the last 30 days, for the official account's owners. */
+export function VisitSettings() {
+  const { data, status, retry } = useJson<{ name: string; count: number }[]>("/api/stats");
+  return (
+    <SettingsLayout title="Visits" crumbs={[{ label: "Visits" }]}>
+      {status === "failed" ? (
+        <LoadFailed what="Visits" retry={retry} />
+      ) : status === "missing" || !data ? (
+        <LoadingList rows={3} label="Loading visits" />
+      ) : (
+        visitGroups.map(({ prefix, title }) => {
+          const counted = data.filter(({ name }) => (prefix ? name.startsWith(prefix) : !name.includes(":")));
+          return (
+            <Section key={title} title={title} description="Last 30 days.">
+              {counted.length ? (
+                <List label={title}>
+                  {counted.map(({ name, count }) => (
+                    <li key={name} className="flex items-center justify-between gap-3 px-3 py-2">
+                      <span>{name.replace(prefix, "")}</span>
+                      <span className="text-muted-foreground tabular-nums">{count}</span>
+                    </li>
+                  ))}
+                </List>
+              ) : (
+                <p className="text-sm text-muted-foreground">None yet.</p>
+              )}
+            </Section>
+          );
+        })
+      )}
+    </SettingsLayout>
+  );
+}
+
 export function AccountSettings() {
   const { user } = useMe();
   const [error, setError] = useState<string>();

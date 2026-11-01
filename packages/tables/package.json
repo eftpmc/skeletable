@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./format": "./src/format.ts"
+    "./format": "./src/format.ts",
+    "./share": "./src/share.ts"
   },
   "scripts": {
     "tables": "tsx src/cli.ts",

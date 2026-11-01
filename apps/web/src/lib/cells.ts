@@ -1,3 +1,8 @@
+import { rowSlugs } from "@skeleton/tables/share";
+
+/** A row's own page. */
+export const rowPath = (table: { owner: string; slug: string; rows: { key: string }[] }, key: string) => `/${table.owner}/${table.slug}/row/${rowSlugs(table).get(key)!}`;
+
 const slugOf = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 /** How an account's name reads in a sentence. */
@@ -9,8 +14,7 @@ export const ownerLabel = (table: { owner: string; ownerName?: string }) => tabl
 /** A cell's address within its table. */
 export const cellId = (rowKey: string, columnId: string) => `${slugOf(rowKey)}--${columnId}`;
 
-export const display = (value: string | number | boolean) =>
-  typeof value === "boolean" ? (value ? "Yes" : "No") : String(value);
+export { displayValue as display } from "@skeleton/tables/share";
 
 export const day = (date: string) =>
   new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });

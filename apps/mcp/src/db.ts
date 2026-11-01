@@ -153,6 +153,9 @@ const migrations = [
   alter table table_rows add column removed_at timestamptz;
   update data_tables t set managed = true from accounts a where a.id = t.account_id and a.handle = 'skeletable';
   `,
+  `
+  alter table table_rows add column former_slugs text[] not null default '{}';
+  `,
 ];
 
 /** Run whatever hasn't run yet. The lock keeps two servers starting together from racing. */
@@ -267,7 +270,8 @@ export async function readTables(sql: Sql): Promise<PublishedTable[]> {
     });
     if (!checked || problems.length) throw new Error(`${table.owner}/${table.slug}: ${problems.join("; ")}`);
     // A person's account name can be the name they signed in with, so only a team's goes out with its tables.
-    return { ...checked, ...(table.team && { ownerName: table.owner_name as string }), ...(table.private && { private: true }), ...(table.managed && { managed: true }), ...(table.watch && { watch: watchFileSchema.parse(table.watch) }) };
+    const moved = Object.fromEntries(rows.filter((row) => row.table_id === table.id).flatMap((row) => (row.former_slugs as string[]).map((slug) => [slug, row.key as string])));
+    return { ...checked, ...(Object.keys(moved).length && { moved }), ...(table.team && { ownerName: table.owner_name as string }), ...(table.private && { private: true }), ...(table.managed && { managed: true }), ...(table.watch && { watch: watchFileSchema.parse(table.watch) }) };
   });
 }
 

@@ -13,7 +13,7 @@ const MAX_ROWS = 200;
 export const MAX_COLUMNS = 20;
 
 // These are the site's own addresses, so no account can take them.
-const reserved = new Set(["api", "auth", "mcp", "health", "explore", "settings", "new", "about", "help", "terms", "privacy", "assets", "logo", "og", "robots", "sitemap", "admin", "www", OFFICIAL_ACCOUNT]);
+const reserved = new Set(["api", "auth", "mcp", "health", "explore", "settings", "new", "about", "accuracy", "blog", "data", "developers", "help", "llms", "terms", "privacy", "assets", "logo", "og", "robots", "sitemap", "admin", "www", OFFICIAL_ACCOUNT]);
 
 const handlePattern = /^[a-z0-9](?:[a-z0-9-]{0,37}[a-z0-9])?$/;
 
@@ -235,6 +235,13 @@ export function accountRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sig
       join table_rows r on r.id = p.row_id
       where m.user_id = ${user.id} and p.status = 'open'
       order by p.id desc limit 50`);
+  });
+
+  // How the site is being found, for the official account's owners. Counts only.
+  app.get("/api/stats", async (c) => {
+    const user = await signedIn(c);
+    if (!user || !(await isOwner(sql, user.id, OFFICIAL_ACCOUNT))) return c.json({ error: "Only the official account's owners can see this." }, 403);
+    return c.json(await sql`select name, sum(count)::int as count from daily_counts where day > current_date - 30 group by name order by count desc`);
   });
 
   // Blocking is for the official account's owners: it stops someone across the whole site.
