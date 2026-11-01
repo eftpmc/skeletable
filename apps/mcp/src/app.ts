@@ -5,6 +5,12 @@ import { Hono } from "hono";
 import { authRoutes, type AuthConfig } from "./auth.js";
 import { searchTables, summarize } from "./library.js";
 import { handleMcp } from "./mcp.js";
+import { rateLimit } from "./rate-limit.js";
+
+// Generous for a person or an agent reading tables, and a brake on anything hammering the server.
+const MCP_PER_MINUTE = 120;
+const API_PER_MINUTE = 240;
+const SIGN_IN_PER_MINUTE = 20;
 
 /** The server: the MCP endpoint, the JSON the site reads, a health check, and the built site when there is one. */
 export function createApp(tables: Table[], webDir?: string, auth?: AuthConfig) {
@@ -15,6 +21,9 @@ export function createApp(tables: Table[], webDir?: string, auth?: AuthConfig) {
     return c.redirect(`https://${url.host.slice(4)}${url.pathname}${url.search}`, 301);
   });
   app.get("/health", (c) => c.json({ ok: true, tables: tables.length }));
+  app.use("/mcp", rateLimit(MCP_PER_MINUTE));
+  app.use("/api/*", rateLimit(API_PER_MINUTE));
+  app.use("/auth/*", rateLimit(SIGN_IN_PER_MINUTE));
   app.all("/mcp", (c) => handleMcp(tables, c.req.raw));
   if (auth) app.route("/", authRoutes(auth));
   else app.get("/api/me", (c) => c.json({ canSignIn: false, user: null }));
