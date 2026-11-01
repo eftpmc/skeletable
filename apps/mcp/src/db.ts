@@ -4,6 +4,9 @@ import { loadTables, type PublishedTable } from "./library.js";
 
 export type Sql = postgres.Sql;
 
+/** The team behind the public library. Nobody can take its name. */
+export const OFFICIAL_ACCOUNT = "skeletable";
+
 // How often a running server picks up changes made in the database.
 const REFRESH_MS = 60_000;
 
@@ -119,6 +122,19 @@ const migrations = [
   `
   alter table users add column email_updates boolean not null default true;
   `,
+  `
+  alter table accounts add column team boolean not null default false;
+  update accounts set team = true where handle = 'skeletable';
+  create table team_invites (
+    id bigint generated always as identity primary key,
+    account_id bigint not null references accounts on delete cascade,
+    email text not null,
+    role text not null default 'editor' check (role in ('owner', 'editor')),
+    created_at timestamptz not null default now(),
+    unique (account_id, email)
+  );
+  create index team_invites_by_email on team_invites (email);
+  `,
 ];
 
 /** Run whatever hasn't run yet. The lock keeps two servers starting together from racing. */
@@ -152,7 +168,7 @@ export async function importTables(sql: Sql, tables: PublishedTable[]) {
     };
     for (const table of tables) {
       const [account] = await tx`
-        insert into accounts (handle, name) values (${table.owner}, ${accountName(table.owner)})
+        insert into accounts (handle, name, team) values (${table.owner}, ${accountName(table.owner)}, ${table.owner === OFFICIAL_ACCOUNT})
         on conflict (handle) do update set handle = excluded.handle returning id`;
       const watch = table.watch ? tx.json(table.watch) : null;
       const [existing] = await tx`select id, watch from data_tables where account_id = ${account!.id} and slug = ${table.slug}`;
@@ -202,7 +218,7 @@ export async function importTables(sql: Sql, tables: PublishedTable[]) {
 /** Every table with the newest version of each cell, held to the same checks as a table on disk. */
 export async function readTables(sql: Sql): Promise<PublishedTable[]> {
   const tables = await sql`
-    select t.id, a.handle as owner, t.slug, t.topic, t.title, t.question, t.scope, t.watch
+    select t.id, a.handle as owner, a.name as owner_name, a.team, t.slug, t.topic, t.title, t.question, t.scope, t.watch
     from data_tables t join accounts a on a.id = t.account_id
     order by a.handle, t.slug`;
   const columns = await sql`select * from table_columns order by table_id, position`;
@@ -229,7 +245,8 @@ export async function readTables(sql: Sql): Promise<PublishedTable[]> {
         })),
     });
     if (!checked || problems.length) throw new Error(`${table.owner}/${table.slug}: ${problems.join("; ")}`);
-    return table.watch ? { ...checked, watch: watchFileSchema.parse(table.watch) } : checked;
+    // A person's account name can be the name they signed in with, so only a team's goes out with its tables.
+    return { ...checked, ...(table.team && { ownerName: table.owner_name as string }), ...(table.watch && { watch: watchFileSchema.parse(table.watch) }) };
   });
 }
 

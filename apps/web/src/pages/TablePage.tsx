@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useJson, useMe } from "@/lib/api";
-import { accountName, day, host } from "@/lib/cells";
+import { day, host, ownerLabel } from "@/lib/cells";
 import { statusCounts, statuses, type CellStatus, type PublishedTable } from "@/lib/status";
 import { Message } from "@/pages/Message";
 import { Grid } from "@/pages/Sheet";
@@ -164,7 +164,7 @@ function TableDetails({ table, view }: { table: PublishedTable; view?: TableView
         <div className="min-w-0 flex-1 basis-96">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <h1 className="text-xl tracking-tight sm:text-2xl">
-              <Link href={`/${table.owner}`} className="text-muted-foreground hover:text-foreground hover:underline">{accountName(table.owner)}</Link>
+              <Link href={`/${table.owner}`} className="text-muted-foreground hover:text-foreground hover:underline">{ownerLabel(table)}</Link>
               <span className="mx-1.5 text-muted-foreground">/</span>
               <span className="font-semibold">{table.title}</span>
             </h1>

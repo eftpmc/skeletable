@@ -29,13 +29,13 @@ describe.skipIf(!url)("database", () => {
 
   it("runs each migration once", async () => {
     await migrate(sql);
-    expect(await sql`select version from schema_migrations`).toHaveLength(5);
+    expect(await sql`select version from schema_migrations`).toHaveLength(6);
   });
 
   it("gives back exactly what went in", async () => {
     await importTables(sql, tables);
     const byAddress = (a: { slug: string }, b: { slug: string }) => a.slug.localeCompare(b.slug);
-    expect(await readTables(sql)).toEqual([...tables].sort(byAddress));
+    expect(await readTables(sql)).toEqual([...tables].sort(byAddress).map((table) => ({ ...table, ownerName: "Skeletable" })));
   });
 
   it("makes one account for all of its tables", async () => {

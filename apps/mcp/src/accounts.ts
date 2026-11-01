@@ -1,14 +1,13 @@
 import { TABLE_FORMAT, validateTable, type Cell, type Table } from "@skeleton/tables/format";
 import type { Context, Hono } from "hono";
 import { z } from "zod";
-import { importTables, type Sql } from "./db.js";
+import { OFFICIAL_ACCOUNT, importTables, type Sql } from "./db.js";
 import type { PublishedTable } from "./library.js";
 import { rateLimit } from "./rate-limit.js";
 
-type SignedIn = (c: Context) => Promise<{ id: string; accounts: string[] } | null>;
+export type SignedIn = (c: Context) => Promise<{ id: string; email: string; accounts: string[] } | null>;
 
-const OFFICIAL_ACCOUNT = "skeletable";
-const CREATIONS_PER_MINUTE = 10;
+export const CREATIONS_PER_MINUTE = 10;
 const MAX_ROWS = 200;
 
 // These are the site's own addresses, so no account can take them.
@@ -16,25 +15,37 @@ const reserved = new Set(["api", "auth", "mcp", "health", "explore", "settings",
 
 const handlePattern = /^[a-z0-9](?:[a-z0-9-]{0,37}[a-z0-9])?$/;
 
-const slugOf = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
+export const slugOf = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
 
 const today = () => new Date().toISOString().slice(0, 10);
+
+/** Make an account at the first free address near `base`, with this person running it. */
+export async function createAccount(sql: Sql, base: string, name: string | null, userId: string, team: boolean) {
+  for (let attempt = 0; attempt < 50; attempt++) {
+    const handle = attempt ? `${base}-${attempt + 1}` : base;
+    if (reserved.has(handle)) continue;
+    const [account] = await sql`insert into accounts (handle, name, team) values (${handle}, ${name ?? handle}, ${team}) on conflict (handle) do nothing returning id`;
+    if (!account) continue;
+    await sql`insert into account_members (account_id, user_id) values (${account.id}, ${userId})`;
+    return { id: account.id as string, handle };
+  }
+  throw new Error(`No free handle for ${base}`);
+}
 
 /** Give a new person their own public account, named after their email. They can rename it in Settings. */
 export async function ensureAccount(sql: Sql, userId: string, email: string, name: string | null) {
   const [user] = await sql`select account_id from users where id = ${userId}`;
   if (user?.account_id) return;
-  const base = slugOf(email.split("@")[0]!) || "user";
-  for (let attempt = 0; attempt < 50; attempt++) {
-    const handle = attempt ? `${base}-${attempt + 1}` : base;
-    if (reserved.has(handle)) continue;
-    const [account] = await sql`insert into accounts (handle, name) values (${handle}, ${name ?? handle}) on conflict (handle) do nothing returning id`;
-    if (!account) continue;
-    await sql`insert into account_members (account_id, user_id) values (${account.id}, ${userId})`;
-    await sql`update users set account_id = ${account.id} where id = ${userId}`;
-    return;
-  }
-  throw new Error(`No free handle for ${base}`);
+  const account = await createAccount(sql, slugOf(email.split("@")[0]!) || "user", name, userId, false);
+  await sql`update users set account_id = ${account.id} where id = ${userId}`;
+}
+
+/** Whether this person is an owner of an account, which is what managing it takes. */
+export async function isOwner(sql: Sql, userId: string, handle: string) {
+  const [member] = await sql`
+    select 1 from account_members m join accounts a on a.id = m.account_id
+    where m.user_id = ${userId} and a.handle = ${handle} and m.role = 'owner'`;
+  return !!member;
 }
 
 const profileBody = z.object({ name: z.string().trim().min(1).max(80).optional(), handle: z.string().trim().toLowerCase().optional(), emailUpdates: z.boolean().optional() });
@@ -47,6 +58,7 @@ const columnBody = z.object({
 });
 
 const tableBody = z.object({
+  owner: z.string().trim().optional(),
   title: z.string().trim().min(1).max(120),
   question: z.string().trim().min(1).max(300),
   topic: z.string().trim().min(1).max(40),
@@ -101,8 +113,15 @@ export function accountRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sig
   app.delete("/api/me", async (c) => {
     const user = await signedIn(c);
     if (!user) return c.json({ error: "Sign in first." }, 401);
+    // A team can't be left with nobody to run it.
+    const stranded = await sql`
+      select a.name from account_members m join accounts a on a.id = m.account_id
+      where m.user_id = ${user.id} and a.team and m.role = 'owner'
+        and not exists (select 1 from account_members other where other.account_id = a.id and other.role = 'owner' and other.user_id <> ${user.id})`;
+    if (stranded.length) return c.json({ error: `Hand over or delete ${stranded.map((team) => team.name as string).join(", ")} first.` }, 409);
     await sql.begin(async (tx) => {
       const [own] = await tx`select account_id from users where id = ${user.id}`;
+      await tx`delete from team_invites where email = ${user.email}`;
       await tx`delete from sessions where user_id = ${user.id}`;
       await tx`delete from api_tokens where user_id = ${user.id}`;
       await tx`delete from account_members where user_id = ${user.id}`;
@@ -124,7 +143,8 @@ export function accountRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sig
     if (!body.success) return c.json({ error: "Fill in every field, with at least one column and one row." }, 400);
     const [account] = await sql`select a.handle from accounts a join users u on u.account_id = a.id where u.id = ${user.id}`;
     if (!account) return c.json({ error: "Your account isn't set up." }, 400);
-    const owner = account.handle as string;
+    const owner = body.data.owner ?? (account.handle as string);
+    if (!runsTable(user, owner)) return c.json({ error: "You can't add tables to that account." }, 403);
     const { title, question, topic, scope, columns, rows } = body.data;
     if (new Set(rows).size !== rows.length) return c.json({ error: "Each row needs its own name." }, 400);
 
@@ -188,15 +208,15 @@ export function accountRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sig
       order by p.id desc limit 50`);
   });
 
-  // Blocking is for the people who run the official account: it stops someone across the whole site.
+  // Blocking is for the official account's owners: it stops someone across the whole site.
   app.post("/api/proposals/:id/block", async (c) => {
     const user = await signedIn(c);
-    if (!runsTable(user, OFFICIAL_ACCOUNT)) return c.json({ error: "You can't block people." }, 403);
+    if (!user || !(await isOwner(sql, user.id, OFFICIAL_ACCOUNT))) return c.json({ error: "You can't block people." }, 403);
     const [proposal] = await sql`select created_by from proposals where id = ${c.req.param("id")}`;
     if (!proposal) return c.notFound();
-    if (proposal.created_by === user!.id) return c.json({ error: "You can't block yourself." }, 400);
+    if (proposal.created_by === user.id) return c.json({ error: "You can't block yourself." }, 400);
     await sql`update users set blocked_at = now() where id = ${proposal.created_by}`;
-    await sql`update proposals set status = 'rejected', decided_by = ${user!.id}, decided_at = now() where created_by = ${proposal.created_by} and status = 'open'`;
+    await sql`update proposals set status = 'rejected', decided_by = ${user.id}, decided_at = now() where created_by = ${proposal.created_by} and status = 'open'`;
     await sql`delete from sessions where user_id = ${proposal.created_by}`;
     await sql`delete from api_tokens where user_id = ${proposal.created_by}`;
     return c.json({ ok: true });

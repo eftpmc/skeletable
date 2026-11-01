@@ -3,6 +3,9 @@ const slugOf = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, "-").
 /** How an account's name reads in a sentence. */
 export const accountName = (owner: string) => owner.charAt(0).toUpperCase() + owner.slice(1);
 
+/** Who a table is by: its team's own name, or the name from its address. */
+export const ownerLabel = (table: { owner: string; ownerName?: string }) => table.ownerName ?? accountName(table.owner);
+
 /** A cell's address within its table. */
 export const cellId = (rowKey: string, columnId: string) => `${slugOf(rowKey)}--${columnId}`;
 

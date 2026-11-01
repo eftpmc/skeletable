@@ -4,7 +4,7 @@ import { Link } from "wouter";
 import { Page } from "@/components/Shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { postJson, useJson, useMe } from "@/lib/api";
+import { postJson, sendJson, useJson, useMe } from "@/lib/api";
 import { day } from "@/lib/cells";
 import { Message } from "@/pages/Message";
 
@@ -55,9 +55,11 @@ function EmailUpdates({ enabled }: { enabled: boolean }) {
 
 function DeleteAccount() {
   const [confirming, setConfirming] = useState(false);
+  const [error, setError] = useState<string>();
   const remove = async () => {
-    await fetch("/api/me", { method: "DELETE" });
-    location.href = "/";
+    const { ok, data } = await sendJson<{ error?: string }>("DELETE", "/api/me");
+    if (ok) location.href = "/";
+    else setError(data.error ?? "That didn't delete.");
   };
   return (
     <section className="space-y-2 border-t pt-5">
@@ -71,6 +73,7 @@ function DeleteAccount() {
       ) : (
         <Button variant="outline" onClick={() => setConfirming(true)}>Delete account</Button>
       )}
+      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     </section>
   );
 }

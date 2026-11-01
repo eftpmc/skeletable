@@ -18,6 +18,7 @@ export function NewTable() {
   const { user } = useMe();
   const [, navigate] = useLocation();
   const [details, setDetails] = useState({ title: "", question: "", topic: "", scope: "" });
+  const [owner, setOwner] = useState(user?.handle ?? "");
   const [columns, setColumns] = useState<NewColumn[]>([blankColumn()]);
   const [rows, setRows] = useState("");
   const [error, setError] = useState<string>();
@@ -44,6 +45,7 @@ export function NewTable() {
     setError(undefined);
     const { ok, data } = await postJson<{ owner: string; slug: string; error?: string }>("/api/tables", {
       ...details,
+      ...(owner && { owner }),
       columns: columns.map(({ unit, ...column }) => ({ ...column, ...(unit.trim() && { unit }) })),
       rows: rows.split("\n").map((row) => row.trim()).filter(Boolean),
     });
@@ -59,6 +61,15 @@ export function NewTable() {
         <p className="mt-1 mb-6 text-muted-foreground">Set up its shape here. You'll add each value with its source in the sheet.</p>
         <form onSubmit={submit} className="space-y-6">
           <div className="space-y-4">
+            {user.teams.length > 0 && (
+              <label className={labelClass}>
+                Owner
+                <select value={owner} onChange={(event) => setOwner(event.target.value)} className="mt-1.5 h-8 w-full rounded-lg border bg-transparent px-2 text-sm font-normal dark:bg-input/30">
+                  {user.handle && <option value={user.handle}>{user.name ?? user.handle}</option>}
+                  {user.teams.map((team) => <option key={team.handle} value={team.handle}>{team.name}</option>)}
+                </select>
+              </label>
+            )}
             <label className={labelClass}>Title<Input className="mt-1.5 font-normal" required maxLength={120} placeholder="Mechanical keyboards" {...detail("title")} /></label>
             <label className={labelClass}>Question it answers<Input className="mt-1.5 font-normal" required maxLength={300} placeholder="How do these keyboards compare on weight and switches?" {...detail("question")} /></label>
             <label className={labelClass}>Topic<Input className="mt-1.5 font-normal" required maxLength={40} placeholder="Consumer tech" {...detail("topic")} /></label>

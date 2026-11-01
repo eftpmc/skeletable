@@ -3,7 +3,7 @@ import { Bone, CircleDashed, Eye, FileCheck, SearchX, ShieldCheck, type LucideIc
 
 export type CellStatus = "fracture" | "gone" | "once" | "summary" | "confirmed" | "gap";
 
-export type PublishedTable = Table & { watch?: WatchFile };
+export type PublishedTable = Table & { watch?: WatchFile; ownerName?: string };
 
 /** How much to trust a cell, worst news first. Each has an icon, so meaning never rests on colour alone. */
 export const statuses: Record<CellStatus, { label: string; detail: string; icon: LucideIcon; tint: string; solid: string }> = {

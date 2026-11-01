@@ -118,7 +118,7 @@ export function AccountButton() {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            {accountLinks(user.handle).map(({ href, label }) => (
+            {accountLinks(user.handle, user.teams, user.invites).map(({ href, label }) => (
               <DropdownMenuItem key={href} asChild><Link href={href}>{label}</Link></DropdownMenuItem>
             ))}
           </DropdownMenuGroup>

@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { postJson, useJson, useMe } from "@/lib/api";
-import { accountName, cellId, day, display, host, place, splitQuote } from "@/lib/cells";
+import { cellId, day, display, host, ownerLabel, place, splitQuote } from "@/lib/cells";
 import { NAME_COLUMN, filteredRows, matchingRows, nextSort, readView, sortedRows, viewSearch, type SheetFilters, type SheetSort, type SheetView } from "@/lib/sheet";
 import { cellStatus, statusCounts, statuses, type CellStatus, type PublishedTable } from "@/lib/status";
 import { Message } from "@/pages/Message";
@@ -420,7 +420,7 @@ function TopBar({ table, owner, link }: { table?: PublishedTable; owner: string;
           <>
             <h1 className="truncate text-lg leading-6">{table.title}</h1>
             <p className="truncate text-xs text-muted-foreground">
-              by <Link href={`/${owner}`} className="hover:text-foreground hover:underline">{accountName(owner)}</Link> · {found.length} of {cells.length} cells · Read {day(lastRead)}
+              by <Link href={`/${owner}`} className="hover:text-foreground hover:underline">{ownerLabel(table)}</Link> · {found.length} of {cells.length} cells · Read {day(lastRead)}
             </p>
           </>
         ) : (

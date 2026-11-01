@@ -4,11 +4,12 @@ import { z } from "zod";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import type { Fetcher } from "@skeleton/tables";
 import { accountRoutes, ensureAccount, runsTable } from "./accounts.js";
-import type { Sql } from "./db.js";
+import { OFFICIAL_ACCOUNT, type Sql } from "./db.js";
 import { notifyOwners, type Mailer } from "./email.js";
 import type { PublishedTable } from "./library.js";
 import { createToken, decideProposal, deleteToken, listProposals, listTokens, submitProposal, tableHistory } from "./proposals.js";
 import { rateLimit } from "./rate-limit.js";
+import { teamRoutes } from "./teams.js";
 
 export type AuthConfig = {
   sql: Sql;
@@ -26,7 +27,6 @@ export type AuthConfig = {
   mail?: Mailer;
 };
 
-const OFFICIAL_ACCOUNT = "skeletable";
 const SESSION_COOKIE = "session";
 const STATE_COOKIE = "auth_state";
 const SESSION_DAYS = 30;
@@ -125,7 +125,11 @@ export function authRoutes({ sql, clientId, clientSecret, publicUrl, ownerEmail,
     const user = await signedIn(c);
     if (!user) return c.json({ canSignIn: true, user: null });
     const { id: _id, ...visible } = user;
-    return c.json({ canSignIn: true, user: visible });
+    const teams = await sql`
+      select a.handle, a.name, m.role from account_members m join accounts a on a.id = m.account_id
+      where m.user_id = ${user.id} and a.team order by a.name`;
+    const [waiting] = await sql`select count(*)::int as invites from team_invites where email = ${user.email}`;
+    return c.json({ canSignIn: true, user: { ...visible, teams, invites: waiting!.invites as number } });
   });
 
   app.get("/api/tables/:owner/:slug/history", async (c) => c.json(await tableHistory(sql, c.req.param("owner"), c.req.param("slug"))));
@@ -180,6 +184,7 @@ export function authRoutes({ sql, clientId, clientSecret, publicUrl, ownerEmail,
   });
 
   accountRoutes(app, sql, tables, signedIn, refresh);
+  teamRoutes(app, sql, signedIn, { mail, publicUrl, refresh });
 
   return app;
 }

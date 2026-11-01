@@ -2,8 +2,8 @@ import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { isFound, normalize, validateTable, watchFileSchema, watchKey, type Cell, type Table, type WatchFile } from "@skeleton/tables/format";
 
-/** A table as served, with what the last watch saw, if it's been watched. */
-export type PublishedTable = Table & { watch?: WatchFile };
+/** A table as served, with what the last watch saw, if it's been watched, and its team's name if a team runs it. */
+export type PublishedTable = Table & { watch?: WatchFile; ownerName?: string };
 
 /** Every published table, read once at start. A table that doesn't pass its checks stops the server rather than going out unchecked. */
 export async function loadTables(dir: string): Promise<PublishedTable[]> {
@@ -33,6 +33,7 @@ const lastRead = (table: Table) => cells(table).reduce((latest, cell) => (cell.r
 export function summarize(table: PublishedTable) {
   return {
     owner: table.owner,
+    ...(table.ownerName && { ownerName: table.ownerName }),
     slug: table.slug,
     topic: table.topic,
     title: table.title,

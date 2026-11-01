@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 export type TableSummary = {
   owner: string;
+  ownerName?: string;
   slug: string;
   topic: string;
   title: string;
@@ -14,7 +15,9 @@ export type TableSummary = {
   checks: { confirmed: number; summary: number; once: number; gap: number };
 };
 
-export type Me = { canSignIn: boolean; user: { email: string; name: string | null; handle: string | null; emailUpdates: boolean; accounts: string[] } | null };
+export type Team = { handle: string; name: string; role: "owner" | "editor" };
+
+export type Me = { canSignIn: boolean; user: { email: string; name: string | null; handle: string | null; emailUpdates: boolean; accounts: string[]; teams: Team[]; invites: number } | null };
 
 /** Who's here, loaded once when the site opens. */
 export const MeContext = createContext<Me>({ canSignIn: false, user: null });
@@ -23,10 +26,12 @@ export const useMe = () => useContext(MeContext);
 type Loaded<T> = { data?: T; status: "loading" | "ready" | "missing" | "failed"; retry: () => void };
 
 /** Sends JSON to the server, and hands back what it says either way. */
-export async function postJson<T>(url: string, body?: unknown): Promise<{ ok: boolean; data: T }> {
-  const response = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body ?? {}) });
+export async function sendJson<T>(method: string, url: string, body?: unknown): Promise<{ ok: boolean; data: T }> {
+  const response = await fetch(url, { method, headers: { "content-type": "application/json" }, body: JSON.stringify(body ?? {}) });
   return { ok: response.ok, data: (await response.json().catch(() => ({}))) as T };
 }
+
+export const postJson = <T>(url: string, body?: unknown) => sendJson<T>("POST", url, body);
 
 /** Reads JSON from the server, and keeps the last answer on screen while the next one loads. */
 export function useJson<T>(url: string): Loaded<T> {

@@ -74,7 +74,7 @@ function PhoneMenu() {
           {user && (
             <div className="space-y-2 border-t p-4">
               <PhoneAccount user={user} />
-              <PhoneLinks links={accountLinks(user.handle)} label="Your account" onNavigate={close} />
+              <PhoneLinks links={accountLinks(user.handle, user.teams, user.invites)} label="Your account" onNavigate={close} />
             </div>
           )}
         </div>

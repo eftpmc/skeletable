@@ -13,7 +13,8 @@ export function Account({ owner }: { owner: string }) {
   const { user } = useMe();
   const { data, status, retry } = useJson<TableSummary[]>("/api/tables");
   const tables = data?.filter((table) => table.owner === owner);
-  const name = accountName(owner);
+  const team = user?.teams.find((candidate) => candidate.handle === owner);
+  const name = team?.name ?? tables?.[0]?.ownerName ?? accountName(owner);
   const yours = user?.accounts.includes(owner);
 
   useEffect(() => {
@@ -31,10 +32,11 @@ export function Account({ owner }: { owner: string }) {
           <>
             <div className="mb-6 flex items-center gap-3">
               <Logo className="size-12" />
-              <div>
+              <div className="min-w-0 flex-1">
                 <h1 className="text-2xl font-semibold tracking-tight">{name}</h1>
                 <p className="text-sm text-muted-foreground">{tables ? `${tables.length} ${tables.length === 1 ? "table" : "tables"}` : " "}</p>
               </div>
+              {team && <Button variant="outline" size="sm" asChild><Link href={`/settings/teams/${owner}`}>Manage team</Link></Button>}
             </div>
             {tables?.length === 0 ? (
               <div className="rounded-xl border p-8 text-center">

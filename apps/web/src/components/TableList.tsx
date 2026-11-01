@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { TableSummary } from "@/lib/api";
-import { accountName, day } from "@/lib/cells";
+import { day, ownerLabel } from "@/lib/cells";
 import { statuses } from "@/lib/status";
 
 /** A small bar of how the table's values were checked, using the same colours as X-ray. */
@@ -36,7 +36,7 @@ function TableRow({ table }: { table: TableSummary }) {
           </div>
           <p className="mt-0.5 text-sm text-muted-foreground">{table.question}</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            by {accountName(table.owner)} · {table.rows} rows · {table.filled} · Checked {day(table.lastChecked)}
+            by {ownerLabel(table)} · {table.rows} rows · {table.filled} · Checked {day(table.lastChecked)}
           </p>
           <CheckBar table={table} className="mt-2 sm:hidden" />
         </div>

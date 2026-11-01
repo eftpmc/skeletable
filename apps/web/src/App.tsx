@@ -10,12 +10,15 @@ import { NewTable } from "@/pages/NewTable";
 import { Settings } from "@/pages/Settings";
 import { Sheet } from "@/pages/Sheet";
 import { TablePage, tableViews, type TableView } from "@/pages/TablePage";
+import { TeamSettings, Teams } from "@/pages/Teams";
 import { YourHome } from "@/pages/YourHome";
 
 function Routes({ me }: { me: Me }) {
   const [isHome] = useRoute("/");
   const [isExplore] = useRoute("/explore");
   const [isSettings] = useRoute("/settings");
+  const [isTeams] = useRoute("/settings/teams");
+  const [isTeam, team] = useRoute("/settings/teams/:handle");
   const [isNew] = useRoute("/new");
   const [isAbout] = useRoute("/about");
   const [isTerms] = useRoute("/terms");
@@ -27,6 +30,8 @@ function Routes({ me }: { me: Me }) {
   if (isHome) return me.user ? <YourHome user={me.user} /> : <Landing />;
   if (isExplore) return <Explore />;
   if (isSettings) return <Settings />;
+  if (isTeams) return <Teams />;
+  if (isTeam) return <TeamSettings key={team.handle} handle={team.handle} />;
   if (isNew) return <NewTable />;
   if (isAbout) return <About />;
   if (isTerms) return <Terms />;

@@ -63,7 +63,7 @@ describe.skipIf(!url)("sign-in", () => {
     expect(callback.headers.get("location")).toBe("/");
     expect(callback.headers.getSetCookie().join()).toMatch(/session=.*HttpOnly.*Secure/i);
     const me = await (await app.request("/api/me", { headers: { cookie: session! } })).json();
-    expect(me).toEqual({ canSignIn: true, user: { email: "someone@example.com", name: "Someone", handle: "someone", emailUpdates: true, accounts: ["someone"] } });
+    expect(me).toEqual({ canSignIn: true, user: { email: "someone@example.com", name: "Someone", handle: "someone", emailUpdates: true, accounts: ["someone"], teams: [], invites: 0 } });
   });
 
   it("keeps only a hash of the session", async () => {
