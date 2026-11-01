@@ -50,6 +50,6 @@ Conflicts and past values follow the same rules as any value, so a summary's cla
 | 5 | Home batteries: capacity and warranty | Home energy | Built and checked |
 | 6 | Password managers: plans and prices | Software | Deferred: two of four makers show no prices to our reader |
 | 7 | Right-to-repair laws by US state | Law | Built, check incomplete |
-| 8 | Data breach notification laws by US state | Law | First 10 states built and checked |
+| 8 | Data breach notification laws by US state | Law | All 51 rows built and checked, 4 blank |
 | 9 | Entrance fees at the most visited US national parks | Travel | Built, read once |
 | 10 | EVs on sale in the US: EPA range | Cars | Deferred |

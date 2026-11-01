@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { coverage, normalize, pageText, pdfText, quoteStates, sampleCells, validateTable, verifyTable, wordsBeyondQuote, type Fetcher, type Table } from "../src/index.js";
+import { isPdf } from "../src/verify.js";
 
 const read = "2026-10-31";
 const table: Table = {
@@ -81,6 +82,7 @@ describe("quoteStates", () => {
     expect(quoteStates(45, "within forty-five days")).toBe(true);
     expect(quoteStates(500, "five hundred residents")).toBe(true);
     expect(quoteStates(60, "sixty (60) days")).toBe(true);
+    expect(quoteStates(1000, "more than one thousand individuals")).toBe(true);
   });
 
   it("doesn't match words inside a longer number", () => {
@@ -88,6 +90,8 @@ describe("quoteStates", () => {
     expect(quoteStates(5, "five hundred residents")).toBe(false);
     expect(quoteStates(30, "two hundred thirty days")).toBe(false);
     expect(quoteStates(30, "thirteen days")).toBe(false);
+    expect(quoteStates(1, "one thousand people")).toBe(false);
+    expect(quoteStates(500, "one thousand five hundred people")).toBe(false);
   });
 });
 
@@ -130,6 +134,12 @@ it("refuses a cell that doesn't say what kind of source it used", () => {
   const bad = structuredClone(table) as unknown as { rows: { cells: { weight: { kind?: string } } }[] };
   delete bad.rows[0]!.cells.weight.kind;
   expect(validateTable(bad).problems.length).toBeGreaterThan(0);
+});
+
+it("spots a PDF however the server labels it", () => {
+  expect(isPdf({ contentType: "application/PDF", url: "https://a.example/page?id=1" })).toBe(true);
+  expect(isPdf({ contentType: "application/octet-stream", url: "https://a.example/law.PDF" })).toBe(true);
+  expect(isPdf({ contentType: "text/html", url: "https://a.example/page" })).toBe(false);
 });
 
 it("pdfText reads the words in a PDF", async () => {

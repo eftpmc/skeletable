@@ -124,9 +124,13 @@ export function normalize(value: string): string {
 const SMALL_NUMBERS = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"];
 const TENS = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
 
-/** A whole number from 1 to 999 in words, the way laws write them: "forty-five", "five hundred". */
+/** A whole number below a million in words, the way laws write them: "forty-five", "one thousand". */
 function spelled(value: number): string | undefined {
-  if (!Number.isInteger(value) || value < 1 || value > 999) return undefined;
+  if (!Number.isInteger(value) || value < 1 || value > 999_999) return undefined;
+  if (value >= 1000) {
+    const remainder = value % 1000;
+    return [`${spelled(Math.floor(value / 1000))} thousand`, remainder ? spelled(remainder) : ""].filter(Boolean).join(" ");
+  }
   const rest = value % 100;
   const under100 = rest < 20 ? SMALL_NUMBERS[rest]! : [TENS[Math.floor(rest / 10)]!, SMALL_NUMBERS[rest % 10]!].filter(Boolean).join("-");
   const hundreds = Math.floor(value / 100);
@@ -142,7 +146,7 @@ export function quoteStates(value: number, quote: string): boolean {
   if (new RegExp(`(?<![\\d.])${number}${tail}(?![\\d.]*\\d)`).test(digits)) return true;
   const words = spelled(value);
   // "thirty" doesn't match "thirty-five" or "two hundred thirty", which are other numbers.
-  return !!words && new RegExp(`(?<![a-z-])(?<!hundred )(?<!hundred and )${words}(?![a-z-])(?! hundred)`).test(digits);
+  return !!words && new RegExp(`(?<![a-z-])(?<!(?:hundred|thousand) )(?<!hundred and )${words}(?![a-z-])(?! (?:hundred|thousand))`).test(digits);
 }
 
 const LINKING_WORDS = new Set(["a", "an", "and", "at", "in", "of", "or", "per", "the", "to", "with"]);

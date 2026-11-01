@@ -110,7 +110,7 @@ export function liveFetcher(): Fetcher {
   };
 }
 
-const isPdf = (response: { contentType: string; url: string }) => /pdf/.test(response.contentType) || /\.pdf$/i.test(new URL(response.url).pathname);
+export const isPdf = (response: { contentType: string; url: string }) => /pdf/i.test(response.contentType) || /\.pdf$/i.test(new URL(response.url).pathname);
 
 /** The words in a PDF. Spec sheets are often the only place a maker states a number. */
 export async function pdfText(data: Uint8Array): Promise<string> {
