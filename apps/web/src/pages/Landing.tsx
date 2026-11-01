@@ -2,7 +2,8 @@ import type { Table } from "@skeleton/tables/format";
 import { ArrowRight, Bot, Quote, SearchX } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
-import { AgentButton, SiteHeader } from "@/components/Chrome";
+import { AccountButton, AgentButton, Logo, ThemeButton } from "@/components/Chrome";
+import { PhoneMenu } from "@/components/Shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useJson } from "@/lib/api";
@@ -39,7 +40,19 @@ export function Landing() {
   }, []);
   return (
     <div className="min-h-svh">
-      <SiteHeader />
+      <header className="flex items-center gap-4 border-b px-4 py-2.5">
+        <Link href="/" className="flex items-center gap-2 font-medium tracking-tight">
+          <Logo className="size-7" />
+          Skeletable
+        </Link>
+        <Link href="/explore" className="hidden text-sm text-muted-foreground transition-colors hover:text-foreground md:inline">Browse tables</Link>
+        <div className="ml-auto hidden items-center gap-1 md:flex">
+          <AgentButton />
+          <ThemeButton />
+          <AccountButton />
+        </div>
+        <div className="ml-auto md:hidden"><PhoneMenu /></div>
+      </header>
       <main className="mx-auto max-w-5xl px-4 pb-16 sm:px-6">
         <section className="mx-auto max-w-2xl pt-14 pb-10 text-center sm:pt-20">
           <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl">Every value shows its source</h1>

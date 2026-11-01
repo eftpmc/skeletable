@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { Logo, SiteHeader } from "@/components/Chrome";
+import { Logo } from "@/components/Chrome";
+import { Shell } from "@/components/Shell";
 import { TableList } from "@/components/TableList";
 import { Button } from "@/components/ui/button";
 import { useJson, type TableSummary } from "@/lib/api";
@@ -17,8 +18,7 @@ export function Account({ owner }: { owner: string }) {
   }, [name]);
 
   return (
-    <div className="min-h-svh">
-      <SiteHeader />
+    <Shell>
       <main className="mx-auto max-w-4xl px-4 pt-8 pb-16 sm:px-6">
         {status === "failed" ? (
           <Message title="This account didn't load" action={<Button variant="outline" size="sm" onClick={retry}>Try again</Button>} />
@@ -37,6 +37,6 @@ export function Account({ owner }: { owner: string }) {
           </>
         )}
       </main>
-    </div>
+    </Shell>
   );
 }

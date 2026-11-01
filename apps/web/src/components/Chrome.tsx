@@ -92,21 +92,3 @@ export function AccountButton() {
     </Popover>
   );
 }
-
-/** The bar across every page except a sheet. */
-export function SiteHeader() {
-  return (
-    <header className="flex items-center gap-4 border-b px-4 py-2.5">
-      <Link href="/" className="flex items-center gap-2 font-medium tracking-tight">
-        <Logo className="size-7" />
-        Skeletable
-      </Link>
-      <Link href="/explore" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Browse tables</Link>
-      <div className="ml-auto flex items-center gap-1">
-        <AgentButton />
-        <ThemeButton />
-        <AccountButton />
-      </div>
-    </header>
-  );
-}
