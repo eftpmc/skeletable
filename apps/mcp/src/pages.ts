@@ -1,10 +1,11 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { isFound, type Cell, type Column } from "@skeleton/tables/format";
-import { displayValue, rowSlugs } from "@skeleton/tables/share";
+import { displayValue, inlineParts, rowSlugs } from "@skeleton/tables/share";
 import type { Hono } from "hono";
 import { everyone, readable } from "./access.js";
 import { lastRead, type PublishedTable } from "./library.js";
+import { postBlocks, published, type Post } from "./posts.js";
 import { previewImage } from "./preview.js";
 
 const description = "A public library of tables, where each cell links to the exact words that prove it.";
@@ -58,6 +59,19 @@ function rowText(table: PublishedTable, row: Row) {
   return `<main><h1>${escape(row.key)}</h1><p>From <a href="${base}">${escape(table.title)}</a>: ${escape(table.question)}</p>${items}</main>`;
 }
 
+const inline = (text: string) => inlineParts(text).map(({ text: words, href }) => (href ? `<a href="${escape(href)}">${escape(words)}</a>` : escape(words))).join("");
+
+/** A post as plain HTML, its live values and their proof included. */
+function postText(post: Post, tables: PublishedTable[]) {
+  const blocks = postBlocks(post, tables).map((block) => {
+    if (block.type === "heading") return `<h2>${escape(block.text)}</h2>`;
+    if (block.type === "text") return `<p>${inline(block.text)}</p>`;
+    const value = isFound(block.cell) ? `${displayValue(block.cell.value)}${block.column.unit ? ` ${block.column.unit}` : ""}` : "Not stated";
+    return `<figure><figcaption>${escape(block.rowKey)}, ${escape(block.column.label)}: ${escape(value)}</figcaption>${isFound(block.cell) ? `<blockquote>${escape(block.cell.quote)}</blockquote><p>Source: <a href="${escape(block.cell.source)}">${escape(block.cell.source)}</a>. Read ${escape(block.cell.read)}.</p>` : ""}</figure>`;
+  });
+  return `<main><article><h1>${escape(post.title)}</h1><p>${escape(post.date)}</p>${blocks.join("")}</article></main>`;
+}
+
 /** The first few stated values, so a search result already answers the question. */
 function rowSummary(table: PublishedTable, row: Row) {
   const stated = table.columns.filter((column) => { const cell = row.cells[column.id]; return cell && isFound(cell); }).slice(0, 3);
@@ -107,7 +121,7 @@ function rowData(table: PublishedTable, row: Row, url: string, publicUrl: string
 }
 
 /** Serve the app's page with the right title and description for its address, plus the files crawlers ask for. */
-export function pageRoutes(app: Hono, tables: PublishedTable[], webDir: string, publicUrl: string) {
+export function pageRoutes(app: Hono, tables: PublishedTable[], webDir: string, publicUrl: string, posts: Post[] = []) {
   const template = readFileSync(join(webDir, "index.html"), "utf8");
   // Pages go out before we know who's asking, so only public tables reach them.
   const open = () => readable(tables, everyone);
@@ -121,6 +135,7 @@ export function pageRoutes(app: Hono, tables: PublishedTable[], webDir: string, 
     "/about": ["About · Skeletable", description],
     "/help": ["Help · Skeletable", "How Skeletable's tables are checked, and how to use them."],
     "/accuracy": ["How accurate is Skeletable?", "How every value is checked, how many have been, and what we can't tell you."],
+    "/blog": ["Blog · Skeletable", "What checking the sources turns up."],
     "/developers": ["Developers · Skeletable", "Use Skeletable's tables from agents over MCP, or as CSV and JSON."],
     "/terms": ["Terms · Skeletable", "The terms for using Skeletable."],
     "/privacy": ["Privacy · Skeletable", "What Skeletable stores, and why."],
@@ -142,13 +157,15 @@ export function pageRoutes(app: Hono, tables: PublishedTable[], webDir: string, 
       `How values are checked: ${publicUrl}/accuracy`,
       `For developers: ${publicUrl}/developers`,
       "",
+      `Blog: ${publicUrl}/blog`,
+      "",
       "## Tables",
       "",
       ...open().map((table) => `- [${table.title}](${publicUrl}/${table.owner}/${table.slug}): ${table.question} Data: ${publicUrl}/data/${table.owner}/${table.slug}.json`),
     ].join("\n")));
 
   app.get("/sitemap.xml", (c) => {
-    const entries: [string, string?][] = [["/"], ["/explore"], ["/accuracy"], ["/developers"], ["/help"]];
+    const entries: [string, string?][] = [["/"], ["/explore"], ["/blog"], ["/accuracy"], ["/developers"], ["/help"], ...published(posts).map((post): [string, string] => [`/blog/${post.slug}`, post.date])];
     for (const table of open()) {
       const base = `/${table.owner}/${table.slug}`;
       const slugs = rowSlugs(table);
@@ -183,6 +200,20 @@ export function pageRoutes(app: Hono, tables: PublishedTable[], webDir: string, 
     // A row that was renamed keeps its old address, so links to it still land.
     const renamed = table.moved?.[slug];
     return renamed && slugs.has(renamed) ? c.redirect(`${base}/row/${slugs.get(renamed)!}`, 301) : next();
+  });
+
+  app.get("/blog/feed.xml", (c) => {
+    c.header("content-type", "application/rss+xml; charset=utf-8");
+    const items = published(posts).map((post) => `<item><title>${escape(post.title)}</title><link>${publicUrl}/blog/${post.slug}</link><guid>${publicUrl}/blog/${post.slug}</guid><pubDate>${new Date(post.date).toUTCString()}</pubDate><description>${escape(post.summary)}</description></item>`).join("");
+    return c.body(`<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0"><channel><title>Skeletable</title><link>${publicUrl}/blog</link><description>What checking the sources turns up.</description>${items}</channel></rss>`);
+  });
+
+  app.get("/blog/:slug", (c, next) => {
+    const post = published(posts).find((candidate) => candidate.slug === c.req.param("slug"));
+    if (!post) return next();
+    const url = `${publicUrl}/blog/${post.slug}`;
+    const data = { "@context": "https://schema.org", "@type": "BlogPosting", headline: post.title, description: post.summary, datePublished: post.date, url, publisher: { "@type": "Organization", name: "Skeletable" } };
+    return c.html(render(headFor(`${post.title} · Skeletable`, post.summary, url, data), postText(post, open())));
   });
 
   app.get("/og/:owner/:file", (c, next) => {

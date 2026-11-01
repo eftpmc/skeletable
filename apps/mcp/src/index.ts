@@ -4,6 +4,7 @@ import type { AuthConfig } from "./auth.js";
 import { connect, openLibrary } from "./db.js";
 import { resendMailer } from "./email.js";
 import { loadTables, type PublishedTable } from "./library.js";
+import { loadPosts } from "./posts.js";
 import { startWatching } from "./watcher.js";
 
 const dir = process.env.TABLES_DIR ?? "../../tables";
@@ -17,5 +18,5 @@ const auth: AuthConfig | undefined =
     ? { sql, clientId: GOOGLE_CLIENT_ID, clientSecret: GOOGLE_CLIENT_SECRET, publicUrl: PUBLIC_URL, ownerEmail: OWNER_EMAIL, tables, refresh: library.refresh, mail: RESEND_API_KEY ? resendMailer(RESEND_API_KEY, EMAIL_FROM) : undefined }
     : undefined;
 const port = Number(process.env.PORT ?? 4200);
-serve({ fetch: createApp(tables, process.env.WEB_DIR ?? "../web/dist", auth).fetch, port });
+serve({ fetch: createApp(tables, process.env.WEB_DIR ?? "../web/dist", auth, await loadPosts(dir)).fetch, port });
 console.log(`Serving ${tables.length} tables at http://localhost:${port}/mcp`);

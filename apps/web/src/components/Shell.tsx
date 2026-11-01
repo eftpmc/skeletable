@@ -103,7 +103,7 @@ export function AppBar({ crumbs = [], phoneTitle, actions }: { crumbs?: Crumb[];
 }
 
 function Footer() {
-  const links = [["/about", "About"], ["/accuracy", "Accuracy"], ["/developers", "Developers"], ["/help", "Help"], ["/terms", "Terms"], ["/privacy", "Privacy"]];
+  const links = [["/about", "About"], ["/blog", "Blog"], ["/accuracy", "Accuracy"], ["/developers", "Developers"], ["/help", "Help"], ["/terms", "Terms"], ["/privacy", "Privacy"]];
   return (
     <footer className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-1 px-4 py-6 text-sm text-muted-foreground sm:px-6">
       <span>Skeletable</span>

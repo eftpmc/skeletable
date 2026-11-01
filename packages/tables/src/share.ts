@@ -19,6 +19,19 @@ export function rowSlugs(table: { rows: { key: string }[] }) {
   }));
 }
 
+/** Text split around `[words](address)` links. Only web and site addresses become links. */
+export function inlineParts(text: string) {
+  const parts: { text: string; href?: string }[] = [];
+  let at = 0;
+  for (const match of text.matchAll(/\[([^\]]+)\]\(((?:https?:\/\/|\/)[^)\s]+)\)/g)) {
+    if (match.index > at) parts.push({ text: text.slice(at, match.index) });
+    parts.push({ text: match[1]!, href: match[2]! });
+    at = match.index + match[0].length;
+  }
+  if (at < text.length) parts.push({ text: text.slice(at) });
+  return parts;
+}
+
 /** A spreadsheet runs text starting with these as a formula, so a value from a page can't reach it as one. */
 const safe = (text: string) => (/^[=+\-@\t\r]/.test(text) ? `'${text}` : text);
 

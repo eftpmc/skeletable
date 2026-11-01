@@ -4,6 +4,7 @@ import { useRoute } from "wouter";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Toaster } from "@/components/ui/sonner";
 import { MeContext, useJson, type Me } from "@/lib/api";
+import { BlogIndex, BlogPost } from "@/pages/Blog";
 import { Accuracy, Developers } from "@/pages/Docs";
 import { Account } from "@/pages/Account";
 import { Explore } from "@/pages/Explore";
@@ -27,6 +28,8 @@ function Routes({ me }: { me: Me }) {
   const [isAccountSettings] = useRoute("/settings/account");
   const [isVisits] = useRoute("/settings/visits");
   const [isAccuracy] = useRoute("/accuracy");
+  const [isBlog] = useRoute("/blog");
+  const [isPost, post] = useRoute("/blog/:slug");
   const [isDevelopers] = useRoute("/developers");
   const [isRow, row] = useRoute("/:owner/:slug/row/:row");
   const [isTeams] = useRoute("/settings/teams");
@@ -47,6 +50,8 @@ function Routes({ me }: { me: Me }) {
   if (isAccountSettings) return <AccountSettings />;
   if (isVisits) return <VisitSettings />;
   if (isAccuracy) return <Accuracy />;
+  if (isBlog) return <BlogIndex />;
+  if (isPost) return <BlogPost key={post.slug} slug={post.slug} />;
   if (isDevelopers) return <Developers />;
   if (isRow) return <RowPage key={row.row} owner={row.owner} slug={row.slug} rowSlug={row.row} />;
   if (isTeams) return <Teams />;

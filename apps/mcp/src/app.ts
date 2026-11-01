@@ -7,6 +7,7 @@ import { authRoutes, sessionViewer, type AuthConfig } from "./auth.js";
 import { dataRoutes } from "./data.js";
 import { checkCounts, searchTables, summarize, type PublishedTable } from "./library.js";
 import { notifyOwners } from "./email.js";
+import { blogRoutes, type Post } from "./posts.js";
 import { handleMcp, type Propose } from "./mcp.js";
 import { pageRoutes } from "./pages.js";
 import { submitProposal, tokenUser } from "./proposals.js";
@@ -19,7 +20,7 @@ const API_PER_MINUTE = 240;
 const SIGN_IN_PER_MINUTE = 20;
 
 /** The server: the MCP endpoint, the JSON the site reads, a health check, and the built site when there is one. */
-export function createApp(tables: PublishedTable[], webDir?: string, auth?: AuthConfig) {
+export function createApp(tables: PublishedTable[], webDir?: string, auth?: AuthConfig, posts: Post[] = []) {
   const app = new Hono();
   const viewerOf = (c: Context) => (auth ? sessionViewer(auth.sql, c) : Promise.resolve(everyone));
   app.use("*", async (c, next) => {
@@ -66,13 +67,14 @@ export function createApp(tables: PublishedTable[], webDir?: string, auth?: Auth
     const table = tables.find((t) => t.owner === c.req.param("owner") && t.slug === c.req.param("slug"));
     return table && canRead(table, await viewerOf(c)) ? c.json(table) : c.json({ error: "No such table" }, 404);
   });
+  blogRoutes(app, posts, tables, viewerOf);
   app.all("/api/*", (c) => c.json({ error: "Not found" }, 404));
   dataRoutes(app, tables, auth?.publicUrl ?? "https://skeletable.com");
   if (webDir && existsSync(join(resolve(webDir), "index.html"))) {
     const root = resolve(webDir);
     app.get("/assets/*", serveStatic({ root }));
     app.get("/logo.*", serveStatic({ root }));
-    pageRoutes(app, tables, root, auth?.publicUrl ?? "https://skeletable.com");
+    pageRoutes(app, tables, root, auth?.publicUrl ?? "https://skeletable.com", posts);
   }
   app.onError((error, c) => {
     console.error(`${c.req.method} ${c.req.path}: ${error.stack ?? error}`);

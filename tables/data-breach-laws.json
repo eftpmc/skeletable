@@ -674,7 +674,8 @@
           "source": "https://www.leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=0500-0599/0501/Sections/0501.171.html",
           "kind": "first-hand",
           "quote": "501.171 security of confidential personal information",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_days": {
           "value": 30,
@@ -1274,7 +1275,8 @@
           "source": "https://legis.la.gov/legis/Law.aspx?d=322030",
           "kind": "first-hand",
           "quote": "rs 51:3074",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_days": {
           "value": 60,
@@ -1373,7 +1375,8 @@
           "source": "https://legislature.maine.gov/statutes/10/title10sec1348.html",
           "kind": "first-hand",
           "quote": "if misuse of the personal information has occurred or if it is reasonably possible that misuse will occur",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "ag_threshold": {
           "missing": true,
@@ -1406,7 +1409,8 @@
           "source": "https://mgaleg.maryland.gov/mgawebsite/Laws/StatuteText?article=gcl&section=14-3504",
           "kind": "first-hand",
           "quote": "14-3504",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_days": {
           "value": 45,
@@ -1472,7 +1476,8 @@
           "source": "https://malegislature.gov/Laws/GeneralLaws/PartI/TitleXV/Chapter93H/Section3",
           "kind": "first-hand",
           "quote": "chapter 93h",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_days": {
           "missing": true,
@@ -1965,7 +1970,8 @@
           "source": "https://www.leg.state.nv.us/nrs/nrs-603a.html",
           "kind": "first-hand",
           "quote": "nrs 603a.220",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_standard": {
           "value": "in the most expedient time possible and without unreasonable delay",
@@ -2096,7 +2102,8 @@
           "source": "https://www.njleg.state.nj.us/2004/Bills/PL05/226_.HTM",
           "kind": "first-hand",
           "quote": "c.56:8-163 disclosure of breach of security to customers",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_standard": {
           "value": "in the most expedient time possible and without unreasonable delay",
@@ -2537,7 +2544,8 @@
           "source": "https://www.oregonlegislature.gov/bills_laws/ors/ors646A.html",
           "kind": "first-hand",
           "quote": "646a.604 notice of breach of security",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_days": {
           "value": 45,
@@ -2743,7 +2751,8 @@
           "source": "https://www.scstatehouse.gov/code/t39c001.php",
           "kind": "first-hand",
           "quote": "39-1-90",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_standard": {
           "value": "in the most expedient time possible and without unreasonable delay",
@@ -3342,7 +3351,8 @@
           "source": "https://docs.legis.wisconsin.gov/statutes/statutes/134/98",
           "kind": "first-hand",
           "quote": "134.98",
-          "read": "2026-11-01"
+          "read": "2026-11-01",
+          "confirmed": "blind-read"
         },
         "notify_days": {
           "value": 45,

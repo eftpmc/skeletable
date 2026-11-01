@@ -1,0 +1,12 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.eftpmc/skeletable",
+  "description": "Sourced tables for agents. Every value links to the exact words that state it.",
+  "version": "1.0.0",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://skeletable.com/mcp"
+    }
+  ]
+}

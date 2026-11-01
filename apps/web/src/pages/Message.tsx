@@ -18,8 +18,10 @@ export function Message({ title, action }: { title: string; action?: ReactNode }
   );
 }
 
+export const NotFoundContent = () => <Message title="There's no page here" />;
+
 export const NotFound = () => (
   <Page>
-    <Content><Message title="There's no page here" /></Content>
+    <Content><NotFoundContent /></Content>
   </Page>
 );
