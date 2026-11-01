@@ -9,6 +9,8 @@ const Prose = ({ children }: { children: ReactNode }) => <div className="space-y
 
 const Code = ({ children }: { children: ReactNode }) => <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs break-all">{children}</code>;
 
+const Command = ({ children }: { children: ReactNode }) => <pre className="overflow-x-auto rounded-md bg-muted px-3 py-2 font-mono text-xs"><code>{children}</code></pre>;
+
 function Totals() {
   const { data, status, retry } = useJson<TableSummary[]>("/api/tables");
   if (status === "failed") return <LoadFailed what="The totals" retry={retry} />;
@@ -122,9 +124,27 @@ export function Developers() {
       <Content size="narrow">
         <PageHeader title="Developers" description="Use the tables from an agent, or as plain data files." />
         <div className="space-y-6">
-          <Section title="MCP" description="A server any MCP client can connect to. Public tables need no account.">
+          <Section title="Connect an MCP client" description="Public tables need no account. Every supported client uses the same Streamable HTTP endpoint.">
+            <Prose><p><Code>{origin}/mcp</Code></p></Prose>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium">Codex</h3>
+                <Command>{`codex mcp add skeletable --url ${origin}/mcp`}</Command>
+                <Prose><p>Then run <Code>codex mcp list</Code> to confirm it is connected. In the ChatGPT desktop app or Codex IDE extension, open Settings, choose MCP servers, add a Streamable HTTP server, and use the same URL.</p></Prose>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium">Claude and Claude Desktop</h3>
+                <Prose><p>Open <strong>Customize → Connectors → Add → Add custom connector</strong>. Name it Skeletable, enter <Code>{origin}/mcp</Code>, and choose <strong>No sign in</strong> for public tables.</p></Prose>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium">Any other compatible client</h3>
+                <Prose><p>Add a remote or Streamable HTTP MCP server and set its URL to <Code>{origin}/mcp</Code>. It does not need a token to read public tables.</p></Prose>
+              </div>
+            </div>
+          </Section>
+          <Section title="MCP tools" description="A server any MCP client can connect to. Public tables need no account.">
             <AgentCommand />
-            <Prose><p>It offers <Code>list_tables</Code>, <Code>get_table</Code> and <Code>get_cell</Code>, which gives a value's source and exact quote, and <Code>check_claim</Code>, which tests a statement against a cell. A token from Settings adds your private tables, <Code>propose_change</Code>, and <Code>create_table</Code>, <Code>add_columns</Code>, <Code>add_rows</Code> and <Code>fill_cells</Code> for building drafts. Each sheet's Agent button gives you the connect command and a ready prompt.</p></Prose>
+            <Prose><p>Claude Code users can use the command above. It offers <Code>list_tables</Code>, <Code>get_table</Code> and <Code>get_cell</Code>, which gives a value's source and exact quote, and <Code>check_claim</Code>, which tests a statement against a cell. A token from Settings adds your private tables, <Code>propose_change</Code>, and <Code>create_table</Code>, <Code>add_columns</Code>, <Code>add_rows</Code> and <Code>fill_cells</Code> for building drafts. Each sheet's Agent button gives you the connect command and a ready prompt.</p></Prose>
           </Section>
           <Section title="Data files" description="Each public table has stable addresses, free to read and crawl.">
             <Prose>
