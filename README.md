@@ -32,6 +32,12 @@ apps/web         The site, built with shadcn/ui and served by the server
 docker/          The server's image, which Railway builds
 ```
 
+## Review table changes
+
+Each table has Overview, Proposals, and History tabs, with an Open sheet button for the editor. Signed-in contributors can create a titled proposal with up to 20 cell changes, a reason, and a source and exact quote for each value. Bundles remain open for review, including when submitted by an owner. Existing single-cell owner saves still apply immediately after validation.
+
+Account owners and editors can accept all changes in a bundle or close it. Acceptance is transactional and refuses a bundle if any cell has a newer version than the one recorded at submission. Close a stale proposal and submit an updated one. Accepted values remain in the existing version history. Discussion threads, revision restore, and editing an open proposal are not implemented yet.
+
 ## Develop
 
 Requirements: Node 22+ and pnpm 10 (`corepack enable`).

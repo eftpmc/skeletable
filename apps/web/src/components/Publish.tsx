@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
 import { FormError } from "@/components/Layout";
+import { Spinner } from "@/components/Loading";
 import { Button } from "@/components/ui/button";
 import { postJson } from "@/lib/api";
 import type { PublishedTable } from "@/lib/status";
@@ -16,12 +17,17 @@ export function PublishDraft({ table, onChanged }: { table: PublishedTable; onCh
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string>();
   const publish = async () => {
+    if (sending) return;
     setSending(true);
+    setError(undefined);
+    try {
     const { ok, data } = await postJson<{ error?: string }>(`/api/tables/${table.owner}/${table.slug}/publish`, { private: isPrivate });
-    setSending(false);
+
     if (!ok) return setError(data.error ?? "That didn't publish. Try again.");
     toast.success("Published");
     onChanged();
+    } catch { setError("Couldn’t connect. Try publishing again."); }
+    finally { setSending(false); }
   };
   return (
     <section className="overflow-hidden rounded-xl border">
@@ -45,7 +51,7 @@ export function PublishDraft({ table, onChanged }: { table: PublishedTable; onCh
           <label className="flex items-center gap-2"><input type="radio" name="publish-to" className="size-4 accent-green-600" checked={isPrivate} onChange={() => setIsPrivate(true)} />Private, for people you add</label>
         </fieldset>
         <FormError error={error} />
-        <Button disabled={!ready || sending} onClick={() => void publish()}>{sending ? "Publishing..." : "Publish"}</Button>
+        <Button aria-busy={sending} disabled={!ready || sending} onClick={() => void publish()}>{sending && <Spinner label="Publishing" />}{sending ? "Publishing..." : "Publish"}</Button>
       </div>
     </section>
   );

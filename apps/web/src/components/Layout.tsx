@@ -66,13 +66,13 @@ export const LoadFailed = ({ what, retry }: { what: string; retry?: () => void }
 );
 
 export const LoadingList = ({ rows = 3, label }: { rows?: number; label: string }) => (
-  <div className="space-y-px overflow-hidden rounded-xl border" aria-label={label}>
+  <div className="divide-y overflow-hidden rounded-xl border" aria-label={label}>
     {Array.from({ length: rows }, (_, index) => <Skeleton key={index} className="h-14 rounded-none" />)}
   </div>
 );
 
-/** Rows divided by lines inside one border, the shape of every list in the app. */
-export const List = ({ children, label }: { children: ReactNode; label?: string }) => <ul aria-label={label} className="divide-y rounded-xl border text-sm">{children}</ul>;
+/** Compact rows with dividers in a gently rounded container. */
+export const List = ({ children, label }: { children: ReactNode; label?: string }) => <ul aria-label={label} className="divide-y overflow-hidden rounded-xl border text-sm">{children}</ul>;
 
 /** Asks once more, in place, before something that can't be undone. */
 export function ConfirmButton({ label, confirm, onConfirm }: { label: string; confirm: string; onConfirm: () => void }) {

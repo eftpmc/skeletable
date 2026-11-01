@@ -1,12 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="197 190 860 860">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="240 216 780 780">
   <defs>
-    <linearGradient id="deep" x1="0.9" y1="0" x2="0.5" y2="1"><stop offset="0" stop-color="#20c24a"/><stop offset="1" stop-color="#056b35"/></linearGradient>
-    <linearGradient id="lime" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#93ff42"/><stop offset="1" stop-color="#2fc72f"/></linearGradient>
+    <linearGradient id="green" gradientUnits="userSpaceOnUse" x1="300" y1="450" x2="950" y2="650">
+      <stop stop-color="#c5ff68"/>
+      <stop offset=".26" stop-color="#7cf84e"/>
+      <stop offset=".6" stop-color="#08d875"/>
+      <stop offset="1" stop-color="#009b68"/>
+    </linearGradient>
   </defs>
-  <rect x="197" y="190" width="860" height="860" rx="190" fill="#000"/>
-  <path fill="url(#deep)" d="M450 316Q471 294 502 294H700Q740 294 740 334V438Q740 484 694 484H328Q304 481 315 456Z"/>
-  <rect fill="url(#lime)" x="775" y="294" width="218" height="190" rx="46"/>
-  <rect fill="url(#lime)" x="775" y="521" width="218" height="170" rx="44"/>
-  <path fill="url(#lime)" d="M775 768Q775 725 818 725H928Q956 729 943 757L809 892Q785 908 774 880Z"/>
-  <path fill="#fbf1e9" fill-rule="evenodd" d="M326 521H676Q739 521 739 584V790Q739 853 676 853H646Q629 853 629 870V925Q629 948 606 948H548Q526 948 526 925V870Q526 853 510 853H493Q477 853 477 870V925Q477 948 455 948H398Q376 948 376 925V870Q376 853 359 853H326Q262 853 262 790V584Q262 521 326 521ZM362 653Q342 653 342 673V753Q342 773 362 773H443Q463 773 463 753V673Q463 653 443 653ZM560 653Q540 653 540 673V753Q540 773 560 773H641Q661 773 661 753V673Q661 653 641 653Z"/>
+  <g fill="url(#green)" transform="matrix(1 0 -.05 1 30.3 0)">
+    <path transform="translate(0 8)" d="M503 307H965C993 307 1008 329 999 356L969 447C961 471 944 487 919 487H350C339 487 332 477 336 466L354 412C375 349 433 307 503 307Z"/>
+    <path d="M357 532H540C548 532 552 539 549 547L506 676C504 683 497 688 489 688H354C308 688 275 644 290 600L299 573C307 549 331 532 357 532Z"/>
+    <path transform="translate(-8 0)" d="M615 532H896C943 532 977 578 962 623L947 668C943 680 932 688 919 688H567C559 688 555 681 558 673L602 541C604 535 609 532 615 532Z"/>
+    <path transform="translate(0 -8)" d="M330 733H913C924 733 931 743 927 754L911 802C891 863 838 905 774 905H292C268 905 253 883 261 859L293 763C299 745 311 733 330 733Z"/>
+  </g>
 </svg>

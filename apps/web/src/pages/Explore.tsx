@@ -1,3 +1,4 @@
+import { Spinner } from "@/components/Loading";
 import { Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Content, LoadFailed, PageHeader } from "@/components/Layout";
@@ -21,7 +22,7 @@ const confirmedShare = ({ checks: { confirmed, summary, once, gap } }: TableSumm
 export function Explore() {
   const [query, setQuery] = useState("");
   const [topic, setTopic] = useState<string>();
-  const { data, status, retry } = useJson<TableSummary[]>(`/api/tables?q=${encodeURIComponent(query)}`);
+  const { data, status, retry, refreshing, refreshFailed } = useJson<TableSummary[]>(`/api/tables?q=${encodeURIComponent(query)}`);
   const all = useJson<TableSummary[]>("/api/tables");
   const [sort, setSort] = useState<keyof typeof sorts>("checked");
   // Browse is the public library, even when you can also see private tables.
@@ -38,10 +39,10 @@ export function Explore() {
     <Page>
       <Content>
         <PageHeader title="Browse tables" description="Every value here shows its source. Open a table to see how well it's been checked." />
-        <div className="relative">
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+        <div className="relative max-w-xl">
+          {refreshing ? <Spinner label="Updating search results" className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground" /> : <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />}
           <Input
-            className="h-10 pl-9"
+            className="h-12 rounded-lg bg-card pl-9 shadow-none"
             type="search"
             aria-label="Search tables"
             placeholder="Search tables and rows"
@@ -49,10 +50,10 @@ export function Explore() {
             onChange={(event) => setQuery(event.target.value)}
           />
         </div>
-        <div className="mt-3 mb-5 flex flex-wrap items-center justify-between gap-2">
+        <div className="mt-6 mb-5 flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by topic">
             {[undefined, ...topics].map((name) => (
-              <Button key={name ?? "all"} variant={topic === name ? "default" : "outline"} size="xs" aria-pressed={topic === name} onClick={() => setTopic(name)}>
+              <Button key={name ?? "all"} variant="ghost" className={topic === name ? "rounded-full bg-secondary text-foreground" : "rounded-full text-muted-foreground"} size="sm" aria-pressed={topic === name} onClick={() => setTopic(name)}>
                 {name ?? "All"}
                 <span className="opacity-60 tabular-nums">{name ? topicCount(name) : library?.length}</span>
               </Button>
@@ -65,6 +66,7 @@ export function Explore() {
             </NativeSelect>
           </label>
         </div>
+        {refreshFailed && <p role="status" className="mb-3 text-sm text-muted-foreground">Couldn’t update results. Showing the previous results. <Button variant="link" size="sm" onClick={retry}>Retry</Button></p>}
         {status === "failed" ? (
           <LoadFailed what="The tables" retry={retry} />
         ) : shown?.length === 0 ? (
@@ -73,7 +75,7 @@ export function Explore() {
             action={<Button variant="outline" size="sm" onClick={() => { setQuery(""); setTopic(undefined); }}>See all tables</Button>}
           />
         ) : (
-          <TableList tables={shown} />
+          <TableList tables={shown} compact />
         )}
       </Content>
     </Page>

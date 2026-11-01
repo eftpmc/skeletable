@@ -53,6 +53,50 @@ describe.skipIf(!url)("proposals, history and tokens", () => {
 
   afterAll(() => sql.end());
 
+  const bundle = (headers: Record<string, string>, changes = [proposal, { ...proposal, row: files.find((table) => table.slug === "home-batteries")!.rows[1]!.key }]) =>
+    app.request("/api/tables/skeletable/home-batteries/proposal-bundles", { method: "POST", headers, body: JSON.stringify({ title: "Update warranties", changes }) });
+
+  it("keeps owner bundles pending and accepts them together only once", async () => {
+    const owner = await person("owner@example.com", "owner", true);
+    const response = await bundle(owner);
+    expect(response.status).toBe(201);
+    const { id } = await response.json() as { id: string };
+    const rows = await sql`select * from proposals`;
+    expect(rows).toHaveLength(2);
+    expect(rows.every((row) => row.status === "open")).toBe(true);
+    expect(rows[0]!.bundle_id).toBe(rows[1]!.bundle_id);
+    expect((await app.request(`/api/proposals/${id}/accept`, { method: "POST", headers: owner })).status).toBe(200);
+    expect(await sql`select * from proposals where status = 'accepted'`).toHaveLength(2);
+    expect((await app.request(`/api/proposals/${id}/accept`, { method: "POST", headers: owner })).status).toBe(403);
+  });
+
+  it("rolls back invalid bundles and disallows repeated cells", async () => {
+    const author = await person("a@example.com", "a");
+    const second = files.find((table) => table.slug === "home-batteries")!.rows[1]!.key;
+    expect((await bundle(author, [proposal, { ...proposal, row: second, quote: "Covered for 99 years" }])).status).toBe(400);
+    expect(await sql`select * from proposals`).toHaveLength(0);
+    expect((await bundle(author, [proposal, proposal])).status).toBe(400);
+  });
+
+  it("blocks non-reviewers and closes the whole bundle", async () => {
+    const author = await person("a@example.com", "a");
+    const owner = await person("owner@example.com", "owner", true);
+    const { id } = await (await bundle(author)).json() as { id: string };
+    expect((await app.request(`/api/proposals/${id}/accept`, { method: "POST", headers: author })).status).toBe(403);
+    expect((await app.request(`/api/proposals/${id}/reject`, { method: "POST", headers: owner })).status).toBe(200);
+    expect(await sql`select * from proposals where status = 'rejected'`).toHaveLength(2);
+  });
+
+  it("rejects stale bundles without applying any of their changes", async () => {
+    const author = await person("a@example.com", "a");
+    const owner = await person("owner@example.com", "owner", true);
+    const { id } = await (await bundle(author)).json() as { id: string };
+    expect((await propose(owner)).status).toBe(201);
+    expect((await app.request(`/api/proposals/${id}/accept`, { method: "POST", headers: owner })).status).toBe(403);
+    expect(await sql`select * from proposals where bundle_id is not null and status = 'open'`).toHaveLength(2);
+    expect(await sql`select * from proposals where status = 'accepted'`).toHaveLength(1);
+  });
+
   it("takes a proposal whose quote is on its page", async () => {
     const response = await propose(await person("a@example.com", "a"));
     expect(response.status).toBe(201);

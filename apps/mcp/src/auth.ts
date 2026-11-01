@@ -9,7 +9,7 @@ import { OFFICIAL_ACCOUNT, type Sql } from "./db.js";
 import { notifyOwners, type Mailer } from "./email.js";
 import type { PublishedTable } from "./library.js";
 import { manageRoutes } from "./manage.js";
-import { asValue, createToken, decideProposal, deleteToken, listProposals, listTokens, submitProposal, tableHistory } from "./proposals.js";
+import { asValue, createToken, decideProposal, deleteToken, listProposals, listTokens, submitProposal, submitBundle, tableHistory } from "./proposals.js";
 import { rateLimit } from "./rate-limit.js";
 import { teamRoutes } from "./teams.js";
 
@@ -162,6 +162,18 @@ export function authRoutes({ sql, clientId, clientSecret, publicUrl, ownerEmail,
     return c.json(await listProposals(sql, c.req.param("owner"), c.req.param("slug")));
   });
 
+  app.post("/api/tables/:owner/:slug/proposal-bundles", rateLimit(PROPOSALS_PER_MINUTE), async (c) => {
+    const user = await signedIn(c);
+    if (!user) return c.json({ error: "Sign in to propose changes." }, 401);
+    if (hidden(c, user)) return c.json(noTable, 404);
+    const body = z.object({ title: z.string().trim().min(1).max(160), note: z.string().max(500).optional(), changes: z.array(proposalBody).min(1).max(20) }).safeParse(await c.req.json().catch(() => null));
+    if (!body.success) return c.json({ error: "Add a title and 1–20 changes, each with its source and quote." }, 400);
+    const result = await submitBundle(sql, readable(tables, user), { ...body.data, owner: c.req.param("owner"), slug: c.req.param("slug") }, user.id, pages);
+    if ("error" in result) return c.json(result, 400);
+    await notifyOwners(sql, mail, publicUrl, result.id);
+    return c.json(result, 201);
+  });
+
   app.post("/api/tables/:owner/:slug/proposals", rateLimit(PROPOSALS_PER_MINUTE), async (c) => {
     const user = await signedIn(c);
     if (!user) return c.json({ error: "Sign in to suggest a change." }, 401);
@@ -173,7 +185,7 @@ export function authRoutes({ sql, clientId, clientSecret, publicUrl, ownerEmail,
     if ("error" in result) return c.json(result, 400);
     // Someone running the table doesn't need to review their own edit, and it still passed every check.
     if (runsTable(user, owner)) {
-      await decideProposal(sql, result.id, user.id, true);
+      if (!(await decideProposal(sql, result.id, user.id, true))) return c.json({ error: "The cell changed while saving. Refresh and review the proposal before accepting it." }, 409);
       await refresh?.();
       return c.json({ ...result, applied: true }, 201);
     }
@@ -198,7 +210,7 @@ export function authRoutes({ sql, clientId, clientSecret, publicUrl, ownerEmail,
     app.post(`/api/proposals/:id/${action}`, async (c) => {
       const user = await signedIn(c);
       if (!user) return c.json({ error: "Sign in first." }, 401);
-      if (!(await decideProposal(sql, c.req.param("id"), user.id, accept))) return c.json({ error: "You can't decide this proposal." }, 403);
+      if (!(await decideProposal(sql, c.req.param("id"), user.id, accept))) return c.json({ error: "This proposal cannot be decided: check your access, its status, and whether its values have changed." }, 403);
       await refresh?.();
       return c.json({ ok: true });
     });

@@ -1,8 +1,9 @@
 import type { Column } from "@skeleton/tables/format";
-import { Settings2 } from "lucide-react";
+import { Ellipsis } from "lucide-react";
 import { useRef, useState, type ClipboardEvent, type FormEvent, type KeyboardEvent } from "react";
 import { toast } from "sonner";
 import { Link, useLocation } from "wouter";
+import { DownloadItems } from "@/components/Download";
 import { Field, FormError } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -212,11 +213,11 @@ export function RowDialog({ table, rowKey, onClose, onChanged }: { table: Publis
 }
 
 /** The sheet's menu, for what isn't a cell: where to go, what to add in bulk, and publishing. */
-export function SheetOptions({ table, canRun, onRows, onShortcuts }: { table: PublishedTable; canRun: boolean; onRows: (names: string[]) => void; onShortcuts: () => void }) {
+export function SheetOptions({ table, downloadTable, canRun, onRows, onShortcuts }: { table: PublishedTable; downloadTable?: PublishedTable; canRun: boolean; onRows: (names: string[]) => void; onShortcuts: () => void }) {
   const page = `/${table.owner}/${table.slug}`;
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild><Button variant="outline" size="sm"><Settings2 />Options</Button></DropdownMenuTrigger>
+      <DropdownMenuTrigger asChild><Button variant="ghost" size="icon-sm" aria-label="Table options"><Ellipsis /></Button></DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuItem asChild><Link href={page}>Table page</Link></DropdownMenuItem>
         {canRun && <DropdownMenuItem asChild><Link href={`${page}/settings`}>Details and who can see it</Link></DropdownMenuItem>}
@@ -227,6 +228,8 @@ export function SheetOptions({ table, canRun, onRows, onShortcuts }: { table: Pu
             {rowSets.map(({ label, rows }) => <DropdownMenuItem key={label} onSelect={() => onRows(rows)}>Add {label}</DropdownMenuItem>)}
           </>
         )}
+        <DropdownMenuSeparator />
+        <DownloadItems table={downloadTable ?? table} />
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={onShortcuts}>Keyboard shortcuts</DropdownMenuItem>
       </DropdownMenuContent>

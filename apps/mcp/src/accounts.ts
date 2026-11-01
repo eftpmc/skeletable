@@ -280,14 +280,14 @@ export function accountRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sig
     const user = await signedIn(c);
     if (!user) return c.json({ error: "Sign in first." }, 401);
     return c.json(await sql`
-      select p.id, a.handle as owner, t.slug, t.title, r.key as row, p.column_id as column, p.created_at
+      select * from (select distinct on (coalesce(p.bundle_id, p.id::text)) p.id, p.title as proposal_title, a.handle as owner, t.slug, t.title, r.key as row, p.column_id as column, p.created_at
       from proposals p
       join data_tables t on t.id = p.table_id
       join accounts a on a.id = t.account_id
       join account_members m on m.account_id = a.id
       join table_rows r on r.id = p.row_id
       where m.user_id = ${user.id} and p.status = 'open'
-      order by p.id desc limit 50`);
+      order by coalesce(p.bundle_id, p.id::text), p.id desc) waiting order by id desc limit 50`);
   });
 
   // How the site is being found, for the official account's owners. Counts only.

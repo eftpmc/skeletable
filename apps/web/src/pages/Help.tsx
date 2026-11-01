@@ -27,7 +27,7 @@ export function Help() {
               <p>Sort by clicking a column, and use Find and Filter at the bottom of the sheet. On a table you run, select a cell and type, type a name in an empty row to add it, and type in the last heading to add a column. Options holds the rest, and Agent hands the table to your own agent. Share gives you a link to the live table with your view kept, and Download saves what you're looking at.</p>
             </Prose>
           </Section>
-          <Section title="How values are checked" description="Turn on X-ray in a sheet to see this for every cell.">
+          <Section title="How values are checked" description="Turn on Show checks above a sheet to see this for every cell.">
             <ul className="space-y-2 text-sm">
               {order.map((status) => {
                 const { label, detail, icon: Icon, tint } = statuses[status];

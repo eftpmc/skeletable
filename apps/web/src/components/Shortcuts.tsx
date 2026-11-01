@@ -1,7 +1,7 @@
 const shortcuts = [
   ["/", "Find in the table"],
   ["F", "Open filters"],
-  ["X", "Turn X-ray on or off"],
+  ["X", "Show or hide checks"],
   ["Type", "Start editing the selected cell, where you can edit"],
   ["Enter", "Edit the selected cell, or save and move down"],
   ["Tab", "Save and move right"],

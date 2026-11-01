@@ -11,7 +11,7 @@ import { useTheme } from "@/lib/theme";
 /** One step of where you are. The last is the current page, so it needs no link. */
 export type Crumb = { label: string; href?: string; editor?: ReactNode };
 
-const BROWSE = { href: "/explore", label: "Browse tables" };
+const navigation = [{ href: "/", label: "Home" }, { href: "/explore", label: "Browse tables" }, { href: "/blog", label: "Blog" }];
 
 /** What a signed-out phone gets in place of the links and buttons that fit on a wider screen. */
 function PublicMenu() {
@@ -25,7 +25,8 @@ function PublicMenu() {
           <Button variant="ghost" size="icon-sm" aria-label="Menu"><Menu /></Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-52">
-          <DropdownMenuItem asChild><Link href={BROWSE.href}>{BROWSE.label}</Link></DropdownMenuItem>
+          {navigation.map(({ href, label }) => <DropdownMenuItem key={href} asChild><Link href={href}>{label}</Link></DropdownMenuItem>)}
+          <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => setAgent(true)}>Connect an agent</DropdownMenuItem>
           <DropdownMenuItem onSelect={(event) => { event.preventDefault(); toggle(); }}>{dark ? "Use light theme" : "Use dark theme"}</DropdownMenuItem>
           {canSignIn && (
@@ -45,7 +46,7 @@ function PublicMenu() {
  * The same bar on every screen. Wide screens show the path, each step a link. Phones show a back
  * arrow to the step before, and the page's name.
  */
-export function AppBar({ crumbs = [], phoneTitle, actions }: { crumbs?: Crumb[]; phoneTitle?: string; actions?: ReactNode }) {
+export function AppBar({ crumbs = [], phoneTitle, actions, workspace = false }: { crumbs?: Crumb[]; phoneTitle?: string; actions?: ReactNode; workspace?: boolean }) {
   const { user } = useMe();
   const [location] = useLocation();
   const current = crumbs.at(-1);
@@ -57,7 +58,7 @@ export function AppBar({ crumbs = [], phoneTitle, actions }: { crumbs?: Crumb[];
           <Link href={back}><ArrowLeft /></Link>
         </Button>
       )}
-      <Link href="/" aria-label="Skeletable home" className={`shrink-0 items-center gap-2 font-medium tracking-tight ${back ? "hidden md:flex" : "flex"}`}>
+      <Link href="/" aria-label="Skeletable home" className={`shrink-0 items-center gap-2.5 font-semibold tracking-tight ${back ? "hidden md:flex" : "flex"}`}>
         <Logo className="size-8" />
         {!current && "Skeletable"}
       </Link>
@@ -68,7 +69,7 @@ export function AppBar({ crumbs = [], phoneTitle, actions }: { crumbs?: Crumb[];
             <span key={`${index}-${label}`} className="flex min-w-0 items-center gap-1.5">
               {index > 0 && <span aria-hidden="true" className="text-muted-foreground">/</span>}
               {editor ?? (href && index < crumbs.length - 1 ? (
-                <Link href={href} className="max-w-48 truncate text-muted-foreground transition-colors hover:text-foreground">{label}</Link>
+                <Link href={href} className="max-w-32 truncate text-muted-foreground transition-colors hover:text-foreground">{label}</Link>
               ) : (
                 <span aria-current="page" className="truncate font-medium">{label}</span>
               ))}
@@ -77,24 +78,20 @@ export function AppBar({ crumbs = [], phoneTitle, actions }: { crumbs?: Crumb[];
         </nav>
       )}
       <div className="ml-auto flex shrink-0 items-center gap-1.5">
-        <Link
-          href={BROWSE.href}
-          aria-current={location === BROWSE.href ? "page" : undefined}
-          className="mr-1.5 hidden text-sm text-muted-foreground transition-colors hover:text-foreground aria-[current=page]:text-foreground md:block"
-        >
-          {BROWSE.label}
-        </Link>
+        {!workspace && <nav aria-label="Main navigation" className="mr-4 hidden items-center gap-5 md:flex">
+          {navigation.map(({ href, label }) => <Link key={href} href={href} aria-current={(href === "/" ? location === href : location === href || location.startsWith(`${href}/`)) ? "page" : undefined} className="text-sm text-muted-foreground transition-colors hover:text-foreground aria-[current=page]:font-medium aria-[current=page]:text-foreground">{label}</Link>)}
+        </nav>}
         {actions}
         {user ? (
           <AccountButton />
         ) : (
           <>
-            <div className="hidden items-center gap-1 md:flex">
+            <div className={workspace ? "hidden" : "hidden items-center gap-1 md:flex"}>
               <AgentButton />
               <ThemeButton />
               <AccountButton />
             </div>
-            <div className="md:hidden"><PublicMenu /></div>
+            <div className={workspace ? "" : "md:hidden"}><PublicMenu /></div>
           </>
         )}
       </div>
@@ -106,7 +103,7 @@ function Footer() {
   const links = [["/about", "About"], ["/blog", "Blog"], ["/accuracy", "Accuracy"], ["/developers", "Developers"], ["/help", "Help"], ["/terms", "Terms"], ["/privacy", "Privacy"]];
   return (
     <footer className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-1 px-4 py-6 text-sm text-muted-foreground sm:px-6">
-      <span>Skeletable</span>
+      <Link href="/" className="font-medium hover:text-foreground">Skeletable home</Link>
       {links.map(([href, label]) => <Link key={href} href={href!} className="hover:text-foreground">{label}</Link>)}
       <span className="sm:ml-auto">Tables under CC BY 4.0</span>
     </footer>

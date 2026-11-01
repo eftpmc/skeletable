@@ -62,7 +62,13 @@ export function createApp(tables: PublishedTable[], webDir?: string, auth?: Auth
     return handleMcp(visible, publicUrl, c.req.raw, propose, userId ? agentActions(auth.sql, tables, userId, publicUrl, auth.refresh, auth.pages) : null);
   });
   if (auth) app.route("/", authRoutes(auth));
-  else app.get("/api/me", (c) => c.json({ canSignIn: false, user: null }));
+  else {
+    app.get("/api/me", (c) => c.json({ canSignIn: false, user: null }));
+    // The public preview has no database, but its table tabs should still be usable.
+    // Auth-backed servers replace these with the real proposal and history routes above.
+    app.get("/api/tables/:owner/:slug/proposals", (c) => c.json([]));
+    app.get("/api/tables/:owner/:slug/history", (c) => c.json([]));
+  }
   app.get("/api/tables", async (c) => c.json(searchTables(readable(tables, await viewerOf(c)), c.req.query("q")).map((table) => ({ ...summarize(table), checks: checkCounts(table) }))));
   // A table you can't read is just a missing one.
   app.get("/api/tables/:owner/:slug", async (c) => {

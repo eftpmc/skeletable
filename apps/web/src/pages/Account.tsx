@@ -45,7 +45,7 @@ export function Account({ owner }: { owner: string }) {
         ) : (
           <>
             <header className="mb-6 flex flex-wrap items-center gap-3">
-              <AccountMark handle={owner} name={name} className="size-14 text-2xl" />
+              <AccountMark handle={owner} name={name} kind={details.team ? "team" : "person"} className="size-14 text-2xl" />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <h1 className="text-2xl font-semibold tracking-tight">{name}</h1>

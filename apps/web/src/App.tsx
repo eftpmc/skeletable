@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { useRoute } from "wouter";
+import { ListSkeleton, Spinner } from "@/components/Loading";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Toaster } from "@/components/ui/sonner";
 import { MeContext, useJson, type Me } from "@/lib/api";
@@ -83,7 +84,7 @@ export function App() {
   }, []);
 
   // Waiting here keeps the frame from flashing from public to signed-in.
-  if (status === "loading" && !data) return null;
+  if (status === "loading" && !data) return <div className="min-h-svh"><div className="flex h-14 items-center gap-2 border-b px-4 text-sm text-muted-foreground"><Spinner label="Loading Skeletable" />Loading Skeletable</div><div className="mx-auto max-w-5xl px-6 py-8"><ListSkeleton label="Loading page" /></div></div>;
   return (
     <MeContext.Provider value={me}>
       <ErrorBoundary>

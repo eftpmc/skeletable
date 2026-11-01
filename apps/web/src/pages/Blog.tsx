@@ -2,10 +2,12 @@ import type { Cell, Column, FoundCell } from "@skeleton/tables/format";
 import { emptyLabel, inlineParts } from "@skeleton/tables/share";
 import { useEffect } from "react";
 import { Link } from "wouter";
-import { Content, EmptyState, List, LoadFailed, LoadingList, PageHeader } from "@/components/Layout";
+import { ListSkeleton } from "@/components/Loading";
+import { Content, EmptyState, LoadFailed, PageHeader } from "@/components/Layout";
 import { NotFoundContent } from "@/pages/Message";
 import { ProofDetails, citation } from "@/components/Proof";
 import { Page } from "@/components/Shell";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useJson } from "@/lib/api";
@@ -34,19 +36,19 @@ export function BlogIndex() {
         {status === "failed" ? (
           <LoadFailed what="The blog" retry={retry} />
         ) : !data ? (
-          <LoadingList label="Loading posts" />
+          <ListSkeleton label="Loading posts" rows={3} />
         ) : data.length ? (
-          <List label="Posts">
+          <ul aria-label="Posts" className="divide-y border-y">
             {data.map((post) => (
               <li key={post.slug}>
-                <Link href={`/blog/${post.slug}`} className="block px-4 py-3 transition-colors hover:bg-muted/50">
-                  <span className="flex flex-wrap items-center gap-2"><span className="font-medium">{post.title}</span>{post.draft && <Draft />}</span>
-                  <span className="mt-0.5 block text-muted-foreground">{post.summary}</span>
-                  <span className="mt-1 block text-xs text-muted-foreground">{day(post.date)}</span>
+                <Link href={`/blog/${post.slug}`} className="group block px-2 py-6 transition-colors hover:bg-muted/50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring sm:px-4">
+                  <span className="flex flex-wrap items-center gap-2"><span className="text-lg font-semibold tracking-tight group-hover:text-brand">{post.title}</span>{post.draft && <Draft />}</span>
+                  <span className="mt-2 block text-sm leading-relaxed text-muted-foreground">{post.summary}</span>
+                  <span className="mt-3 block text-xs text-muted-foreground">{day(post.date)}</span>
                 </Link>
               </li>
             ))}
-          </List>
+          </ul>
         ) : (
           <EmptyState title="Nothing here yet" body="Findings from checking the sources will appear here." />
         )}
@@ -103,7 +105,7 @@ export function BlogPost({ slug }: { slug: string }) {
             </div>
           </article>
         ) : (
-          <LoadingList rows={4} label="Loading post" />
+          <div role="status" aria-label="Loading post" className="space-y-6"><span className="sr-only">Loading post</span><Skeleton className="h-9 w-4/5" /><Skeleton className="h-3 w-28" />{[0, 1, 2].map((index) => <div key={index} aria-hidden="true" className="space-y-3"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-3/4" /></div>)}</div>
         )}
       </Content>
     </Page>

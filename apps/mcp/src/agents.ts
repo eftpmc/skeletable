@@ -81,7 +81,7 @@ export function agentActions(sql: Sql, tables: PublishedTable[], userId: string,
       if (!fill.source || !fill.quote) return { error: "A value needs its source and exact quote." };
       const result = await submitProposal(sql, [table], { owner: table.owner, slug: table.slug, row, column, value: fill.value, source: fill.source, quote: fill.quote }, userId, "agent", fetcher);
       if ("error" in result) return result;
-      await decideProposal(sql, result.id, userId, true);
+      if (!(await decideProposal(sql, result.id, userId, true))) return { error: "The cell changed while saving. Read the table again before retrying." };
       return { saved: true, check: result.check };
     }
     const held = table.rows.find((candidate) => candidate.key === row)?.cells[column];

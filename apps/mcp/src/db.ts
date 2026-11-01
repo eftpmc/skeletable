@@ -160,6 +160,16 @@ const migrations = [
   `
   alter table data_tables add column draft boolean not null default false;
   `,
+  `
+  alter table proposals add column bundle_id text;
+  alter table proposals add column title text;
+  alter table proposals add column base_version bigint;
+  alter table proposals add column base_cell jsonb;
+  update proposals p set base_version = v.id, base_cell = v.cell
+  from cell_versions v where v.id = (select max(v2.id) from cell_versions v2 where v2.row_id = p.row_id and v2.column_id = p.column_id and v2.created_at <= p.created_at);
+  create index proposals_by_bundle on proposals(bundle_id);
+  `,
+
 ];
 
 /** Run whatever hasn't run yet. The lock keeps two servers starting together from racing. */

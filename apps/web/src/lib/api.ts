@@ -25,7 +25,7 @@ export type Me = { canSignIn: boolean; user: { email: string; name: string | nul
 export const MeContext = createContext<Me & { refresh: () => void }>({ canSignIn: false, user: null, refresh: () => {} });
 export const useMe = () => useContext(MeContext);
 
-type Loaded<T> = { data?: T; status: "loading" | "ready" | "missing" | "failed"; retry: () => void };
+type Loaded<T> = { refreshing?: boolean; refreshFailed?: boolean; data?: T; status: "loading" | "ready" | "missing" | "failed"; retry: () => void };
 
 /** Sends JSON to the server, and hands back what it says either way. */
 export async function sendJson<T>(method: string, url: string, body?: unknown): Promise<{ ok: boolean; data: T }> {
@@ -42,7 +42,7 @@ export function useJson<T>(url: string): Loaded<T> {
 
   useEffect(() => {
     const request = new AbortController();
-    setState((previous) => ({ data: previous.data, status: previous.data ? "ready" : "loading" }));
+    setState((previous) => ({ data: previous.data, refreshing: !!previous.data, status: previous.data ? "ready" : "loading" }));
     fetch(url, { signal: request.signal })
       .then(async (response) => {
         if (response.status === 404) return setState({ status: "missing" });
@@ -51,7 +51,7 @@ export function useJson<T>(url: string): Loaded<T> {
       })
       .catch(() => {
         // A later look that fails leaves what's on screen alone, and only a first one shows as failed.
-        if (!request.signal.aborted) setState((previous) => (previous.data ? { data: previous.data, status: "ready" } : { status: "failed" }));
+        if (!request.signal.aborted) setState((previous) => (previous.data ? { data: previous.data, status: "ready", refreshFailed: true } : { status: "failed" }));
       });
     return () => request.abort();
   }, [url, attempt]);

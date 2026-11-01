@@ -10,7 +10,7 @@ import { useMe, type Me } from "@/lib/api";
 import { copyText } from "@/lib/copy";
 import { useTheme } from "@/lib/theme";
 
-/** The product's mark: a skull built from a sheet's cells, on its own tile so it reads on any background. */
+/** The product's green sheet mark, with a transparent background. */
 export const Logo = ({ className = "size-8" }: { className?: string }) => <img src="/logo.svg" alt="" className={className} />;
 
 export function ThemeButton() {
@@ -110,7 +110,9 @@ export function AccountButton() {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <DropdownMenuItem asChild className="md:hidden"><Link href="/explore">Browse tables</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link href="/">Home</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link href="/explore">Browse tables</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link href="/blog">Blog</Link></DropdownMenuItem>
             {accountLinks(user.handle, user.teams, user.invites).map(({ href, label }) => (
               <DropdownMenuItem key={href} asChild><Link href={href}>{label}</Link></DropdownMenuItem>
             ))}

@@ -1,5 +1,6 @@
 import { Bot, Check, Copy } from "lucide-react";
 import { useState } from "react";
+import { Spinner } from "@/components/Loading";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -37,11 +38,18 @@ function CopyBlock({ label, text, rows }: { label: string; text: string; rows: n
 export function AgentBuildButton({ table }: { table: { owner: string; slug: string; draft?: boolean; columns: unknown[] } }) {
   const [token, setToken] = useState<string>();
   const [error, setError] = useState<string>();
+  const [sending, setSending] = useState(false);
   const [subject, setSubject] = useState("");
   const makeToken = async () => {
+    if (sending) return;
+    setSending(true);
+    setError(undefined);
+    try {
     const { ok, data } = await postJson<{ token: string }>("/api/tokens", { name: "Agent" });
     if (ok) setToken(data.token);
     else setError("That token didn't save. Try again.");
+    } catch { setError("Couldn’t connect. Try again."); }
+    finally { setSending(false); }
   };
   const at = `${table.owner}/${table.slug}`;
   const blank = table.draft && !table.columns.length;
@@ -53,7 +61,7 @@ export function AgentBuildButton({ table }: { table: { owner: string; slug: stri
         <DialogTitle>Edit this table with your agent</DialogTitle>
         <DialogDescription>{table.draft ? "Your own agent does the reading. Each value is tested before it's saved, and this sheet fills in as it works. Nothing goes public until you publish." : "Your own agent does the reading. Each change it finds comes to you under Proposals, with its proof already tested, and nothing changes until you accept it."}</DialogDescription>
         <div className="min-w-0 space-y-4">
-          {!token && <Button type="button" variant="outline" size="sm" onClick={() => void makeToken()}>Make a token for this agent</Button>}
+          {!token && <Button type="button" variant="outline" size="sm" disabled={sending} aria-busy={sending} onClick={() => void makeToken()}>{sending && <Spinner label="Creating token" />}{sending ? "Creating token…" : "Make a token for this agent"}</Button>}
           {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
           {token && <p className="text-sm text-muted-foreground">The token is in the command below, and it's shown only once. You can remove it in Settings.</p>}
           <CopyBlock label="1. Connect it once" text={command} rows={3} />

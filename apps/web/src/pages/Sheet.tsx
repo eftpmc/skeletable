@@ -1,11 +1,11 @@
 import { isAnswered, isFound, type Cell, type Column } from "@skeleton/tables/format";
-import { ArrowDown, ArrowRight, ArrowUp, ChevronDown, Info, Lock, Pencil, ScanLine, Search } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUp, ChevronDown, Info, Lock, Pencil, ScanLine, Search, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent, type PointerEvent, type ReactNode, type RefObject } from "react";
 import { toast } from "sonner";
 import { Link, useLocation, useSearch } from "wouter";
+import { SheetSkeleton, Spinner } from "@/components/Loading";
 import { Input } from "@/components/ui/input";
 import { AgentBuildButton } from "@/components/AgentBuild";
-import { DownloadButton } from "@/components/Download";
 import { FilterButton } from "@/components/Filter";
 import { NoTable } from "@/components/NoTable";
 import { CiteButton, Conflicts, Quote, SourceLink, StatusBadge, kindLabels } from "@/components/Proof";
@@ -16,7 +16,7 @@ import { Shortcuts } from "@/components/Shortcuts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { signInHref } from "@/lib/account";
 import { postJson, useJson, useMe } from "@/lib/api";
@@ -90,18 +90,22 @@ function SuggestForm({ table, selected, canEdit, source, typed, onDone }: { tabl
   const search = useQuoteSearch(table, selected.column.id, form.value, form.source);
   const send = async (event: FormEvent) => {
     event.preventDefault();
+    if (sending) return;
     setSending(true);
     setError(undefined);
+    try {
     const { ok, data } = await postJson<{ error?: string }>(`/api/tables/${table.owner}/${table.slug}/proposals`, { ...form, row: selected.rowKey, column: selected.column.id });
-    setSending(false);
+
     if (!ok) return setError(data.error ?? "That didn't send. Try again.");
     toast.success(canEdit ? "Value saved" : "Proposal sent");
     onDone(true, form.source);
+    } catch { setError("Couldn’t connect. Try saving again."); }
+    finally { setSending(false); }
   };
   return (
     <form onSubmit={send} onKeyDown={(event) => { event.stopPropagation(); if (event.key === "Escape") onDone(false, form.source); }} className="space-y-2 border-t px-3 py-2 text-sm duration-150 animate-in fade-in slide-in-from-top-1">
       <p className="text-xs text-muted-foreground">{selected.column.rule}</p>
-      <div className="grid gap-2 sm:grid-cols-[10rem_1fr]">
+      <div className="grid gap-2">
         <Input aria-label="New value" autoFocus={!form.value} placeholder={`New value${selected.column.unit ? ` (${selected.column.unit})` : ""}`} required {...field("value")} />
         <Input aria-label="Source link" type="url" autoFocus={!!form.value && !form.source} placeholder="Link to the page that states it" required {...field("source")} />
       </div>
@@ -119,7 +123,7 @@ function SuggestForm({ table, selected, canEdit, source, typed, onDone }: { tabl
         </ul>
       )}
       <div className="flex items-center gap-2">
-        <Button type="submit" size="sm" disabled={sending}>{sending ? "Checking the page..." : canEdit ? "Save value" : "Send proposal"}</Button>
+        <Button type="submit" size="sm" disabled={sending} aria-busy={sending}>{sending && <Spinner label="Checking source" />}{sending ? "Checking the page..." : canEdit ? "Save value" : "Send proposal"}</Button>
         <Button type="button" variant="ghost" size="sm" onClick={() => onDone(false, form.source)}>Cancel</Button>
         {error && <span role="alert" className="text-xs text-destructive">{error}</span>}
       </div>
@@ -146,13 +150,13 @@ function XrayReading({ table }: { table: PublishedTable }) {
   );
 }
 
-/** Along the bottom of the sheet, like a spreadsheet's: the table's tools, out of the way of the data. */
-function StatusBar({ table, xray, onXray, onNext, find, onFind, findInput, filters, onFilters, filtering, onFiltering, shown }: { table: PublishedTable; xray: boolean; onXray: () => void; onNext?: () => void; find: string; onFind: (find: string) => void; findInput: RefObject<HTMLInputElement | null>; filters: SheetFilters; onFilters: (filters: SheetFilters) => void; filtering: boolean; onFiltering: (open: boolean) => void; shown: number }) {
+/** Frequently used controls stay directly above the grid. */
+function SheetToolbar({ table, xray, onXray, onNext, find, onFind, findInput, filters, onFilters, filtering, onFiltering, shown }: { table: PublishedTable; xray: boolean; onXray: () => void; onNext?: () => void; find: string; onFind: (find: string) => void; findInput: RefObject<HTMLInputElement | null>; filters: SheetFilters; onFilters: (filters: SheetFilters) => void; filtering: boolean; onFiltering: (open: boolean) => void; shown: number }) {
   return (
-    <footer className="flex h-9 shrink-0 items-center gap-2 overflow-x-auto border-t bg-muted px-2 text-xs">
-      <div className="relative w-24 shrink-0 sm:w-44">
+    <div aria-label="Sheet tools" className="flex shrink-0 flex-wrap items-center gap-2 px-3 py-2 text-xs">
+      <div className="relative w-32 shrink-0 sm:w-56">
         <Search className="pointer-events-none absolute top-1/2 left-2 size-3 -translate-y-1/2 text-muted-foreground" />
-        <Input ref={findInput} aria-label="Find in this table" placeholder="Find" value={find} onChange={(event) => onFind(event.target.value)} className="h-6 bg-background pl-6 text-xs md:text-xs" />
+        <Input ref={findInput} aria-label="Find in this table" placeholder="Find in table" value={find} onChange={(event) => onFind(event.target.value)} className="h-8 bg-background pl-6 text-xs md:text-xs" />
       </div>
       <FilterButton table={table} filters={filters} onChange={onFilters} open={filtering} onOpenChange={onFiltering} />
       {shown !== table.rows.length && <span className="shrink-0 text-muted-foreground tabular-nums">{shown} of {table.rows.length}</span>}
@@ -165,10 +169,21 @@ function StatusBar({ table, xray, onXray, onNext, find, onFind, findInput, filte
         className={xray ? "bg-selected text-foreground hover:bg-selected" : "text-muted-foreground"}
       >
         <ScanLine />
-        X-ray
+        Show checks
       </Button>
-      {xray && <XrayReading table={table} />}
       {onNext && <Button variant="ghost" size="xs" className="shrink-0 text-muted-foreground" onClick={onNext}><ArrowRight />Next to prove</Button>}
+    </div>
+  );
+}
+
+/** Counts and context remain below the sheet, away from editing controls. */
+function StatusBar({ table, xray, shown, refreshing, refreshFailed, retry }: { table: PublishedTable; xray: boolean; shown: number; refreshing?: boolean; refreshFailed?: boolean; retry: () => void }) {
+  return (
+    <footer className="flex min-h-9 shrink-0 flex-wrap items-center gap-3 border-t bg-muted px-3 py-1 text-xs">
+      <span className="shrink-0 text-muted-foreground tabular-nums">{shown === table.rows.length ? `${shown} rows` : `${shown} of ${table.rows.length} rows`}</span>
+      {xray && <XrayReading table={table} />}
+      {refreshing && <Spinner label="Refreshing table" />}
+      {refreshFailed && <button onClick={retry} className="text-muted-foreground underline">Update failed · Retry</button>}
       <SheetFacts table={table} />
       <Popover>
         <PopoverTrigger asChild>
@@ -193,7 +208,7 @@ function rowSource(table: PublishedTable, rowKey: string) {
 }
 
 /** Above the grid, like a spreadsheet's: one line until a cell is selected, then its evidence opens beneath. */
-export function FormulaBar({ selected, table, onChanged, editing, typed, onEditing, onNext }: { selected?: Selected; table?: PublishedTable; onChanged?: () => void; editing?: boolean; typed?: string; onEditing?: (editing: boolean) => void; onNext?: () => void }) {
+export function FormulaBar({ selected, table, onChanged, editing, typed, onEditing, onNext, compact = false }: { compact?: boolean; selected?: Selected; table?: PublishedTable; onChanged?: () => void; editing?: boolean; typed?: string; onEditing?: (editing: boolean) => void; onNext?: () => void }) {
   const { user } = useMe();
   const canEdit = !!table && !!user?.accounts.includes(table.owner);
   const [ownEditing, setOwnEditing] = useState(false);
@@ -206,12 +221,12 @@ export function FormulaBar({ selected, table, onChanged, editing, typed, onEditi
   const value = !selected || !cell ? undefined : isFound(cell) ? `${display(cell.value)}${selected.column.unit ? ` ${selected.column.unit}` : ""}` : cell.unproven !== undefined ? `${display(cell.unproven)}${selected.column.unit ? ` ${selected.column.unit}` : ""}` : statuses[selected.status].label;
   return (
     <section className="shrink-0 border-y" aria-live="polite" aria-label="Selected cell">
-      <div className="flex h-9 items-center text-sm">
-        <div className="w-32 shrink-0 truncate border-r px-3 text-xs leading-9 text-muted-foreground sm:w-56">
+      <div className={compact ? "space-y-2 px-4 py-3 text-sm" : "flex h-9 items-center text-sm"}>
+        <div className={compact ? "pr-6 text-xs text-muted-foreground" : "w-32 shrink-0 truncate border-r px-3 text-xs leading-9 text-muted-foreground sm:w-56"}>
           {selected ? `${selected.rowKey} · ${selected.column.label}` : ""}
         </div>
-        <span className="px-3 font-serif text-muted-foreground italic" aria-hidden="true">fx</span>
-        <p className={`min-w-0 flex-1 truncate pr-3 ${value ? "font-medium" : "text-muted-foreground"}`}>{value ?? "Select a cell to see its source"}</p>
+        {!compact && <span className="px-3 font-serif text-muted-foreground italic" aria-hidden="true">fx</span>}
+        <p className={compact ? "text-lg font-semibold break-words" : `min-w-0 flex-1 truncate pr-3 ${value ? "font-medium" : "text-muted-foreground"}`}>{value ?? "Select a cell to see its source"}</p>
       </div>
       {cell && table && suggesting && (
         <SuggestForm
@@ -232,7 +247,7 @@ export function FormulaBar({ selected, table, onChanged, editing, typed, onEditi
         />
       )}
       {cell && !suggesting && (
-        <div key={selected.rowKey + selected.column.id} className="max-h-36 space-y-1.5 overflow-y-auto border-t px-3 py-2 text-sm duration-150 animate-in fade-in slide-in-from-top-1">
+        <div key={selected.rowKey + selected.column.id} className={compact ? "space-y-3 border-t px-4 py-3 text-sm" : "max-h-36 space-y-1.5 overflow-y-auto border-t px-3 py-2 text-sm duration-150 animate-in fade-in slide-in-from-top-1"}>
           {isFound(cell) ? (
             <>
               <Quote cell={cell} />
@@ -276,6 +291,7 @@ type GridProps = {
   selectedId: string | null;
   select: (id: string | null) => void;
   emptyRows?: number;
+  cellDetails?: ReactNode;
   focusOnLoad?: boolean;
   xray?: boolean;
   // Sorting, resizing and copying only happen in the full sheet, so previews leave these out.
@@ -321,7 +337,7 @@ function HeaderContent({ column, label, sort, onSort, onResize, onMenu }: { colu
   );
 }
 
-export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - table.rows.length, focusOnLoad = true, xray = false, sort, onSort, widths, onResize, onCopy, rowHref, edit }: GridProps) {
+export function Grid({ table, selectedId, select, emptyRows = 0, focusOnLoad = true, xray = false, sort, onSort, widths, onResize, onCopy, rowHref, edit, cellDetails }: GridProps) {
   const grid = useRef<HTMLTableElement>(null);
   const focused = useRef(focusOnLoad ? null : selectedId);
   const [typing, setTyping] = useState<{ id: string; text: string } | null>(null);
@@ -420,7 +436,7 @@ export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - t
                 const statusName = cellStatus(cell, row.key, column.id, table.watch);
                 const status = statuses[statusName];
                 const StatusIcon = status.icon;
-                return (
+                const content = (
                   <td
                     key={column.id}
                     role="gridcell"
@@ -456,6 +472,20 @@ export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - t
                     )}
                   </td>
                 );
+                if (!cellDetails) return content;
+                return (
+                  <Popover key={column.id} open={selectedId === id && typing?.id !== id} onOpenChange={(open) => { if (!open && selectedId === id) select(null); }}>
+                    <PopoverAnchor asChild>{content}</PopoverAnchor>
+                    {selectedId === id && <PopoverContent aria-label="Cell details" side="bottom" align="start" sideOffset={8} collisionPadding={12} className="relative max-h-[min(28rem,70svh)] w-96 max-w-[calc(100vw-1.5rem)] gap-0 overflow-y-auto p-0"
+                      onOpenAutoFocus={(event) => event.preventDefault()}
+                      onCloseAutoFocus={(event) => event.preventDefault()}
+                      onInteractOutside={(event) => { if ((event.target as HTMLElement)?.closest('[data-cell]')) event.preventDefault(); }}
+                    >
+                      <Button variant="ghost" size="icon-sm" className="absolute top-1 right-1" aria-label="Close cell details" onClick={() => select(null)}><X /></Button>
+                      {cellDetails}
+                    </PopoverContent>}
+                  </Popover>
+                );
               })}
               <td className="border-b" aria-hidden="true" />
             </tr>
@@ -484,13 +514,14 @@ function SheetFacts({ table }: { table: PublishedTable }) {
 }
 
 export function Sheet({ owner, slug }: { owner: string; slug: string }) {
-  const { data, status, retry } = useJson<PublishedTable>(`/api/tables/${owner}/${slug}`);
+  const { data, status, retry, refreshing, refreshFailed } = useJson<PublishedTable>(`/api/tables/${owner}/${slug}`);
   const { user } = useMe();
   const [xray, setXray] = useState(false);
   const [widths, setWidths] = useState<Record<string, number>>({});
   const [filtering, setFiltering] = useState(false);
   const [helping, setHelping] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [pendingSaves, setPendingSaves] = useState(0);
   const [typed, setTyped] = useState<string>();
   const [columnEdit, setColumnEdit] = useState<{ column?: Column; label?: string } | null>(null);
   const [rowEdit, setRowEdit] = useState<string | null>(null);
@@ -555,9 +586,13 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
   const canAdd = canRun && data.draft;
   const tableApi = `/api/tables/${owner}/${slug}`;
   const saveGrid = async (change: ReturnType<typeof gridChange> | { cells: { row: string; column: string; value: string }[] }) => {
-    const { ok, data: result } = await postJson<{ error?: string }>(`${tableApi}/grid`, change);
-    if (!ok) toast.error(result.error ?? "That didn't save.");
-    retry();
+    setPendingSaves((count) => count + 1);
+    try {
+      const { ok, data: result } = await postJson<{ error?: string }>(`${tableApi}/grid`, change);
+      if (!ok) toast.error(result.error ?? "That didn't save. Try again.");
+      else { toast.success("Saved"); retry(); }
+    } catch { toast.error("Couldn't connect. Your changes weren't saved. Try again."); }
+    finally { setPendingSaves((count) => count - 1); }
   };
   // Values go straight in while a table is a draft. Otherwise a person types the value and the formula bar asks for its proof.
   const typeIn: GridEdit["typeIn"] = (rowKey, column, text) => {
@@ -603,14 +638,15 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
   return (
     <div className="flex h-svh flex-col duration-200 animate-in fade-in zoom-in-[0.995] motion-reduce:animate-none">
       <AppBar
-        crumbs={[{ label: data ? ownerLabel(data) : accountName(owner), href: `/${owner}` }, { label: data?.title ?? "Table", href: `/${owner}/${slug}`, ...(canRun && data && { editor: <TitleInput table={data} onChanged={retry} /> }) }, { label: "Sheet" }]}
+        workspace
+        crumbs={[{ label: data ? ownerLabel(data) : accountName(owner), href: `/${owner}` }, { label: data?.title ?? "Table", href: `/${owner}/${slug}`, ...(canRun && data && { editor: <TitleInput table={data} onChanged={retry} /> }) }]}
         phoneTitle={data?.title}
         actions={
           <>
+            {pendingSaves > 0 && <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><Spinner label="Saving changes" />Saving</span>}
             {data?.private && <Lock aria-label="Private" className="size-4 text-muted-foreground" />}
             {data && user?.accounts.includes(data.owner) && <AgentBuildButton table={data} />}
-            {data && <SheetOptions table={data} canRun={canRun} onRows={(names) => void saveGrid({ addColumns: [], addRows: names, cells: [] })} onShortcuts={() => setHelping(true)} />}
-            {shown && <DownloadButton table={shown} size="sm" />}
+            {data && <SheetOptions table={data} downloadTable={shown} canRun={canRun} onRows={(names) => void saveGrid({ addColumns: [], addRows: names, cells: [] })} onShortcuts={() => setHelping(true)} />}
             {data && !data.draft && <ShareButton table={data} path={`${path}${viewSearch(view, selectedId)}`} size="sm" onChanged={retry} />}
           </>
         }
@@ -621,11 +657,13 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
         <Message title="This table didn't load" action={<Button variant="outline" size="sm" onClick={retry}>Try again</Button>} />
       ) : data && shown ? (
         <>
-          <FormulaBar table={data} onChanged={retry} selected={selectedCell(data, selectedId)} editing={editing} typed={typed} onEditing={(on) => { setEditing(on); if (!on) setTyped(undefined); }} onNext={() => goNext.current()} />
+          <SheetToolbar table={data} xray={xray} onXray={() => setXray(!xray)} onNext={data.draft && canRun ? () => goNext.current() : undefined} find={find} onFind={(next) => show({ find: next })} findInput={findInput} filters={filters} onFilters={(next) => show({ filters: next })} filtering={filtering} onFiltering={setFiltering} shown={shown.rows.length} />
+
           <Grid
+            cellDetails={<FormulaBar compact table={data} onChanged={retry} selected={selectedCell(data, selectedId)} editing={editing} typed={typed} onEditing={(on) => { setEditing(on); if (!on) setTyped(undefined); }} onNext={() => goNext.current()} />}
             table={shown}
             selectedId={selectedId}
-            select={(id) => show({}, id)}
+            select={(id) => { setEditing(false); setTyped(undefined); show({}, id); }}
             xray={xray}
             sort={sort}
             onSort={(column) => show({ sort: nextSort(sort, column) })}
@@ -633,16 +671,13 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
             onResize={(column, width) => setWidths((current) => ({ ...current, [column]: width }))}
             onCopy={(text) => void copyText(text)}
             edit={gridEdit}
-            emptyRows={Math.max(fullHeightRows - shown.rows.length, gridEdit?.addRow ? 5 : 0)}
+            emptyRows={data.draft ? Math.max(fullHeightRows - shown.rows.length, gridEdit?.addRow ? 5 : 0) : gridEdit?.addRow ? 1 : 0}
             rowHref={(key) => rowPath(data, key)}
           />
-          <StatusBar table={data} xray={xray} onXray={() => setXray(!xray)} onNext={data.draft && canRun ? () => goNext.current() : undefined} find={find} onFind={(next) => show({ find: next })} findInput={findInput} filters={filters} onFilters={(next) => show({ filters: next })} filtering={filtering} onFiltering={setFiltering} shown={shown.rows.length} />
+          <StatusBar table={data} xray={xray} shown={shown.rows.length} refreshing={refreshing} refreshFailed={refreshFailed} retry={retry} />
         </>
       ) : (
-        <div className="flex-1 space-y-2 p-3" aria-label="Loading table">
-          <Skeleton className="h-9 w-full" />
-          <Skeleton className="h-64 w-full" />
-        </div>
+        <SheetSkeleton />
       )}
       {data && columnEdit && <ColumnDialog {...columnEdit} table={data} onClose={() => setColumnEdit(null)} onChanged={retry} />}
       {data && rowEdit && <RowDialog key={rowEdit} table={data} rowKey={rowEdit} onClose={() => setRowEdit(null)} onChanged={retry} />}

@@ -213,6 +213,9 @@ export function TablePage({ owner, slug, view }: { owner: string; slug: string; 
   return (
     <Page crumbs={crumbs}>
       <Content>
+        {data && <nav aria-label="Table navigation" className="mb-6 flex gap-1 overflow-x-auto border-b pb-2">
+          {[["", "Overview"], ["/proposals", "Proposals"], ["/history", "History"]].map(([suffix, label]) => <Button key={label} asChild size="sm" variant={(view ? `/${view}` : "") === suffix ? "secondary" : "ghost"}><Link href={`/${owner}/${slug}${suffix}`} aria-current={(view ? `/${view}` : "") === suffix ? "page" : undefined}>{label}</Link></Button>)}
+        </nav>}
         {status === "missing" ? (
           <NoTable />
         ) : status === "failed" ? (

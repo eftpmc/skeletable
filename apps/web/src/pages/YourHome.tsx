@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useJson, type Me, type TableSummary } from "@/lib/api";
 import { accountName } from "@/lib/cells";
 
-type Waiting = { id: string; owner: string; slug: string; title: string; row: string; column: string };
+type Waiting = { proposal_title?: string; id: string; owner: string; slug: string; title: string; row: string; column: string };
 
 /** What needs you, as a short list above your tables. */
 function Inbox() {
@@ -23,7 +23,7 @@ function Inbox() {
           <li key={item.id}>
             <Link href={`/${item.owner}/${item.slug}/proposals`} className="flex items-center gap-2.5 px-3 py-2 transition-colors hover:bg-muted/50">
               <GitPullRequestArrow className="size-4 shrink-0 text-muted-foreground" />
-              <span className="min-w-0 truncate"><span className="font-medium">{item.title}</span> <span className="text-muted-foreground">· {item.row}</span></span>
+              <span className="min-w-0 truncate"><span className="font-medium">{item.title}</span> <span className="text-muted-foreground">· {item.proposal_title ?? item.row}</span></span>
             </Link>
           </li>
         ))}
