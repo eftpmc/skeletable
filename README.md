@@ -32,6 +32,10 @@ apps/web         The site, built with shadcn/ui and served by the server
 docker/          The server's image, which Railway builds
 ```
 
+## Licensing
+
+The source code is licensed under [Apache-2.0](LICENSE). Published table data is licensed separately under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), as shown in the data responses.
+
 ## Review table changes
 
 Each table has Overview, Proposals, and History tabs, with an Open sheet button for the editor. Signed-in contributors can create a titled proposal with up to 20 cell changes, a reason, and a source and exact quote for each value. Bundles remain open for review, including when submitted by an owner. Existing single-cell owner saves still apply immediately after validation.
