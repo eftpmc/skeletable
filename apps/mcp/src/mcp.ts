@@ -3,6 +3,7 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 import type { Table } from "@skeleton/tables/format";
 import { z } from "zod";
 import { findCell, searchTables, summarize, tableValues } from "./library.js";
+import type { ProposalInput } from "./proposals.js";
 
 const text = (value: unknown) => ({ content: [{ type: "text" as const, text: JSON.stringify(value, null, 2) }] });
 const refuse = (message: string) => ({ content: [{ type: "text" as const, text: message }], isError: true });
@@ -12,8 +13,10 @@ const instructions =
   "get_table to read it, and get_cell for a value's source and exact quote. A null value means no acceptable source stated it: " +
   "say it's unknown rather than filling it in. Check a table's scope and lastRead before relying on it, and cite the source when you use a value.";
 
-/** The library as read-only MCP tools, for anyone's agent. */
-export function tablesMcpServer(tables: Table[]) {
+export type Propose = (input: ProposalInput) => Promise<{ id: string; check: string } | { error: string }>;
+
+/** The library as MCP tools for anyone's agent. Reading needs no account, and proposing needs a token. */
+export function tablesMcpServer(tables: Table[], propose?: Propose) {
   const server = new McpServer({ name: "skeletable", version: "1.0.0" }, { instructions });
   const readOnly = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false };
   const bySlug = (slug: string) => tables.find((table) => table.slug === slug);
@@ -62,12 +65,38 @@ export function tablesMcpServer(tables: Table[]) {
     },
   );
 
+  if (propose) {
+    server.registerTool(
+      "propose_change",
+      {
+        description:
+          "Suggest a new value for a cell, with its proof. The quote must be word for word from the source and state the value. The owner reviews it before anything changes. Needs a token sent as a Bearer token.",
+        inputSchema: {
+          slug: z.string().max(120).describe("From list_tables"),
+          row: z.string().max(200).describe("The row's exact key, from get_table"),
+          column: z.string().max(80).describe("The column's id, from get_table"),
+          value: z.string().max(300).describe("The new value, following the column's rule"),
+          source: z.string().url().max(2000).describe("The page that states it"),
+          quote: z.string().max(400).describe("The exact words on that page"),
+          note: z.string().max(500).optional().describe("Why this should change"),
+        },
+        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+      },
+      async ({ slug, ...input }) => {
+        const table = bySlug(slug);
+        if (!table) return refuse(`No table called ${slug}. Use list_tables to see what exists.`);
+        const result = await propose({ ...input, owner: table.owner, slug });
+        return "error" in result ? refuse(result.error) : text({ proposed: true, ...result });
+      },
+    );
+  }
+
   return server;
 }
 
-/** Answer one MCP request statelessly: a fresh server and transport per request, since the tables never change while running. */
-export async function handleMcp(tables: Table[], request: Request): Promise<Response> {
+/** Answer one MCP request statelessly: a fresh server and transport per request, so nothing carries between callers. */
+export async function handleMcp(tables: Table[], request: Request, propose?: Propose): Promise<Response> {
   const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
-  await tablesMcpServer(tables).connect(transport);
+  await tablesMcpServer(tables, propose).connect(transport);
   return transport.handleRequest(request);
 }

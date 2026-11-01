@@ -21,7 +21,7 @@ describe.skipIf(!url)("sign-in", () => {
       : new Response(JSON.stringify(profile))) as typeof fetch;
 
   const site = () =>
-    createApp(tables, undefined, { sql, clientId: "id", clientSecret: "secret", publicUrl: "https://skeletable.test", ownerEmail: "owner@example.com", fetcher: google });
+    createApp(tables, undefined, { sql, clientId: "id", clientSecret: "secret", publicUrl: "https://skeletable.test", ownerEmail: "owner@example.com", fetcher: google, tables });
 
   const cookieFrom = (response: Response, name: string) =>
     response.headers.getSetCookie().find((line) => line.startsWith(`${name}=`))?.split(";")[0];

@@ -29,7 +29,7 @@ describe.skipIf(!url)("database", () => {
 
   it("runs each migration once", async () => {
     await migrate(sql);
-    expect(await sql`select version from schema_migrations`).toHaveLength(2);
+    expect(await sql`select version from schema_migrations`).toHaveLength(3);
   });
 
   it("gives back exactly what went in", async () => {

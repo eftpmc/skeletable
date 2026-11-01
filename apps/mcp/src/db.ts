@@ -80,6 +80,32 @@ const migrations = [
     created_at timestamptz not null default now()
   );
   `,
+  `
+  create table proposals (
+    id bigint generated always as identity primary key,
+    table_id bigint not null references data_tables on delete cascade,
+    row_id bigint not null references table_rows on delete cascade,
+    column_id text not null,
+    cell jsonb not null,
+    note text,
+    check_status text not null,
+    status text not null default 'open' check (status in ('open', 'accepted', 'rejected')),
+    via text not null default 'site' check (via in ('site', 'agent')),
+    created_by bigint not null references users,
+    decided_by bigint references users,
+    decided_at timestamptz,
+    created_at timestamptz not null default now()
+  );
+  create index proposals_by_table on proposals (table_id, id desc);
+  create table api_tokens (
+    id bigint generated always as identity primary key,
+    token_hash text not null unique,
+    user_id bigint not null references users on delete cascade,
+    name text not null,
+    last_used_at timestamptz,
+    created_at timestamptz not null default now()
+  );
+  `,
 ];
 
 /** Run whatever hasn't run yet. The lock keeps two servers starting together from racing. */
@@ -170,11 +196,11 @@ export const connect = (url: string): Sql => postgres(url, { max: 5, onnotice: (
  * The library from the database, seeded with any new tables on disk. A server keeps the same list
  * and refills it, so a change goes live without a deploy. A refresh that fails keeps the last good tables.
  */
-export async function openLibrary(sql: Sql, dir: string): Promise<PublishedTable[]> {
+export async function openLibrary(sql: Sql, dir: string) {
   await migrate(sql);
   await importTables(sql, await loadTables(dir));
   const tables = await readTables(sql);
   const refresh = () => readTables(sql).then((fresh) => tables.splice(0, tables.length, ...fresh));
   setInterval(() => refresh().catch((error) => console.error(`Keeping the last good tables: ${error}`)), REFRESH_MS).unref();
-  return tables;
+  return { tables, refresh };
 }

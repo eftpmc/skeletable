@@ -1,7 +1,12 @@
 import { createHash, randomBytes } from "node:crypto";
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
+import { z } from "zod";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
+import type { Fetcher } from "@skeleton/tables";
+import type { Table } from "@skeleton/tables/format";
 import type { Sql } from "./db.js";
+import { createToken, decideProposal, deleteToken, listProposals, listTokens, submitProposal, tableHistory } from "./proposals.js";
+import { rateLimit } from "./rate-limit.js";
 
 export type AuthConfig = {
   sql: Sql;
@@ -11,12 +16,28 @@ export type AuthConfig = {
   // Whoever signs in with this email runs the official account.
   ownerEmail?: string;
   fetcher?: typeof fetch;
+  tables: Table[];
+  refresh?: () => Promise<unknown>;
+  // Reads a proposal's source. Only tests swap this.
+  pages?: Fetcher;
 };
 
 const OFFICIAL_ACCOUNT = "skeletable";
 const SESSION_COOKIE = "session";
 const STATE_COOKIE = "auth_state";
 const SESSION_DAYS = 30;
+
+// Each proposal opens a web page, so these are far fewer than other requests.
+const PROPOSALS_PER_MINUTE = 10;
+
+const proposalBody = z.object({
+  row: z.string().max(200),
+  column: z.string().max(80),
+  value: z.string().max(300),
+  source: z.string().url().max(2000),
+  quote: z.string().min(1).max(400),
+  note: z.string().max(500).optional(),
+});
 
 const authorizeUrl = "https://accounts.google.com/o/oauth2/v2/auth";
 const tokenUrl = "https://oauth2.googleapis.com/token";
@@ -26,7 +47,7 @@ const profileUrl = "https://openidconnect.googleapis.com/v1/userinfo";
 const hash = (token: string) => createHash("sha256").update(token).digest("hex");
 
 /** Who a session cookie belongs to, and the accounts they can act as. */
-export async function currentUser(sql: Sql, token: string | undefined) {
+async function currentUser(sql: Sql, token: string | undefined) {
   if (!token) return null;
   const [user] = await sql`
     select u.id, u.email, u.name from sessions s join users u on u.id = s.user_id
@@ -34,11 +55,11 @@ export async function currentUser(sql: Sql, token: string | undefined) {
   if (!user) return null;
   const accounts = await sql`
     select a.handle from account_members m join accounts a on a.id = m.account_id where m.user_id = ${user.id} order by a.handle`;
-  return { email: user.email as string, name: user.name as string | null, accounts: accounts.map((account) => account.handle as string) };
+  return { id: user.id as string, email: user.email as string, name: user.name as string | null, accounts: accounts.map((account) => account.handle as string) };
 }
 
 /** Sign in with Google. People only ever sign in here: there are no passwords to look after. */
-export function authRoutes({ sql, clientId, clientSecret, publicUrl, ownerEmail, fetcher = fetch }: AuthConfig) {
+export function authRoutes({ sql, clientId, clientSecret, publicUrl, ownerEmail, fetcher = fetch, tables, refresh, pages }: AuthConfig) {
   const app = new Hono();
   const redirectUri = `${publicUrl}/auth/google/callback`;
   const cookie = { httpOnly: true, secure: publicUrl.startsWith("https:"), sameSite: "Lax", path: "/" } as const;
@@ -92,7 +113,56 @@ export function authRoutes({ sql, clientId, clientSecret, publicUrl, ownerEmail,
     return c.redirect("/", 303);
   });
 
-  app.get("/api/me", async (c) => c.json({ canSignIn: true, user: await currentUser(sql, getCookie(c, SESSION_COOKIE)) }));
+  const signedIn = (c: Context) => currentUser(sql, getCookie(c, SESSION_COOKIE));
+
+  app.get("/api/me", async (c) => {
+    const user = await signedIn(c);
+    if (!user) return c.json({ canSignIn: true, user: null });
+    const { id: _id, ...visible } = user;
+    return c.json({ canSignIn: true, user: visible });
+  });
+
+  app.get("/api/tables/:owner/:slug/history", async (c) => c.json(await tableHistory(sql, c.req.param("owner"), c.req.param("slug"))));
+  app.get("/api/tables/:owner/:slug/proposals", async (c) => c.json(await listProposals(sql, c.req.param("owner"), c.req.param("slug"))));
+
+  app.post("/api/tables/:owner/:slug/proposals", rateLimit(PROPOSALS_PER_MINUTE), async (c) => {
+    const user = await signedIn(c);
+    if (!user) return c.json({ error: "Sign in to suggest a change." }, 401);
+    const body = proposalBody.safeParse(await c.req.json().catch(() => null));
+    if (!body.success) return c.json({ error: "Add a value, a source link and the exact quote." }, 400);
+    const result = await submitProposal(sql, tables, { ...body.data, owner: c.req.param("owner"), slug: c.req.param("slug") }, user.id, "site", pages);
+    return c.json(result, "error" in result ? 400 : 201);
+  });
+
+  for (const [action, accept] of [["accept", true], ["reject", false]] as const) {
+    app.post(`/api/proposals/:id/${action}`, async (c) => {
+      const user = await signedIn(c);
+      if (!user) return c.json({ error: "Sign in first." }, 401);
+      if (!(await decideProposal(sql, c.req.param("id"), user.id, accept))) return c.json({ error: "You can't decide this proposal." }, 403);
+      await refresh?.();
+      return c.json({ ok: true });
+    });
+  }
+
+  app.get("/api/tokens", async (c) => {
+    const user = await signedIn(c);
+    return user ? c.json(await listTokens(sql, user.id)) : c.json({ error: "Sign in first." }, 401);
+  });
+
+  app.post("/api/tokens", async (c) => {
+    const user = await signedIn(c);
+    if (!user) return c.json({ error: "Sign in first." }, 401);
+    const { name } = ((await c.req.json().catch(() => ({}))) ?? {}) as { name?: unknown };
+    if (name !== undefined && typeof name !== "string") return c.json({ error: "A token's name must be text." }, 400);
+    return c.json(await createToken(sql, user.id, name?.trim().slice(0, 80) || "Agent"), 201);
+  });
+
+  app.delete("/api/tokens/:id", async (c) => {
+    const user = await signedIn(c);
+    if (!user) return c.json({ error: "Sign in first." }, 401);
+    await deleteToken(sql, user.id, c.req.param("id"));
+    return c.json({ ok: true });
+  });
 
   return app;
 }

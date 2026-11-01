@@ -4,7 +4,8 @@ import type { Table } from "@skeleton/tables/format";
 import { Hono } from "hono";
 import { authRoutes, type AuthConfig } from "./auth.js";
 import { searchTables, summarize } from "./library.js";
-import { handleMcp } from "./mcp.js";
+import { handleMcp, type Propose } from "./mcp.js";
+import { submitProposal, tokenUser } from "./proposals.js";
 import { rateLimit } from "./rate-limit.js";
 
 // Generous for a person or an agent reading tables, and a brake on anything hammering the server.
@@ -24,7 +25,15 @@ export function createApp(tables: Table[], webDir?: string, auth?: AuthConfig) {
   app.use("/mcp", rateLimit(MCP_PER_MINUTE));
   app.use("/api/*", rateLimit(API_PER_MINUTE));
   app.use("/auth/*", rateLimit(SIGN_IN_PER_MINUTE));
-  app.all("/mcp", (c) => handleMcp(tables, c.req.raw));
+  app.all("/mcp", (c) => {
+    if (!auth) return handleMcp(tables, c.req.raw);
+    const propose: Propose = async (input) => {
+      const userId = await tokenUser(auth.sql, c.req.header("authorization"));
+      if (!userId) return { error: "Proposing needs a token. Create one in Skeletable under Settings, and send it as a Bearer token." };
+      return submitProposal(auth.sql, tables, input, userId, "agent", auth.pages);
+    };
+    return handleMcp(tables, c.req.raw, propose);
+  });
   if (auth) app.route("/", authRoutes(auth));
   else app.get("/api/me", (c) => c.json({ canSignIn: false, user: null }));
   app.get("/api/tables", (c) => c.json(searchTables(tables, c.req.query("q")).map(summarize)));
