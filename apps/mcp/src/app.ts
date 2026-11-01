@@ -5,6 +5,7 @@ import type { Table } from "@skeleton/tables/format";
 import { Hono } from "hono";
 import { authRoutes, type AuthConfig } from "./auth.js";
 import { searchTables, summarize } from "./library.js";
+import { notifyOwners } from "./email.js";
 import { handleMcp, type Propose } from "./mcp.js";
 import { pageRoutes } from "./pages.js";
 import { submitProposal, tokenUser } from "./proposals.js";
@@ -42,7 +43,9 @@ export function createApp(tables: Table[], webDir?: string, auth?: AuthConfig) {
     const propose: Propose = async (input) => {
       const userId = await tokenUser(auth.sql, c.req.header("authorization"));
       if (!userId) return { error: "Proposing needs a token. Create one in Skeletable under Settings, and send it as a Bearer token." };
-      return submitProposal(auth.sql, tables, input, userId, "agent", auth.pages);
+      const result = await submitProposal(auth.sql, tables, input, userId, "agent", auth.pages);
+      if ("id" in result) await notifyOwners(auth.sql, auth.mail, auth.publicUrl, result.id);
+      return result;
     };
     return handleMcp(tables, c.req.raw, propose);
   });

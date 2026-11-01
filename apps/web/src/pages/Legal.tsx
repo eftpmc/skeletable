@@ -57,7 +57,7 @@ export const Privacy = () => (
     <h2>Usage</h2>
     <p>We count page visits and agent requests per day, with no address or identity attached. To limit abuse, we hold visitors' network addresses briefly in memory, and our host keeps standard server logs. We don't use advertising trackers or sell data.</p>
     <h2>Who handles your data</h2>
-    <p>Google handles sign-in, and Railway hosts the site and its database.</p>
+    <p>Google handles sign-in, Railway hosts the site and its database, and Resend sends our emails.</p>
     <h2>Your choices</h2>
     <p>You can change your name in Settings or delete your account there. Deleting it removes your email, name, tokens, sign-ins and tables. Proposals you made to other people's tables stay, with your name removed. Backups may hold old data until they expire.</p>
     <h2>Contact</h2>

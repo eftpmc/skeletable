@@ -116,6 +116,9 @@ const migrations = [
     primary key (day, name)
   );
   `,
+  `
+  alter table users add column email_updates boolean not null default true;
+  `,
 ];
 
 /** Run whatever hasn't run yet. The lock keeps two servers starting together from racing. */

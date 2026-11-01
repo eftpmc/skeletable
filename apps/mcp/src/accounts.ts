@@ -37,7 +37,7 @@ export async function ensureAccount(sql: Sql, userId: string, email: string, nam
   throw new Error(`No free handle for ${base}`);
 }
 
-const profileBody = z.object({ name: z.string().trim().min(1).max(80).optional(), handle: z.string().trim().toLowerCase().optional() });
+const profileBody = z.object({ name: z.string().trim().min(1).max(80).optional(), handle: z.string().trim().toLowerCase().optional(), emailUpdates: z.boolean().optional() });
 
 const columnBody = z.object({
   label: z.string().trim().min(1).max(80),
@@ -78,11 +78,12 @@ export function accountRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sig
     if (!user) return c.json({ error: "Sign in first." }, 401);
     const body = profileBody.safeParse(await c.req.json().catch(() => null));
     if (!body.success) return c.json({ error: "Enter a name of up to 80 characters." }, 400);
-    const { name, handle } = body.data;
+    const { name, handle, emailUpdates } = body.data;
     if (handle !== undefined && (!handlePattern.test(handle) || reserved.has(handle))) {
       return c.json({ error: "Use letters, numbers and dashes, and pick a name that isn't reserved." }, 400);
     }
     const [account] = await sql`select a.id, a.handle from accounts a join users u on u.account_id = a.id where u.id = ${user.id}`;
+    if (emailUpdates !== undefined) await sql`update users set email_updates = ${emailUpdates} where id = ${user.id}`;
     if (name !== undefined) {
       await sql`update users set name = ${name} where id = ${user.id}`;
       if (account) await sql`update accounts set name = ${name} where id = ${account.id}`;

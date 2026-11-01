@@ -13,7 +13,7 @@ export type TableSummary = {
   lastChecked: string;
 };
 
-export type Me = { canSignIn: boolean; user: { email: string; name: string | null; handle: string | null; accounts: string[] } | null };
+export type Me = { canSignIn: boolean; user: { email: string; name: string | null; handle: string | null; emailUpdates: boolean; accounts: string[] } | null };
 
 /** Who's here, loaded once when the site opens. */
 export const MeContext = createContext<Me>({ canSignIn: false, user: null });

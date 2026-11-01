@@ -36,6 +36,23 @@ function Profile({ handle, name }: { handle: string; name: string }) {
   );
 }
 
+function EmailUpdates({ enabled }: { enabled: boolean }) {
+  const [on, setOn] = useState(enabled);
+  const change = async (next: boolean) => {
+    setOn(next);
+    await fetch("/api/me", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ emailUpdates: next }) });
+  };
+  return (
+    <section className="space-y-2 border-t pt-5">
+      <h2 className="font-medium">Email</h2>
+      <label className="flex items-center gap-2 text-sm">
+        <input type="checkbox" className="size-4 accent-green-600" checked={on} onChange={(event) => change(event.target.checked)} />
+        Email me when someone proposes a change to my tables
+      </label>
+    </section>
+  );
+}
+
 function DeleteAccount() {
   const [confirming, setConfirming] = useState(false);
   const remove = async () => {
@@ -120,6 +137,7 @@ export function Settings() {
       <main className="mx-auto max-w-2xl space-y-5 px-4 pt-8 pb-16 sm:px-6">
         <h1 className="text-3xl font-semibold tracking-tight">Settings</h1>
         {user.handle && <Profile handle={user.handle} name={user.name ?? user.handle} />}
+        <EmailUpdates enabled={user.emailUpdates} />
         <section className="space-y-3 border-t pt-5">
           <div>
             <h2 className="font-medium">Agent tokens</h2>

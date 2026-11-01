@@ -23,6 +23,7 @@ describe.skipIf(!url)("accounts and creating tables", () => {
   let sql: Sql;
   let tables: typeof files;
   let app: ReturnType<typeof createApp>;
+  let mailed: { to: string; subject: string; text: string }[];
 
   const pages = async () => ({ status: 200, contentType: "text/html", body: "<p>Weighs 900 g</p>" });
 
@@ -50,7 +51,11 @@ describe.skipIf(!url)("accounts and creating tables", () => {
     await migrate(sql);
     await importTables(sql, files);
     tables = await readTables(sql);
-    app = createApp(tables, undefined, { sql, clientId: "id", clientSecret: "secret", publicUrl: "https://skeletable.test", tables, refresh, pages });
+    mailed = [];
+    const mail = async (to: string, subject: string, text: string) => {
+      mailed.push({ to, subject, text });
+    };
+    app = createApp(tables, undefined, { sql, clientId: "id", clientSecret: "secret", publicUrl: "https://skeletable.test", tables, refresh, pages, mail });
   });
 
   afterAll(() => sql.end());
@@ -125,6 +130,31 @@ describe.skipIf(!url)("accounts and creating tables", () => {
     const inbox = (await (await app.request("/api/inbox", { headers: owner })).json()) as { title: string }[];
     expect(inbox.map((item) => item.title)).toEqual(["My keyboards"]);
     expect(await (await app.request("/api/inbox", { headers: stranger })).json()).toEqual([]);
+  });
+
+  it("emails the owner about a stranger's proposal, unless they've opted out", async () => {
+    const owner = await person("pat@example.com", "a");
+    const stranger = await person("sam@example.com", "b");
+    await send("/api/tables", "POST", owner, newTable);
+    const proposal = { row: "Alpha", column: "weight", value: "900", source: "https://maker.example/a", quote: "Weighs 900 g" };
+    await send("/api/tables/pat/my-keyboards/proposals", "POST", stranger, proposal);
+    expect(mailed).toHaveLength(1);
+    expect(mailed[0]).toMatchObject({ to: "pat@example.com", subject: "New proposal on My keyboards" });
+    expect(mailed[0]!.text).toContain("https://skeletable.test/pat/my-keyboards/proposals");
+    await send("/api/tables/pat/my-keyboards/proposals", "POST", owner, proposal);
+    expect(mailed).toHaveLength(1);
+    await send("/api/me", "PATCH", owner, { emailUpdates: false });
+    await send("/api/tables/pat/my-keyboards/proposals", "POST", stranger, { ...proposal, value: "900.0", quote: "Weighs 900.0 g" });
+    expect(mailed).toHaveLength(1);
+  });
+
+  it("keeps the proposal when email fails", async () => {
+    const owner = await person("pat@example.com", "a");
+    const stranger = await person("sam@example.com", "b");
+    await send("/api/tables", "POST", owner, newTable);
+    app = createApp(tables, undefined, { sql, clientId: "id", clientSecret: "secret", publicUrl: "https://skeletable.test", tables, refresh, pages, mail: async () => { throw new Error("down"); } });
+    const response = await send("/api/tables/pat/my-keyboards/proposals", "POST", stranger, { row: "Alpha", column: "weight", value: "900", source: "https://maker.example/a", quote: "Weighs 900 g" });
+    expect(response.status).toBe(201);
   });
 
   it("deletes your account, your tables and your details, and keeps your proposals nameless", async () => {

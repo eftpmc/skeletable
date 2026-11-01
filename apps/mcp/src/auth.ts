@@ -5,6 +5,7 @@ import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import type { Fetcher } from "@skeleton/tables";
 import { accountRoutes, ensureAccount, runsTable } from "./accounts.js";
 import type { Sql } from "./db.js";
+import { notifyOwners, type Mailer } from "./email.js";
 import type { PublishedTable } from "./library.js";
 import { createToken, decideProposal, deleteToken, listProposals, listTokens, submitProposal, tableHistory } from "./proposals.js";
 import { rateLimit } from "./rate-limit.js";
@@ -21,6 +22,8 @@ export type AuthConfig = {
   refresh?: () => Promise<unknown>;
   // Reads a proposal's source. Only tests swap this.
   pages?: Fetcher;
+  // Sends notices. Without it, the site just doesn't send email.
+  mail?: Mailer;
 };
 
 const OFFICIAL_ACCOUNT = "skeletable";
@@ -51,16 +54,16 @@ const hash = (token: string) => createHash("sha256").update(token).digest("hex")
 async function currentUser(sql: Sql, token: string | undefined) {
   if (!token) return null;
   const [user] = await sql`
-    select u.id, u.email, u.name, a.handle from sessions s join users u on u.id = s.user_id left join accounts a on a.id = u.account_id
+    select u.id, u.email, u.name, u.email_updates, a.handle from sessions s join users u on u.id = s.user_id left join accounts a on a.id = u.account_id
     where s.token_hash = ${hash(token)} and s.expires_at > now() and u.blocked_at is null`;
   if (!user) return null;
   const accounts = await sql`
     select a.handle from account_members m join accounts a on a.id = m.account_id where m.user_id = ${user.id} order by a.handle`;
-  return { id: user.id as string, email: user.email as string, name: user.name as string | null, handle: user.handle as string | null, accounts: accounts.map((account) => account.handle as string) };
+  return { id: user.id as string, email: user.email as string, name: user.name as string | null, handle: user.handle as string | null, emailUpdates: user.email_updates as boolean, accounts: accounts.map((account) => account.handle as string) };
 }
 
 /** Sign in with Google. People only ever sign in here: there are no passwords to look after. */
-export function authRoutes({ sql, clientId, clientSecret, publicUrl, ownerEmail, fetcher = fetch, tables, refresh, pages }: AuthConfig) {
+export function authRoutes({ sql, clientId, clientSecret, publicUrl, ownerEmail, fetcher = fetch, tables, refresh, pages, mail }: AuthConfig) {
   const app = new Hono();
   const redirectUri = `${publicUrl}/auth/google/callback`;
   const cookie = { httpOnly: true, secure: publicUrl.startsWith("https:"), sameSite: "Lax", path: "/" } as const;
@@ -142,6 +145,7 @@ export function authRoutes({ sql, clientId, clientSecret, publicUrl, ownerEmail,
       await refresh?.();
       return c.json({ ...result, applied: true }, 201);
     }
+    await notifyOwners(sql, mail, publicUrl, result.id);
     return c.json(result, 201);
   });
 
