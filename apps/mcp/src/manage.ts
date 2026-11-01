@@ -1,9 +1,10 @@
 import type { Context, Hono } from "hono";
 import { draftChecklist, slugOfRow } from "@skeleton/tables/share";
 import { z } from "zod";
-import { MAX_COLUMNS, columnBody, emptyCell, isOwner, runsTable, slugOf, type SignedIn } from "./accounts.js";
+import { MAX_COLUMNS, MAX_ROWS, addColumn, addRow, columnBody, emptyCell, freeSlug, isOwner, runsTable, type SignedIn } from "./accounts.js";
 import type { Sql } from "./db.js";
 import type { PublishedTable } from "./library.js";
+import { asValue } from "./proposals.js";
 
 const detailsBody = z.object({
   title: z.string().trim().min(1).max(120),
@@ -12,7 +13,13 @@ const detailsBody = z.object({
   scope: z.string().trim().max(800),
 });
 
-const columnChange = z.object({ label: z.string().trim().min(1).max(80), unit: z.string().trim().max(30).optional(), rule: z.string().trim().max(500) });
+const columnChange = z.object({ label: z.string().trim().min(1).max(80), type: z.enum(["text", "number", "boolean"]).optional(), unit: z.string().trim().max(30).optional(), rule: z.string().trim().max(500) });
+const gridChange = z.object({
+  addColumns: z.array(columnBody).max(MAX_COLUMNS).default([]),
+  addRows: z.array(z.string().trim().min(1).max(120)).max(MAX_ROWS).default([]),
+  // `column` is a column's id, or `new:0` for the first of `addColumns`. An empty value clears the cell.
+  cells: z.array(z.object({ row: z.string().max(120), column: z.string().max(80), value: z.string().trim().max(300) })).max(MAX_ROWS * MAX_COLUMNS).default([]),
+});
 const publishBody = z.object({ private: z.boolean() });
 const rowName = z.string().trim().min(1).max(120);
 const rowChange = z.object({ key: rowName, to: rowName });
@@ -45,7 +52,41 @@ export function manageRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sign
     const body = detailsBody.safeParse(await c.req.json().catch(() => null));
     if (!body.success || (!found.table.draft && !(body.data.question && body.data.topic && body.data.scope))) return c.json({ error: "Fill in every field." }, 400);
     const { title, question, topic, scope } = body.data;
-    await sql`update data_tables set title = ${title}, question = ${question}, topic = ${topic}, scope = ${scope} where id = ${found.id}`;
+    // Nothing links to a draft yet, so its address can follow its title. After that it never changes.
+    const slug = found.table.draft ? freeSlug(tables, found.table.owner, title, found.table.slug) : found.table.slug;
+    await sql`update data_tables set title = ${title}, question = ${question}, topic = ${topic}, scope = ${scope}, slug = ${slug} where id = ${found.id}`;
+    await refresh?.();
+    return c.json({ ok: true, slug });
+  });
+
+  // What's typed or pasted into a draft, all at once. Values here have no proof yet, so a proved cell is left alone.
+  app.post("/api/tables/:owner/:slug/grid", async (c) => {
+    const found = await editing(c);
+    if (found instanceof Response) return found;
+    const { table } = found;
+    if (!table.draft) return c.json({ error: "A published table's values need their proof." }, 409);
+    const body = gridChange.safeParse(await c.req.json().catch(() => null));
+    if (!body.success) return c.json({ error: "That didn't save." }, 400);
+    const { addColumns, addRows, cells } = body.data;
+    const freshRows = [...new Set(addRows)].filter((key) => !table.rows.some((row) => row.key === key));
+    if (table.rows.length + freshRows.length > MAX_ROWS) return c.json({ error: "That's more rows than a table can hold." }, 400);
+    if (table.columns.length + addColumns.length > MAX_COLUMNS) return c.json({ error: "That's more columns than a table can hold." }, 400);
+    for (const key of freshRows) await addRow(sql, table, key);
+    await sql.begin(async (tx) => {
+      const made = [];
+      for (const column of addColumns) made.push({ id: await addColumn(tx, found.id, column), type: column.type });
+      const rows = await tx`select id, key from table_rows where table_id = ${found.id} and removed_at is null`;
+      for (const { row, column, value } of cells) {
+        const target = column.startsWith("new:") ? made[Number(column.slice(4))] : table.columns.find((candidate) => candidate.id === column);
+        const rowId = rows.find((candidate) => candidate.key === row)?.id;
+        if (!target || !rowId) continue;
+        const [held] = await tx`select cell from cell_versions where row_id = ${rowId} and column_id = ${target.id} order by id desc limit 1`;
+        if (held && !held.cell.missing) continue;
+        const parsed = value ? asValue({ type: target.type as "text" }, value) : undefined;
+        const { unproven: _old, ...blank } = (held?.cell ?? emptyCell()) as Record<string, unknown>;
+        await tx`insert into cell_versions (row_id, column_id, cell, created_by) values (${rowId}, ${target.id}, ${tx.json({ ...blank, ...(parsed !== undefined && { unproven: parsed }) } as never)}, ${found.userId})`;
+      }
+    });
     return finish(c);
   });
 
@@ -88,19 +129,7 @@ export function manageRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sign
     const body = columnBody.safeParse(await c.req.json().catch(() => null));
     if (!body.success || (!found.table.draft && !body.data.rule)) return c.json({ error: "Give the column a name and a rule." }, 400);
     if (found.table.columns.length >= MAX_COLUMNS) return c.json({ error: "This table has reached its column limit." }, 400);
-    const { label, type, unit, rule } = body.data;
-    await sql.begin(async (tx) => {
-      // A removed column keeps its id, so its old versions can't be mistaken for this one's.
-      const used = new Set((await tx`select id from table_columns where table_id = ${found.id}`).map((column) => column.id as string));
-      const base = slugOf(label).replace(/-/g, "_").replace(/^[^a-z]+/, "") || "column";
-      let columnId = base;
-      for (let n = 2; used.has(columnId); n++) columnId = `${base}_${n}`;
-      await tx`
-        insert into table_columns (table_id, id, position, label, type, unit, rule)
-        select ${found.id}, ${columnId}, coalesce(max(position) + 1, 0), ${label}, ${type}, ${unit || null}, ${rule} from table_columns where table_id = ${found.id}`;
-      const rows = await tx`select id from table_rows where table_id = ${found.id} and removed_at is null`;
-      for (const row of rows) await tx`insert into cell_versions (row_id, column_id, cell) values (${row.id}, ${columnId}, ${tx.json(emptyCell())})`;
-    });
+    await sql.begin((tx) => addColumn(tx, found.id, body.data));
     await refresh?.();
     return c.json({ ok: true }, 201);
   });
@@ -111,14 +140,18 @@ export function manageRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sign
     const body = columnChange.safeParse(await c.req.json().catch(() => null));
     if (!body.success || (!found.table.draft && !body.data.rule)) return c.json({ error: "Give the column a name and a rule." }, 400);
     const { label, unit, rule } = body.data;
-    await sql`update table_columns set label = ${label}, unit = ${unit || null}, rule = ${rule} where table_id = ${found.id} and id = ${c.req.param("column")} and removed_at is null`;
+    const columnId = c.req.param("column")!;
+    // A value was checked against its column's type, so only a column with no proved values can change it.
+    const hasProof = found.table.rows.some((row) => row.cells[columnId] && !("missing" in row.cells[columnId]));
+    const type = body.data.type && found.table.draft && !hasProof ? body.data.type : undefined;
+    await sql`update table_columns set label = ${label}, unit = ${unit || null}, rule = ${rule}, type = coalesce(${type ?? null}, type) where table_id = ${found.id} and id = ${columnId} and removed_at is null`;
     return finish(c);
   });
 
   app.delete("/api/tables/:owner/:slug/columns/:column", async (c) => {
     const found = await editing(c);
     if (found instanceof Response) return found;
-    if (found.table.columns.length <= 1) return c.json({ error: "A table needs at least one column." }, 400);
+    if (found.table.columns.length <= 1 && !found.table.draft) return c.json({ error: "A table needs at least one column." }, 400);
     const column = c.req.param("column");
     await sql.begin(async (tx) => {
       await tx`update table_columns set removed_at = now() where table_id = ${found.id} and id = ${column}`;
@@ -146,7 +179,7 @@ export function manageRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sign
     if (found instanceof Response) return found;
     const body = rowRemoval.safeParse(await c.req.json().catch(() => null));
     if (!body.success) return c.json({ error: "Name the row to remove." }, 400);
-    if (found.table.rows.length <= 1) return c.json({ error: "A table needs at least one row." }, 400);
+    if (found.table.rows.length <= 1 && !found.table.draft) return c.json({ error: "A table needs at least one row." }, 400);
     await sql.begin(async (tx) => {
       const [row] = await tx`update table_rows set removed_at = now() where table_id = ${found.id} and key = ${body.data.key} and removed_at is null returning id`;
       if (row) await tx`update proposals set status = 'rejected', decided_by = ${found.userId}, decided_at = now() where row_id = ${row.id} and status = 'open'`;

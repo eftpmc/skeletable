@@ -24,7 +24,7 @@ export function Help() {
           <Section title="Reading a table">
             <Prose>
               <p>Select any value in a sheet to see the exact words that state it, and a link to where they came from. The mark in a cell's corner shows how far it was checked. "Not found" means no source we could use said so, which never means no. "None stated" means the source was read and gives no such value.</p>
-              <p>Sort by clicking a column, and use Find and Filter at the bottom of the sheet. Share gives you a link to the live table with your view kept, and Download saves what you're looking at.</p>
+              <p>Sort by clicking a column, and use Find and Filter at the bottom of the sheet. On a table you run, select a cell and type, type a name in an empty row to add it, and type in the last heading to add a column. Options holds the rest, and Agent hands the table to your own agent. Share gives you a link to the live table with your view kept, and Download saves what you're looking at.</p>
             </Prose>
           </Section>
           <Section title="How values are checked" description="Turn on X-ray in a sheet to see this for every cell.">

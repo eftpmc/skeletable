@@ -1,16 +1,16 @@
 import { isAnswered, isFound, type Cell, type Column } from "@skeleton/tables/format";
-import { ArrowDown, ArrowUp, Info, Lock, Pencil, Plus, ScanLine, Search } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUp, ChevronDown, Info, Lock, Pencil, ScanLine, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent, type PointerEvent, type ReactNode, type RefObject } from "react";
 import { toast } from "sonner";
 import { Link, useLocation, useSearch } from "wouter";
 import { Input } from "@/components/ui/input";
-import { NativeSelect } from "@/components/ui/native-select";
 import { AgentBuildButton } from "@/components/AgentBuild";
 import { DownloadButton } from "@/components/Download";
 import { FilterButton } from "@/components/Filter";
 import { NoTable } from "@/components/NoTable";
 import { CiteButton, Conflicts, Quote, SourceLink, StatusBadge, kindLabels } from "@/components/Proof";
 import { ShareButton } from "@/components/Share";
+import { CellInput, ColumnDialog, NewColumnInput, NewRowInput, RowDialog, SheetOptions, TitleInput, addTableRow, type GridEdit } from "@/components/SheetEdit";
 import { AppBar } from "@/components/Shell";
 import { Shortcuts } from "@/components/Shortcuts";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,7 @@ import { postJson, useJson, useMe } from "@/lib/api";
 import { accountName, cellId, day, display, host, ownerLabel, place } from "@/lib/cells";
 import { copyText } from "@/lib/copy";
 import { rowPath } from "@/lib/cells";
+import { gridChange, headingColumn } from "@/lib/draft";
 import { NAME_COLUMN, filteredRows, matchingRows, nextSort, readView, sortedRows, viewSearch, type SheetFilters, type SheetSort, type SheetView } from "@/lib/sheet";
 import { cellStatus, statusCounts, statuses, type CellStatus, type PublishedTable } from "@/lib/status";
 import { Message } from "@/pages/Message";
@@ -43,7 +44,7 @@ export function selectedCell(table: PublishedTable, id: string | null): Selected
   return { rowKey: row.key, column, cell, status: cellStatus(cell, row.key, column.id, table.watch) };
 }
 
-function SuggestButton({ onSuggest, canEdit }: { onSuggest: () => void; canEdit: boolean }) {
+function SuggestButton({ onSuggest, canEdit, label }: { onSuggest: () => void; canEdit: boolean; label?: string }) {
   const { canSignIn, user } = useMe();
   if (!canSignIn) return null;
   if (!user) {
@@ -53,7 +54,7 @@ function SuggestButton({ onSuggest, canEdit }: { onSuggest: () => void; canEdit:
       </Button>
     );
   }
-  return <Button variant="ghost" size="xs" onClick={onSuggest}><Pencil />{canEdit ? "Edit value" : "Suggest a change"}</Button>;
+  return <Button variant="ghost" size="xs" onClick={onSuggest}><Pencil />{label ?? (canEdit ? "Edit value" : "Suggest a change")}</Button>;
 }
 
 type QuoteSearch = { quotes: string[]; blocked?: "robots" | "unreadable" };
@@ -80,9 +81,9 @@ function useQuoteSearch(table: PublishedTable, column: string, value: string, so
 }
 
 /** Propose a new value with its proof, which the server tests before anyone reviews it. */
-function SuggestForm({ table, selected, canEdit, source, onDone }: { table: PublishedTable; selected: Selected; canEdit: boolean; source: string; onDone: (sent: boolean, source: string) => void }) {
+function SuggestForm({ table, selected, canEdit, source, typed, onDone }: { table: PublishedTable; selected: Selected; canEdit: boolean; source: string; typed?: string; onDone: (sent: boolean, source: string) => void }) {
   const unproven = "missing" in selected.cell ? selected.cell.unproven : undefined;
-  const [form, setForm] = useState({ value: unproven === undefined ? "" : display(unproven), source, quote: "" });
+  const [form, setForm] = useState({ value: typed ?? (unproven === undefined ? "" : display(unproven)), source, quote: "" });
   const [error, setError] = useState<string>();
   const [sending, setSending] = useState(false);
   const field = (name: keyof typeof form) => ({ value: form[name], onChange: (event: { target: { value: string } }) => setForm({ ...form, [name]: event.target.value }) });
@@ -145,79 +146,8 @@ function XrayReading({ table }: { table: PublishedTable }) {
   );
 }
 
-/** Lets an owner add a row from the status bar. */
-function AddRow({ table, onAdded }: { table: PublishedTable; onAdded: () => void }) {
-  const { user } = useMe();
-  const [key, setKey] = useState("");
-  const [open, setOpen] = useState(false);
-  const [error, setError] = useState<string>();
-  if (!user?.accounts.includes(table.owner)) return null;
-  const add = async (event: FormEvent) => {
-    event.preventDefault();
-    const { ok, data } = await postJson<{ error?: string }>(`/api/tables/${table.owner}/${table.slug}/rows`, { key });
-    if (!ok) return setError(data.error ?? "That didn't save.");
-    toast.success("Row added");
-    setKey("");
-    setError(undefined);
-    setOpen(false);
-    onAdded();
-  };
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button variant="ghost" size="xs" className="shrink-0 text-muted-foreground"><Plus />Add row</Button>
-      </PopoverTrigger>
-      <PopoverContent align="start" className="w-72 gap-2 p-3">
-        <form onSubmit={add} className="flex gap-2">
-          <Input aria-label="New row name" placeholder="Row name" required maxLength={120} value={key} onChange={(event) => setKey(event.target.value)} />
-          <Button type="submit" size="sm">Add</Button>
-        </form>
-        {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-/** Lets the people building a draft add a column as they go. */
-function AddColumn({ table, onAdded }: { table: PublishedTable; onAdded: () => void }) {
-  const { user } = useMe();
-  const [form, setForm] = useState({ label: "", type: "text" });
-  const [open, setOpen] = useState(false);
-  const [error, setError] = useState<string>();
-  if (!table.draft || !user?.accounts.includes(table.owner)) return null;
-  const add = async (event: FormEvent) => {
-    event.preventDefault();
-    const { ok, data } = await postJson<{ error?: string }>(`/api/tables/${table.owner}/${table.slug}/columns`, { ...form, rule: "" });
-    if (!ok) return setError(data.error ?? "That didn't save.");
-    toast.success("Column added");
-    setForm({ label: "", type: "text" });
-    setError(undefined);
-    setOpen(false);
-    onAdded();
-  };
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button variant="ghost" size="xs" className="shrink-0 text-muted-foreground"><Plus />Add column</Button>
-      </PopoverTrigger>
-      <PopoverContent align="start" className="w-80 gap-2 p-3">
-        <form onSubmit={add} className="flex gap-2">
-          <Input aria-label="New column name" placeholder="Column name" required maxLength={80} value={form.label} onChange={(event) => setForm({ ...form, label: event.target.value })} />
-          <NativeSelect aria-label="New column type" value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value })}>
-            <option value="text">Text</option>
-            <option value="number">Number</option>
-            <option value="boolean">Yes or no</option>
-          </NativeSelect>
-          <Button type="submit" size="sm">Add</Button>
-        </form>
-        {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
-      </PopoverContent>
-    </Popover>
-  );
-}
-
 /** Along the bottom of the sheet, like a spreadsheet's: the table's tools, out of the way of the data. */
-function StatusBar({ table, xray, onXray, onChanged, find, onFind, findInput, filters, onFilters, filtering, onFiltering, shown }: { table: PublishedTable; xray: boolean; onXray: () => void; onChanged: () => void; find: string; onFind: (find: string) => void; findInput: RefObject<HTMLInputElement | null>; filters: SheetFilters; onFilters: (filters: SheetFilters) => void; filtering: boolean; onFiltering: (open: boolean) => void; shown: number }) {
+function StatusBar({ table, xray, onXray, onNext, find, onFind, findInput, filters, onFilters, filtering, onFiltering, shown }: { table: PublishedTable; xray: boolean; onXray: () => void; onNext?: () => void; find: string; onFind: (find: string) => void; findInput: RefObject<HTMLInputElement | null>; filters: SheetFilters; onFilters: (filters: SheetFilters) => void; filtering: boolean; onFiltering: (open: boolean) => void; shown: number }) {
   return (
     <footer className="flex h-9 shrink-0 items-center gap-2 overflow-x-auto border-t bg-muted px-2 text-xs">
       <div className="relative w-24 shrink-0 sm:w-44">
@@ -238,8 +168,7 @@ function StatusBar({ table, xray, onXray, onChanged, find, onFind, findInput, fi
         X-ray
       </Button>
       {xray && <XrayReading table={table} />}
-      <AddRow table={table} onAdded={onChanged} />
-      <AddColumn table={table} onAdded={onChanged} />
+      {onNext && <Button variant="ghost" size="xs" className="shrink-0 text-muted-foreground" onClick={onNext}><ArrowRight />Next to prove</Button>}
       <SheetFacts table={table} />
       <Popover>
         <PopoverTrigger asChild>
@@ -264,7 +193,7 @@ function rowSource(table: PublishedTable, rowKey: string) {
 }
 
 /** Above the grid, like a spreadsheet's: one line until a cell is selected, then its evidence opens beneath. */
-export function FormulaBar({ selected, table, onChanged, editing, onEditing, onNext }: { selected?: Selected; table?: PublishedTable; onChanged?: () => void; editing?: boolean; onEditing?: (editing: boolean) => void; onNext?: () => void }) {
+export function FormulaBar({ selected, table, onChanged, editing, typed, onEditing, onNext }: { selected?: Selected; table?: PublishedTable; onChanged?: () => void; editing?: boolean; typed?: string; onEditing?: (editing: boolean) => void; onNext?: () => void }) {
   const { user } = useMe();
   const canEdit = !!table && !!user?.accounts.includes(table.owner);
   const [ownEditing, setOwnEditing] = useState(false);
@@ -286,11 +215,12 @@ export function FormulaBar({ selected, table, onChanged, editing, onEditing, onN
       </div>
       {cell && table && suggesting && (
         <SuggestForm
-          key={selected.rowKey + selected.column.id}
+          key={selected.rowKey + selected.column.id + (typed ?? "")}
           table={table}
           selected={selected}
           canEdit={canEdit}
           source={lastSource.current || rowSource(table, selected.rowKey)}
+          typed={typed}
           onDone={(done, source) => {
             lastSource.current = source;
             setSent(done && !canEdit);
@@ -321,7 +251,7 @@ export function FormulaBar({ selected, table, onChanged, editing, onEditing, onN
               <p className="text-muted-foreground">{cell.unproven !== undefined ? "This has no proof yet, so it doesn't count. Add the page that states it." : cell.absent ? `We read this source on ${day(cell.read)} and it gives no such value.` : cell.checked.length ? `No source we could use stated this. We looked here on ${day(cell.read)}:` : "Nobody has looked for this yet."}</p>
               <div className="flex flex-wrap gap-1.5">
                 {cell.checked.map((url) => <SourceLink key={url} url={url} label={place(url)} />)}
-                {table && <SuggestButton onSuggest={() => setSuggesting(true)} canEdit={canEdit} />}
+                {table && <SuggestButton onSuggest={() => setSuggesting(true)} canEdit={canEdit} label={canEdit ? "Add proof" : undefined} />}
               </div>
             </>
           )}
@@ -335,6 +265,9 @@ export function FormulaBar({ selected, table, onChanged, editing, onEditing, onN
     </section>
   );
 }
+
+/** What a cell holds, for editing it. */
+const cellText = (cell: Cell) => (isFound(cell) ? display(cell.value) : cell.unproven !== undefined ? display(cell.unproven) : "");
 
 const moves: Record<string, [number, number]> = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
 
@@ -351,14 +284,14 @@ type GridProps = {
   widths?: Record<string, number>;
   onResize?: (column: string, width: number) => void;
   onCopy?: (text: string) => void;
-  onEnter?: () => void;
   rowHref?: (key: string) => string;
+  edit?: GridEdit;
 };
 
 const MIN_COLUMN_WIDTH = 64;
 
 /** A column heading that sorts when clicked, and resizes from its right edge. */
-function HeaderContent({ column, label, sort, onSort, onResize }: { column: string; label: ReactNode; sort?: SheetSort; onSort?: (column: string) => void; onResize?: (column: string, width: number) => void }) {
+function HeaderContent({ column, label, sort, onSort, onResize, onMenu }: { column: string; label: ReactNode; sort?: SheetSort; onSort?: (column: string) => void; onResize?: (column: string, width: number) => void; onMenu?: () => void }) {
   const active = sort?.column === column;
   const SortIcon = sort?.descending ? ArrowDown : ArrowUp;
   const startResize = (event: PointerEvent<HTMLSpanElement>) => {
@@ -382,14 +315,16 @@ function HeaderContent({ column, label, sort, onSort, onResize }: { column: stri
           {active && <span className="sr-only">Sorted {sort?.descending ? "descending" : "ascending"}</span>}
         </button>
       ) : label}
+      {onMenu && <button type="button" aria-label="Edit this column" onClick={onMenu} className="ml-1 rounded-sm align-[-1px] opacity-0 group-hover:opacity-100 max-md:opacity-70 hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"><ChevronDown className="size-3" /></button>}
       {onResize && <span onPointerDown={startResize} aria-hidden="true" className="absolute inset-y-0 right-0 w-1.5 cursor-col-resize touch-none hover:bg-brand/50" />}
     </>
   );
 }
 
-export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - table.rows.length, focusOnLoad = true, xray = false, sort, onSort, widths, onResize, onCopy, onEnter, rowHref }: GridProps) {
+export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - table.rows.length, focusOnLoad = true, xray = false, sort, onSort, widths, onResize, onCopy, rowHref, edit }: GridProps) {
   const grid = useRef<HTMLTableElement>(null);
   const focused = useRef(focusOnLoad ? null : selectedId);
+  const [typing, setTyping] = useState<{ id: string; text: string } | null>(null);
 
   useEffect(() => {
     if (selectedId && selectedId !== focused.current) grid.current?.querySelector<HTMLElement>(`[data-cell="${selectedId}"]`)?.focus();
@@ -398,9 +333,20 @@ export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - t
 
   const onKeyDown = (event: KeyboardEvent, rowIndex: number, columnIndex: number) => {
     if (event.key === "Escape") return select(null);
-    if (event.key === "Enter" && onEnter) {
-      event.preventDefault();
-      return onEnter();
+    if (edit && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      const cell = table.rows[rowIndex]!.cells[table.columns[columnIndex]!.id]!;
+      const id = cellId(table.rows[rowIndex]!.key, table.columns[columnIndex]!.id);
+      const start = (text: string) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setTyping({ id, text });
+      };
+      if (event.key === "Enter" || event.key === "F2") return start(cellText(cell));
+      if (event.key.length === 1) return start(event.key);
+      if ((event.key === "Delete" || event.key === "Backspace") && "missing" in cell && cell.unproven !== undefined) {
+        edit.typeIn(table.rows[rowIndex]!.key, table.columns[columnIndex]!, "");
+        return;
+      }
     }
     if (event.key.toLowerCase() === "c" && (event.ctrlKey || event.metaKey) && onCopy) {
       const cell = table.rows[rowIndex]!.cells[table.columns[columnIndex]!.id]!;
@@ -409,9 +355,21 @@ export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - t
     const move = moves[event.key];
     if (!move) return;
     event.preventDefault();
+    if (move[0] === 1 && rowIndex === table.rows.length - 1 && edit?.addRow) return void grid.current?.querySelector<HTMLElement>(`[data-new-row="0"]`)?.focus();
     const row = table.rows[Math.min(Math.max(rowIndex + move[0], 0), table.rows.length - 1)]!;
     const column = table.columns[Math.min(Math.max(columnIndex + move[1], 0), table.columns.length - 1)]!;
     select(cellId(row.key, column.id));
+  };
+
+  /** A finished edit: saves it, then moves on as a spreadsheet does, unless the value still needs its proof. */
+  const finishTyping = (rowIndex: number, columnIndex: number, id: string, text: string | null, move?: "down" | "right") => {
+    setTyping(null);
+    const stay = text !== null && edit!.typeIn(table.rows[rowIndex]!.key, table.columns[columnIndex]!, text);
+    const row = table.rows[rowIndex + (move === "down" ? 1 : 0)];
+    const column = table.columns[columnIndex + (move === "right" ? 1 : 0)];
+    if (!stay && move && row && column) select(cellId(row.key, column.id));
+    else if (!stay && move === "down" && edit?.addRow) grid.current?.querySelector<HTMLElement>(`[data-new-row="0"]`)?.focus();
+    else if (text === null || move) grid.current?.querySelector<HTMLElement>(`[data-cell="${id}"]`)?.focus();
   };
 
   const activeRow = table.rows.findIndex((row) => table.columns.some((column) => cellId(row.key, column.id) === selectedId));
@@ -435,18 +393,23 @@ export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - t
                 title={column.rule}
                 style={widths?.[column.id] ? { width: widths[column.id], minWidth: widths[column.id], maxWidth: widths[column.id] } : undefined}
                 aria-sort={sort?.column === column.id ? (sort.descending ? "descending" : "ascending") : undefined}
-                className={`${edge} ${frozen} top-0 z-20 overflow-hidden px-2 py-1 text-xs font-medium whitespace-nowrap text-muted-foreground transition-colors ${column.type === "number" ? "text-right" : "text-left"} ${header(columnIndex === activeColumn)}`}
+                onDoubleClick={edit?.columnMenu && (() => edit.columnMenu!(column))}
+                className={`group ${edge} ${frozen} top-0 z-20 overflow-hidden px-2 py-1 text-xs font-medium whitespace-nowrap text-muted-foreground transition-colors ${column.type === "number" ? "text-right" : "text-left"} ${header(columnIndex === activeColumn)}`}
               >
-                <HeaderContent column={column.id} label={`${column.label}${column.unit ? ` (${column.unit})` : ""}`} sort={sort} onSort={onSort} onResize={onResize} />
+                <HeaderContent column={column.id} label={`${column.label}${column.unit ? ` (${column.unit})` : ""}`} sort={sort} onSort={onSort} onResize={onResize} onMenu={edit?.columnMenu && (() => edit.columnMenu!(column))} />
               </th>
             ))}
-            <th className={`${frozen} top-0 w-full border-b bg-muted`} aria-hidden="true" />
+            <th className={`${frozen} top-0 w-full min-w-32 border-b bg-muted px-2 py-1 text-left text-xs font-medium`} aria-hidden={edit?.addColumn ? undefined : true}>
+              {edit?.addColumn && <NewColumnInput onAdd={edit.addColumn} />}
+            </th>
           </tr>
         </thead>
         <tbody>
           {table.rows.map((row, rowIndex) => (
             <tr key={row.key}>
-              <td className={`${edge} ${frozen} left-0 text-center text-xs text-muted-foreground transition-colors ${header(rowIndex === activeRow)}`}>{rowIndex + 1}</td>
+              <td className={`${edge} ${frozen} left-0 text-center text-xs text-muted-foreground transition-colors ${header(rowIndex === activeRow)}`}>
+                {edit?.rowMenu ? <button type="button" aria-label={`Edit row ${row.key}`} onClick={() => edit.rowMenu!(row.key)} className="w-full rounded-sm hover:text-foreground focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none">{rowIndex + 1}</button> : rowIndex + 1}
+              </td>
               <th scope="row" className={`${edge} sticky left-10 z-10 max-w-28 bg-background px-2 py-1 text-left font-medium sm:max-w-none sm:whitespace-nowrap`}>
                 {rowHref ? <Link href={rowHref(row.key)} className="hover:underline">{row.key}</Link> : row.key}
               </th>
@@ -466,11 +429,17 @@ export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - t
                     aria-selected={selectedId === id}
                     onClick={() => select(id)}
                     onKeyDown={(event) => onKeyDown(event, rowIndex, columnIndex)}
+                    onDoubleClick={edit && (() => setTyping({ id, text: cellText(cell) }))}
+                    onPaste={edit?.paste && ((event) => {
+                      event.preventDefault();
+                      edit.paste!(rowIndex, columnIndex, event.clipboardData.getData("text"));
+                    })}
                     title={isFound(cell) ? `${status.label}: ${cell.quote}` : status.detail}
                     // The tint runs down the grid row by row, like a scan.
                     style={{ ...(xray && { transitionDelay: `${rowIndex * 35}ms` }), ...(widths?.[column.id] && { maxWidth: widths[column.id] }) }}
                     className={`${edge} ${xray ? status.tint : ""} relative max-w-44 cursor-cell truncate px-2 py-1 transition-colors duration-200 hover:bg-muted/50 motion-reduce:transition-none focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset aria-selected:bg-brand/10 aria-selected:ring-2 aria-selected:ring-brand aria-selected:ring-inset sm:max-w-72 ${column.type === "number" ? "text-right" : ""} ${isFound(cell) ? "" : "text-xs text-muted-foreground"}`}
                   >
+                    {typing?.id === id && <CellInput initial={typing.text} numeric={column.type === "number"} onDone={(text, move) => finishTyping(rowIndex, columnIndex, id, text, move)} />}
                     {xray && <StatusIcon className="mr-1.5 inline size-3 align-[-1px] text-foreground/70" aria-label={status.label} />}
                     {!xray && status.corner && <span aria-hidden="true" className={`absolute top-0 right-0 size-0 border-t-[7px] border-l-[7px] border-l-transparent ${status.corner}`} />}
                     {isFound(cell) ? (
@@ -492,9 +461,11 @@ export function Grid({ table, selectedId, select, emptyRows = fullHeightRows - t
             </tr>
           ))}
           {Array.from({ length: Math.max(emptyRows, 0) }, (_, index) => (
-            <tr key={index} aria-hidden="true">
+            <tr key={index} aria-hidden={edit?.addRow ? undefined : true}>
               <td className={`${edge} ${frozen} left-0 bg-muted text-center text-xs text-muted-foreground`}>{table.rows.length + index + 1}</td>
-              <td className={`${edge} sticky left-10 z-10 bg-background px-2 py-1`}>&nbsp;</td>
+              <td className={`${edge} sticky left-10 z-10 bg-background px-2 py-1`}>
+                {edit?.addRow ? <NewRowInput index={index} onAdd={edit.addRow} onPaste={edit.paste && ((text) => edit.paste!(table.rows.length + index, -1, text))} /> : <>&nbsp;</>}
+              </td>
               {table.columns.map((column) => <td key={column.id} className={edge} />)}
               <td className="border-b" />
             </tr>
@@ -520,6 +491,9 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
   const [filtering, setFiltering] = useState(false);
   const [helping, setHelping] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [typed, setTyped] = useState<string>();
+  const [columnEdit, setColumnEdit] = useState<{ column?: Column; label?: string } | null>(null);
+  const [rowEdit, setRowEdit] = useState<string | null>(null);
   const findInput = useRef<HTMLInputElement>(null);
   const [path, navigate] = useLocation();
   const search = useSearch();
@@ -558,6 +532,7 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
   };
   const goNext = useRef(() => {});
   goNext.current = () => {
+    setTyped(undefined);
     const next = nextOpen();
     if (next) show({}, next);
     else setEditing(false);
@@ -576,15 +551,65 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  const canRun = !!data && !data.managed && !!user?.accounts.includes(data.owner);
+  const canAdd = canRun && data.draft;
+  const tableApi = `/api/tables/${owner}/${slug}`;
+  const saveGrid = async (change: ReturnType<typeof gridChange> | { cells: { row: string; column: string; value: string }[] }) => {
+    const { ok, data: result } = await postJson<{ error?: string }>(`${tableApi}/grid`, change);
+    if (!ok) toast.error(result.error ?? "That didn't save.");
+    retry();
+  };
+  // Values go straight in while a table is a draft. Otherwise a person types the value and the formula bar asks for its proof.
+  const typeIn: GridEdit["typeIn"] = (rowKey, column, text) => {
+    const cell = data!.rows.find((candidate) => candidate.key === rowKey)!.cells[column.id]!;
+    if (text.trim() === cellText(cell)) return false;
+    if (canAdd && !isFound(cell)) {
+      void saveGrid({ cells: [{ row: rowKey, column: column.id, value: text }] });
+      return false;
+    }
+    if (!text.trim()) return false;
+    setTyped(text);
+    setEditing(true);
+    show({}, cellId(rowKey, column.id));
+    return true;
+  };
+  /** A paste lands where it was dropped, even in a sorted or filtered view. */
+  const paste = (rowIndex: number, columnIndex: number, text: string) => {
+    const key = shown?.rows[rowIndex]?.key;
+    const at = key ? data!.rows.findIndex((row) => row.key === key) : data!.rows.length + rowIndex - shown!.rows.length;
+    void saveGrid(gridChange(data!, at, columnIndex, text));
+  };
+  const gridEdit: GridEdit | undefined = data && user ? {
+    typeIn,
+    ...(canAdd && { paste }),
+    ...(canRun && {
+      addRow: async (name: string) => {
+        const ok = await addTableRow(data, name);
+        retry();
+        return ok;
+      },
+      addColumn: (heading: string) => {
+        if (!canAdd) return setColumnEdit({ label: heading });
+        void postJson<{ error?: string }>(`${tableApi}/columns`, { ...headingColumn(heading), rule: "" }).then(({ ok, data: result }) => {
+          if (!ok) toast.error(result.error ?? "That column didn't save.");
+          retry();
+        });
+      },
+      columnMenu: (column: Column) => setColumnEdit({ column }),
+      rowMenu: setRowEdit,
+    }),
+  } : undefined;
+
   return (
     <div className="flex h-svh flex-col duration-200 animate-in fade-in zoom-in-[0.995] motion-reduce:animate-none">
       <AppBar
-        crumbs={[{ label: data ? ownerLabel(data) : accountName(owner), href: `/${owner}` }, { label: data?.title ?? "Table", href: `/${owner}/${slug}` }, { label: "Sheet" }]}
+        crumbs={[{ label: data ? ownerLabel(data) : accountName(owner), href: `/${owner}` }, { label: data?.title ?? "Table", href: `/${owner}/${slug}`, ...(canRun && data && { editor: <TitleInput table={data} onChanged={retry} /> }) }, { label: "Sheet" }]}
         phoneTitle={data?.title}
         actions={
           <>
             {data?.private && <Lock aria-label="Private" className="size-4 text-muted-foreground" />}
-            {data?.draft && user?.accounts.includes(data.owner) && <AgentBuildButton table={data} />}
+            {data && user?.accounts.includes(data.owner) && <AgentBuildButton table={data} />}
+            {data && <SheetOptions table={data} canRun={canRun} onRows={(names) => void saveGrid({ addColumns: [], addRows: names, cells: [] })} onShortcuts={() => setHelping(true)} />}
             {shown && <DownloadButton table={shown} size="sm" />}
             {data && !data.draft && <ShareButton table={data} path={`${path}${viewSearch(view, selectedId)}`} size="sm" onChanged={retry} />}
           </>
@@ -596,7 +621,7 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
         <Message title="This table didn't load" action={<Button variant="outline" size="sm" onClick={retry}>Try again</Button>} />
       ) : data && shown ? (
         <>
-          <FormulaBar table={data} onChanged={retry} selected={selectedCell(data, selectedId)} editing={editing} onEditing={setEditing} onNext={() => goNext.current()} />
+          <FormulaBar table={data} onChanged={retry} selected={selectedCell(data, selectedId)} editing={editing} typed={typed} onEditing={(on) => { setEditing(on); if (!on) setTyped(undefined); }} onNext={() => goNext.current()} />
           <Grid
             table={shown}
             selectedId={selectedId}
@@ -607,10 +632,11 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
             widths={widths}
             onResize={(column, width) => setWidths((current) => ({ ...current, [column]: width }))}
             onCopy={(text) => void copyText(text)}
-            onEnter={() => setEditing(true)}
+            edit={gridEdit}
+            emptyRows={Math.max(fullHeightRows - shown.rows.length, gridEdit?.addRow ? 5 : 0)}
             rowHref={(key) => rowPath(data, key)}
           />
-          <StatusBar table={data} xray={xray} onXray={() => setXray(!xray)} onChanged={retry} find={find} onFind={(next) => show({ find: next })} findInput={findInput} filters={filters} onFilters={(next) => show({ filters: next })} filtering={filtering} onFiltering={setFiltering} shown={shown.rows.length} />
+          <StatusBar table={data} xray={xray} onXray={() => setXray(!xray)} onNext={data.draft && canRun ? () => goNext.current() : undefined} find={find} onFind={(next) => show({ find: next })} findInput={findInput} filters={filters} onFilters={(next) => show({ filters: next })} filtering={filtering} onFiltering={setFiltering} shown={shown.rows.length} />
         </>
       ) : (
         <div className="flex-1 space-y-2 p-3" aria-label="Loading table">
@@ -618,6 +644,8 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
           <Skeleton className="h-64 w-full" />
         </div>
       )}
+      {data && columnEdit && <ColumnDialog {...columnEdit} table={data} onClose={() => setColumnEdit(null)} onChanged={retry} />}
+      {data && rowEdit && <RowDialog key={rowEdit} table={data} rowKey={rowEdit} onClose={() => setRowEdit(null)} onChanged={retry} />}
       <Dialog open={helping} onOpenChange={setHelping}>
         <DialogContent>
           <DialogTitle>Keyboard shortcuts</DialogTitle>

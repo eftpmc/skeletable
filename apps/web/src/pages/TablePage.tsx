@@ -2,6 +2,7 @@ import { isAnswered } from "@skeleton/tables/format";
 import { ArrowRight, ExternalLink, Settings2 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "wouter";
+import { AgentBuildButton } from "@/components/AgentBuild";
 import { DownloadButton } from "@/components/Download";
 import { Content, LoadFailed } from "@/components/Layout";
 import { NoTable } from "@/components/NoTable";
@@ -89,12 +90,13 @@ function Sources({ table }: { table: PublishedTable }) {
 function About({ table }: { table: PublishedTable }) {
   const cells = table.rows.flatMap((row) => Object.values(row.cells));
   const filled = cells.filter((cell) => !("missing" in cell));
+  const answered = cells.length ? Math.round((cells.filter(isAnswered).length / cells.length) * 100) : 0;
   const lastChecked = table.watch?.ran ?? filled.reduce((latest, cell) => (cell.read > latest ? cell.read : latest), "");
   const facts: [string, string | number][] = [
     ["Topic", table.topic],
     ["Rows", table.rows.length],
     ["Columns", table.columns.length],
-    ["Filled", `${Math.round((cells.filter(isAnswered).length / cells.length) * 100)}%`],
+    ["Filled", `${answered}%`],
     ["Last checked", lastChecked ? day(lastChecked) : "Not yet"],
   ];
   return (
@@ -181,6 +183,7 @@ function TableDetails({ table, view, onChanged }: { table: PublishedTable; view?
         <div className="flex shrink-0 flex-wrap items-center gap-2">
           {!table.draft && <ShareButton table={table} path={`/${table.owner}/${table.slug}`} onChanged={onChanged} />}
           <DownloadButton table={table} />
+          {canManage && <AgentBuildButton table={table} />}
           {canManage && (
             <Button variant="outline" size="icon-lg" aria-label="Table settings" asChild>
               <Link href={`/${table.owner}/${table.slug}/settings`}><Settings2 /></Link>

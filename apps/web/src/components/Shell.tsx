@@ -9,7 +9,7 @@ import { useMe } from "@/lib/api";
 import { useTheme } from "@/lib/theme";
 
 /** One step of where you are. The last is the current page, so it needs no link. */
-export type Crumb = { label: string; href?: string };
+export type Crumb = { label: string; href?: string; editor?: ReactNode };
 
 const BROWSE = { href: "/explore", label: "Browse tables" };
 
@@ -64,14 +64,14 @@ export function AppBar({ crumbs = [], phoneTitle, actions }: { crumbs?: Crumb[];
       {current && <p className="min-w-0 truncate font-medium md:hidden">{phoneTitle ?? current.label}</p>}
       {current && (
         <nav aria-label="Where you are" className="hidden min-w-0 items-center gap-1.5 text-sm md:flex">
-          {crumbs.map(({ label, href }, index) => (
+          {crumbs.map(({ label, href, editor }, index) => (
             <span key={`${index}-${label}`} className="flex min-w-0 items-center gap-1.5">
               {index > 0 && <span aria-hidden="true" className="text-muted-foreground">/</span>}
-              {href && index < crumbs.length - 1 ? (
+              {editor ?? (href && index < crumbs.length - 1 ? (
                 <Link href={href} className="max-w-48 truncate text-muted-foreground transition-colors hover:text-foreground">{label}</Link>
               ) : (
                 <span aria-current="page" className="truncate font-medium">{label}</span>
-              )}
+              ))}
             </span>
           ))}
         </nav>

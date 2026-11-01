@@ -36,7 +36,7 @@ export function PublishDraft({ table, onChanged }: { table: PublishedTable; onCh
           ))}
         </ul>
         <p className="text-sm">
-          <Link href={`/${table.owner}/${table.slug}/settings`} className="underline underline-offset-2">Open details and columns</Link>
+          <Link href={`/${table.owner}/${table.slug}/settings`} className="underline underline-offset-2">Open details</Link>. Columns and rows are edited in the sheet.
         </p>
         {unproven > 0 && <p className="text-sm text-muted-foreground">{unproven} {unproven === 1 ? "value has" : "values have"} no proof yet and will be left out when you publish.</p>}
         <fieldset className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm">

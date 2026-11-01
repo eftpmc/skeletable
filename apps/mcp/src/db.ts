@@ -3,6 +3,7 @@ import postgres from "postgres";
 import { loadTables, type PublishedTable } from "./library.js";
 
 export type Sql = postgres.Sql;
+export type TransactionSql = postgres.TransactionSql;
 
 /** The team behind the public library. Nobody can take its name. */
 export const OFFICIAL_ACCOUNT = "skeletable";

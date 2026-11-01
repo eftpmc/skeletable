@@ -1,6 +1,6 @@
 import { liveFetcher, type Fetcher } from "@skeleton/tables";
 import { isFound } from "@skeleton/tables/format";
-import { addRow, createTable, MAX_ROWS, tableBody } from "./accounts.js";
+import { addColumn, addRow, createTable, MAX_COLUMNS, MAX_ROWS, tableBody } from "./accounts.js";
 import { viewerFor } from "./access.js";
 import type { Sql } from "./db.js";
 import type { PublishedTable } from "./library.js";
@@ -60,6 +60,18 @@ export function agentActions(sql: Sql, tables: PublishedTable[], userId: string,
     return { added: fresh.length };
   };
 
+  const addColumns = async (slug: string, columns: NewDraft["columns"]) => {
+    const found = await running(slug);
+    if ("error" in found) return found;
+    const { table } = found;
+    if (table.columns.length + columns.length > MAX_COLUMNS) return { error: "That's more columns than a table can hold." };
+    const [saved] = await sql`select t.id from data_tables t join accounts a on a.id = t.account_id where a.handle = ${table.owner} and t.slug = ${table.slug}`;
+    const ids = [];
+    for (const { rule = "", ...column } of columns) ids.push({ id: await sql.begin((tx) => addColumn(tx, saved!.id as string, { ...column, rule })), label: column.label });
+    await refresh?.();
+    return { columns: ids };
+  };
+
   const fillOne = async (slug: string, fill: CellFill, fetcher: Fetcher) => {
     const found = await running(slug);
     if ("error" in found) return found;
@@ -97,7 +109,7 @@ export function agentActions(sql: Sql, tables: PublishedTable[], userId: string,
     return { saved: results.filter((result) => "saved" in result).length, of: cells.length, results };
   };
 
-  return { create, addRows, fill };
+  return { create, addColumns, addRows, fill };
 }
 
 export type AgentActions = ReturnType<typeof agentActions>;

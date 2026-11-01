@@ -2,9 +2,8 @@ import { TABLE_FORMAT, validateTable, type Cell, type Table } from "@skeleton/ta
 import type { Context, Hono } from "hono";
 import { z } from "zod";
 import { everyone, readable } from "./access.js";
-import { OFFICIAL_ACCOUNT, importTables, type Sql } from "./db.js";
+import { OFFICIAL_ACCOUNT, importTables, type Sql, type TransactionSql } from "./db.js";
 import type { PublishedTable } from "./library.js";
-import { asValue } from "./proposals.js";
 import { rateLimit } from "./rate-limit.js";
 
 export type SignedIn = (c: Context) => Promise<{ id: string; email: string; accounts: string[]; shared: string[] } | null>;
@@ -72,27 +71,26 @@ export const tableBody = z.object({
   scope: z.string().trim().max(800).default(""),
   columns: z.array(columnBody).min(1).max(MAX_COLUMNS),
   rows: z.array(z.string().trim().min(1).max(120)).min(1).max(MAX_ROWS),
-  // What was typed or pasted into a draft, one list per row in column order. None of it counts until it's proved.
-  values: z.array(z.array(z.string().trim().max(300))).max(MAX_ROWS).optional(),
 });
 
 type NewTable = z.infer<typeof tableBody>;
 
-/** A new table's starting cells: blank, or holding what someone typed into a draft. */
-const startingCell = (body: NewTable, row: number, column: number): Cell => {
-  const raw = body.draft ? body.values?.[row]?.[column] : undefined;
-  const value = raw ? asValue(body.columns[column]!, raw) : undefined;
-  return value === undefined ? emptyCell() : { ...emptyCell(), unproven: value };
-};
-
 /** Why a table can't be made yet. Only a draft can leave its details for later. */
 const unfinished = ({ draft, question, topic, scope, columns }: NewTable) => !draft && (!question || !topic || !scope || columns.some((column) => !column.rule));
 
-/** Make a table for this owner, at the first free address near its title. */
-export async function createTable(sql: Sql, tables: PublishedTable[], owner: string, body: NewTable) {
-  const base = slugOf(body.title) || "table";
+const UNTITLED = "Untitled table";
+
+/** The first free address near a title. A table can keep the one it has. */
+export function freeSlug(tables: PublishedTable[], owner: string, title: string, own?: string) {
+  const base = slugOf(title) || "table";
   let slug = base;
-  for (let n = 2; tables.some((t) => t.owner === owner && t.slug === slug); n++) slug = `${base}-${n}`;
+  for (let n = 2; slug !== own && tables.some((t) => t.owner === owner && t.slug === slug); n++) slug = `${base}-${n}`;
+  return slug;
+}
+
+/** Make a table for this owner, at the first free address near its title. */
+export async function createTable(sql: Sql, tables: PublishedTable[], owner: string, body: Omit<NewTable, "columns" | "rows"> & { columns: NewTable["columns"]; rows: string[] }) {
+  const slug = freeSlug(tables, owner, body.title);
   const ids = columnIds(body.columns.map((column) => column.label));
   const { title, question, topic, scope, columns, rows, draft } = body;
   const table: Table = {
@@ -105,7 +103,7 @@ export async function createTable(sql: Sql, tables: PublishedTable[], owner: str
     question,
     scope,
     columns: columns.map(({ unit, ...column }, index) => ({ ...column, id: ids[index]!, ...(unit && { unit }) })),
-    rows: rows.map((key, row) => ({ key, cells: Object.fromEntries(ids.map((id, column) => [id, startingCell(body, row, column)])) })),
+    rows: rows.map((key) => ({ key, cells: Object.fromEntries(ids.map((id) => [id, emptyCell()])) })),
   };
   const { problems } = validateTable(table);
   if (problems.length) return undefined;
@@ -126,6 +124,20 @@ function columnIds(labels: string[]) {
     used.add(id);
     return id;
   });
+}
+
+/** Add a column to a table, with every row blank in it. A removed column keeps its id, so its old versions can't be mistaken for this one's. */
+export async function addColumn(tx: Sql | TransactionSql, tableId: string, { label, type, unit, rule }: { label: string; type: string; unit?: string; rule: string }) {
+  const used = new Set((await tx`select id from table_columns where table_id = ${tableId}`).map((column) => column.id as string));
+  const base = slugOf(label).replace(/-/g, "_").replace(/^[^a-z]+/, "") || "column";
+  let columnId = base;
+  for (let n = 2; used.has(columnId); n++) columnId = `${base}_${n}`;
+  await tx`
+    insert into table_columns (table_id, id, position, label, type, unit, rule)
+    select ${tableId}, ${columnId}, coalesce(max(position) + 1, 0), ${label}, ${type}, ${unit || null}, ${rule} from table_columns where table_id = ${tableId}`;
+  const rows = await tx`select id from table_rows where table_id = ${tableId} and removed_at is null`;
+  for (const row of rows) await tx`insert into cell_versions (row_id, column_id, cell) values (${row.id}, ${columnId}, ${tx.json(emptyCell())})`;
+  return columnId;
 }
 
 /** Add a row. A removed row of this name comes back with its old values. */
@@ -217,6 +229,20 @@ export function accountRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sig
     });
     await refresh?.();
     return c.json({ ok: true });
+  });
+
+  // A blank sheet to type into. An untouched one is reused, so opening New table twice doesn't leave a trail of them.
+  app.post("/api/tables/blank", rateLimit(CREATIONS_PER_MINUTE), async (c) => {
+    const user = await signedIn(c);
+    if (!user) return c.json({ error: "Sign in to create a table." }, 401);
+    const [account] = await sql`select a.handle from accounts a join users u on u.account_id = a.id where u.id = ${user.id}`;
+    if (!account) return c.json({ error: "Your account isn't set up." }, 400);
+    const owner = account.handle as string;
+    const untouched = tables.find((t) => t.owner === owner && t.draft && t.title === UNTITLED && !t.rows.length && !t.columns.length);
+    if (untouched) return c.json({ owner, slug: untouched.slug });
+    const created = await createTable(sql, tables, owner, { title: UNTITLED, draft: true, private: true, question: "", topic: "", scope: "", columns: [], rows: [] });
+    await refresh?.();
+    return c.json(created, 201);
   });
 
   app.post("/api/tables", rateLimit(CREATIONS_PER_MINUTE), async (c) => {

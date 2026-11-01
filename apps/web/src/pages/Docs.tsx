@@ -81,7 +81,7 @@ export function Developers() {
         <div className="space-y-6">
           <Section title="MCP" description="A server any MCP client can connect to. Public tables need no account.">
             <AgentCommand />
-            <Prose><p>It offers <Code>list_tables</Code>, <Code>get_table</Code> and <Code>get_cell</Code>, which gives a value's source and exact quote, and <Code>check_claim</Code>, which tests a statement against a cell. A token from Settings adds your private tables, <Code>propose_change</Code>, and <Code>create_table</Code>, <Code>add_rows</Code> and <Code>fill_cells</Code> for building drafts.</p></Prose>
+            <Prose><p>It offers <Code>list_tables</Code>, <Code>get_table</Code> and <Code>get_cell</Code>, which gives a value's source and exact quote, and <Code>check_claim</Code>, which tests a statement against a cell. A token from Settings adds your private tables, <Code>propose_change</Code>, and <Code>create_table</Code>, <Code>add_columns</Code>, <Code>add_rows</Code> and <Code>fill_cells</Code> for building drafts. Each sheet's Agent button gives you the connect command and a ready prompt.</p></Prose>
           </Section>
           <Section title="Data files" description="Each public table has stable addresses, free to read and crawl.">
             <Prose>

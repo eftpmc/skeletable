@@ -54,7 +54,7 @@ export function AgentButton({ label }: { label?: string }) {
       </PopoverTrigger>
       <PopoverContent align="end" className="w-96 max-w-[calc(100vw-2rem)] gap-2 p-3">
         <p className="font-medium">Use these from an agent</p>
-        <p className="text-muted-foreground">A read-only MCP server. No account needed.</p>
+        <p className="text-muted-foreground">Reading needs no account. To let one build or edit your tables, use the Agent button in a sheet.</p>
         <AgentCommand />
       </PopoverContent>
     </Popover>
@@ -77,7 +77,7 @@ export const AgentDialog = ({ open, onOpenChange }: { open: boolean; onOpenChang
   <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent>
       <DialogTitle>Use these from an agent</DialogTitle>
-      <DialogDescription>A read-only MCP server for public tables. To let an agent read your private tables or propose changes, make a token in Settings.</DialogDescription>
+      <DialogDescription>Reading public tables needs no account. To let an agent build or edit your tables, use the Agent button in a sheet.</DialogDescription>
       <AgentCommand />
     </DialogContent>
   </Dialog>

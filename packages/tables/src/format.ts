@@ -101,8 +101,8 @@ export const tableSchema = z.object({
   question: z.string().trim().max(300),
   // What belongs in the table and what doesn't. Completeness is judged against this.
   scope: z.string().trim().max(800),
-  columns: z.array(columnSchema).min(1).max(20),
-  rows: z.array(rowSchema).min(1),
+  columns: z.array(columnSchema).max(20),
+  rows: z.array(rowSchema),
 });
 
 export type SourceKind = (typeof sourceKinds)[number];
@@ -187,6 +187,7 @@ export function validateTable(input: unknown): { table?: Table; problems: string
   if (!table.draft) {
     for (const field of ["topic", "question", "scope"] as const) if (!table[field]) problems.push(`${field}: empty`);
     for (const column of table.columns) if (!column.rule) problems.push(`${column.id}: has no rule`);
+    if (!table.columns.length || !table.rows.length) problems.push("needs at least one column and one row");
   }
   const seen = new Set<string>();
   for (const row of table.rows) {

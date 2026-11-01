@@ -18,6 +18,7 @@ claude mcp add --transport http skeletable https://skeletable.com/mcp
 | `check_claim` | Test a statement against a cell: it matches, differs, is disputed, or is unknown |
 | `propose_change` | Suggest a new value with its proof, for the owner to review |
 | `create_table` | Make a private draft, ready to fill |
+| `add_columns` | Add columns to a draft |
 | `add_rows` | Add rows to a draft |
 | `fill_cells` | Fill a draft's cells with proof, or say where you looked |
 

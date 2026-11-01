@@ -115,8 +115,9 @@ describe.skipIf(!url)("accounts and creating tables", () => {
   it("keeps a draft to its people, and leaves unproven values out when it's published", async () => {
     const owner = await person("pat@example.com", "a");
     const stranger = await person("sam@example.com", "b");
-    const body = { title: "Sketch", draft: true, columns: [{ label: "Weight", type: "number", unit: "g" }], rows: ["Alpha", "Beta"], values: [["900"], ["850"]] };
+    const body = { title: "Sketch", draft: true, columns: [{ label: "Weight", type: "number", unit: "g" }], rows: ["Alpha", "Beta"] };
     expect((await send("/api/tables", "POST", owner, body)).status).toBe(201);
+    await send("/api/tables/pat/sketch/grid", "POST", owner, { cells: [{ row: "Alpha", column: "weight", value: "900" }, { row: "Beta", column: "weight", value: "850" }] });
     const held = () => tables.find((t) => t.owner === "pat" && t.slug === "sketch")!;
     expect(held()).toMatchObject({ draft: true, private: true });
     expect(held().rows[1]!.cells.weight).toMatchObject({ missing: true, unproven: 850 });
@@ -134,6 +135,45 @@ describe.skipIf(!url)("accounts and creating tables", () => {
     expect(held().rows[1]!.cells.weight).not.toHaveProperty("unproven");
     expect((await app.request("/api/tables/pat/sketch", { headers: stranger })).status).toBe(200);
     expect((await send("/api/tables/pat/sketch/publish", "POST", owner, { private: false })).status).toBe(409);
+  });
+
+  it("opens a blank sheet, reusing an untouched one", async () => {
+    const owner = await person("pat@example.com", "a");
+    expect(await (await send("/api/tables/blank", "POST", owner)).json()).toMatchObject({ owner: "pat", slug: "untitled-table" });
+    expect(await (await send("/api/tables/blank", "POST", owner)).json()).toEqual({ owner: "pat", slug: "untitled-table" });
+    expect(tables.filter((t) => t.owner === "pat")).toHaveLength(1);
+    expect(tables.find((t) => t.owner === "pat")).toMatchObject({ draft: true, private: true, rows: [], columns: [] });
+  });
+
+  it("takes what's typed or pasted into a draft, and leaves proof alone", async () => {
+    const owner = await person("pat@example.com", "a");
+    await send("/api/tables/blank", "POST", owner);
+    const grid = "/api/tables/pat/untitled-table/grid";
+    const held = () => tables.find((t) => t.owner === "pat")!;
+    expect((await send(grid, "POST", owner, {
+      addColumns: [{ label: "Weight", type: "number", unit: "g" }, { label: "Colour", type: "text" }],
+      addRows: ["Alpha", "Beta"],
+      cells: [{ row: "Alpha", column: "new:0", value: "1,200" }, { row: "Beta", column: "new:1", value: "Black" }],
+    })).status).toBe(200);
+    expect(held().columns.map((column) => column.id)).toEqual(["weight", "colour"]);
+    expect(held().rows[0]!.cells.weight).toMatchObject({ missing: true, unproven: 1200 });
+    expect(held().rows[1]!.cells.colour).toMatchObject({ unproven: "Black" });
+
+    await send(grid, "POST", owner, { cells: [{ row: "Alpha", column: "weight", value: "" }] });
+    expect(held().rows[0]!.cells.weight).not.toHaveProperty("unproven");
+
+    await send("/api/tables/pat/untitled-table/proposals", "POST", owner, { row: "Alpha", column: "weight", value: "900", source: "https://maker.example/a", quote: "Weighs 900 g" });
+    await send(grid, "POST", owner, { cells: [{ row: "Alpha", column: "weight", value: "5" }] });
+    expect(held().rows[0]!.cells.weight).toMatchObject({ value: 900 });
+  });
+
+  it("lets a draft's address follow its title, until it's published", async () => {
+    const owner = await person("pat@example.com", "a");
+    await send("/api/tables/blank", "POST", owner);
+    const details = { title: "My keyboards", question: "", topic: "", scope: "" };
+    expect(await (await send("/api/tables/pat/untitled-table", "PATCH", owner, details)).json()).toMatchObject({ slug: "my-keyboards" });
+    expect(tables.some((t) => t.owner === "pat" && t.slug === "my-keyboards")).toBe(true);
+    expect(await (await send("/api/tables/pat/my-keyboards", "PATCH", owner, details)).json()).toMatchObject({ slug: "my-keyboards" });
   });
 
   it("won't take a published table without its details", async () => {

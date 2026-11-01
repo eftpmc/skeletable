@@ -103,6 +103,13 @@ describe.skipIf(!url)("building a table through an agent", () => {
     expect((await call("fill_cells", { slug: "keyboards", cells: [{ row: "Alpha", column: "colour" }] })).json().results[0].error).toContain("where you looked");
   });
 
+  it("builds out a blank sheet a person started", async () => {
+    await call("create_table", draft);
+    const { columns } = (await call("add_columns", { slug: "keyboards", columns: [{ label: "Switch", type: "text" }] })).json();
+    expect(columns).toEqual([{ id: "switch", label: "Switch" }]);
+    expect(held().rows[0]!.cells.switch).toMatchObject({ missing: true });
+  });
+
   it("adds rows, skipping names it already has", async () => {
     await call("create_table", draft);
     expect((await call("add_rows", { slug: "keyboards", rows: ["Beta", "Gamma", "Gamma"] })).json()).toEqual({ added: 1 });

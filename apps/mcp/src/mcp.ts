@@ -140,6 +140,19 @@ export function tablesMcpServer(tables: PublishedTable[], publicUrl: string, pro
     );
 
     server.registerTool(
+      "add_columns",
+      {
+        description: "Add columns to a draft you run, such as a blank one a person started. Returns the new column ids for fill_cells. Needs a token.",
+        inputSchema: {
+          slug: z.string().max(120),
+          columns: z.array(z.object({ label: z.string().max(80), type: z.enum(["text", "number", "boolean"]), unit: z.string().max(30).optional(), rule: z.string().max(500).optional().describe("What counts as this value, so two readers would fill it in the same way") })).min(1).max(20),
+        },
+        annotations: writes,
+      },
+      ({ slug, columns }) => withToken((actions) => actions.addColumns(slug, columns)),
+    );
+
+    server.registerTool(
       "add_rows",
       {
         description: "Add rows to a draft you run, as you find what belongs in it. A name it already has is skipped. Needs a token.",

@@ -8,7 +8,9 @@ import type { PublishedTable } from "@/lib/status";
 
 /** Pick a column, then the values to keep, like a spreadsheet's filter. */
 export function FilterButton({ table, filters, onChange, open, onOpenChange }: { table: PublishedTable; filters: SheetFilters; onChange: (filters: SheetFilters) => void; open: boolean; onOpenChange: (open: boolean) => void }) {
-  const [columnId, setColumnId] = useState((table.columns.find((column) => filters[column.id]?.length) ?? table.columns[0]!).id);
+  const [chosen, setColumnId] = useState<string>();
+  // A blank sheet has nothing to filter yet.
+  const columnId = chosen ?? (table.columns.find((column) => filters[column.id]?.length) ?? table.columns[0])?.id ?? "";
   const active = table.columns.filter((column) => filters[column.id]?.length).length;
   const picked = filters[columnId] ?? [];
   const toggle = (value: string) => {
@@ -16,6 +18,7 @@ export function FilterButton({ table, filters, onChange, open, onOpenChange }: {
     const { [columnId]: _dropped, ...others } = filters;
     onChange(values.length ? { ...others, [columnId]: values } : others);
   };
+  if (!table.columns.length) return null;
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>
