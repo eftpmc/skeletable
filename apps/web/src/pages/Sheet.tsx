@@ -10,7 +10,7 @@ import { FilterButton } from "@/components/Filter";
 import { NoTable } from "@/components/NoTable";
 import { CiteButton, Conflicts, Quote, SourceLink, StatusBadge, kindLabels } from "@/components/Proof";
 import { ShareButton } from "@/components/Share";
-import { CellInput, ColumnDialog, NewColumnInput, NewRowInput, RowDialog, SheetOptions, TitleInput, addTableRow, type GridEdit } from "@/components/SheetEdit";
+import { CellInput, ColumnDialog, NewColumnInput, NewRowInput, RowDialog, SheetOptions, addTableRow, type GridEdit } from "@/components/SheetEdit";
 import { AppBar } from "@/components/Shell";
 import { Shortcuts } from "@/components/Shortcuts";
 import { Badge } from "@/components/ui/badge";
@@ -638,7 +638,7 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
     <div className="flex h-svh flex-col duration-200 animate-in fade-in zoom-in-[0.995] motion-reduce:animate-none">
       <AppBar
         workspace
-        crumbs={[{ label: data ? ownerLabel(data) : accountName(owner), href: `/${owner}` }, { label: data?.title ?? "Table", href: `/${owner}/${slug}`, ...(canRun && data && { editor: <TitleInput table={data} onChanged={retry} /> }) }, { label: "Sheet" }]}
+        crumbs={[{ label: data ? ownerLabel(data) : accountName(owner), href: `/${owner}` }, { label: data?.title ?? "Table", href: `/${owner}/${slug}` }, { label: "Sheet" }]}
         phoneTitle="Sheet"
         actions={
           <>
