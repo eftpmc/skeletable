@@ -94,13 +94,13 @@ const PhoneBar = () => (
 
 const readRail = () => {
   try {
-    return localStorage.getItem(RAIL_KEY) === "open";
+    return localStorage.getItem(RAIL_KEY) !== "closed";
   } catch {
-    return false;
+    return true;
   }
 };
 
-/** A slim strip of icons that opens to show their names, and remembers which you prefer. */
+/** The signed-in sidebar. It can shrink to a strip of icons, and remembers which you prefer. */
 function Rail() {
   const [open, setOpen] = useState(readRail);
   const toggle = () => {
