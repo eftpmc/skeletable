@@ -34,6 +34,7 @@ function Inbox() {
 export function YourHome({ user }: { user: NonNullable<Me["user"]> }) {
   const { data, status, retry } = useJson<TableSummary[]>("/api/tables");
   const tables = data?.filter((table) => user.accounts.includes(table.owner));
+  const shared = data?.filter((table) => table.private && !user.accounts.includes(table.owner));
 
   useEffect(() => {
     document.title = "Your tables · Skeletable";
@@ -62,6 +63,12 @@ export function YourHome({ user }: { user: NonNullable<Me["user"]> }) {
           </div>
         ) : (
           <TableList tables={tables} />
+        )}
+        {!!shared?.length && (
+          <section className="mt-8">
+            <h2 className="mb-2 font-medium">Shared with you</h2>
+            <TableList tables={shared} />
+          </section>
         )}
       </main>
     </Page>
