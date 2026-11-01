@@ -1,8 +1,12 @@
-import { Bot, Check, Copy, Moon, Sun } from "lucide-react";
-import { useState } from "react";
+import { Bot, Check, ChevronsUpDown, Copy, Moon, Sun } from "lucide-react";
+import { useRef, useState } from "react";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useMe } from "@/lib/api";
+import { accountLinks } from "@/lib/account";
+import { useMe, type Me } from "@/lib/api";
 import { useTheme } from "@/lib/theme";
 
 /** The product's mark: a skull built from a sheet's cells, on its own tile so it reads on any background. */
@@ -17,8 +21,8 @@ export function ThemeButton() {
   );
 }
 
-/** Opens the MCP command. Shows a label when there's room for one, or just the icon. */
-export function AgentButton({ label }: { label?: string }) {
+/** The MCP command, ready to copy. */
+function AgentCommand() {
   const command = `claude mcp add --transport http skeletable ${location.origin}/mcp`;
   const [copied, setCopied] = useState(false);
   const copy = async () => {
@@ -32,6 +36,18 @@ export function AgentButton({ label }: { label?: string }) {
     setTimeout(() => setCopied(false), 1500);
   };
   return (
+    <div className="flex items-center gap-2">
+      <code className="min-w-0 flex-1 rounded-md bg-muted px-2 py-1.5 font-mono text-xs break-all">{command}</code>
+      <Button variant="outline" size="icon-sm" onClick={copy} aria-label={copied ? "Copied" : "Copy command"}>
+        {copied ? <Check /> : <Copy />}
+      </Button>
+    </div>
+  );
+}
+
+/** Opens the MCP command. Shows a label when there's room for one, or just the icon. */
+export function AgentButton({ label }: { label?: string }) {
+  return (
     <Popover>
       <PopoverTrigger asChild>
         {label ? (
@@ -43,20 +59,47 @@ export function AgentButton({ label }: { label?: string }) {
       <PopoverContent align="end" className="w-96 max-w-[calc(100vw-2rem)] gap-2 p-3">
         <p className="font-medium">Use these from an agent</p>
         <p className="text-muted-foreground">A read-only MCP server. No account needed.</p>
-        <div className="flex items-center gap-2">
-          <code className="min-w-0 flex-1 rounded-md bg-muted px-2 py-1.5 font-mono text-xs break-all">{command}</code>
-          <Button variant="outline" size="icon-sm" onClick={copy} aria-label={copied ? "Copied" : "Copy command"}>
-            {copied ? <Check /> : <Copy />}
-          </Button>
-        </div>
+        <AgentCommand />
       </PopoverContent>
     </Popover>
   );
 }
 
-/** Sign in, or who you are and a way out. Shows nothing until sign-in is really available. */
-export function AccountButton() {
+type User = NonNullable<Me["user"]>;
+
+const Initial = ({ user }: { user: User }) => (
+  <span aria-hidden="true" className="flex size-6 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-medium text-secondary-foreground">
+    {(user.name ?? user.email).charAt(0).toUpperCase()}
+  </span>
+);
+
+const SignOutForm = ({ formRef, children }: { formRef?: React.Ref<HTMLFormElement>; children?: React.ReactNode }) => (
+  <form ref={formRef} method="post" action="/auth/logout">{children}</form>
+);
+
+/** On a phone there's no room for a menu inside the menu, so this just says who you are. */
+export function PhoneAccount({ user }: { user: User }) {
+  return (
+    <div className="flex items-center gap-2.5 border-t p-4">
+      <Initial user={user} />
+      <div className="min-w-0 flex-1 text-sm">
+        {user.name && <p className="truncate font-medium">{user.name}</p>}
+        <p className="truncate text-muted-foreground">{user.email}</p>
+      </div>
+      <SignOutForm><Button type="submit" variant="outline" size="sm">Sign out</Button></SignOutForm>
+    </div>
+  );
+}
+
+/**
+ * Sign in, or the menu for everything about your account. Shows nothing until sign-in is really
+ * available. `wide` fills the sidebar with your name, opening upwards from the bottom of the page.
+ */
+export function AccountButton({ wide, compact }: { wide?: boolean; compact?: boolean }) {
   const { canSignIn, user } = useMe();
+  const { dark, toggle } = useTheme();
+  const [agent, setAgent] = useState(false);
+  const signOut = useRef<HTMLFormElement>(null);
   if (!canSignIn) return null;
   if (!user) {
     return (
@@ -65,20 +108,50 @@ export function AccountButton() {
       </Button>
     );
   }
+  const inRail = wide || compact;
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button variant="secondary" size="icon-sm" className="rounded-full" aria-label="Your account">
-          {(user.name ?? user.email).charAt(0).toUpperCase()}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent align="end" className="w-64 gap-2 p-3">
-        {user.name && <p className="truncate font-medium">{user.name}</p>}
-        <p className="truncate text-muted-foreground">{user.email}</p>
-        <form method="post" action="/auth/logout">
-          <Button type="submit" variant="outline" size="sm" className="w-full">Sign out</Button>
-        </form>
-      </PopoverContent>
-    </Popover>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          {wide ? (
+            <Button variant="ghost" className="h-10 w-full justify-start gap-2.5 px-1.5 font-normal" aria-label="Your account">
+              <Initial user={user} />
+              <span className="min-w-0 flex-1 truncate text-left">{user.name ?? user.email}</span>
+              <ChevronsUpDown className="text-muted-foreground" />
+            </Button>
+          ) : (
+            <Button variant="ghost" size="icon-sm" className="rounded-full" aria-label="Your account"><Initial user={user} /></Button>
+          )}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side={inRail ? "top" : "bottom"} align={inRail ? "start" : "end"} className="w-64">
+          <DropdownMenuLabel className="font-normal">
+            {user.name && <p className="truncate font-medium text-foreground">{user.name}</p>}
+            <p className="truncate">{user.email}</p>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            {accountLinks(user.handle).map(({ href, label }) => (
+              <DropdownMenuItem key={href} asChild><Link href={href}>{label}</Link></DropdownMenuItem>
+            ))}
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <DropdownMenuItem onSelect={() => setAgent(true)}>Connect an agent</DropdownMenuItem>
+            {/* Stays open, so you see the change and can flip it back. */}
+            <DropdownMenuItem onSelect={(event) => { event.preventDefault(); toggle(); }}>{dark ? "Use light theme" : "Use dark theme"}</DropdownMenuItem>
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={() => signOut.current?.requestSubmit()}>Sign out</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <SignOutForm formRef={signOut} />
+      <Dialog open={agent} onOpenChange={setAgent}>
+        <DialogContent>
+          <DialogTitle>Use these from an agent</DialogTitle>
+          <DialogDescription>A read-only MCP server. To let an agent propose changes, make a token in Settings.</DialogDescription>
+          <AgentCommand />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

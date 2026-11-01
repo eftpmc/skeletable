@@ -1,9 +1,10 @@
-import { Home, Menu, PanelLeft, Settings, Table2, X, type LucideIcon } from "lucide-react";
+import { Menu, PanelLeft, Table2, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { AccountButton, AgentButton, Logo, ThemeButton } from "@/components/Chrome";
+import { AccountButton, AgentButton, Logo, PhoneAccount, ThemeButton } from "@/components/Chrome";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { accountLinks, type AccountLink } from "@/lib/account";
 import { useMe } from "@/lib/api";
 
 // Shared by every top bar and the phone menu, so the menu button and its X sit in the same spot.
@@ -24,17 +25,21 @@ const Brand = () => (
   </Link>
 );
 
-function useNavItems() {
+const browse: AccountLink = { href: "/explore", label: "Browse tables", icon: Table2 };
+
+/** The rail leaves your account to its menu. A phone has no such menu, so it lists everything. */
+function useNavItems(everything = false) {
   const { user } = useMe();
-  const items: { href: string; label: string; icon: LucideIcon }[] = [{ href: "/explore", label: "Browse tables", icon: Table2 }];
-  return user ? [{ href: "/", label: "Your tables", icon: Home }, ...items, { href: "/settings", label: "Settings", icon: Settings }] : items;
+  if (!user) return [browse];
+  const [home, ...rest] = accountLinks(user.handle);
+  return [home!, browse, ...(everything ? rest : [])];
 }
 
 function NavLinks({ onNavigate, size = "normal" }: { onNavigate?: () => void; size?: "icons" | "normal" | "large" }) {
   const [location] = useLocation();
   return (
     <nav aria-label="Main" className="flex flex-col gap-1">
-      {useNavItems().map(({ href, label, icon: Icon }) => (
+      {useNavItems(size === "large").map(({ href, label, icon: Icon }) => (
         <Link
           key={href}
           href={href}
@@ -53,6 +58,7 @@ function NavLinks({ onNavigate, size = "normal" }: { onNavigate?: () => void; si
 
 /** On a phone, all navigation opens as one simple full-screen menu. */
 function PhoneMenu() {
+  const { user } = useMe();
   const [open, setOpen] = useState(false);
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -73,11 +79,12 @@ function PhoneMenu() {
         <div className="flex-1 p-4">
           <NavLinks onNavigate={() => setOpen(false)} size="large" />
         </div>
+        {user && <PhoneAccount user={user} />}
         <div className="flex items-center gap-2 border-t p-4">
           <AgentButton label="Connect an agent" />
           <div className="ml-auto flex items-center gap-1">
             <ThemeButton />
-            <AccountButton />
+            {!user && <AccountButton />}
           </div>
         </div>
       </DialogContent>
@@ -124,17 +131,17 @@ function Rail() {
   };
   return (
     <aside className={`sticky top-0 hidden h-svh shrink-0 flex-col border-r p-2 transition-[width] duration-150 md:flex ${open ? "w-56" : "w-14"}`}>
-      <Link href="/" aria-label="Skeletable" className={`mb-3 flex h-10 items-center gap-2 font-medium tracking-tight ${open ? "px-1.5" : "justify-center"}`}>
-        {open ? <BrandName /> : <Logo className="size-7" />}
-      </Link>
-      <NavLinks size={open ? "normal" : "icons"} />
-      <div className={`mt-auto flex gap-1 border-t pt-2 ${open ? "items-center" : "flex-col items-center"}`}>
-        <Button variant="ghost" size="icon-sm" onClick={toggle} aria-label={open ? "Collapse sidebar" : "Expand sidebar"} aria-expanded={open}>
+      <div className={`mb-3 flex gap-1 ${open ? "items-center" : "flex-col items-center"}`}>
+        <Link href="/" aria-label="Skeletable" className={`flex h-10 items-center gap-2 font-medium tracking-tight ${open ? "px-1.5" : "justify-center"}`}>
+          {open ? <BrandName /> : <Logo className="size-7" />}
+        </Link>
+        <Button variant="ghost" size="icon-sm" className={open ? "ml-auto" : undefined} onClick={toggle} aria-label={open ? "Collapse sidebar" : "Expand sidebar"} aria-expanded={open}>
           <PanelLeft />
         </Button>
-        <AgentButton />
-        <ThemeButton />
-        <div className={open ? "ml-auto flex" : "flex"}><AccountButton /></div>
+      </div>
+      <NavLinks size={open ? "normal" : "icons"} />
+      <div className={`mt-auto flex border-t pt-2 ${open ? "" : "justify-center"}`}>
+        <AccountButton wide={open} compact={!open} />
       </div>
     </aside>
   );
