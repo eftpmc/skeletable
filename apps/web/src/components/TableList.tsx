@@ -10,13 +10,13 @@ import { day, ownerLabel } from "@/lib/cells";
 import { statuses } from "@/lib/status";
 
 /** A small bar of how the table's values were checked, using the same colours as X-ray. */
-function CheckBar({ table, className }: { table: TableSummary; className: string }) {
+export function CheckBar({ table, className }: { table: TableSummary; className: string }) {
   const { confirmed, summary, once, given = 0, gap } = table.checks;
   const parts = [["confirmed", confirmed], ["summary", summary], ["once", once], ["linked", given], ["gap", gap]] as const;
   const total = confirmed + summary + once + given + gap;
   const filled = confirmed + summary + once;
   return (
-    <div className={`shrink-0 sm:w-36 ${className}`} title={`Double-checked means a filled value was confirmed by a second read or matched a summary. Missing values are excluded from the percentage. ${confirmed} confirmed by a blind read, ${summary} matched a summary, ${once} read once,${given ? ` ${given} without a quote,` : ""} ${gap} not stated`}>
+    <div className={`shrink-0 ${className}`} title={`Double-checked means a filled value was confirmed by a second read or matched a summary. Missing values are excluded from the percentage. ${confirmed} confirmed by a blind read, ${summary} matched a summary, ${once} read once,${given ? ` ${given} without a quote,` : ""} ${gap} not stated`}>
       <p className="mb-2 text-xs text-muted-foreground tabular-nums">{confirmed + summary ? `${Math.round(((confirmed + summary) / filled) * 100)}% double-checked` : once ? "Not double-checked yet" : given ? `${given} values, no quotes` : "No values yet"}</p>
       <div className="flex h-1.5 gap-px overflow-hidden rounded-full bg-muted" aria-hidden="true">
         {parts.filter(([, count]) => count).map(([status, count]) => <div key={status} className={statuses[status].solid} style={{ width: `${(count / total) * 100}%` }} />)}
@@ -55,7 +55,7 @@ function TableRow({ table, compact, showOwner }: { table: TableSummary; compact:
           <CheckBar table={table} className={`${compact ? "mt-2" : "mt-4"} max-w-36 sm:hidden`} />
         </div>
         <Link href={`/${table.owner}/${table.slug}`} aria-label={`Open ${table.title}`} className="flex shrink-0 items-center gap-4 rounded-sm focus-visible:bg-muted focus-visible:outline-2 focus-visible:outline-ring">
-          <CheckBar table={table} className="hidden sm:block" />
+          <CheckBar table={table} className="hidden sm:block sm:w-36" />
           <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
         </Link>
       </div>
