@@ -1,14 +1,16 @@
-import type { Column } from "@skeleton/tables/format";
+import { proofOptional, type Column } from "@skeleton/tables/format";
 import { Ellipsis } from "lucide-react";
 import { useRef, useState, type ClipboardEvent, type FormEvent, type KeyboardEvent } from "react";
 import { toast } from "sonner";
 import { Link, useLocation } from "wouter";
+import { DataLinkDialog, SaveVersionDialog } from "@/components/Data";
 import { DownloadItems } from "@/components/Download";
 import { Field, FormError } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { NativeSelect } from "@/components/ui/native-select";
 import { postJson, sendJson } from "@/lib/api";
 import { rowSets } from "@/lib/draft";
@@ -137,7 +139,9 @@ export function TitleInput({ table, onChanged }: { table: PublishedTable; onChan
 
 /** A column's heading, kind and rule, all in one place. */
 export function ColumnDialog({ table, column, label = "", onClose, onChanged }: { table: PublishedTable; column?: Column; label?: string; onClose: () => void; onChanged: () => void }) {
-  const [form, setForm] = useState({ label: column?.label ?? label, type: column?.type ?? "text", unit: column?.unit ?? "", rule: column?.rule ?? "" });
+  const [form, setForm] = useState({ label: column?.label ?? label, type: column?.type ?? "text", unit: column?.unit ?? "", rule: column?.rule ?? "", instruction: column?.instruction ?? "", choices: column?.choices?.join(", ") ?? "" });
+  const [ai, setAi] = useState(!!column?.instruction);
+  const others = table.columns.filter((other) => other.id !== column?.id);
   const [error, setError] = useState<string>();
   const base = `/api/tables/${table.owner}/${table.slug}/columns`;
   const proved = !!column && table.rows.some((row) => !("missing" in row.cells[column.id]!));
@@ -150,7 +154,8 @@ export function ColumnDialog({ table, column, label = "", onClose, onChanged }: 
   };
   const save = (event: FormEvent) => {
     event.preventDefault();
-    void (column ? send("PATCH", `${base}/${column.id}`, form, "Column saved") : send("POST", base, form, "Column added"));
+    const body = { ...form, instruction: ai ? form.instruction : "", choices: ai && form.type === "text" ? form.choices.split(",").map((choice) => choice.trim()).filter(Boolean) : [] };
+    void (column ? send("PATCH", `${base}/${column.id}`, body, "Column saved") : send("POST", base, body, "Column added"));
   };
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -172,6 +177,25 @@ export function ColumnDialog({ table, column, label = "", onClose, onChanged }: 
             {form.type === "number" && <Field label="Unit"><Input maxLength={30} placeholder="g" value={form.unit} onChange={(event) => setForm({ ...form, unit: event.target.value })} /></Field>}
           </div>
           <Field label="What counts"><Input required={!table.draft} maxLength={500} placeholder="Weight as the maker states it" value={form.rule} onChange={(event) => setForm({ ...form, rule: event.target.value })} /></Field>
+          {proofOptional(table) ? (
+            <div className="space-y-3 rounded-lg border p-3">
+              <label className="flex items-center gap-2 text-sm font-medium">
+                <input type="checkbox" checked={ai} onChange={(event) => setAi(event.target.checked)} className="accent-brand" />
+                AI column: your agent fills it from an instruction
+              </label>
+              {ai && (
+                <>
+                  <Field label="Instruction">
+                    <Textarea required rows={3} maxLength={1000} placeholder={others[0] ? `Classify {${others[0].label}} as…` : "What to work out for each row"} value={form.instruction} onChange={(event) => setForm({ ...form, instruction: event.target.value })} />
+                  </Field>
+                  <p className="text-xs text-muted-foreground">Name other columns in braces{others.length ? <>, like {others.slice(0, 3).map((other) => <code key={other.id} className="mx-0.5">{`{${other.label}}`}</code>)}</> : null}. {"{Name}"} is the row's name. Values a person types are never overwritten.</p>
+                  {form.type === "text" && <Field label="Allowed answers (optional)"><Input maxLength={2000} placeholder="Horror, Puzzle, RPG" value={form.choices} onChange={(event) => setForm({ ...form, choices: event.target.value })} /></Field>}
+                </>
+              )}
+            </div>
+          ) : (
+            column?.instruction ? null : <p className="text-xs text-muted-foreground">To have an agent fill this column from an instruction, make proof optional in the table's settings.</p>
+          )}
           <FormError error={error} />
           <div className="flex items-center gap-2">
             <Button type="submit" size="sm">Save</Button>
@@ -213,9 +237,13 @@ export function RowDialog({ table, rowKey, onClose, onChanged }: { table: Publis
 }
 
 /** The sheet's menu, for what isn't a cell: where to go, what to add in bulk, and publishing. */
-export function SheetOptions({ table, downloadTable, canRun, onRows, onShortcuts }: { table: PublishedTable; downloadTable?: PublishedTable; canRun: boolean; onRows: (names: string[]) => void; onShortcuts: () => void }) {
+export function SheetOptions({ table, downloadTable, canRun, onRows, onShortcuts, onChanged }: { table: PublishedTable; downloadTable?: PublishedTable; canRun: boolean; onRows: (names: string[]) => void; onShortcuts: () => void; onChanged?: () => void }) {
   const page = `/${table.owner}/${table.slug}`;
+  const [open, setOpen] = useState<"link" | "version" | null>(null);
   return (
+    <>
+    {open === "link" && <DataLinkDialog table={table} onClose={() => setOpen(null)} />}
+    {open === "version" && <SaveVersionDialog table={table} onClose={() => setOpen(null)} onSaved={() => onChanged?.()} />}
     <DropdownMenu>
       <DropdownMenuTrigger asChild><Button variant="ghost" size="icon-sm" aria-label="Table options"><Ellipsis /></Button></DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
@@ -228,12 +256,20 @@ export function SheetOptions({ table, downloadTable, canRun, onRows, onShortcuts
             {rowSets.map(({ label, rows }) => <DropdownMenuItem key={label} onSelect={() => onRows(rows)}>Add {label}</DropdownMenuItem>)}
           </>
         )}
+        {canRun && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => setOpen("version")}>Save a version…</DropdownMenuItem>
+            {!!table.versions?.length && <DropdownMenuItem asChild><Link href={`${page}/v/${table.versions.at(-1)!.number}`}>Latest version (v{table.versions.at(-1)!.number})</Link></DropdownMenuItem>}
+          </>
+        )}
         <DropdownMenuSeparator />
-        <DownloadItems table={downloadTable ?? table} />
+        <DownloadItems table={downloadTable ?? table} onDataLink={canRun ? () => setOpen("link") : undefined} />
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={onShortcuts}>Keyboard shortcuts</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+    </>
   );
 }
 

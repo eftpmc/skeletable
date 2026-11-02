@@ -4,6 +4,9 @@ import { html } from "hono/html";
 import { everyone, readable } from "./access.js";
 import { hasValue, isFound, isGiven } from "@skeleton/tables/format";
 import { lastRead, type PublishedTable } from "./library.js";
+import type { Sql } from "./db.js";
+import { tableForKey } from "./links.js";
+import { loadVersion, versionNumber } from "./versions.js";
 
 /** A public table as a data file, with what a reuser needs to credit it. */
 export function tableFile(table: PublishedTable, publicUrl: string) {
@@ -28,7 +31,46 @@ export function tableFile(table: PublishedTable, publicUrl: string) {
  * Plain addresses for a public table's data, safe to crawl and link to. These never change shape
  * without a new address, because tools will come to rely on them. A private table isn't here at all.
  */
-export function dataRoutes(app: Hono, tables: PublishedTable[], publicUrl: string) {
+export function dataRoutes(app: Hono, tables: PublishedTable[], publicUrl: string, sql?: Sql) {
+  /** A table as a file. `?columns=a,b` picks columns by id and `?names=0` leaves out row names, for loading into a notebook as it is. */
+  const sendFile = (c: Context, table: PublishedTable, format: string, cache: string, proofByDefault = false) => {
+    c.header("access-control-allow-origin", "*");
+    c.header("cache-control", cache);
+    if (!table.private) c.header("link", '<https://creativecommons.org/licenses/by/4.0/>; rel="license"');
+    if (format === "json") return c.json(tableFile(table, publicUrl));
+    const columns = c.req.query("columns")?.split(",").map((id) => id.trim()).filter(Boolean);
+    c.header("content-type", "text/csv; charset=utf-8");
+    const proof = c.req.query("proof");
+    return c.body(tableCsv(table, proof === undefined ? proofByDefault : proof === "1", { columns, names: c.req.query("names") !== "0" }));
+  };
+  const fileName = (file: string) => /^(.+)\.(csv|json)$/.exec(file) ?? undefined;
+
+  // A private table's data link, which works without signing in. It's never cached along the way.
+  if (sql) {
+    // A link that no longer works says so plainly, rather than opening the site.
+    const gone = (c: Context) => c.text("This data link doesn't work any more. Ask the table's owner for a new one.", 404);
+    app.get("/d/:file", async (c) => {
+      const [, key, format] = fileName(c.req.param("file")) ?? [];
+      const table = key ? await tableForKey(sql, tables, key) : undefined;
+      return table ? sendFile(c, table, format!, "private, no-store") : gone(c);
+    });
+    app.get("/d/:key/:file", async (c) => {
+      const [, name, format] = fileName(c.req.param("file")) ?? [];
+      const table = await tableForKey(sql, tables, c.req.param("key"));
+      const number = name ? versionNumber(name) : undefined;
+      const version = table && number ? await loadVersion(sql, table, number) : undefined;
+      return version ? sendFile(c, version, format!, "private, no-store") : gone(c);
+    });
+    // A public table's saved version, like /data/owner/slug/v2.csv. It never changes, so it can be kept.
+    app.get("/data/:owner/:slug/:file", async (c, next) => {
+      const [, name, format] = fileName(c.req.param("file")) ?? [];
+      const table = readable(tables, everyone).find((t) => t.owner === c.req.param("owner") && t.slug === c.req.param("slug"));
+      const number = name ? versionNumber(name) : undefined;
+      const version = table && number ? await loadVersion(sql, table, number) : undefined;
+      return version ? sendFile(c, version, format!, "public, max-age=86400") : next();
+    });
+  }
+
   /** The public cell an address names. A renamed row keeps its old address. */
   const cellAt = (c: Context, columnId: string) => {
     const table = readable(tables, everyone).find((t) => t.owner === c.req.param("owner") && t.slug === c.req.param("slug"));
@@ -109,11 +151,7 @@ ${stated ? html`<a href="${quoteLink(stated.source, stated.quote)}" target="_bla
     const file = c.req.param("file");
     const table = readable(tables, everyone).find((t) => t.owner === c.req.param("owner") && (file === `${t.slug}.csv` || file === `${t.slug}.json`));
     if (!table) return next();
-    c.header("access-control-allow-origin", "*");
-    c.header("cache-control", "public, max-age=3600");
-    c.header("link", '<https://creativecommons.org/licenses/by/4.0/>; rel="license"');
-    if (file.endsWith(".json")) return c.json(tableFile(table, publicUrl));
-    c.header("content-type", "text/csv; charset=utf-8");
-    return c.body(tableCsv(table, true));
+    // The full CSV has always come with its proof, so it still does unless asked otherwise.
+    return sendFile(c, table, file.endsWith(".json") ? "json" : "csv", "public, max-age=3600", true);
   });
 }

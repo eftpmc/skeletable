@@ -1,8 +1,10 @@
-import { hasValue, isAnswered } from "@skeleton/tables/format";
-import { ArrowRight, ExternalLink, Settings2 } from "lucide-react";
+import { aiProgress, columnSummary } from "@skeleton/tables/columns";
+import { hasValue, isAnswered, proofOptional } from "@skeleton/tables/format";
+import { ArrowRight, ExternalLink, Settings2, Sparkles } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "wouter";
 import { AgentBuildButton } from "@/components/AgentBuild";
+import { ColumnSummaryView, ForkButton, ForkedFrom, SaveVersionDialog, VersionList } from "@/components/Data";
 import { DownloadButton } from "@/components/Download";
 import { Content, LoadFailed } from "@/components/Layout";
 import { NoTable } from "@/components/NoTable";
@@ -37,7 +39,7 @@ const SideSection = ({ title, children }: { title: string; children: ReactNode }
 function Health({ table }: { table: PublishedTable }) {
   const counts = statusCounts(table);
   const total = [...counts.values()].reduce((sum, count) => sum + count, 0);
-  const best = ["confirmed", "summary", "none", "once", "gone", "fracture", "unproven", "gap", "blank"] satisfies CellStatus[];
+  const best = ["confirmed", "summary", "none", "once", "gone", "fracture", "linked", "imported", "entered", "generated", "unproven", "gap", "blank"] satisfies CellStatus[];
   const shown = best.filter((status) => counts.has(status));
   return (
     <>
@@ -87,7 +89,8 @@ function Sources({ table }: { table: PublishedTable }) {
 }
 
 /** The column beside the data, like a repository's About box. */
-function About({ table }: { table: PublishedTable }) {
+function About({ table, canManage, onChanged }: { table: PublishedTable; canManage: boolean; onChanged: () => void }) {
+  const [saving, setSaving] = useState(false);
   const cells = table.rows.flatMap((row) => Object.values(row.cells));
   const filled = cells.filter(hasValue);
   const answered = cells.length ? Math.round((cells.filter(isAnswered).length / cells.length) * 100) : 0;
@@ -111,7 +114,12 @@ function About({ table }: { table: PublishedTable }) {
           ))}
         </dl>
       </SideSection>
-      <SideSection title="How it's checked"><Health table={table} /></SideSection>
+      <SideSection title={proofOptional(table) ? "Where values came from" : "How it's checked"}><Health table={table} /></SideSection>
+      <SideSection title="Versions">
+        <VersionList table={table} />
+        {canManage && <Button variant="outline" size="sm" className="mt-3" onClick={() => setSaving(true)}>Save a version</Button>}
+        {saving && <SaveVersionDialog table={table} onClose={() => setSaving(false)} onSaved={onChanged} />}
+      </SideSection>
       <SideSection title="Sources"><Sources table={table} /></SideSection>
     </aside>
   );
@@ -141,18 +149,27 @@ function Overview({ table, canDecide, onChanged }: { table: PublishedTable; canD
             <div>
               <h3 className="mb-2 text-sm font-semibold">Columns</h3>
               <dl className="divide-y text-sm">
-                {table.columns.map((column) => (
-                  <div key={column.id} className="grid gap-x-4 gap-y-0.5 py-2 sm:grid-cols-[10rem_1fr]">
-                    <dt className="font-medium">{column.label}{column.unit ? <span className="font-normal text-muted-foreground"> ({column.unit})</span> : null}</dt>
-                    <dd className="text-muted-foreground">{column.rule}</dd>
-                  </div>
-                ))}
+                {table.columns.map((column) => {
+                  const progress = column.instruction ? aiProgress(table, column) : undefined;
+                  return (
+                    <div key={column.id} className="grid gap-x-4 gap-y-1 py-2.5 sm:grid-cols-[10rem_1fr_12rem]">
+                      <dt className="font-medium">{column.label}{column.unit ? <span className="font-normal text-muted-foreground"> ({column.unit})</span> : null}</dt>
+                      <dd className="min-w-0 space-y-1 text-muted-foreground">
+                        {column.rule && <p>{column.rule}</p>}
+                        {column.instruction && (
+                          <p className="flex gap-1.5 text-xs"><Sparkles className="mt-0.5 size-3 shrink-0 text-indigo-500" /><span><span className="font-medium text-foreground">AI column:</span> {column.instruction}{column.choices ? ` (${column.choices.join(", ")})` : ""}{progress && progress.pending + progress.stale ? ` · ${progress.pending + progress.stale} waiting for your agent` : ""}</span></p>
+                        )}
+                      </dd>
+                      <dd className="min-w-0"><ColumnSummaryView summary={columnSummary(table, column)} column={column} compact /></dd>
+                    </div>
+                  );
+                })}
               </dl>
             </div>
           </div>
         </section>
         </div>
-        <About table={table} />
+        <About table={table} canManage={canDecide} onChanged={onChanged} />
       </div>
     </div>
   );
@@ -179,10 +196,12 @@ function TableDetails({ table, view, onChanged }: { table: PublishedTable; view?
             <Badge variant="outline">{table.draft ? "Draft" : table.private ? "Private" : "Public"}</Badge>
           </div>
           <p className="mt-1.5 max-w-2xl text-muted-foreground">{table.question}</p>
+          <ForkedFrom table={table} />
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
           {!table.draft && <ShareButton table={table} path={`/${table.owner}/${table.slug}`} onChanged={onChanged} />}
-          <DownloadButton table={table} />
+          {((!table.draft && !table.private) || canManage) && <ForkButton table={table} />}
+          <DownloadButton table={table} canRun={canManage} />
           {canManage && <AgentBuildButton table={table} />}
           {canManage && (
             <Button variant="outline" size="icon-lg" aria-label="Table settings" asChild>

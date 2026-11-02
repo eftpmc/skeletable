@@ -4,7 +4,9 @@ import { Bone, CircleDashed, CircleSlash, Eye, FileCheck, FileInput, Keyboard, L
 
 export { cellStatus, type CellStatus };
 
-export type PublishedTable = Table & { watch?: WatchFile; ownerName?: string; private?: boolean; managed?: boolean; moved?: Record<string, string> };
+export type VersionInfo = { number: number; note: string; created: string; rows: number };
+
+export type PublishedTable = Table & { watch?: WatchFile; ownerName?: string; private?: boolean; managed?: boolean; moved?: Record<string, string>; versions?: VersionInfo[]; forkedFrom?: string };
 
 /**
  * How much to trust a cell, worst news first. Each has an icon, so meaning never rests on colour

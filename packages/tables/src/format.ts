@@ -19,6 +19,10 @@ export const columnSchema = z.object({
   unit: text(30).optional(),
   // What counts as this value, so two readers would fill it in the same way. Only a draft can leave it empty.
   rule: z.string().trim().max(500),
+  // An AI column: what a model is asked for each row, naming other columns in braces, like "Classify {Pitch}".
+  instruction: z.string().trim().min(1).max(1000).optional(),
+  // The only answers an AI column takes, when it has a fixed set.
+  choices: z.array(z.string().trim().min(1).max(80)).min(1).max(50).optional(),
 });
 
 /**
@@ -78,6 +82,10 @@ export const givenCellSchema = z.object({
   source: url.optional(),
   // How it was made: the prompt that generated it, or the file it was imported from.
   note: z.string().trim().min(1).max(500).optional(),
+  // The model that wrote it, when one did.
+  model: z.string().trim().min(1).max(80).optional(),
+  // For an AI column, a fingerprint of the prompt it answered, so a change to the row or the instruction shows it's out of date.
+  basis: z.string().regex(/^[0-9a-f]{1,32}$/).optional(),
   // The day it was set.
   read: day,
 });
@@ -229,6 +237,10 @@ export function validateTable(input: unknown): { table?: Table; problems: string
     for (const field of ["topic", "question", "scope"] as const) if (!table[field]) problems.push(`${field}: empty`);
     for (const column of table.columns) if (!column.rule) problems.push(`${column.id}: has no rule`);
     if (!table.columns.length || !table.rows.length) problems.push("needs at least one column and one row");
+  }
+  for (const column of table.columns) {
+    if (column.instruction && !proofOptional(table)) problems.push(`${column.id}: has an instruction, and this table requires proof`);
+    if (column.choices && column.type !== "text") problems.push(`${column.id}: only a text column can have choices`);
   }
   const seen = new Set<string>();
   for (const row of table.rows) {

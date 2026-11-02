@@ -2,7 +2,7 @@ import type { Context, Hono } from "hono";
 import { MAX_GIVEN_TEXT, isGiven, proofOptional, type Cell } from "@skeleton/tables/format";
 import { draftChecklist, slugOfRow } from "@skeleton/tables/share";
 import { z } from "zod";
-import { MAX_COLUMNS, MAX_ROWS, addColumn, addRow, columnBody, emptyCell, freeSlug, isOwner, runsTable, type SignedIn } from "./accounts.js";
+import { MAX_COLUMNS, MAX_ROWS, addColumn, addRow, aiFields, choicesBody, columnBody, emptyCell, freeSlug, instructionBody, isOwner, runsTable, type SignedIn } from "./accounts.js";
 import type { Sql } from "./db.js";
 import type { PublishedTable } from "./library.js";
 import { asValue } from "./proposals.js";
@@ -14,7 +14,8 @@ const detailsBody = z.object({
   scope: z.string().trim().max(800),
 });
 
-const columnChange = z.object({ label: z.string().trim().min(1).max(80), type: z.enum(["text", "number", "boolean"]).optional(), unit: z.string().trim().max(30).optional(), rule: z.string().trim().max(500) });
+// Leaving out `instruction` keeps the one a column has. An empty one makes it a plain column again.
+const columnChange = z.object({ label: z.string().trim().min(1).max(80), type: z.enum(["text", "number", "boolean"]).optional(), unit: z.string().trim().max(30).optional(), rule: z.string().trim().max(500), instruction: instructionBody.optional(), choices: choicesBody.optional() });
 const gridChange = z.object({
   addColumns: z.array(columnBody).max(MAX_COLUMNS).default([]),
   addRows: z.array(z.string().trim().min(1).max(120)).max(MAX_ROWS).default([]),
@@ -145,6 +146,7 @@ export function manageRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sign
     if (!body.success) return c.json({ error: "Choose whether values need proof." }, 400);
     const given = found.table.rows.reduce((count, row) => count + Object.values(row.cells).filter(isGiven).length, 0);
     if (body.data.proof === "required" && given) return c.json({ error: `${given} ${given === 1 ? "value has" : "values have"} no quote. Prove or clear ${given === 1 ? "it" : "them"} first.` }, 409);
+    if (body.data.proof === "required" && found.table.columns.some((column) => column.instruction)) return c.json({ error: "Turn the AI columns back into plain columns first." }, 409);
     await sql`update data_tables set proof = ${body.data.proof} where id = ${found.id}`;
     return finish(c);
   });
@@ -163,6 +165,7 @@ export function manageRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sign
     const body = columnBody.safeParse(await c.req.json().catch(() => null));
     if (!body.success || (!found.table.draft && !body.data.rule)) return c.json({ error: "Give the column a name and a rule." }, 400);
     if (found.table.columns.length >= MAX_COLUMNS) return c.json({ error: "This table has reached its column limit." }, 400);
+    if (body.data.instruction?.trim() && !proofOptional(found.table)) return c.json({ error: "An AI column needs a table whose proof is optional." }, 400);
     await sql.begin((tx) => addColumn(tx, found.id, body.data));
     await refresh?.();
     return c.json({ ok: true }, 201);
@@ -178,7 +181,15 @@ export function manageRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sign
     // A value was checked against its column's type, so only a column with no proved values can change it.
     const hasProof = found.table.rows.some((row) => row.cells[columnId] && !("missing" in row.cells[columnId]));
     const type = body.data.type && found.table.draft && !hasProof ? body.data.type : undefined;
-    await sql`update table_columns set label = ${label}, unit = ${unit || null}, rule = ${rule}, type = coalesce(${type ?? null}, type) where table_id = ${found.id} and id = ${columnId} and removed_at is null`;
+    const held = found.table.columns.find((column) => column.id === columnId);
+    if (!held) return c.json({ error: "No such column" }, 404);
+    const kept = body.data.instruction === undefined;
+    if (!kept && body.data.instruction && !proofOptional(found.table)) return c.json({ error: "An AI column needs a table whose proof is optional." }, 400);
+    // Choices only go with an instruction on a text column, so a change of type can take them away.
+    const ai = aiFields({ type: type ?? held.type, instruction: kept ? held.instruction : body.data.instruction, choices: body.data.choices ?? held.choices });
+    await sql`update table_columns set label = ${label}, unit = ${unit || null}, rule = ${rule}, type = coalesce(${type ?? null}, type),
+      instruction = ${ai.instruction ?? null}, choices = ${ai.choices ? sql.json(ai.choices) : null}
+      where table_id = ${found.id} and id = ${columnId} and removed_at is null`;
     return finish(c);
   });
 

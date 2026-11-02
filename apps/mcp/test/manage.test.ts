@@ -215,4 +215,62 @@ describe.skipIf(!url)("managing a table", () => {
     await send(`${base}/grid`, "POST", pat, { cells: [{ row: "Alpha", column: "weight", value: "1" }] });
     expect((await read()).rows[0]!.cells.weight).toMatchObject({ value: 900, quote: "Weighs 900 g" });
   });
+  it("makes, shows and revokes a data link, only for the people running the table", async () => {
+    const sam = await person("sam@example.com");
+    expect((await send(`${base}/data-link`, "POST", sam)).status).toBe(403);
+    expect(await (await app.request(`${base}/data-link`, { headers: pat })).json()).toEqual({ url: null });
+    const made = (await (await send(`${base}/data-link`, "POST", pat)).json()) as { url: string; pandas: string };
+    expect(made.pandas).toContain(made.url);
+    expect((await app.request(new URL(made.url).pathname)).status).toBe(200);
+    const fresh = (await (await send(`${base}/data-link`, "POST", pat, { fresh: true })).json()) as { url: string };
+    expect(fresh.url).not.toBe(made.url);
+    expect((await app.request(new URL(made.url).pathname)).status).toBe(404);
+    await send(`${base}/data-link`, "DELETE", pat);
+    expect((await app.request(new URL(fresh.url).pathname)).status).toBe(404);
+  });
+
+  it("saves a version anyone who can read the table can open, with a public file once it's public", async () => {
+    await send(`${base}/proposals`, "POST", pat, proposal);
+    expect((await send(`${base}/versions`, "POST", pat, { note: "Launch" })).status).toBe(201);
+    await send(`${base}/proposals`, "POST", pat, { ...proposal, row: "Beta" });
+    const version = (await (await app.request(`${base}/versions/1`)).json()) as { version: { number: number; note: string }; rows: { cells: Record<string, { value?: number }> }[]; versions: unknown[] };
+    expect(version.version).toMatchObject({ number: 1, note: "Launch" });
+    expect(version.rows[1]!.cells.weight).toMatchObject({ missing: true });
+    expect(version.versions).toHaveLength(1);
+    expect((await app.request(`${base}/versions/2`)).status).toBe(404);
+    const csv = await app.request("/data/pat/my-keyboards/v1.csv?names=0&columns=weight");
+    expect(await csv.text()).toBe("Weight (g)\r\n900\r\n");
+    expect(csv.headers.get("cache-control")).toContain("public");
+    const sam = await person("sam@example.com");
+    expect((await send(`${base}/versions`, "POST", sam)).status).toBe(403);
+  });
+
+  it("forks a public table into a private draft, and only what you may read", async () => {
+    await send(`${base}/proposals`, "POST", pat, proposal);
+    const sam = await person("sam@example.com");
+    const forked = await send(`${base}/fork`, "POST", sam, { title: "Sam's keyboards" });
+    expect(forked.status).toBe(201);
+    expect(await forked.json()).toEqual({ owner: "sam", slug: "sam-s-keyboards" });
+    const copy = (await (await app.request("/api/tables/sam/sam-s-keyboards", { headers: sam })).json()) as { draft: boolean; private: boolean; forkedFrom: string; rows: { cells: Record<string, { value?: number }> }[] };
+    expect(copy).toMatchObject({ draft: true, private: true, forkedFrom: "pat/my-keyboards" });
+    expect(copy.rows[0]!.cells.weight!.value).toBe(900);
+    await send(`${base}/access`, "PATCH", pat, { private: true });
+    expect((await send(`${base}/fork`, "POST", sam)).status).toBe(404);
+    expect((await send(`${base}/fork`, "POST", {})).status).toBe(401);
+  });
+
+  it("sets an AI column's instruction from the site, only where proof is optional", async () => {
+    const instructed = { label: "Switch", rule: "As stated.", instruction: "Guess the switch in {Name}", choices: ["Linear", "Tactile"] };
+    expect((await send(`${base}/columns/switch`, "PATCH", pat, instructed)).status).toBe(400);
+    await send(`${base}/proof`, "PUT", pat, { proof: "optional" });
+    expect((await send(`${base}/columns/switch`, "PATCH", pat, instructed)).status).toBe(200);
+    const table = (await read()) as unknown as { columns: { id: string; instruction?: string; choices?: string[] }[] };
+    expect(table.columns[1]).toMatchObject({ instruction: "Guess the switch in {Name}", choices: ["Linear", "Tactile"] });
+    expect((await send(`${base}/proof`, "PUT", pat, { proof: "required" })).status).toBe(409);
+    // Renaming keeps the instruction, and an empty one clears it.
+    await send(`${base}/columns/switch`, "PATCH", pat, { label: "Switch type", rule: "As stated." });
+    expect(((await read()) as unknown as { columns: { instruction?: string }[] }).columns[1]!.instruction).toBe("Guess the switch in {Name}");
+    await send(`${base}/columns/switch`, "PATCH", pat, { label: "Switch type", rule: "As stated.", instruction: "" });
+    expect(((await read()) as unknown as { columns: { instruction?: string }[] }).columns[1]).not.toHaveProperty("instruction");
+  });
 });

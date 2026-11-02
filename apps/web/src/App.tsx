@@ -44,6 +44,7 @@ function Routes({ me }: { me: Me }) {
   const [isAccount, account] = useRoute("/:owner");
   const [isTable, table] = useRoute("/:owner/:slug");
   const [isSheet, sheet] = useRoute("/:owner/:slug/sheet");
+  const [isVersion, versioned] = useRoute("/:owner/:slug/v/:number");
   const [isView, view] = useRoute("/:owner/:slug/:view");
   if (isHome) return me.user ? <YourHome user={me.user} /> : <Landing />;
   if (isExplore) return <Explore />;
@@ -67,6 +68,7 @@ function Routes({ me }: { me: Me }) {
   if (isAccount) return <Account key={account.owner} owner={account.owner} />;
   if (isTable) return <TablePage key={`${table.owner}/${table.slug}`} owner={table.owner} slug={table.slug} />;
   if (isSheet) return <Sheet key={`${sheet.owner}/${sheet.slug}`} owner={sheet.owner} slug={sheet.slug} />;
+  if (isVersion && /^\d+$/.test(versioned.number)) return <Sheet key={`${versioned.owner}/${versioned.slug}/v${versioned.number}`} owner={versioned.owner} slug={versioned.slug} version={Number(versioned.number)} />;
   if (isView && tableViews.includes(view.view as TableView)) {
     return <TablePage key={`${view.owner}/${view.slug}/${view.view}`} owner={view.owner} slug={view.slug} view={view.view as TableView} />;
   }

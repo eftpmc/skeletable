@@ -13,15 +13,31 @@ claude mcp add --transport http skeletable https://skeletable.com/mcp
 | Tool | What it does |
 |---|---|
 | `list_tables` | Find a table by what it covers |
-| `get_table` | Read a table: its scope, columns and rows |
+| `get_table` | Read a table: its scope, columns, a summary of each column, and its rows, live or as a saved version |
 | `get_cell` | One value's source, exact quote and date, or where we looked |
 | `check_claim` | Test a statement against a cell: it matches, differs, is disputed, or is unknown |
-| `export_table` | A table as CSV, with chosen columns, and optionally each value's source, quote and origin |
+| `export_table` | A table as CSV, live or a saved version, with chosen columns, and optionally each value's source, quote and origin |
 | `propose_change` | Suggest a new value with its proof, for the owner to review |
 | `create_table` | Make a private draft, ready to fill. `proof: "optional"` makes one for working data |
-| `add_columns` | Add columns to a draft |
-| `add_rows` | Add rows to a draft |
-| `fill_cells` | Fill a draft's cells with proof, or say where you looked. Where proof is optional, a value can give its origin instead |
+| `add_columns` | Add columns to a draft, including AI columns with an instruction |
+| `add_rows` | Add up to 500 rows a call, each by name or with its values |
+| `fill_cells` | Fill a draft's cells with proof, or say where you looked. Where proof is optional, a value can give its origin instead. Replies list only what failed |
+| `data_link` | A private CSV address for a notebook, script or spreadsheet, with the lines to load it |
+| `save_version` | Freeze a table as a numbered version with a link that never changes |
+| `fork_table` | Copy a public table, or one you run, into your account as a private draft |
+| `set_instruction` | Make a column an AI column, change its instruction, or clear it |
+| `next_ai_cells` | The next prompts for a table's AI columns, each with a fingerprint |
+| `fill_ai_cells` | Save the agent's answers to an AI column |
+
+## Datasets
+
+A table whose proof is optional is a dataset. Its values say where they came from: a linked page, a person, a file, or a model. On top of that:
+
+- **AI columns** have an instruction, like `Classify {Pitch} as Horror, Puzzle or Racing`. The person's own agent answers it for each row through `next_ai_cells` and `fill_ai_cells`, so Skeletable never runs a model itself. Each answer records the model and a fingerprint of its prompt, so a changed row shows its answer is out of date. A value a person typed is never overwritten.
+- **Versions** freeze a table with a lasting link, at `/owner/slug/v/2` and, for a public table, `/data/owner/slug/v2.csv`.
+- **Column summaries** show what each column holds: categories with counts, text lengths, number ranges, and where values came from.
+- **Data links** at `/d/<key>.csv` load a private table into pandas or Google Sheets. `?columns=a,b` picks columns and `?names=0` drops row names.
+- **Forks** copy a public table into your account to extend or relabel, and remember where they came from.
 
 ## What's here
 

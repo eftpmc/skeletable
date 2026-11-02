@@ -1,10 +1,13 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { hasValue, isAnswered, isFound, isGiven, normalize, quoteStates, validateTable, watchFileSchema, watchKey, type Cell, type Column, type Table, type WatchFile } from "@skeleton/tables/format";
+import { aiProgress, tableSummaries } from "@skeleton/tables/columns";
 import { cellPaths, cellStatus } from "@skeleton/tables/share";
 
 /** A table as served, with what the last watch saw, if it's been watched, and its team's name if a team runs it. A private one must only go out through the rule in access.ts. */
-export type PublishedTable = Table & { watch?: WatchFile; ownerName?: string; private?: boolean; managed?: boolean; moved?: Record<string, string> };
+export type VersionInfo = { number: number; note: string; created: string; rows: number };
+
+export type PublishedTable = Table & { watch?: WatchFile; ownerName?: string; private?: boolean; managed?: boolean; moved?: Record<string, string>; versions?: VersionInfo[]; forkedFrom?: string };
 
 /** Every published table, read once at start. A table that doesn't pass its checks stops the server rather than going out unchecked. */
 export async function loadTables(dir: string): Promise<PublishedTable[]> {
@@ -78,7 +81,8 @@ const cellValue = (cell: Cell) => (hasValue(cell) ? cell.value : null);
  * A table's values, with null where no acceptable source stated one. Evidence is one get_cell away.
  * In a table whose proof is optional, `origins` says where each value without a quote came from.
  */
-export function tableValues(table: Table) {
+export function tableValues(table: PublishedTable & { version?: VersionInfo }, { offset = 0, limit = Infinity } = {}) {
+  const ai = Object.fromEntries(table.columns.filter((column) => column.instruction).map((column) => [column.id, aiProgress(table, column)]));
   return {
     owner: table.owner,
     slug: table.slug,
@@ -87,8 +91,16 @@ export function tableValues(table: Table) {
     scope: table.scope,
     proof: table.proof ?? "required",
     lastRead: lastRead(table),
+    ...(table.version && { version: table.version }),
+    ...(table.versions && { versions: table.versions }),
+    ...(table.forkedFrom && { forkedFrom: table.forkedFrom }),
     columns: table.columns,
-    rows: table.rows.map((row) => {
+    // What each column holds, so a reader can see its shape without reading every row.
+    summaries: tableSummaries(table),
+    // How far each AI column has got: blanks waiting for an answer, and answers out of date.
+    ...(Object.keys(ai).length && { ai }),
+    totalRows: table.rows.length,
+    rows: table.rows.slice(offset, offset + limit).map((row) => {
       const origins = Object.fromEntries(table.columns.flatMap((column) => {
         const cell = row.cells[column.id]!;
         return isGiven(cell) ? [[column.id, cell.origin]] : [];

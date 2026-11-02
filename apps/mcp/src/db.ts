@@ -172,6 +172,22 @@ const migrations = [
   `
   alter table data_tables add column proof text not null default 'required' check (proof in ('required', 'optional'));
   `,
+  `
+  alter table data_tables add column data_key text unique;
+  alter table data_tables add column forked_from text;
+  alter table table_columns add column instruction text;
+  alter table table_columns add column choices jsonb;
+  create table table_versions (
+    id bigint generated always as identity primary key,
+    table_id bigint not null references data_tables on delete cascade,
+    number int not null,
+    note text not null default '',
+    data jsonb not null,
+    created_by bigint references users,
+    created_at timestamptz not null default now(),
+    unique (table_id, number)
+  );
+  `,
 
 ];
 
@@ -245,13 +261,13 @@ export async function importTables(sql: Sql, tables: PublishedTable[], { managed
         continue;
       }
       const [created] = await tx`
-        insert into data_tables (account_id, slug, topic, title, question, scope, watch, private, managed, draft, proof)
-        values (${account!.id}, ${table.slug}, ${table.topic}, ${table.title}, ${table.question}, ${table.scope}, ${watch}, ${table.private ?? false}, ${managed}, ${table.draft ?? false}, ${table.proof ?? "required"})
+        insert into data_tables (account_id, slug, topic, title, question, scope, watch, private, managed, draft, proof, forked_from)
+        values (${account!.id}, ${table.slug}, ${table.topic}, ${table.title}, ${table.question}, ${table.scope}, ${watch}, ${table.private ?? false}, ${managed}, ${table.draft ?? false}, ${table.proof ?? "required"}, ${table.forkedFrom ?? null})
         returning id`;
       for (const [position, column] of table.columns.entries()) {
         await tx`
-          insert into table_columns (table_id, id, position, label, type, unit, rule)
-          values (${created!.id}, ${column.id}, ${position}, ${column.label}, ${column.type}, ${column.unit ?? null}, ${column.rule})`;
+          insert into table_columns (table_id, id, position, label, type, unit, rule, instruction, choices)
+          values (${created!.id}, ${column.id}, ${position}, ${column.label}, ${column.type}, ${column.unit ?? null}, ${column.rule}, ${column.instruction ?? null}, ${column.choices ? tx.json(column.choices) : null})`;
       }
       for (const [position, row] of table.rows.entries()) await addRow(created!.id, row, position);
     }
@@ -261,13 +277,14 @@ export async function importTables(sql: Sql, tables: PublishedTable[], { managed
 /** Every table with the newest version of each cell, held to the same checks as a table on disk. */
 export async function readTables(sql: Sql): Promise<PublishedTable[]> {
   const tables = await sql`
-    select t.id, a.handle as owner, a.name as owner_name, a.team, t.slug, t.topic, t.title, t.question, t.scope, t.watch, t.private, t.managed, t.draft, t.proof
+    select t.id, a.handle as owner, a.name as owner_name, a.team, t.slug, t.topic, t.title, t.question, t.scope, t.watch, t.private, t.managed, t.draft, t.proof, t.forked_from
     from data_tables t join accounts a on a.id = t.account_id
     order by a.handle, t.slug`;
   // Removed rows and columns stay for the history, out of the table.
   const columns = await sql`select * from table_columns where removed_at is null order by table_id, position`;
   const rows = await sql`select * from table_rows where removed_at is null order by table_id, position`;
   const cells = await sql`select distinct on (row_id, column_id) row_id, column_id, cell from cell_versions order by row_id, column_id, id desc`;
+  const versions = await sql`select table_id, number, note, created_at, jsonb_array_length(data->'rows') as rows from table_versions order by table_id, number`;
   // Grouped once, so a big table doesn't make every row look through every cell.
   const group = <T extends Record<string, unknown>>(items: readonly T[], key: string) => {
     const groups = new Map<unknown, T[]>();
@@ -281,6 +298,7 @@ export async function readTables(sql: Sql): Promise<PublishedTable[]> {
   const columnsOf = group(columns, "table_id");
   const rowsOf = group(rows, "table_id");
   const cellsOf = group(cells, "row_id");
+  const versionsOf = group(versions, "table_id");
 
   return tables.map((table) => {
     const live = new Set(columnsOf(table.id).map((column) => column.id as string));
@@ -295,7 +313,7 @@ export async function readTables(sql: Sql): Promise<PublishedTable[]> {
       question: table.question,
       scope: table.scope,
       columns: columnsOf(table.id)
-        .map(({ id, label, type, unit, rule }) => ({ id, label, type, rule, ...(unit && { unit }) })),
+        .map(({ id, label, type, unit, rule, instruction, choices }) => ({ id, label, type, rule, ...(unit && { unit }), ...(instruction && { instruction }), ...(choices && { choices }) })),
       rows: rowsOf(table.id)
         .map((row) => ({
           key: row.key,
@@ -305,7 +323,8 @@ export async function readTables(sql: Sql): Promise<PublishedTable[]> {
     if (!checked || problems.length) throw new Error(`${table.owner}/${table.slug}: ${problems.join("; ")}`);
     // A person's account name can be the name they signed in with, so only a team's goes out with its tables.
     const moved = Object.fromEntries(rowsOf(table.id).flatMap((row) => (row.former_slugs as string[]).map((slug) => [slug, row.key as string])));
-    return { ...checked, ...(Object.keys(moved).length && { moved }), ...(table.team && { ownerName: table.owner_name as string }), ...(table.private && { private: true }), ...(table.managed && { managed: true }), ...(table.watch && { watch: watchFileSchema.parse(table.watch) }) };
+    const saved = versionsOf(table.id).map((version) => ({ number: version.number as number, note: version.note as string, created: (version.created_at as Date).toISOString().slice(0, 10), rows: version.rows as number }));
+    return { ...checked, ...(saved.length && { versions: saved }), ...(table.forked_from && { forkedFrom: table.forked_from as string }), ...(Object.keys(moved).length && { moved }), ...(table.team && { ownerName: table.owner_name as string }), ...(table.private && { private: true }), ...(table.managed && { managed: true }), ...(table.watch && { watch: watchFileSchema.parse(table.watch) }) };
   });
 }
 

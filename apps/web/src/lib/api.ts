@@ -5,6 +5,7 @@ export type TableSummary = {
   ownerName?: string;
   private?: boolean;
   draft?: boolean;
+  proof?: "optional";
   slug: string;
   topic: string;
   title: string;

@@ -17,19 +17,25 @@ const sorts = {
   name: { label: "A to Z", order: (a: TableSummary, b: TableSummary) => a.title.localeCompare(b.title) },
 };
 
+/** Sourced tables quote a source for every value. Datasets say where each value came from instead. */
+const kinds = { all: "Everything", sourced: "Sourced", datasets: "Datasets" } as const;
+type Kind = keyof typeof kinds;
+const isKind = (table: TableSummary, kind: Kind) => kind === "all" || (kind === "datasets") === (table.proof === "optional");
+
 const confirmedShare = ({ checks: { confirmed, summary, once, given = 0, gap } }: TableSummary) => (confirmed + summary) / (confirmed + summary + once + given + gap || 1);
 
 export function Explore() {
   const [query, setQuery] = useState("");
   const [topic, setTopic] = useState<string>();
+  const [kind, setKind] = useState<Kind>("all");
   const { data, status, retry, refreshing, refreshFailed } = useJson<TableSummary[]>(`/api/tables?q=${encodeURIComponent(query)}`);
   const all = useJson<TableSummary[]>("/api/tables");
   const [sort, setSort] = useState<keyof typeof sorts>("checked");
   // Browse is the public library, even when you can also see private tables.
-  const library = all.data?.filter((table) => !table.private);
+  const library = all.data?.filter((table) => !table.private && isKind(table, kind));
   const topicCount = (name: string) => library?.filter((table) => table.topic === name).length ?? 0;
   const topics = [...new Set(library?.map((table) => table.topic))].sort();
-  const shown = data?.filter((table) => !table.private && (!topic || table.topic === topic)).sort(sorts[sort].order);
+  const shown = data?.filter((table) => !table.private && isKind(table, kind) && (!topic || table.topic === topic)).sort(sorts[sort].order);
 
   useEffect(() => {
     document.title = "Browse tables · Skeletable";
@@ -38,7 +44,12 @@ export function Explore() {
   return (
     <Page>
       <Content>
-        <PageHeader title="Browse tables" description="Every value here shows its source. Open a table to see how well it's been checked." />
+        <PageHeader title="Browse tables" description="Every value here shows where it came from. Sourced tables quote a source for each one, and datasets say whether a value was linked, entered or generated. Fork any of them to make it your own." />
+        <div className="mb-4 inline-flex rounded-lg border p-0.5" role="group" aria-label="Kind of table">
+          {(Object.keys(kinds) as Kind[]).map((name) => (
+            <Button key={name} variant="ghost" size="sm" aria-pressed={kind === name} className={kind === name ? "bg-secondary text-foreground" : "text-muted-foreground"} onClick={() => { setKind(name); setTopic(undefined); }}>{kinds[name]}</Button>
+          ))}
+        </div>
         <div className="relative max-w-xl">
           {refreshing ? <Spinner label="Updating search results" className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground" /> : <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />}
           <Input

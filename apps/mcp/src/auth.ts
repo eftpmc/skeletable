@@ -8,7 +8,10 @@ import { accountRoutes, ensureAccount, runsTable } from "./accounts.js";
 import { OFFICIAL_ACCOUNT, type Sql } from "./db.js";
 import { notifyOwners, type Mailer } from "./email.js";
 import type { PublishedTable } from "./library.js";
+import { forkRoutes } from "./forks.js";
+import { dataLinkRoutes } from "./links.js";
 import { manageRoutes } from "./manage.js";
+import { versionRoutes } from "./versions.js";
 import { asValue, createToken, decideProposal, deleteToken, listProposals, listTokens, submitProposal, submitBundle, tableHistory } from "./proposals.js";
 import { rateLimit } from "./rate-limit.js";
 import { teamRoutes } from "./teams.js";
@@ -240,6 +243,9 @@ export function authRoutes({ sql, clientId, clientSecret, publicUrl, ownerEmail,
   teamRoutes(app, sql, signedIn, { mail, publicUrl, refresh });
   accessRoutes(app, sql, signedIn, { tables, mail, publicUrl, refresh });
   manageRoutes(app, sql, tables, signedIn, refresh);
+  dataLinkRoutes(app, sql, tables, signedIn, publicUrl);
+  versionRoutes(app, sql, tables, signedIn, async (c) => (await signedIn(c)) ?? everyone, refresh);
+  forkRoutes(app, sql, tables, signedIn, refresh);
 
   return app;
 }

@@ -91,13 +91,19 @@ export const Conflicts = ({ cell }: { cell: FoundCell }) =>
   ) : null;
 
 /** Where a value without a quote came from, used wherever a value is shown on its own. */
-export const OriginDetails = ({ cell, status, actions }: { cell: GivenCell; status: CellStatus; actions?: ReactNode }) => (
+export const OriginDetails = ({ cell, status, actions, prompt }: { cell: GivenCell; status: CellStatus; actions?: ReactNode; prompt?: { text: string; stale: boolean } }) => (
   <div className="space-y-1.5 text-sm">
-    <p className="text-muted-foreground">{statuses[status].detail}. It has no quote, so check it before relying on it.</p>
-    {cell.note && <p className="border-l-2 pl-3 break-words text-xs text-muted-foreground">{cell.note}</p>}
+    <p className="text-muted-foreground">{statuses[status].detail}{prompt ? ", answering this row's prompt" : ""}. It has no quote, so check it before relying on it.</p>
+    {prompt ? (
+      <>
+        <p className="border-l-2 border-indigo-400 pl-3 break-words whitespace-pre-line text-xs text-muted-foreground">{prompt.text}</p>
+        {prompt.stale && <p className="text-xs font-medium text-orange-600 dark:text-orange-400">Out of date: the row or the instruction changed since. Your agent will answer it again.</p>}
+      </>
+    ) : cell.note && <p className="border-l-2 pl-3 break-words text-xs text-muted-foreground">{cell.note}</p>}
     <div className="flex flex-wrap items-center gap-1.5">
       {cell.source && <SourceLink url={cell.source} label={host(cell.source)} />}
       <StatusBadge status={status} />
+      {cell.model && <Badge variant="outline" title="The model that wrote it">{cell.model}</Badge>}
       {actions}
       <Badge variant="outline">Set {day(cell.read)}</Badge>
     </div>

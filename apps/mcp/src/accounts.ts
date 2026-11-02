@@ -54,12 +54,24 @@ export const bioSchema = z.string().trim().max(160);
 
 const profileBody = z.object({ name: z.string().trim().min(1).max(80).optional(), handle: z.string().trim().toLowerCase().optional(), bio: bioSchema.optional(), emailUpdates: z.boolean().optional() });
 
+export const instructionBody = z.string().trim().max(1000);
+export const choicesBody = z.array(z.string().trim().min(1).max(80)).max(50);
+
 export const columnBody = z.object({
   label: z.string().trim().min(1).max(80),
   type: z.enum(["text", "number", "boolean"]),
   unit: z.string().trim().max(30).optional(),
   rule: z.string().trim().max(500).default(""),
+  instruction: instructionBody.optional(),
+  choices: choicesBody.optional(),
 });
+
+/** A column's instruction and choices as stored: an empty one is none. Choices only go with an instruction on a text column. */
+export function aiFields(column: { type: string; instruction?: string; choices?: string[] }) {
+  const instruction = column.instruction?.trim() || undefined;
+  const choices = instruction && column.type === "text" && column.choices?.length ? [...new Set(column.choices.map((choice) => choice.trim()).filter(Boolean))] : undefined;
+  return { instruction, choices: choices?.length ? choices : undefined };
+}
 
 export const tableBody = z.object({
   owner: z.string().trim().optional(),
@@ -104,7 +116,10 @@ export async function createTable(sql: Sql, tables: PublishedTable[], owner: str
     title,
     question,
     scope,
-    columns: columns.map(({ unit, ...column }, index) => ({ ...column, id: ids[index]!, ...(unit && { unit }) })),
+    columns: columns.map(({ unit, instruction: _instruction, choices: _choices, ...column }, index) => {
+      const ai = aiFields({ ...column, instruction: _instruction, choices: _choices });
+      return { ...column, id: ids[index]!, ...(unit && { unit }), ...(ai.instruction && { instruction: ai.instruction }), ...(ai.choices && { choices: ai.choices }) };
+    }),
     rows: rows.map((key) => ({ key, cells: Object.fromEntries(ids.map((id) => [id, emptyCell()])) })),
   };
   const { problems } = validateTable(table);
@@ -129,14 +144,15 @@ function columnIds(labels: string[]) {
 }
 
 /** Add a column to a table, with every row blank in it. A removed column keeps its id, so its old versions can't be mistaken for this one's. */
-export async function addColumn(tx: Sql | TransactionSql, tableId: string, { label, type, unit, rule }: { label: string; type: string; unit?: string; rule: string }) {
+export async function addColumn(tx: Sql | TransactionSql, tableId: string, { label, type, unit, rule, ...rest }: { label: string; type: string; unit?: string; rule: string; instruction?: string; choices?: string[] }) {
+  const { instruction, choices } = aiFields({ type, ...rest });
   const used = new Set((await tx`select id from table_columns where table_id = ${tableId}`).map((column) => column.id as string));
   const base = slugOf(label).replace(/-/g, "_").replace(/^[^a-z]+/, "") || "column";
   let columnId = base;
   for (let n = 2; used.has(columnId); n++) columnId = `${base}_${n}`;
   await tx`
-    insert into table_columns (table_id, id, position, label, type, unit, rule)
-    select ${tableId}, ${columnId}, coalesce(max(position) + 1, 0), ${label}, ${type}, ${unit || null}, ${rule} from table_columns where table_id = ${tableId}`;
+    insert into table_columns (table_id, id, position, label, type, unit, rule, instruction, choices)
+    select ${tableId}, ${columnId}, coalesce(max(position) + 1, 0), ${label}, ${type}, ${unit || null}, ${rule}, ${instruction ?? null}, ${choices ? tx.json(choices) : null} from table_columns where table_id = ${tableId}`;
   const rows = await tx`select id from table_rows where table_id = ${tableId} and removed_at is null`;
   for (const row of rows) await tx`insert into cell_versions (row_id, column_id, cell) values (${row.id}, ${columnId}, ${tx.json(emptyCell())})`;
   return columnId;
@@ -156,6 +172,36 @@ export const addRow = (sql: Sql, table: PublishedTable, key: string) =>
       if (!held.has(column.id)) await tx`insert into cell_versions (row_id, column_id, cell) values (${saved!.id}, ${column.id}, ${tx.json(emptyCell())})`;
     }
   });
+
+/**
+ * Add many new rows at once, each with its cells, in one transaction. The names must be new to the
+ * table, including rows removed from it: `addRow` brings one of those back instead.
+ */
+export async function addRowsAt(sql: Sql, table: PublishedTable, rows: { key: string; cells: Record<string, Cell> }[], userId?: string) {
+  if (!rows.length) return;
+  await sql.begin(async (tx) => {
+    const [saved] = await tx`select t.id, coalesce((select max(position) + 1 from table_rows r where r.table_id = t.id), 0) as next
+      from data_tables t join accounts a on a.id = t.account_id where a.handle = ${table.owner} and t.slug = ${table.slug}`;
+    const keys = rows.map((row) => row.key);
+    const positions = rows.map((_, index) => Number(saved!.next) + index);
+    const made = await tx`
+      insert into table_rows (table_id, key, position)
+      select ${saved!.id}, * from unnest(${keys}::text[], ${positions}::int[])
+      returning id, key`;
+    const ids = new Map(made.map((row) => [row.key as string, row.id as string]));
+    const [rowIds, columnIds, cells] = [[] as string[], [] as string[], [] as string[]];
+    for (const row of rows) {
+      for (const column of table.columns) {
+        rowIds.push(ids.get(row.key)!);
+        columnIds.push(column.id);
+        cells.push(JSON.stringify(row.cells[column.id] ?? emptyCell()));
+      }
+    }
+    await tx`
+      insert into cell_versions (row_id, column_id, cell, created_by)
+      select r, c, v::jsonb, ${userId ?? null} from unnest(${rowIds}::bigint[], ${columnIds}::text[], ${cells}::text[]) as x(r, c, v)`;
+  });
+}
 
 /** Whether a table's owner has this person in it, for the routes that change a table. */
 export const runsTable = (user: { accounts: string[] } | null, owner: string) => !!user?.accounts.includes(owner);

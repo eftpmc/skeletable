@@ -5,6 +5,7 @@ import { checkClaim, findCell, searchTables, summarize, tableValues, type Publis
 import { MAX_GIVEN_TEXT, origins } from "@skeleton/tables/format";
 import { tableCsv } from "@skeleton/tables/share";
 import { MAX_CELLS_PER_CALL, MAX_QUOTED_PER_CALL, type AgentActions } from "./agents.js";
+import type { VersionedTable } from "./versions.js";
 import type { ProposalInput } from "./proposals.js";
 
 const text = (value: unknown) => ({ content: [{ type: "text" as const, text: JSON.stringify(value, null, 2) }] });
@@ -16,16 +17,30 @@ const instructions =
   "say it's unknown rather than filling it in. Check a table's scope and lastRead before relying on it. When you use a value, cite the source and give the cell's `url`, so a reader can see the proof. " +
   "With a token you can build a table: create_table makes a private draft, and fill_cells adds values with their proof. Use the owner's own pages, copy each quote word for word, never get around a block, and say where you looked when no source states a value. A person reviews and publishes a draft. " +
   "A table whose `proof` is `optional` can also hold values without a quote, each saying where it came from: `link` (a page, given as `source`), `generated` (written or labeled by a model, with the prompt as `note`), `entered` (typed by a person) or `imported` (from a file). Use it for working data, such as a dataset to train or test a model, and say the origin truthfully. " +
-  "export_table gives any table you can read as CSV.";
+  "export_table gives any table you can read as CSV, and data_link gives a private address that loads it in a notebook or spreadsheet. " +
+  "To build a dataset fast, create_table and then add_rows with each row's values, up to 500 rows a call. An AI column has an instruction naming other columns in braces, like \"Classify {Pitch}\": " +
+  "call next_ai_cells for prompts, answer each one yourself, and send the answers with fill_ai_cells until nothing remains. save_version freezes a table so a result can name exactly what it used, and fork_table copies a table you can read into your own account.";
+
+/** Reads a table's saved version. Only a server with a database has them. */
+export type LoadVersion = (table: PublishedTable, number: number) => Promise<VersionedTable | undefined>;
 
 export type Propose = (input: ProposalInput) => Promise<{ id: string; check: string } | { error: string }>;
 
 /** The library as MCP tools for anyone's agent. It only gets the tables this caller may read. Reading public tables needs no account, and proposing needs a token. */
-export function tablesMcpServer(tables: PublishedTable[], publicUrl: string, propose?: Propose, agent?: AgentActions | null) {
+export function tablesMcpServer(tables: PublishedTable[], publicUrl: string, propose?: Propose, agent?: AgentActions | null, loadVersion?: LoadVersion) {
   const server = new McpServer({ name: "skeletable", version: "1.0.0" }, { instructions });
   const readOnly = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false };
   // An agent with a token can see more than one table of the same name, so "owner/slug" picks one.
   const bySlug = (slug: string) => tables.find((table) => `${table.owner}/${table.slug}` === slug) ?? tables.find((table) => table.slug === slug);
+  const versionField = z.number().int().min(1).optional().describe("A saved version's number, from `versions` in get_table. Leave out for the live table");
+  /** The live table, or one of its saved versions. */
+  const pick = async (slug: string, version?: number): Promise<PublishedTable | string> => {
+    const table = bySlug(slug);
+    if (!table) return `No table called ${slug}. Use list_tables to see what exists.`;
+    if (version === undefined) return table;
+    const saved = loadVersion && (await loadVersion(table, version));
+    return saved ?? `${slug} has no version ${version}. get_table lists its versions.`;
+  };
 
   server.registerTool(
     "list_tables",
@@ -40,13 +55,20 @@ export function tablesMcpServer(tables: PublishedTable[], publicUrl: string, pro
   server.registerTool(
     "get_table",
     {
-      description: "Read a table: its scope, its columns with the rule for each, and its rows. A null value means no acceptable source stated it.",
-      inputSchema: { slug: z.string().max(120).describe("From list_tables") },
+      description:
+        "Read a table: its scope, its columns with the rule for each, a summary of what each column holds, and its rows. A null value means no acceptable source stated it. " +
+        "`origins` says where a row's unquoted values came from, `ai` says how far each AI column has got, and `versions` lists saved versions. For a big table, read the summaries first and page through rows with `offset` and `limit`.",
+      inputSchema: {
+        slug: z.string().max(120).describe("From list_tables"),
+        version: versionField,
+        offset: z.number().int().min(0).optional().describe("Skip this many rows"),
+        limit: z.number().int().min(0).max(1000).optional().describe("Return at most this many rows. 0 returns just the table's shape and summaries"),
+      },
       annotations: readOnly,
     },
-    async ({ slug }) => {
-      const table = bySlug(slug);
-      return table ? text(tableValues(table)) : refuse(`No table called ${slug}. Use list_tables to see what exists.`);
+    async ({ slug, version, offset, limit }) => {
+      const table = await pick(slug, version);
+      return typeof table === "string" ? refuse(table) : text(tableValues(table, { offset, limit }));
     },
   );
 
@@ -104,12 +126,13 @@ export function tablesMcpServer(tables: PublishedTable[], publicUrl: string, pro
         columns: z.array(z.string().max(80)).max(20).optional().describe("Column ids, from get_table. Leave out for every column"),
         names: z.boolean().optional().describe("Whether to start each line with the row's name. Defaults to true"),
         proof: z.boolean().optional().describe("Whether to add each value's source, quote and origin. Defaults to false"),
+        version: versionField,
       },
       annotations: readOnly,
     },
-    async ({ slug, columns, names, proof }) => {
-      const table = bySlug(slug);
-      if (!table) return refuse(`No table called ${slug}. Use list_tables to see what exists.`);
+    async ({ slug, columns, names, proof, version }) => {
+      const table = await pick(slug, version);
+      if (typeof table === "string") return refuse(table);
       const unknown = columns?.filter((id) => !table.columns.some((column) => column.id === id)) ?? [];
       if (unknown.length) return refuse(`${slug} has no column ${unknown.join(", ")}. Use get_table for its column ids.`);
       return { content: [{ type: "text" as const, text: tableCsv(table, proof ?? false, { columns, names }) }] };
@@ -147,6 +170,15 @@ export function tablesMcpServer(tables: PublishedTable[], publicUrl: string, pro
     const withToken = <T,>(run: (actions: AgentActions) => Promise<T | { error: string }>) =>
       agent ? run(agent).then((result) => (result && typeof result === "object" && "error" in result ? refuse(result.error) : text(result))) : Promise.resolve(refuse("Building tables needs a token. Create one in Skeletable under Settings, and send it as a Bearer token."));
     const writes = { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true };
+    const columnsField = z.array(z.object({
+      label: z.string().max(80),
+      type: z.enum(["text", "number", "boolean"]),
+      unit: z.string().max(30).optional(),
+      rule: z.string().max(500).optional().describe("What counts as this value, so two readers would fill it in the same way"),
+      instruction: z.string().max(1000).optional().describe("Makes it an AI column: what to work out for each row, naming other columns in braces, like \"Classify {Pitch} by genre\". Needs proof to be optional"),
+      choices: z.array(z.string().max(80)).max(50).optional().describe("For an AI text column, the only answers it takes"),
+    })).min(1).max(20);
+    const valueField = z.union([z.string().max(MAX_GIVEN_TEXT), z.number(), z.boolean()]);
 
     server.registerTool(
       "create_table",
@@ -159,8 +191,8 @@ export function tablesMcpServer(tables: PublishedTable[], publicUrl: string, pro
           scope: z.string().max(800).optional().describe("What belongs in the table and what doesn't"),
           owner: z.string().max(60).optional().describe("A team you're on. Leave out for your own account"),
           proof: z.enum(["required", "optional"]).optional().describe("`required` (the default): every value needs a source and exact quote. `optional`: values can instead say where they came from, for working data like a training set"),
-          columns: z.array(z.object({ label: z.string().max(80), type: z.enum(["text", "number", "boolean"]), unit: z.string().max(30).optional(), rule: z.string().max(500).optional().describe("What counts as this value, so two readers would fill it in the same way") })).min(1).max(20),
-          rows: z.array(z.string().max(120)).min(1).max(500),
+          columns: columnsField,
+          rows: z.array(z.string().max(120)).min(1).max(500).describe("Row names. To add rows with their values, create the table with one row and use add_rows"),
         },
         annotations: writes,
       },
@@ -173,7 +205,7 @@ export function tablesMcpServer(tables: PublishedTable[], publicUrl: string, pro
         description: "Add columns to a draft you run, such as a blank one a person started. Returns the new column ids for fill_cells. Needs a token.",
         inputSchema: {
           slug: z.string().max(120),
-          columns: z.array(z.object({ label: z.string().max(80), type: z.enum(["text", "number", "boolean"]), unit: z.string().max(30).optional(), rule: z.string().max(500).optional().describe("What counts as this value, so two readers would fill it in the same way") })).min(1).max(20),
+          columns: columnsField,
         },
         annotations: writes,
       },
@@ -183,8 +215,22 @@ export function tablesMcpServer(tables: PublishedTable[], publicUrl: string, pro
     server.registerTool(
       "add_rows",
       {
-        description: "Add rows to a draft you run, as you find what belongs in it. A name it already has is skipped. Needs a token.",
-        inputSchema: { slug: z.string().max(120), rows: z.array(z.string().max(120)).min(1).max(500) },
+        description:
+          "Add up to 500 rows to a table you run. Each row is a name, or an object with its `values` by column id or label, so a whole dataset goes in a few calls. A row without a `key` gets the next free number, and a name the table already has is skipped. " +
+          "Values need a table whose proof is optional, and say where they came from with `origin` (`generated` unless there's a `source`, then `link`) and an optional `note`. Rows with values can go into a published table whose proof is optional; rows by name only into a draft. Needs a token.",
+        inputSchema: {
+          slug: z.string().max(120),
+          rows: z.array(z.union([
+            z.string().max(120),
+            z.object({
+              key: z.string().max(120).optional(),
+              values: z.record(z.string().max(80), valueField).optional(),
+              origin: z.enum(origins).optional(),
+              source: z.string().max(2000).optional(),
+              note: z.string().max(500).optional(),
+            }),
+          ])).min(1).max(500),
+        },
         annotations: writes,
       },
       ({ slug, rows }) => withToken((actions) => actions.addRows(slug, rows)),
@@ -196,13 +242,14 @@ export function tablesMcpServer(tables: PublishedTable[], publicUrl: string, pro
         description:
           `Fill up to ${MAX_CELLS_PER_CALL} cells of a draft you run. A proved cell gives \`value\`, \`source\` and \`quote\`, where the quote is word for word from the source and states the value; each is checked and the page opened before it's saved, so send at most ${MAX_QUOTED_PER_CALL} of these at once. ` +
           "If no acceptable source states it, give `checked` with the pages you read instead of a value, and add `none_stated` only if you read the whole source and it has no such value. " +
-          "In a table whose proof is optional, a cell can give `value` and `origin` with no quote: `link` with its `source`, `generated` with the prompt as `note`, `entered` or `imported`. Left out, the origin is `link` when there's a `source` and `generated` when there isn't. These can replace each other but never a quoted value. Bad cells come back with a reason and don't stop the rest. Needs a token.",
+          "In a table whose proof is optional, a cell can give `value` and `origin` with no quote: `link` with its `source`, `generated` with the prompt as `note`, `entered` or `imported`. Left out, the origin is `link` when there's a `source` and `generated` when there isn't. These can replace each other but never a quoted value, and they can go into a published table whose proof is optional. " +
+          "The reply counts what saved and lists only the cells that didn't, with a reason, and `unchecked` names quoted values whose page couldn't be read. Needs a token.",
         inputSchema: {
           slug: z.string().max(120).describe("From create_table or list_tables"),
           cells: z.array(z.object({
             row: z.string().max(200),
             column: z.string().max(80).describe("The column's id, from get_table"),
-            value: z.string().max(MAX_GIVEN_TEXT).optional(),
+            value: z.union([z.string().max(MAX_GIVEN_TEXT), z.number(), z.boolean()]).transform((value) => String(value)).optional(),
             source: z.string().max(2000).optional(),
             quote: z.string().max(400).optional(),
             origin: z.enum(origins).optional().describe("Where a value without a quote came from. Only in a table whose proof is optional"),
@@ -215,14 +262,93 @@ export function tablesMcpServer(tables: PublishedTable[], publicUrl: string, pro
       },
       ({ slug, cells }) => withToken((actions) => actions.fill(slug, cells)),
     );
+
+    server.registerTool(
+      "data_link",
+      {
+        description: "A private address that loads a table you run as CSV, for a notebook, a script or a spreadsheet, with the lines to do it. Add `?columns=a,b` to pick columns and `?names=0` to leave out row names. Anyone with the link can read the data, and `fresh` makes a new one so the old one stops working. Needs a token.",
+        inputSchema: { slug: z.string().max(120), fresh: z.boolean().optional() },
+        annotations: writes,
+      },
+      ({ slug, fresh }) => withToken((actions) => actions.dataLink(slug, fresh)),
+    );
+
+    server.registerTool(
+      "save_version",
+      {
+        description: "Freeze a table you run as it stands now, as a numbered version with a lasting link that never changes. Do this before training on a dataset or citing a table, and name the version you used. Needs a token.",
+        inputSchema: { slug: z.string().max(120), note: z.string().max(200).optional().describe("What this version is, like \"Before review\"") },
+        annotations: writes,
+      },
+      ({ slug, note }) => withToken((actions) => actions.version(slug, note)),
+    );
+
+    server.registerTool(
+      "fork_table",
+      {
+        description: "Copy a table into your own account as a private draft, to extend or relabel: any published public table, or one you run. Every value keeps its proof or origin, and the copy remembers where it came from. Needs a token.",
+        inputSchema: {
+          slug: z.string().max(120).describe("owner/slug, from list_tables"),
+          title: z.string().max(120).optional().describe("A title for the copy. Defaults to the original's"),
+          owner: z.string().max(60).optional().describe("A team you're on. Leave out for your own account"),
+        },
+        annotations: writes,
+      },
+      ({ slug, title, owner }) => withToken((actions) => actions.fork(slug, title, owner)),
+    );
+
+    server.registerTool(
+      "set_instruction",
+      {
+        description: "Make a column an AI column, change its instruction, or turn it back into a plain column with an empty one. The instruction says what to work out for each row and names other columns in braces, like \"Classify {Pitch} by genre\". Its values never overwrite what a person typed, linked or quoted. Needs proof to be optional and a token.",
+        inputSchema: {
+          slug: z.string().max(120),
+          column: z.string().max(80).describe("The column's id or label"),
+          instruction: z.string().max(1000),
+          choices: z.array(z.string().max(80)).max(50).optional().describe("For a text column, the only answers it takes"),
+        },
+        annotations: writes,
+      },
+      ({ slug, column, instruction, choices }) => withToken((actions) => actions.setInstruction(slug, column, instruction, choices)),
+    );
+
+    server.registerTool(
+      "next_ai_cells",
+      {
+        description: `The next prompts to answer for a table's AI columns, up to ${MAX_CELLS_PER_CALL} at a time: blank cells first, then answers whose row or instruction has changed. Answer each prompt yourself, then send the answers back with fill_ai_cells, each with its \`row\` and \`basis\`. Repeat until it says \`done\`. \`redo\` also re-answers generated values that came from outside the instruction. Needs a token.`,
+        inputSchema: {
+          slug: z.string().max(120),
+          column: z.string().max(80).optional().describe("One AI column's id or label. Leave out for the first one with work waiting"),
+          limit: z.number().int().min(1).max(MAX_CELLS_PER_CALL).optional(),
+          redo: z.boolean().optional(),
+        },
+        annotations: readOnly,
+      },
+      ({ slug, column, limit, redo }) => withToken((actions) => actions.nextAiCells(slug, column, limit, redo)),
+    );
+
+    server.registerTool(
+      "fill_ai_cells",
+      {
+        description: `Save up to ${MAX_CELLS_PER_CALL} answers to an AI column, each with the \`row\` and \`basis\` next_ai_cells gave it. An answer outside the column's choices, or to a prompt that has since changed, comes back with a reason. Each value is saved as generated, with the instruction and \`model\`. Needs a token.`,
+        inputSchema: {
+          slug: z.string().max(120),
+          column: z.string().max(80).describe("The AI column's id, from next_ai_cells"),
+          model: z.string().max(80).describe("The model that answered, like the one you are"),
+          answers: z.array(z.object({ row: z.string().max(200), value: z.string().max(MAX_GIVEN_TEXT), basis: z.string().max(32) })).min(1).max(MAX_CELLS_PER_CALL),
+        },
+        annotations: writes,
+      },
+      ({ slug, column, model, answers }) => withToken((actions) => actions.fillAiCells(slug, column, model, answers)),
+    );
   }
 
   return server;
 }
 
 /** Answer one MCP request statelessly: a fresh server and transport per request, so nothing carries between callers. */
-export async function handleMcp(tables: PublishedTable[], publicUrl: string, request: Request, propose?: Propose, agent?: AgentActions | null): Promise<Response> {
+export async function handleMcp(tables: PublishedTable[], publicUrl: string, request: Request, propose?: Propose, agent?: AgentActions | null, loadVersion?: LoadVersion): Promise<Response> {
   const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
-  await tablesMcpServer(tables, publicUrl, propose, agent).connect(transport);
+  await tablesMcpServer(tables, publicUrl, propose, agent, loadVersion).connect(transport);
   return transport.handleRequest(request);
 }

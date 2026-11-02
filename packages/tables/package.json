@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./format": "./src/format.ts",
-    "./share": "./src/share.ts"
+    "./share": "./src/share.ts",
+    "./columns": "./src/columns.ts"
   },
   "scripts": {
     "tables": "tsx src/cli.ts",

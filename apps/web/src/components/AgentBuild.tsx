@@ -14,6 +14,10 @@ const buildPrompt = (at: string, subject: string) => `Use the Skeletable MCP ser
 
 const fillPrompt = (at: string) => `Use the Skeletable MCP server to fill my draft table ${at}. Call get_table to see its columns and rows, then find the source for each cell and save them with fill_cells, a few rows at a time. Add columns or rows with add_columns and add_rows if it needs them. Leave the cells that already have proof alone. ${rules} When you're done, tell me what you couldn't find.`;
 
+const datasetPrompt = (at: string, subject: string) => `Use the Skeletable MCP server to build my dataset ${at}${subject ? `: ${subject}` : ""}. Call get_table to see its columns, add any it needs with add_columns, then add rows with their values using add_rows, up to 500 at a time. Say truthfully where each value came from with \`origin\`: generated if you wrote it, link with its \`source\` if it came from a page. When you're done, tell me how many rows you added and anything you weren't sure about.`;
+
+const aiPrompt = (at: string) => `Use the Skeletable MCP server to fill the AI columns in my table ${at}. Call next_ai_cells to get the prompts, answer each one yourself, and send the answers back with fill_ai_cells, each with its row and basis and your model's name. Keep going until next_ai_cells says it's done, then tell me how many you filled and any you weren't sure about.`;
+
 const editPrompt = (at: string) => `Use the Skeletable MCP server to check my table ${at}. Call get_table, then open each source and see whether its value still holds. Where a value is wrong, missing or out of date, suggest the fix with propose_change, with its source and exact quote. I'll review each one under Proposals. ${rules} When you're done, tell me what you changed and what you couldn't check.`;
 
 function CopyBlock({ label, text, rows }: { label: string; text: string; rows: number }) {
@@ -35,7 +39,7 @@ function CopyBlock({ label, text, rows }: { label: string; text: string; rows: n
 }
 
 /** The one place to hand a table to the person's own agent. It does the reading, and a person keeps the final say. */
-export function AgentBuildButton({ table, label = "Agent", size = "sm" }: { table: { owner: string; slug: string; draft?: boolean; columns: unknown[] }; label?: string; size?: "sm" | "default" | "lg" }) {
+export function AgentBuildButton({ table, label = "Agent", size = "sm" }: { table: { owner: string; slug: string; draft?: boolean; proof?: "required" | "optional"; columns: { instruction?: string }[] }; label?: string; size?: "sm" | "default" | "lg" }) {
   const [token, setToken] = useState<string>();
   const [error, setError] = useState<string>();
   const [sending, setSending] = useState(false);
@@ -53,20 +57,23 @@ export function AgentBuildButton({ table, label = "Agent", size = "sm" }: { tabl
   };
   const at = `${table.owner}/${table.slug}`;
   const blank = table.draft && !table.columns.length;
+  const dataset = table.proof === "optional";
+  const hasAi = table.columns.some((column) => column.instruction);
+  const prompt = hasAi ? aiPrompt(at) : dataset ? datasetPrompt(at, subject) : blank ? buildPrompt(at, subject) : table.draft ? fillPrompt(at) : editPrompt(at);
   const command = `claude mcp add --transport http skeletable ${location.origin}/mcp --header "Authorization: Bearer ${token ?? "YOUR_TOKEN"}"`;
   return (
     <Dialog>
       <DialogTrigger asChild><Button type="button" variant="outline" size={size}><Bot />{label}</Button></DialogTrigger>
       <DialogContent className="sm:max-w-xl">
         <DialogTitle>Edit this table with your agent</DialogTitle>
-        <DialogDescription>{table.draft ? "Your own agent does the reading. Each value is tested before it's saved, and this sheet fills in as it works. Nothing goes public until you publish." : "Your own agent does the reading. Each change it finds comes to you under Proposals, with its proof already tested, and nothing changes until you accept it."}</DialogDescription>
+        <DialogDescription>{hasAi ? "Your own agent answers each AI column's instruction, row by row, and this sheet fills in as it works. Anything a person typed stays as it is." : dataset ? "Your own agent adds rows and values, each marked with where it came from, and this sheet fills in as it works." : table.draft ? "Your own agent does the reading. Each value is tested before it's saved, and this sheet fills in as it works. Nothing goes public until you publish." : "Your own agent does the reading. Each change it finds comes to you under Proposals, with its proof already tested, and nothing changes until you accept it."}</DialogDescription>
         <div className="min-w-0 space-y-4">
           {!token && <Button type="button" variant="outline" size="sm" disabled={sending} aria-busy={sending} onClick={() => void makeToken()}>{sending && <Spinner label="Creating token" />}{sending ? "Creating token…" : "Make a token for this agent"}</Button>}
           {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
           {token && <p className="text-sm text-muted-foreground">The token is in the command below, and it's shown only once. You can remove it in Settings.</p>}
           <CopyBlock label="1. Connect it once" text={command} rows={3} />
-          {blank && <Input aria-label="What should this table cover?" placeholder="What should this table cover?" value={subject} onChange={(event) => setSubject(event.target.value)} />}
-          <CopyBlock label="2. Ask it" text={blank ? buildPrompt(at, subject) : table.draft ? fillPrompt(at) : editPrompt(at)} rows={7} />
+          {(blank || (dataset && !hasAi)) && <Input aria-label="What should this table cover?" placeholder="What should this table cover?" value={subject} onChange={(event) => setSubject(event.target.value)} />}
+          <CopyBlock label="2. Ask it" text={prompt} rows={7} />
         </div>
       </DialogContent>
     </Dialog>

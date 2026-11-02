@@ -38,7 +38,7 @@ describe.skipIf(!url)("building a table through an agent", () => {
       body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name, arguments: args } }),
     });
     const { result } = (await response.json()) as { result: { content: { text: string }[]; isError?: boolean } };
-    return { isError: result.isError, text: result.content[0]!.text, json: () => JSON.parse(result.content[0]!.text) };
+    return { isError: result.isError, text: result.content[0]!.text, json: () => { try { return JSON.parse(result.content[0]!.text); } catch { throw new Error(result.content[0]!.text); } } };
   };
 
   const draft = { title: "Keyboards", columns: [{ label: "Weight", type: "number", unit: "g" }, { label: "Colour", type: "text" }], rows: ["Alpha", "Beta"] };
@@ -86,9 +86,11 @@ describe.skipIf(!url)("building a table through an agent", () => {
       ],
     })).json();
     expect(result).toMatchObject({ saved: 1, of: 4 });
-    expect(result.results[1].error).toContain("isn't on that page");
-    expect(result.results[2].error).toContain("exact value");
-    expect(result.results[3].error).toContain("no such cell");
+    expect(result.errors.map((problem: { row: string }) => problem.row)).toEqual(["Beta", "Beta", "Gamma"]);
+    expect(result.errors[0].error).toContain("isn't on that page");
+    expect(result.errors[1].error).toContain("exact value");
+    expect(result.errors[2].error).toContain("no such cell");
+    expect(result).not.toHaveProperty("results");
     expect(held().rows[0]!.cells.weight).toMatchObject({ value: 900, read: expect.any(String) });
     expect(held().rows[0]!.cells.weight).not.toHaveProperty("confirmed");
     expect(opened.filter((page) => page === source)).toHaveLength(1);
@@ -100,7 +102,7 @@ describe.skipIf(!url)("building a table through an agent", () => {
     await call("fill_cells", { slug: "keyboards", cells: [{ row: "Alpha", column: "weight", checked }, { row: "Beta", column: "weight", checked, none_stated: true }] });
     expect(held().rows[0]!.cells.weight).toMatchObject({ missing: true, checked });
     expect(held().rows[1]!.cells.weight).toMatchObject({ missing: true, checked, absent: true });
-    expect((await call("fill_cells", { slug: "keyboards", cells: [{ row: "Alpha", column: "colour" }] })).json().results[0].error).toContain("where you looked");
+    expect((await call("fill_cells", { slug: "keyboards", cells: [{ row: "Alpha", column: "colour" }] })).json().errors[0].error).toContain("where you looked");
   });
 
   it("builds out a blank sheet a person started", async () => {
@@ -112,14 +114,14 @@ describe.skipIf(!url)("building a table through an agent", () => {
 
   it("adds rows, skipping names it already has", async () => {
     await call("create_table", draft);
-    expect((await call("add_rows", { slug: "keyboards", rows: ["Beta", "Gamma", "Gamma"] })).json()).toEqual({ added: 1 });
+    expect((await call("add_rows", { slug: "keyboards", rows: ["Beta", "Gamma", "Gamma"] })).json()).toEqual({ added: 1, skipped: 2, names: ["Gamma"] });
     expect(held().rows.map((row) => row.key)).toEqual(["Alpha", "Beta", "Gamma"]);
   });
 
   it("asks for a quote in a table that requires proof", async () => {
     await call("create_table", draft);
     const result = (await call("fill_cells", { slug: "keyboards", cells: [{ row: "Alpha", column: "colour", value: "Black", origin: "generated" }] })).json();
-    expect(result.results[0].error).toContain("proof optional");
+    expect(result.errors[0].error).toContain("proof optional");
     expect(held().rows[0]!.cells.colour).toMatchObject({ missing: true });
   });
 
@@ -139,9 +141,7 @@ describe.skipIf(!url)("building a table through an agent", () => {
       ],
     })).json();
     expect(result).toMatchObject({ saved: 3, of: 6 });
-    expect(result.results[3].error).toContain("number");
-    expect(result.results[4].error).toContain("no such cell");
-    expect(result.results[5].error).toContain("source");
+    expect(result.errors.map((problem: { error: string }) => problem.error)).toEqual([expect.stringContaining("number"), expect.stringContaining("no such cell"), expect.stringContaining("source")]);
     expect(held().rows[0]!.cells).toMatchObject({
       colour: { value: "Black", origin: "generated", note: "Label each keyboard's colour" },
       weight: { value: 900, origin: "link", source: "https://maker.example/a" },
@@ -158,21 +158,21 @@ describe.skipIf(!url)("building a table through an agent", () => {
     await call("create_table", { ...draft, proof: "optional" });
     await call("fill_cells", { slug: "keyboards", cells: [{ row: "Alpha", column: "weight", value: "900", source: "https://maker.example/a", quote: "Weighs 900 g" }] });
     const result = (await call("fill_cells", { slug: "keyboards", cells: [{ row: "Alpha", column: "weight", value: "800", origin: "generated" }] })).json();
-    expect(result.results[0].error).toContain("quoted value");
+    expect(result.errors[0].error).toContain("quoted value");
     expect(held().rows[0]!.cells.weight).toMatchObject({ value: 900, quote: "Weighs 900 g" });
   });
 
   it("fills a large dataset in a few calls, and exports it as CSV", async () => {
     const rows = Array.from({ length: 300 }, (_, index) => `ex-${index}`);
     await call("create_table", { title: "Clauses", proof: "optional", columns: [{ label: "Text", type: "text" }, { label: "Label", type: "text" }], rows: rows.slice(0, 1) });
-    expect((await call("add_rows", { slug: "clauses", rows: rows.slice(1) })).json()).toEqual({ added: 299 });
+    expect((await call("add_rows", { slug: "clauses", rows: rows.slice(1) })).json()).toMatchObject({ added: 299 });
     const long = `We keep your data, "as needed", for ${"a very long time ".repeat(30)}`.trim();
     for (let start = 0; start < rows.length; start += 100) {
       const cells = rows.slice(start, start + 100).flatMap((row) => [
         { row, column: "text", value: row === "ex-0" ? long : `Sentence ${row}`, source: "https://policy.example/privacy" },
         { row, column: "label", value: "Data retention", origin: "generated" },
       ]);
-      expect((await call("fill_cells", { slug: "clauses", cells })).json()).toMatchObject({ saved: 200, of: 200 });
+      expect((await call("fill_cells", { slug: "clauses", cells })).json()).toEqual({ saved: 200, of: 200 });
     }
     const clauses = tables.find((table) => table.slug === "clauses")!;
     expect(clauses.rows).toHaveLength(300);
@@ -188,6 +188,140 @@ describe.skipIf(!url)("building a table through an agent", () => {
     expect((await call("export_table", { slug: "clauses", columns: ["nope"] })).isError).toBe(true);
   });
 
+  const dataset = { title: "Pitches", proof: "optional", columns: [{ label: "Pitch", type: "text" }, { label: "Genre", type: "text" }], rows: ["seed"] };
+  const pitches = () => tables.find((table) => table.owner === "pat" && table.slug === "pitches")!;
+
+  it("adds whole rows with their values in one call, numbering rows without a name", async () => {
+    await call("create_table", dataset);
+    const result = (await call("add_rows", {
+      slug: "pitches",
+      rows: [
+        { values: { pitch: "Race lawnmowers across backyards.", Genre: "Racing" } },
+        { key: "named", values: { pitch: "A ghost haunts the lift.", genre: "Horror" }, origin: "entered" },
+        { values: { pitch: "Stack crates." } },
+        { values: { nope: "x" } },
+        "seed",
+      ],
+    })).json();
+    expect(result).toMatchObject({ added: 3, skipped: 1, names: ["2", "named", "3"] });
+    expect(result.errors).toEqual([{ row: "4", error: "nope: There's no such column." }]);
+    expect(pitches().rows.map((row) => row.key)).toEqual(["seed", "2", "named", "3"]);
+    expect(pitches().rows[1]!.cells).toMatchObject({ pitch: { value: "Race lawnmowers across backyards.", origin: "generated" }, genre: { value: "Racing" } });
+    expect(pitches().rows[2]!.cells.genre).toMatchObject({ value: "Horror", origin: "entered" });
+    expect(pitches().rows[3]!.cells.genre).toMatchObject({ missing: true });
+
+    await call("create_table", draft);
+    expect((await call("add_rows", { slug: "keyboards", rows: [{ values: { colour: "Black" } }] })).text).toContain("quote");
+  });
+
+  it("lets values without quotes into a published table whose proof is optional, but not quoted ones", async () => {
+    await call("create_table", dataset);
+    await sql`update data_tables set draft = false, question = 'Q', topic = 'T', scope = 'S' where slug = 'pitches'`;
+    await sql`update table_columns set rule = 'R' where table_id = (select id from data_tables where slug = 'pitches')`;
+    await refresh();
+    expect((await call("add_rows", { slug: "pitches", rows: [{ values: { pitch: "Leap between clouds.", genre: "Platformer" } }] })).json()).toMatchObject({ added: 1 });
+    expect((await call("add_rows", { slug: "pitches", rows: ["empty"] })).text).toContain("draft");
+    expect((await call("fill_cells", { slug: "pitches", cells: [{ row: "seed", column: "genre", value: "Puzzle" }] })).json()).toEqual({ saved: 1, of: 1 });
+    const quoted = (await call("fill_cells", { slug: "pitches", cells: [{ row: "seed", column: "pitch", value: "Weighs", source: "https://maker.example/a", quote: "Weighs 900 g" }] })).json();
+    expect(quoted.errors[0].error).toContain("propose_change");
+  });
+
+  it("gives a private data link that loads in a notebook, and can be replaced", async () => {
+    await call("create_table", dataset);
+    await call("add_rows", { slug: "pitches", rows: [{ values: { pitch: "Race, fast", genre: "Racing" } }] });
+    const link = (await call("data_link", { slug: "pitches" })).json();
+    expect(link.url).toMatch(/^https:\/\/skeletable\.test\/d\/[\w-]{24}\.csv$/);
+    expect(link.pandas).toBe(`pd.read_csv("${link.url}")`);
+    expect((await call("data_link", { slug: "pitches" })).json().url).toBe(link.url);
+    const path = new URL(link.url).pathname;
+    const csv = await app.request(`${path}?columns=pitch,genre&names=0`);
+    expect(csv.headers.get("cache-control")).toBe("private, no-store");
+    expect(await csv.text()).toBe('Pitch,Genre\r\n,\r\n"Race, fast",Racing');
+    expect((await app.request(path.replace(".csv", ".json"))).status).toBe(200);
+
+    const fresh = (await call("data_link", { slug: "pitches", fresh: true })).json();
+    expect(fresh.url).not.toBe(link.url);
+    expect((await app.request(path)).status).toBe(404);
+    expect((await call("data_link", { slug: "skeletable/data-breach-laws" })).text).toContain("don't run");
+  });
+
+  it("saves versions that stay put while the table changes, and says what changed", async () => {
+    await call("create_table", dataset);
+    await call("add_rows", { slug: "pitches", rows: [{ key: "a", values: { pitch: "One", genre: "Racing" } }] });
+    expect((await call("save_version", { slug: "pitches", note: "First" })).json()).toEqual({ number: 1, url: "https://skeletable.test/pat/pitches/v/1" });
+    await call("fill_cells", { slug: "pitches", cells: [{ row: "a", column: "genre", value: "Puzzle" }] });
+    await call("add_rows", { slug: "pitches", rows: [{ key: "b", values: { pitch: "Two" } }] });
+    expect((await call("save_version", { slug: "pitches" })).json().number).toBe(2);
+
+    const v1 = (await call("get_table", { slug: "pitches", version: 1 })).json();
+    expect(v1.version).toMatchObject({ number: 1, note: "First", rows: 2 });
+    expect(v1.rows.find((row: { key: string }) => row.key === "a").values.genre).toBe("Racing");
+    const v2 = (await call("get_table", { slug: "pitches", version: 2 })).json();
+    expect(v2.version.changes).toEqual({ rowsAdded: 1, rowsRemoved: 0, valuesChanged: 1 });
+    expect((await call("get_table", { slug: "pitches" })).json().versions).toHaveLength(2);
+    expect((await call("export_table", { slug: "pitches", version: 1, columns: ["genre"], names: false })).text).toBe("Genre\r\n\r\nRacing");
+    expect((await call("get_table", { slug: "pitches", version: 9 })).isError).toBe(true);
+
+    const link = (await call("data_link", { slug: "pitches" })).json();
+    const key = new URL(link.url).pathname.slice(3, -4);
+    expect(await (await app.request(`/d/${key}/v1.csv?columns=genre&names=0`)).text()).toBe("Genre\r\n\r\nRacing");
+    // A draft's versions aren't public.
+    expect((await app.request("/data/pat/pitches/v1.csv")).status).not.toBe(200);
+  });
+
+  it("summarizes each column, so a reader sees its shape without every row", async () => {
+    await call("create_table", dataset);
+    await call("add_rows", { slug: "pitches", rows: ["Racing", "Racing", "Racing", "Horror"].map((genre, index) => ({ values: { pitch: `Pitch number ${index}`, genre } })) });
+    const read = (await call("get_table", { slug: "pitches", limit: 0 })).json();
+    expect(read.rows).toEqual([]);
+    expect(read.totalRows).toBe(5);
+    expect(read.summaries.genre).toEqual({ kind: "categories", filled: 4, blank: 1, origins: { generated: 4 }, values: [{ value: "Racing", count: 3 }, { value: "Horror", count: 1 }] });
+    expect(read.summaries.pitch).toMatchObject({ kind: "text", filled: 4, shortest: 14, longest: 14, duplicates: 0 });
+  });
+
+  it("fills an AI column through the agent: prompts with a fingerprint, answers within the choices, never over a person's value", async () => {
+    await call("create_table", { ...dataset, columns: [{ label: "Pitch", type: "text" }, { label: "Genre", type: "text", instruction: "Classify this pitch: {Pitch}", choices: ["Racing", "Horror"] }] });
+    await call("add_rows", { slug: "pitches", rows: [{ key: "a", values: { pitch: "Drift at midnight." } }, { key: "b", values: { pitch: "The attic barked back." } }, { key: "c", values: { pitch: "Typed", genre: "Horror" }, origin: "entered" }] });
+    const next = (await call("next_ai_cells", { slug: "pitches" })).json();
+    expect(next).toMatchObject({ column: "genre", choices: ["Racing", "Horror"], remaining: 0 });
+    // The seed row has no pitch yet, so it waits, and row c keeps the value a person gave it.
+    expect(next.cells.map((cell: { row: string }) => cell.row)).toEqual(["a", "b"]);
+    expect(next.cells[0].prompt).toBe("Classify this pitch: Drift at midnight.\nAnswer with exactly one of: Racing, Horror.");
+
+    const [a, b] = next.cells;
+    const filled = (await call("fill_ai_cells", { slug: "pitches", column: "genre", model: "test-model", answers: [{ row: "a", value: "racing.", basis: a.basis }, { row: "b", value: "Comedy", basis: b.basis }, { row: "c", value: "Racing", basis: "abc" }] })).json();
+    expect(filled).toMatchObject({ saved: 1, of: 3, remaining: 1 });
+    expect(filled.errors.map((problem: { row: string }) => problem.row)).toEqual(["b", "c"]);
+    expect(pitches().rows.find((row) => row.key === "a")!.cells.genre).toMatchObject({ value: "Racing", origin: "generated", model: "test-model", basis: a.basis });
+    expect(pitches().rows.find((row) => row.key === "c")!.cells.genre).toMatchObject({ value: "Horror", origin: "entered" });
+
+    // Changing the pitch makes its answer out of date, and an answer to the old prompt is refused.
+    await call("fill_cells", { slug: "pitches", cells: [{ row: "a", column: "pitch", value: "Drift at noon." }] });
+    expect((await call("get_table", { slug: "pitches", limit: 0 })).json().ai.genre).toMatchObject({ done: 0, stale: 1, pending: 1, waiting: 1, kept: 1 });
+    expect((await call("fill_ai_cells", { slug: "pitches", column: "genre", model: "m", answers: [{ row: "a", value: "Racing", basis: a.basis }] })).json().errors[0].error).toContain("changed");
+    const again = (await call("next_ai_cells", { slug: "pitches", limit: 1 })).json();
+    expect(again).toMatchObject({ remaining: 1, cells: [{ row: "b" }] });
+
+    expect((await call("set_instruction", { slug: "pitches", column: "Genre", instruction: "" })).json()).toEqual({ column: "genre", cleared: true });
+    expect((await call("next_ai_cells", { slug: "pitches" })).text).toContain("no AI columns");
+    await call("create_table", draft);
+    expect((await call("set_instruction", { slug: "keyboards", column: "colour", instruction: "Guess {Weight}" })).text).toContain("optional");
+  });
+
+  it("forks a public table, or your own, into a private draft that remembers where it came from", async () => {
+    const forked = (await call("fork_table", { slug: "skeletable/data-breach-laws", title: "My breach laws" })).json();
+    expect(forked).toEqual({ owner: "pat", slug: "my-breach-laws", url: "https://skeletable.test/pat/my-breach-laws/sheet" });
+    const copy = tables.find((table) => table.slug === "my-breach-laws")!;
+    const original = tables.find((table) => table.slug === "data-breach-laws")!;
+    expect(copy).toMatchObject({ draft: true, private: true, forkedFrom: "skeletable/data-breach-laws" });
+    expect(copy.rows).toEqual(original.rows);
+
+    await call("create_table", dataset);
+    const sam = await person("sam@example.com");
+    expect((await call("fork_table", { slug: "pat/pitches" }, sam)).text).toContain("no table");
+    expect((await call("fork_table", { slug: "pat/pitches" })).json().slug).toBe("pitches-2");
+  });
+
   it("can't write to a published table, or someone else's draft", async () => {
     await call("create_table", draft);
     await sql`update data_tables set draft = false, question = 'Q', topic = 'T', scope = 'S' where slug = 'keyboards'`;
@@ -195,12 +329,12 @@ describe.skipIf(!url)("building a table through an agent", () => {
     await refresh();
     const cell = { row: "Alpha", column: "weight", value: "900", source: "https://maker.example/a", quote: "Weighs 900 g" };
     const published = await call("fill_cells", { slug: "keyboards", cells: [cell] });
-    expect(published.json().results[0].error).toContain("propose_change");
+    expect(published.json().errors[0].error).toContain("propose_change");
 
     const other = await person("sam@example.com");
     const strangers = await call("fill_cells", { slug: "pat/keyboards", cells: [cell] }, other);
-    expect(strangers.json().results[0].error).toContain("don't run");
+    expect(strangers.json().errors[0].error).toContain("don't run");
     const official = await call("fill_cells", { slug: "skeletable/data-breach-laws", cells: [cell] });
-    expect(official.json().results[0].error).toContain("don't run");
+    expect(official.json().errors[0].error).toContain("don't run");
   });
 });

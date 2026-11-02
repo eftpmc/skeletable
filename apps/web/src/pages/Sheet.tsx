@@ -1,11 +1,13 @@
+import { aiCellState, aiProgress, rowPrompt, tableSummaries, type ColumnSummary } from "@skeleton/tables/columns";
 import { hasValue, isAnswered, isFound, isGiven, proofOptional, type Cell, type Column } from "@skeleton/tables/format";
-import { ArrowDown, ArrowRight, ArrowUp, ChevronDown, Info, Lock, Pencil, ScanLine, Search, X } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUp, BarChart3, ChevronDown, History, Info, Lock, Pencil, ScanLine, Search, Sparkles, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent, type PointerEvent, type ReactNode, type RefObject } from "react";
 import { toast } from "sonner";
 import { Link, useLocation, useSearch } from "wouter";
 import { SheetSkeleton, Spinner } from "@/components/Loading";
 import { Input } from "@/components/ui/input";
 import { AgentBuildButton } from "@/components/AgentBuild";
+import { ColumnSummaryView } from "@/components/Data";
 import { FilterButton } from "@/components/Filter";
 import { NoTable } from "@/components/NoTable";
 import { CiteButton, Conflicts, OriginDetails, Quote, SourceLink, StatusBadge, kindLabels } from "@/components/Proof";
@@ -150,7 +152,7 @@ function XrayReading({ table }: { table: PublishedTable }) {
 }
 
 /** Frequently used controls stay directly above the grid. */
-function SheetToolbar({ table, xray, onXray, onNext, find, onFind, findInput, filters, onFilters, filtering, onFiltering, shown }: { table: PublishedTable; xray: boolean; onXray: () => void; onNext?: () => void; find: string; onFind: (find: string) => void; findInput: RefObject<HTMLInputElement | null>; filters: SheetFilters; onFilters: (filters: SheetFilters) => void; filtering: boolean; onFiltering: (open: boolean) => void; shown: number }) {
+function SheetToolbar({ table, xray, onXray, summaries, onSummaries, onNext, find, onFind, findInput, filters, onFilters, filtering, onFiltering, shown }: { table: PublishedTable; xray: boolean; onXray: () => void; summaries: boolean; onSummaries: () => void; onNext?: () => void; find: string; onFind: (find: string) => void; findInput: RefObject<HTMLInputElement | null>; filters: SheetFilters; onFilters: (filters: SheetFilters) => void; filtering: boolean; onFiltering: (open: boolean) => void; shown: number }) {
   return (
     <div aria-label="Sheet tools" className="flex shrink-0 flex-wrap items-center gap-2 px-3 py-2 text-xs">
       <div className="relative w-32 shrink-0 sm:w-56">
@@ -169,6 +171,17 @@ function SheetToolbar({ table, xray, onXray, onNext, find, onFind, findInput, fi
       >
         <ScanLine />
         Show checks
+      </Button>
+      <Button
+        variant="ghost"
+        size="xs"
+        title="Show what each column holds"
+        aria-pressed={summaries}
+        onClick={onSummaries}
+        className={summaries ? "bg-selected text-foreground hover:bg-selected" : "text-muted-foreground"}
+      >
+        <BarChart3 />
+        Summary
       </Button>
       {onNext && <Button variant="ghost" size="xs" className="shrink-0 text-muted-foreground" onClick={onNext}><ArrowRight />{proofOptional(table) ? "Next empty" : "Next to prove"}</Button>}
     </div>
@@ -207,8 +220,10 @@ function rowSource(table: PublishedTable, rowKey: string) {
 }
 
 /** Above the grid, like a spreadsheet's: one line until a cell is selected, then its evidence opens beneath. */
-export function FormulaBar({ selected, table, onChanged, editing, typed, onEditing, onNext, compact = false }: { compact?: boolean; selected?: Selected; table?: PublishedTable; onChanged?: () => void; editing?: boolean; typed?: string; onEditing?: (editing: boolean) => void; onNext?: () => void }) {
+export function FormulaBar({ selected, table, onChanged, editing, typed, onEditing, onNext, compact = false, frozen = false }: { compact?: boolean; selected?: Selected; table?: PublishedTable; onChanged?: () => void; editing?: boolean; typed?: string; onEditing?: (editing: boolean) => void; onNext?: () => void; frozen?: boolean }) {
   const { user } = useMe();
+  // A saved version never changes, so it offers no edits.
+  const editable = !!table && !frozen;
   const canEdit = !!table && !!user?.accounts.includes(table.owner);
   const [ownEditing, setOwnEditing] = useState(false);
   const suggesting = editing ?? ownEditing;
@@ -254,8 +269,8 @@ export function FormulaBar({ selected, table, onChanged, editing, typed, onEditi
                 <SourceLink url={cell.source} label={host(cell.source)} quote={cell.quote} />
                 <Badge variant="secondary">{kindLabels[cell.kind]}</Badge>
                 <StatusBadge status={selected.status} />
-                {table && <SuggestButton onSuggest={() => setSuggesting(true)} canEdit={canEdit} />}
-                {table && !table.draft && <CiteButton cell={cell} address={{ table, rowKey: selected.rowKey, columnId: selected.column.id }} />}
+                {editable && <SuggestButton onSuggest={() => setSuggesting(true)} canEdit={canEdit} />}
+                {table && !table.draft && !frozen && <CiteButton cell={cell} address={{ table, rowKey: selected.rowKey, columnId: selected.column.id }} />}
                 <Badge variant="outline">Read {day(cell.read)}</Badge>
               </div>
               <Conflicts cell={cell} />
@@ -264,7 +279,8 @@ export function FormulaBar({ selected, table, onChanged, editing, typed, onEditi
             <OriginDetails
               cell={cell}
               status={selected.status}
-              actions={table && (
+              prompt={aiPrompt(table, selected)}
+              actions={editable && (
                 <>
                   <SuggestButton onSuggest={() => setSuggesting(true)} canEdit={canEdit} label={canEdit ? "Add proof" : undefined} />
                   {!table.draft && <CiteButton address={{ table, rowKey: selected.rowKey, columnId: selected.column.id }} />}
@@ -276,7 +292,7 @@ export function FormulaBar({ selected, table, onChanged, editing, typed, onEditi
               <p className="text-muted-foreground">{cell.unproven !== undefined ? "This has no proof yet, so it doesn't count. Add the page that states it." : cell.absent ? `We read this source on ${day(cell.read)} and it gives no such value.` : cell.checked.length ? `No source we could use stated this. We looked here on ${day(cell.read)}:` : "Nobody has looked for this yet."}</p>
               <div className="flex flex-wrap gap-1.5">
                 {cell.checked.map((url) => <SourceLink key={url} url={url} label={place(url)} />)}
-                {table && <SuggestButton onSuggest={() => setSuggesting(true)} canEdit={canEdit} label={canEdit ? "Add proof" : undefined} />}
+                {editable && <SuggestButton onSuggest={() => setSuggesting(true)} canEdit={canEdit} label={canEdit ? "Add proof" : undefined} />}
               </div>
             </>
           )}
@@ -289,6 +305,14 @@ export function FormulaBar({ selected, table, onChanged, editing, typed, onEditi
       )}
     </section>
   );
+}
+
+/** For a value an AI column generated, the prompt its row asked, and whether that has changed since. */
+function aiPrompt(table: PublishedTable | undefined, selected: Selected) {
+  const row = table?.rows.find((candidate) => candidate.key === selected.rowKey);
+  const cell = selected.cell;
+  if (!table || !row || !selected.column.instruction || !isGiven(cell) || !cell.basis) return undefined;
+  return { text: rowPrompt(table, selected.column, row)!.prompt, stale: aiCellState(table, selected.column, row) === "stale" };
 }
 
 /** What a cell holds, for editing it. */
@@ -312,6 +336,8 @@ type GridProps = {
   onCopy?: (text: string) => void;
   rowHref?: (key: string) => string;
   edit?: GridEdit;
+  // A row under the headings showing what each column holds.
+  summaries?: Record<string, ColumnSummary>;
 };
 
 const MIN_COLUMN_WIDTH = 64;
@@ -347,7 +373,19 @@ function HeaderContent({ column, label, sort, onSort, onResize, onMenu }: { colu
   );
 }
 
-export function Grid({ table, selectedId, select, emptyRows = 0, focusOnLoad = true, xray = false, sort, onSort, widths, onResize, onCopy, rowHref, edit, cellDetails }: GridProps) {
+/** An AI column's mark in its heading, with how much is waiting for the agent. */
+function AiMark({ table, column }: { table: PublishedTable; column: Column }) {
+  const progress = aiProgress(table, column);
+  const waiting = progress.pending + progress.stale;
+  return (
+    <span title={`AI column: ${column.instruction}${column.choices ? `\nAnswers: ${column.choices.join(", ")}` : ""}${waiting ? `\n${waiting} waiting for your agent` : ""}`} className="mr-1 inline-flex items-center gap-0.5 align-[-2px] text-indigo-500">
+      <Sparkles className="size-3" aria-label="AI column" />
+      {waiting > 0 && <span className="text-[10px] tabular-nums">{waiting}</span>}
+    </span>
+  );
+}
+
+export function Grid({ table, selectedId, select, emptyRows = 0, focusOnLoad = true, xray = false, sort, onSort, widths, onResize, onCopy, rowHref, edit, cellDetails, summaries }: GridProps) {
   const grid = useRef<HTMLTableElement>(null);
   const focused = useRef(focusOnLoad ? null : selectedId);
   const [typing, setTyping] = useState<{ id: string; text: string } | null>(null);
@@ -422,13 +460,25 @@ export function Grid({ table, selectedId, select, emptyRows = 0, focusOnLoad = t
                 onDoubleClick={edit?.columnMenu && (() => edit.columnMenu!(column))}
                 className={`group ${edge} ${frozen} top-0 z-20 overflow-hidden px-2 py-1 text-xs font-medium whitespace-nowrap text-muted-foreground transition-colors ${column.type === "number" ? "text-right" : "text-left"} ${header(columnIndex === activeColumn)}`}
               >
-                <HeaderContent column={column.id} label={`${column.label}${column.unit ? ` (${column.unit})` : ""}`} sort={sort} onSort={onSort} onResize={onResize} onMenu={edit?.columnMenu && (() => edit.columnMenu!(column))} />
+                <HeaderContent column={column.id} label={<>{column.instruction && <AiMark table={table} column={column} />}{`${column.label}${column.unit ? ` (${column.unit})` : ""}`}</>} sort={sort} onSort={onSort} onResize={onResize} onMenu={edit?.columnMenu && (() => edit.columnMenu!(column))} />
               </th>
             ))}
             <th className={`${frozen} top-0 w-full min-w-32 border-b bg-muted px-2 py-1 text-left text-xs font-medium`} aria-hidden={edit?.addColumn ? undefined : true}>
               {edit?.addColumn && <NewColumnInput onAdd={edit.addColumn} />}
             </th>
           </tr>
+          {summaries && (
+            <tr className="duration-150 animate-in fade-in">
+              <th className={`${edge} sticky left-0 z-20 bg-muted`} aria-hidden="true" />
+              <th scope="row" className={`${edge} sticky left-10 z-20 bg-muted px-2 py-1.5 text-left align-top text-xs font-normal text-muted-foreground`}>{table.rows.length} rows</th>
+              {table.columns.map((column) => (
+                <td key={column.id} className={`${edge} bg-muted/60 px-2 py-1.5 align-top`} style={widths?.[column.id] ? { maxWidth: widths[column.id] } : undefined}>
+                  <div className="max-w-44 sm:max-w-72"><ColumnSummaryView summary={summaries[column.id]!} column={column} compact /></div>
+                </td>
+              ))}
+              <td className="border-b bg-muted/60" />
+            </tr>
+          )}
         </thead>
         <tbody>
           {table.rows.map((row, rowIndex) => (
@@ -523,10 +573,30 @@ function SheetFacts({ table }: { table: PublishedTable }) {
   return <span className="ml-auto hidden shrink-0 text-muted-foreground tabular-nums md:inline">{cells.filter(isAnswered).length} of {cells.length} cells{lastRead && ` · Read ${day(lastRead)}`}</span>;
 }
 
-export function Sheet({ owner, slug }: { owner: string; slug: string }) {
-  const { data, status, retry, refreshing, refreshFailed } = useJson<PublishedTable>(`/api/tables/${owner}/${slug}`);
+type VersionedTable = PublishedTable & { version?: { number: number; note: string; created: string; rows: number; changes?: { rowsAdded: number; rowsRemoved: number; valuesChanged: number } } };
+
+/** What a saved version is, above its frozen sheet, with the way back to the live table. */
+function VersionBanner({ table }: { table: VersionedTable }) {
+  const { version } = table;
+  if (!version) return null;
+  const changes = version.changes;
+  const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+  const changed = changes && [changes.rowsAdded && count(changes.rowsAdded, "row added", "rows added"), changes.rowsRemoved && count(changes.rowsRemoved, "row removed", "rows removed"), changes.valuesChanged && count(changes.valuesChanged, "value changed", "values changed")].filter(Boolean).join(", ");
+  return (
+    <div role="note" className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-b bg-indigo-500/10 px-3 py-2 text-sm">
+      <History className="size-4 text-indigo-500" />
+      <span className="font-medium">Version {version.number}</span>
+      <span className="text-muted-foreground">Saved {day(version.created)}{version.note ? ` · ${version.note}` : ""}{changed ? ` · Since v${version.number - 1}: ${changed}` : ""}. It never changes.</span>
+      <Link href={`/${table.owner}/${table.slug}/sheet`} className="ml-auto font-medium underline underline-offset-2">Open the live table</Link>
+    </div>
+  );
+}
+
+export function Sheet({ owner, slug, version }: { owner: string; slug: string; version?: number }) {
+  const { data, status, retry, refreshing, refreshFailed } = useJson<VersionedTable>(version ? `/api/tables/${owner}/${slug}/versions/${version}` : `/api/tables/${owner}/${slug}`);
   const { user } = useMe();
   const [xray, setXray] = useState(false);
+  const [summarizing, setSummarizing] = useState(false);
   const [widths, setWidths] = useState<Record<string, number>>({});
   const [filtering, setFiltering] = useState(false);
   const [helping, setHelping] = useState(false);
@@ -544,13 +614,13 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
   const show = (next: Partial<SheetView>, cell = selectedId) => navigate(`${path}${viewSearch({ ...view, ...next }, cell)}`, { replace: true });
 
   useEffect(() => {
-    if (data) document.title = `${data.title} · Skeletable`;
-  }, [data]);
+    if (data) document.title = `${data.title}${version ? ` v${version}` : ""} · Skeletable`;
+  }, [data, version]);
 
   // A draft can be filling up from an agent, so it keeps itself current while someone's looking.
   const reload = useRef(retry);
   reload.current = retry;
-  const isDraft = !!data?.draft;
+  const isDraft = !!data?.draft && !version;
   useEffect(() => {
     if (!isDraft) return;
     const timer = setInterval(() => {
@@ -592,7 +662,8 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const canRun = !!data && !data.managed && !!user?.accounts.includes(data.owner);
+  // A saved version is only for reading.
+  const canRun = !!data && !data.managed && !version && !!user?.accounts.includes(data.owner);
   const canAdd = canRun && data.draft;
   // Where proof is optional, typed values count as entered, so they go straight in even once it's published.
   const canType = canRun && (data.draft || proofOptional(data));
@@ -626,7 +697,8 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
     const at = key ? data!.rows.findIndex((row) => row.key === key) : data!.rows.length + rowIndex - shown!.rows.length;
     void saveGrid(gridChange(data!, at, columnIndex, text));
   };
-  const gridEdit: GridEdit | undefined = data && user ? {
+  const summaries = useMemo(() => (summarizing && shown ? tableSummaries(shown) : undefined), [summarizing, shown]);
+  const gridEdit: GridEdit | undefined = data && user && !version ? {
     typeIn,
     ...(canType && { paste }),
     ...(canRun && {
@@ -651,15 +723,15 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
     <div className="flex h-svh flex-col duration-200 animate-in fade-in zoom-in-[0.995] motion-reduce:animate-none">
       <AppBar
         workspace
-        crumbs={[{ label: data ? ownerLabel(data) : accountName(owner), href: `/${owner}` }, { label: data?.title ?? "Table", href: `/${owner}/${slug}` }, { label: "Sheet" }]}
+        crumbs={[{ label: data ? ownerLabel(data) : accountName(owner), href: `/${owner}` }, { label: data?.title ?? "Table", href: `/${owner}/${slug}` }, { label: version ? `Version ${version}` : "Sheet" }]}
         phoneTitle="Sheet"
         actions={
           <>
             {pendingSaves > 0 && <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><Spinner label="Saving changes" />Saving</span>}
             {data?.private && <Lock aria-label="Private" className="size-4 text-muted-foreground" />}
-            {data && user?.accounts.includes(data.owner) && <AgentBuildButton table={data} label="Use agent" size="default" />}
-            {data && <SheetOptions table={data} downloadTable={shown} canRun={canRun} onRows={(names) => void saveGrid({ addColumns: [], addRows: names, cells: [] })} onShortcuts={() => setHelping(true)} />}
-            {data && !data.draft && <ShareButton table={data} path={`${path}${viewSearch(view, selectedId)}`} size="sm" onChanged={retry} />}
+            {data && !version && user?.accounts.includes(data.owner) && <AgentBuildButton table={data} label="Use agent" size="default" />}
+            {data && <SheetOptions table={data} downloadTable={shown} canRun={canRun} onRows={(names) => void saveGrid({ addColumns: [], addRows: names, cells: [] })} onShortcuts={() => setHelping(true)} onChanged={retry} />}
+            {data && !data.draft && !version && <ShareButton table={data} path={`${path}${viewSearch(view, selectedId)}`} size="sm" onChanged={retry} />}
           </>
         }
       />
@@ -669,10 +741,12 @@ export function Sheet({ owner, slug }: { owner: string; slug: string }) {
         <Message title="This table didn't load" action={<Button variant="outline" size="sm" onClick={retry}>Try again</Button>} />
       ) : data && shown ? (
         <>
-          <SheetToolbar table={data} xray={xray} onXray={() => setXray(!xray)} onNext={data.draft && canRun ? () => goNext.current() : undefined} find={find} onFind={(next) => show({ find: next })} findInput={findInput} filters={filters} onFilters={(next) => show({ filters: next })} filtering={filtering} onFiltering={setFiltering} shown={shown.rows.length} />
+          <VersionBanner table={data} />
+          <SheetToolbar table={data} xray={xray} onXray={() => setXray(!xray)} summaries={summarizing} onSummaries={() => setSummarizing(!summarizing)} onNext={data.draft && canRun ? () => goNext.current() : undefined} find={find} onFind={(next) => show({ find: next })} findInput={findInput} filters={filters} onFilters={(next) => show({ filters: next })} filtering={filtering} onFiltering={setFiltering} shown={shown.rows.length} />
 
           <Grid
-            cellDetails={<FormulaBar compact table={data} onChanged={retry} selected={selectedCell(data, selectedId)} editing={editing} typed={typed} onEditing={(on) => { setEditing(on); if (!on) setTyped(undefined); }} onNext={() => goNext.current()} />}
+            cellDetails={<FormulaBar compact frozen={!!version} table={data} onChanged={retry} selected={selectedCell(data, selectedId)} editing={editing} typed={typed} onEditing={(on) => { setEditing(on); if (!on) setTyped(undefined); }} onNext={() => goNext.current()} />}
+            summaries={summaries}
             table={shown}
             selectedId={selectedId}
             select={(id) => { setEditing(false); setTyped(undefined); show({}, id); }}

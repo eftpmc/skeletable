@@ -14,6 +14,7 @@ import { pageRoutes } from "./pages.js";
 import { submitProposal, tokenUser } from "./proposals.js";
 import { rateLimit } from "./rate-limit.js";
 import { visitNames } from "./visits.js";
+import { loadVersion } from "./versions.js";
 
 // Generous for a person or an agent reading tables, and a brake on anything hammering the server.
 const MCP_PER_MINUTE = 120;
@@ -59,7 +60,7 @@ export function createApp(tables: PublishedTable[], webDir?: string, auth?: Auth
       if ("id" in result) await notifyOwners(auth.sql, auth.mail, auth.publicUrl, result.id);
       return result;
     };
-    return handleMcp(visible, publicUrl, c.req.raw, propose, userId ? agentActions(auth.sql, tables, userId, publicUrl, auth.refresh, auth.pages) : null);
+    return handleMcp(visible, publicUrl, c.req.raw, propose, userId ? agentActions(auth.sql, tables, userId, publicUrl, auth.refresh, auth.pages) : null, (table, number) => loadVersion(auth.sql, table, number));
   });
   if (auth) app.route("/", authRoutes(auth));
   else {
@@ -77,7 +78,7 @@ export function createApp(tables: PublishedTable[], webDir?: string, auth?: Auth
   });
   blogRoutes(app, posts, tables, viewerOf);
   app.all("/api/*", (c) => c.json({ error: "Not found" }, 404));
-  dataRoutes(app, tables, publicUrl);
+  dataRoutes(app, tables, publicUrl, auth?.sql);
   if (webDir && existsSync(join(resolve(webDir), "index.html"))) {
     const root = resolve(webDir);
     app.get("/assets/*", serveStatic({ root }));
