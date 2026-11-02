@@ -1,7 +1,8 @@
 import { liveFetcher, type Fetcher } from "@skeleton/tables";
 import { aiCellState, aiProgress, matchChoice, rowPrompt } from "@skeleton/tables/columns";
 import { isFound, isGiven, proofOptional, type Cell, type Column, type Origin } from "@skeleton/tables/format";
-import { addColumn, addRow, addRowsAt, aiFields, createTable, MAX_COLUMNS, MAX_ROWS, tableBody } from "./accounts.js";
+import { templateById } from "@skeleton/tables/templates";
+import { addColumn, addRow, addRowsAt, aiFields, createFromTemplate, createTable, MAX_COLUMNS, MAX_ROWS, tableBody } from "./accounts.js";
 import { viewerFor } from "./access.js";
 import { canFork, forkTable } from "./forks.js";
 import { dataKey, dataLinkUrl, loadSnippets } from "./links.js";
@@ -15,7 +16,7 @@ export const MAX_CELLS_PER_CALL = 200;
 export const MAX_QUOTED_PER_CALL = 25;
 
 export type NewColumn = { label: string; type: "text" | "number" | "boolean" | "date"; unit?: string; rule?: string; instruction?: string; choices?: string[] };
-export type NewDraft = { owner?: string; title: string; question?: string; topic?: string; scope?: string; proof?: "required" | "optional"; columns: NewColumn[]; rows: string[] };
+export type NewDraft = { owner?: string; title?: string; template?: string; question?: string; topic?: string; scope?: string; proof?: "required" | "optional"; columns?: NewColumn[]; rows?: string[] };
 export type NewRow = string | { key?: string; values?: Record<string, string | number | boolean>; origin?: Origin; source?: string; note?: string };
 export type AiAnswer = { row: string; value: string; basis: string };
 
@@ -63,6 +64,14 @@ export function agentActions(sql: Sql, tables: PublishedTable[], userId: string,
     const [mine] = await sql`select a.handle from accounts a join users u on u.account_id = a.id where u.id = ${userId}`;
     const owner = input.owner ?? (mine?.handle as string | undefined);
     if (!owner || !accounts.includes(owner)) return { error: "You can't add tables to that account." };
+    if (input.template) {
+      const template = templateById(input.template);
+      if (!template) return { error: `There's no template ${input.template}.` };
+      const made = await createFromTemplate(sql, tables, owner, template, input.title);
+      if (!made) return { error: "That table didn't save." };
+      await refresh?.();
+      return { ...made, url: tableUrl(made), next: template.prompt(`${made.owner}/${made.slug}`, "") };
+    }
     const body = tableBody.safeParse({ ...input, owner, draft: true });
     if (!body.success) return { error: "A table needs a title, at least one column and at least one row." };
     if (new Set(body.data.rows).size !== body.data.rows.length) return { error: "Each row needs its own name." };

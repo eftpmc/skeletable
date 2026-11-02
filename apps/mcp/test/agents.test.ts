@@ -377,6 +377,20 @@ describe.skipIf(!url)("building a table through an agent", () => {
     expect((await call("create_table", { title: "Strict", proof: "required", columns: [{ label: "When", type: "date" }], rows: ["a"] })).text).toContain("optional");
   });
 
+  it("starts a table from a template, with its columns set up and a prompt to fill it", async () => {
+    const made = (await call("create_table", { template: "job-tracker" })).json();
+    expect(made).toMatchObject({ owner: "pat", slug: "job-applications", url: "https://skeletable.test/pat/job-applications/sheet" });
+    expect(made.next).toContain("pat/job-applications");
+    const tracker = tables.find((table) => table.slug === "job-applications")!;
+    expect(tracker).toMatchObject({ draft: true, private: true, proof: "optional", rows: [] });
+    expect(tracker.columns.map((column) => [column.label, column.type])).toEqual([["Role", "text"], ["Status", "text"], ["Applied", "date"], ["Follow up", "date"], ["Next step", "text"], ["Link", "text"]]);
+    expect(tracker.columns[1]!.choices).toContain("Interviewing");
+    const notes = (await call("create_table", { template: "research-notes", title: "Thesis sources" })).json();
+    expect(tables.find((table) => table.slug === notes.slug)!.columns.find((column) => column.label === "Topic")!.instruction).toContain("{Key point}");
+    expect((await call("create_table", { template: "nope" })).isError).toBe(true);
+    expect((await call("create_table", { title: "No columns" })).text).toContain("template");
+  });
+
   it("tells agents values don't need a page behind them", async () => {
     const response = await app.request("/mcp", {
       method: "POST",

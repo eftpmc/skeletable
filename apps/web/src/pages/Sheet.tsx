@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Link, useLocation, useSearch } from "wouter";
 import { SheetSkeleton, Spinner } from "@/components/Loading";
 import { Input } from "@/components/ui/input";
+import { templateById } from "@skeleton/tables/templates";
 import { AgentBuildButton } from "@/components/AgentBuild";
 import { ColumnSummaryView } from "@/components/Data";
 import { FilterButton } from "@/components/Filter";
@@ -611,6 +612,8 @@ export function Sheet({ owner, slug, version }: { owner: string; slug: string; v
   const selectedId = new URLSearchParams(search).get("cell");
   const view = useMemo(() => readView(search), [search]);
   const { sort, find, filters } = view;
+  // Just started from a template: its agent prompt opens once.
+  const startedFrom = templateById(new URLSearchParams(search).get("agent") ?? "");
   const show = (next: Partial<SheetView>, cell = selectedId) => navigate(`${path}${viewSearch({ ...view, ...next }, cell)}`, { replace: true });
 
   useEffect(() => {
@@ -735,7 +738,7 @@ export function Sheet({ owner, slug, version }: { owner: string; slug: string; v
           <>
             {pendingSaves > 0 && <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><Spinner label="Saving changes" />Saving</span>}
             {data?.private && <Lock aria-label="Private" className="size-4 text-muted-foreground" />}
-            {data && !version && user?.accounts.includes(data.owner) && <AgentBuildButton table={data} label="Use agent" size="default" />}
+            {data && !version && user?.accounts.includes(data.owner) && <AgentBuildButton table={data} label="Use agent" size="default" template={startedFrom} defaultOpen={!!startedFrom} />}
             {data && <SheetOptions table={data} downloadTable={shown} canRun={canRun} onRows={(names) => void saveGrid({ addColumns: [], addRows: names, cells: [] })} onShortcuts={() => setHelping(true)} onChanged={retry} />}
             {data && !data.draft && !version && <ShareButton table={data} path={`${path}${viewSearch(view, selectedId)}`} size="sm" onChanged={retry} />}
           </>

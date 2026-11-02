@@ -6,6 +6,10 @@ import { MAX_GIVEN_TEXT, origins } from "@skeleton/tables/format";
 import { tableCsv } from "@skeleton/tables/share";
 import { MAX_CELLS_PER_CALL, MAX_QUOTED_PER_CALL, type AgentActions } from "./agents.js";
 import type { VersionedTable } from "./versions.js";
+import { templates } from "@skeleton/tables/templates";
+
+const templateIds = templates.map((template) => template.id) as [string, ...string[]];
+const templateList = templates.map((template) => `\`${template.id}\` (${template.summary.replace(/\.$/, "")})`).join(", ");
 import type { ProposalInput } from "./proposals.js";
 
 const text = (value: unknown) => ({ content: [{ type: "text" as const, text: JSON.stringify(value, null, 2) }] });
@@ -16,7 +20,7 @@ const instructions =
   "Most tables let a value say its origin: `link` (a page, given as `source`), `entered` (a person typed it), `imported` (from a file or another app, like a spreadsheet, notes or an email, said in `note`) or `generated` (written or labeled by a model). That's the default for a new table, so nothing needs a web page behind it. Say the origin truthfully. " +
   "Some tables, like the public library, require proof: each value quotes its source word for word, and `proof` reads `required`. There, use the owner's own pages, copy each quote exactly, never get around a block, and say where you looked when no source states a value. " +
   "To read: list_tables finds a table, get_table reads it with a summary of each column, get_cell shows one value's origin or source and quote, and check_claim tests a statement against a cell. A null value is blank: say it's unknown rather than filling it in. When you use a quoted value, cite its source and the cell's `url`. " +
-  "To build (with a token): create_table makes a private draft, add_rows adds up to 500 rows a call with their values, and fill_cells sets cells. Columns can be text, number, yes/no or date (YYYY-MM-DD), and a text column can have `choices`, like a status list. A person reviews and publishes a draft. " +
+  "To build (with a token): create_table makes a private draft, from scratch or from a template like a job tracker or a text dataset, add_rows adds up to 500 rows a call with their values, and fill_cells sets cells. Columns can be text, number, yes/no or date (YYYY-MM-DD), and a text column can have `choices`, like a status list. A person reviews and publishes a draft. " +
   "An AI column has an instruction naming other columns in braces, like \"Classify {Pitch}\": call next_ai_cells for prompts, answer each one yourself, and send the answers with fill_ai_cells until nothing remains. " +
   "export_table gives a table as CSV, data_link gives a private address that loads it in a notebook or spreadsheet, save_version freezes a table so a result can name exactly what it used, and fork_table copies a table into your account.";
 
@@ -184,18 +188,22 @@ export function tablesMcpServer(tables: PublishedTable[], publicUrl: string, pro
       {
         description: "Make a private draft table, ready to fill, for anything from a tracker to a dataset. Its values say where they came from unless you set `proof` to `required`. Only `title`, `columns` and `rows` are needed now, but give `question`, `scope`, and a `rule` for each column if you can: a person has to supply them before publishing. Returns the column ids fill_cells needs, and the sheet's link, so tell your person to open it and watch it fill. Needs a token.",
         inputSchema: {
-          title: z.string().max(120),
+          template: z.enum(templateIds).optional().describe(`Start from a template, with its columns set up: ${templateList}. Then only \`title\` is optional`),
+          title: z.string().max(120).optional().describe("Needed unless you use a template"),
           question: z.string().max(300).optional().describe("The question the table answers"),
           topic: z.string().max(40).optional().describe("A broad subject, like Law or Consumer tech"),
           scope: z.string().max(800).optional().describe("What belongs in the table and what doesn't"),
           owner: z.string().max(60).optional().describe("A team you're on. Leave out for your own account"),
           proof: z.enum(["optional", "required"]).optional().describe("`optional` (the default): each value says where it came from, like a person, a file, an email or a page. `required`: every value must quote a source word for word, for a table of public facts"),
-          columns: columnsField,
-          rows: z.array(z.string().max(120)).min(1).max(500).describe("Row names. To add rows with their values, create the table with one row and use add_rows"),
+          columns: columnsField.optional().describe("Needed unless you use a template"),
+          rows: z.array(z.string().max(120)).max(500).optional().describe("Row names. To add rows with their values, use add_rows after"),
         },
         annotations: writes,
       },
-      (input) => withToken((actions) => actions.create(input)),
+      (input) => withToken(async (actions) => {
+        if (!input.template && (!input.title || !input.columns?.length || !input.rows?.length)) return { error: "Give a `title`, `columns` and at least one row, or start from a `template`." };
+        return actions.create(input);
+      }),
     );
 
     server.registerTool(
