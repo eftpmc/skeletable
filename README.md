@@ -20,7 +20,7 @@ claude mcp add --transport http skeletable https://skeletable.com/mcp
 | `propose_change` | Suggest a new value with its proof, for the owner to review |
 | `create_table` | Make a private draft, ready to fill. `proof: "optional"` makes one for working data |
 | `add_columns` | Add columns to a draft, including AI columns with an instruction |
-| `add_rows` | Add up to 500 rows a call, each by name or with its values |
+| `add_rows` | Add up to 500 rows a call, each by name or with its values. A row it already has gets the new values |
 | `fill_cells` | Fill a draft's cells with proof, or say where you looked. Where proof is optional, a value can give its origin instead. Replies list only what failed |
 | `data_link` | A private CSV address for a notebook, script or spreadsheet, with the lines to load it |
 | `save_version` | Freeze a table as a numbered version with a link that never changes |

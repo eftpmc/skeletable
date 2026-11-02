@@ -128,7 +128,9 @@ export function agentActions(sql: Sql, tables: PublishedTable[], userId: string,
 
   /**
    * Add rows, each by name or with its values. A row given without a name gets the next free number.
-   * A name the table already has is skipped. Values need a table whose proof is optional.
+   * A name the table already has gets the values given for it, so re-syncing from a source is one
+   * call, and with no values it's skipped. Values need a table whose proof is optional, and never
+   * replace a quoted one.
    */
   const addRows = async (slug: string, rows: NewRow[]) => {
     const wantsValues = rows.some((row) => typeof row !== "string" && row.values && Object.keys(row.values).length);
@@ -146,11 +148,14 @@ export function agentActions(sql: Sql, tables: PublishedTable[], userId: string,
     const problems: Problem[] = [];
     const fresh: { key: string; cells: Record<string, Cell> }[] = [];
     const restored: { key: string; cells: Record<string, Cell> }[] = [];
+    const existing: { key: string; cells: Record<string, Cell> }[] = [];
     let skipped = 0;
     for (const entry of rows) {
       const row = typeof entry === "string" ? { key: entry } : entry;
       const named = row.key?.trim();
-      if (named && (taken.get(named) === false || fresh.some((made) => made.key === named))) {
+      const held = !!named && taken.get(named) === false && table.rows.some((candidate) => candidate.key === named);
+      // A name already in the table with nothing to set, or one given twice in this call, has nothing to do.
+      if (named && ((held && !Object.keys(row.values ?? {}).length) || [...fresh, ...restored, ...existing].some((made) => made.key === named))) {
         skipped += 1;
         continue;
       }
@@ -169,16 +174,19 @@ export function agentActions(sql: Sql, tables: PublishedTable[], userId: string,
         problems.push({ row: key, error });
         continue;
       }
-      (taken.get(key) === true ? restored : fresh).push({ key, cells });
+      (held ? existing : taken.get(key) === true ? restored : fresh).push({ key, cells });
       taken.set(key, false);
     }
     if (table.rows.length + fresh.length + restored.length > MAX_ROWS) return { error: `A table holds at most ${MAX_ROWS} rows.` };
     await addRowsAt(sql, table, fresh, userId);
     for (const { key } of restored) await addRow(sql, table, key);
-    await saveGiven(table, restored.flatMap(({ key, cells }) => Object.entries(cells).map(([column, cell]) => ({ row: key, column, cell }))), notQuoted);
+    const updates = [...restored, ...existing].flatMap(({ key, cells }) => Object.entries(cells).map(([column, cell]) => ({ row: key, column, cell })));
+    const refused = await saveGiven(table, updates, notQuoted);
+    for (const [index, error] of refused) problems.push({ row: updates[index]!.row, column: updates[index]!.column, error });
     await refresh?.();
     const added = fresh.length + restored.length;
-    return { added, ...(skipped && { skipped }), ...(problems.length && { errors: problems }), ...(added && { names: [...fresh, ...restored].map((row) => row.key) }) };
+    const updated = existing.filter(({ key }) => updates.some((update, index) => update.row === key && !refused.has(index))).length;
+    return { added, ...(updated && { updated }), ...(skipped && { skipped }), ...(problems.length && { errors: problems }), ...(added && { names: [...fresh, ...restored].map((row) => row.key) }) };
   };
 
   const addColumns = async (slug: string, columns: NewColumn[]) => {

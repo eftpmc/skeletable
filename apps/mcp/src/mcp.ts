@@ -215,7 +215,7 @@ export function tablesMcpServer(tables: PublishedTable[], publicUrl: string, pro
       "add_rows",
       {
         description:
-          "Add up to 500 rows to a table you run. Each row is a name, or an object with its `values` by column id or label, so a whole tracker or dataset goes in a few calls. A row without a `key` gets the next free number, and a name the table already has is skipped. " +
+          "Add up to 500 rows to a table you run. Each row is a name, or an object with its `values` by column id or label, so a whole tracker or dataset goes in a few calls. A row without a `key` gets the next free number. A name the table already has gets the values given for it, so syncing again from the same source is one call; with no values it's skipped. " +
           "Say where the values came from with `origin` (`entered`, `imported` with a `note` naming the file or email, `link` with a `source`, or `generated`, which is the default without a source). Rows with values can go into a published table too; rows by name only into a draft. A table that requires proof takes rows by name only. Needs a token.",
         inputSchema: {
           slug: z.string().max(120),

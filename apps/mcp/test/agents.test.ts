@@ -346,6 +346,7 @@ describe.skipIf(!url)("building a table through an agent", () => {
       ],
     })).json();
     expect(added).toMatchObject({ added: 2, names: ["Acme", "Globex"] });
+    expect(added).not.toHaveProperty("updated");
     expect(added.errors).toEqual([
       { row: "Initech", error: "status: Status takes one of: Applied, Interviewing, Offer, Rejected." },
       { row: "Hooli", error: "applied: Give Applied as a date, like 2026-10-28." },
@@ -355,8 +356,21 @@ describe.skipIf(!url)("building a table through an agent", () => {
     expect(tracker().rows.find((row) => row.key === "Globex")!.cells.applied).toMatchObject({ value: "2026-10-02" });
 
     expect((await call("fill_cells", { slug: "job-applications", cells: [{ row: "Globex", column: "status", value: "Offer", origin: "entered" }] })).json()).toEqual({ saved: 1, of: 1 });
+
+    // Syncing again updates the rows it already has, and adds the new ones, in one call.
+    const synced = (await call("add_rows", {
+      slug: "job-applications",
+      rows: [
+        { key: "Acme", values: { status: "Offer", "next step": "Negotiate" }, origin: "imported", note: "Gmail: 'Offer letter' from Acme, Nov 1" },
+        { key: "Umbrella", values: { status: "Applied", applied: "2026-11-01" }, origin: "imported", note: "applications.md" },
+        "Globex",
+      ],
+    })).json();
+    expect(synced).toEqual({ added: 1, updated: 1, skipped: 1, names: ["Umbrella"] });
+    const acmeNow = tracker().rows.find((row) => row.key === "Acme")!.cells;
+    expect(acmeNow).toMatchObject({ status: { value: "Offer", note: "Gmail: 'Offer letter' from Acme, Nov 1" }, next_step: { value: "Negotiate" }, applied: { value: "2026-10-28" } });
     const summary = (await call("get_table", { slug: "job-applications", limit: 0 })).json().summaries;
-    expect(summary.applied).toMatchObject({ kind: "date", earliest: "2026-10-02", latest: "2026-10-28", months: [{ month: "2026-10", count: 2 }] });
+    expect(summary.applied).toMatchObject({ kind: "date", earliest: "2026-10-02", latest: "2026-11-01", months: [{ month: "2026-10", count: 2 }, { month: "2026-11", count: 1 }] });
 
     expect((await call("create_table", { title: "Strict", proof: "required", columns: [{ label: "When", type: "date" }], rows: ["a"] })).text).toContain("optional");
   });
