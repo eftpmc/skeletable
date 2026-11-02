@@ -139,6 +139,16 @@ describe.skipIf(!url)("accounts and creating tables", () => {
     expect((await send("/api/tables/pat/sketch/publish", "POST", owner, { private: false })).status).toBe(409);
   });
 
+  it("starts a table from a template for someone signed in", async () => {
+    const owner = await person("pat@example.com", "a");
+    expect((await send("/api/tables/template", "POST", {}, { template: "reading-list" })).status).toBe(401);
+    expect((await send("/api/tables/template", "POST", owner, { template: "nope" })).status).toBe(400);
+    const made = await send("/api/tables/template", "POST", owner, { template: "reading-list" });
+    expect(made.status).toBe(201);
+    expect(await made.json()).toEqual({ owner: "pat", slug: "reading-list" });
+    expect(tables.find((t) => t.slug === "reading-list")).toMatchObject({ draft: true, private: true, proof: "optional", title: "Reading list" });
+  });
+
   it("opens a blank sheet, reusing an untouched one", async () => {
     const owner = await person("pat@example.com", "a");
     expect(await (await send("/api/tables/blank", "POST", owner)).json()).toMatchObject({ owner: "pat", slug: "untitled-table" });

@@ -1,10 +1,11 @@
-import { GitPullRequestArrow, Plus, Table2 } from "lucide-react";
+import { GitPullRequestArrow, Plus } from "lucide-react";
 import { useEffect } from "react";
 import { Link } from "wouter";
 import { AccountMark } from "@/components/AccountMark";
-import { Content, EmptyState, List, LoadFailed, PageHeader } from "@/components/Layout";
+import { Content, List, LoadFailed, PageHeader } from "@/components/Layout";
 import { Page } from "@/components/Shell";
 import { TableList } from "@/components/TableList";
+import { TemplateCards } from "@/components/Templates";
 import { Button } from "@/components/ui/button";
 import { useJson, type Me, type TableSummary } from "@/lib/api";
 import { accountName } from "@/lib/cells";
@@ -72,17 +73,11 @@ export function YourHome({ user }: { user: NonNullable<Me["user"]> }) {
         {status === "failed" ? (
           <LoadFailed what="Your tables" retry={retry} />
         ) : !user.teams.length && data?.length !== undefined && !ownedBy(user.handle ?? "")?.length && !shared?.length ? (
-          <EmptyState
-            icon={Table2}
-            title="Start your first table"
-            body="Pick something you want reliable data on, or see what others have built."
-            action={
-              <>
-                <Button size="sm" asChild><Link href="/new">New table</Link></Button>
-                <Button size="sm" variant="outline" asChild><Link href="/explore">Browse tables</Link></Button>
-              </>
-            }
-          />
+          <section aria-labelledby="first-table">
+            <h2 id="first-table" className="font-medium">Start your first table</h2>
+            <p className="mb-4 text-sm text-muted-foreground">Pick a template and your agent fills it in, or <Link href="/new?blank=1" className="underline underline-offset-2">start blank</Link>. You can also <Link href="/explore" className="underline underline-offset-2">browse public tables</Link>.</p>
+            <TemplateCards />
+          </section>
         ) : (
           <div className="space-y-8">
             {user.handle && <AccountTables handle={user.handle} name={accountName(user.handle)} tables={ownedBy(user.handle)} empty="You don't have any tables of your own yet." />}

@@ -1,4 +1,5 @@
 import { TABLE_FORMAT, columnTypes, validateTable, type Cell, type Table } from "@skeleton/tables/format";
+import { templateById, type Template } from "@skeleton/tables/templates";
 import type { Context, Hono } from "hono";
 import { z } from "zod";
 import { everyone, readable } from "./access.js";
@@ -128,6 +129,12 @@ export async function createTable(sql: Sql, tables: PublishedTable[], owner: str
   // A draft is private until someone publishes it.
   await importTables(sql, [{ ...table, private: draft || body.private }]);
   return { owner, slug, columns: table.columns.map(({ id, label }) => ({ id, label })) };
+}
+
+/** A new private draft from a template: its columns set up, ready for rows. */
+export function createFromTemplate(sql: Sql, tables: PublishedTable[], owner: string, template: Template, title?: string) {
+  const { question, topic, scope, columns } = template;
+  return createTable(sql, tables, owner, { title: title?.trim() || template.title, question, topic, scope, draft: true, private: true, proof: "optional", columns: columns.map((column) => ({ ...column })), rows: [] });
 }
 
 export const emptyCell = (): Cell => ({ missing: true, checked: [], read: today() });
@@ -292,6 +299,21 @@ export function accountRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sig
     const created = await createTable(sql, tables, owner, { title: UNTITLED, draft: true, private: true, proof: "optional", question: "", topic: "", scope: "", columns: [], rows: [] });
     await refresh?.();
     return c.json(created, 201);
+  });
+
+  // A table from a template, in the person's own account.
+  app.post("/api/tables/template", rateLimit(CREATIONS_PER_MINUTE), async (c) => {
+    const user = await signedIn(c);
+    if (!user) return c.json({ error: "Sign in to create a table." }, 401);
+    const body = z.object({ template: z.string().max(60), title: z.string().trim().max(120).optional() }).safeParse(await c.req.json().catch(() => null));
+    const template = body.success ? templateById(body.data.template) : undefined;
+    if (!body.success || !template) return c.json({ error: "There's no such template." }, 400);
+    const [account] = await sql`select a.handle from accounts a join users u on u.account_id = a.id where u.id = ${user.id}`;
+    if (!account) return c.json({ error: "Your account isn't set up." }, 400);
+    const created = await createFromTemplate(sql, tables, account.handle as string, template, body.data.title);
+    if (!created) return c.json({ error: "That table didn't save." }, 400);
+    await refresh?.();
+    return c.json({ owner: created.owner, slug: created.slug }, 201);
   });
 
   app.post("/api/tables", rateLimit(CREATIONS_PER_MINUTE), async (c) => {

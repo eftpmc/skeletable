@@ -1,4 +1,5 @@
 import { ArrowRight, Bot, GitPullRequestArrow, Quote } from "lucide-react";
+import { TemplateCards } from "@/components/Templates";
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { AgentButton } from "@/components/Chrome";
@@ -57,19 +58,32 @@ export function Landing() {
     <Page>
       <main className="mx-auto max-w-5xl px-4 pb-16 sm:px-6">
         <section className="mx-auto max-w-2xl pt-14 pb-10 text-center sm:pt-20">
-          <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl">Tables you can trace</h1>
-          <p className="mt-4 text-lg text-muted-foreground">Tables for people and agents, where every value records where it came from and keeps its history. Public tables go further and quote a source for every value.</p>
+          <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl">Tables your agent keeps for you</h1>
+          <p className="mt-4 text-lg text-muted-foreground">Track job applications, build a dataset, keep a reading list. Your agent fills it from your email, your files and the web, and every value records where it came from.</p>
           <div className="mt-7 flex items-center justify-center gap-2">
             <Button size="lg" asChild>
-              <Link href="/explore">
-                Browse public tables
+              <Link href="/new">
+                Start a table
                 <ArrowRight />
               </Link>
             </Button>
             <AgentButton label="Connect an agent" />
           </div>
         </section>
-        <Demo />
+        <section aria-labelledby="templates">
+          <h2 id="templates" className="mb-3 text-sm font-medium text-muted-foreground">Start from a template</h2>
+          <TemplateCards />
+        </section>
+        <section className="mt-16" aria-labelledby="library">
+          <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+            <div>
+              <h2 id="library" className="font-medium">The public library</h2>
+              <p className="text-sm text-muted-foreground">Sourced tables, where every value quotes the page that states it. Select a value to see its proof.</p>
+            </div>
+            <Button variant="ghost" size="sm" asChild><Link href="/explore">Browse all<ArrowRight /></Link></Button>
+          </div>
+          <Demo />
+        </section>
         <section className="mt-14 grid gap-6 sm:grid-cols-3">
           {points.map(({ icon: Icon, title, body }) => (
             <div key={title}>

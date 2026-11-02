@@ -6,8 +6,11 @@ import { toast } from "sonner";
 import { Link, useLocation, useSearch } from "wouter";
 import { SheetSkeleton, Spinner } from "@/components/Loading";
 import { Input } from "@/components/ui/input";
+import { templateById } from "@skeleton/tables/templates";
 import { AgentBuildButton } from "@/components/AgentBuild";
 import { ColumnSummaryView } from "@/components/Data";
+import { BoardView, ByColumn, UpcomingView, ViewSwitcher } from "@/components/Views";
+import { availableViews, boardColumns, dateColumns, defaultDateColumn, type ViewMode } from "@/lib/views";
 import { FilterButton } from "@/components/Filter";
 import { NoTable } from "@/components/NoTable";
 import { CiteButton, Conflicts, OriginDetails, Quote, SourceLink, StatusBadge, kindLabels } from "@/components/Proof";
@@ -152,15 +155,17 @@ function XrayReading({ table }: { table: PublishedTable }) {
 }
 
 /** Frequently used controls stay directly above the grid. */
-function SheetToolbar({ table, xray, onXray, summaries, onSummaries, onNext, find, onFind, findInput, filters, onFilters, filtering, onFiltering, shown }: { table: PublishedTable; xray: boolean; onXray: () => void; summaries: boolean; onSummaries: () => void; onNext?: () => void; find: string; onFind: (find: string) => void; findInput: RefObject<HTMLInputElement | null>; filters: SheetFilters; onFilters: (filters: SheetFilters) => void; filtering: boolean; onFiltering: (open: boolean) => void; shown: number }) {
+function SheetToolbar({ table, xray, onXray, summaries, onSummaries, onNext, find, onFind, findInput, filters, onFilters, filtering, onFiltering, shown, viewControls, gridShown = true }: { table: PublishedTable; xray: boolean; onXray: () => void; summaries: boolean; onSummaries: () => void; onNext?: () => void; find: string; onFind: (find: string) => void; findInput: RefObject<HTMLInputElement | null>; filters: SheetFilters; onFilters: (filters: SheetFilters) => void; filtering: boolean; onFiltering: (open: boolean) => void; shown: number; viewControls?: ReactNode; gridShown?: boolean }) {
   return (
     <div aria-label="Sheet tools" className="flex shrink-0 flex-wrap items-center gap-2 px-3 py-2 text-xs">
+      {viewControls}
       <div className="relative w-32 shrink-0 sm:w-56">
         <Search className="pointer-events-none absolute top-1/2 left-2 size-3 -translate-y-1/2 text-muted-foreground" />
         <Input ref={findInput} aria-label="Find in this table" placeholder="Find in table" value={find} onChange={(event) => onFind(event.target.value)} className="h-8 bg-background pl-6 text-xs md:text-xs" />
       </div>
       <FilterButton table={table} filters={filters} onChange={onFilters} open={filtering} onOpenChange={onFiltering} />
       {shown !== table.rows.length && <span className="shrink-0 text-muted-foreground tabular-nums">{shown} of {table.rows.length}</span>}
+      {gridShown && <>
       <Button
         variant="ghost"
         size="xs"
@@ -183,7 +188,8 @@ function SheetToolbar({ table, xray, onXray, summaries, onSummaries, onNext, fin
         <BarChart3 />
         Summary
       </Button>
-      {onNext && <Button variant="ghost" size="xs" className="shrink-0 text-muted-foreground" onClick={onNext}><ArrowRight />{proofOptional(table) ? "Next empty" : "Next to prove"}</Button>}
+      </>}
+      {onNext && gridShown && <Button variant="ghost" size="xs" className="shrink-0 text-muted-foreground" onClick={onNext}><ArrowRight />{proofOptional(table) ? "Next empty" : "Next to prove"}</Button>}
     </div>
   );
 }
@@ -611,6 +617,8 @@ export function Sheet({ owner, slug, version }: { owner: string; slug: string; v
   const selectedId = new URLSearchParams(search).get("cell");
   const view = useMemo(() => readView(search), [search]);
   const { sort, find, filters } = view;
+  // Just started from a template: its agent prompt opens once.
+  const startedFrom = templateById(new URLSearchParams(search).get("agent") ?? "");
   const show = (next: Partial<SheetView>, cell = selectedId) => navigate(`${path}${viewSearch({ ...view, ...next }, cell)}`, { replace: true });
 
   useEffect(() => {
@@ -704,6 +712,20 @@ export function Sheet({ owner, slug, version }: { owner: string; slug: string; v
     void saveGrid(gridChange(data!, at, columnIndex, text));
   };
   const summaries = useMemo(() => (summarizing && shown ? tableSummaries(shown) : undefined), [summarizing, shown]);
+  // A board or upcoming view, when the table has a column for it. The address says which, and by what.
+  const views = data ? availableViews(data) : ["sheet" as const];
+  const mode: ViewMode = view.mode && views.includes(view.mode) ? view.mode : "sheet";
+  const byChoices = data ? boardColumns(data) : [];
+  const byDates = data ? dateColumns(data) : [];
+  const boardBy = byChoices.find((column) => column.id === view.by) ?? byChoices[0];
+  const upcomingBy = byDates.find((column) => column.id === view.by) ?? (data ? defaultDateColumn(data) : undefined);
+  const viewControls = data && views.length > 1 ? (
+    <>
+      <ViewSwitcher views={views} mode={mode} onMode={(next) => show({ mode: next === "sheet" ? undefined : next, by: undefined }, null)} />
+      {mode === "board" && boardBy && <ByColumn label="By" columns={byChoices} value={boardBy.id} onChange={(by) => show({ by })} />}
+      {mode === "upcoming" && upcomingBy && <ByColumn label="By" columns={byDates} value={upcomingBy.id} onChange={(by) => show({ by })} />}
+    </>
+  ) : undefined;
   const gridEdit: GridEdit | undefined = data && user && !version ? {
     typeIn,
     ...(canType && { paste }),
@@ -729,13 +751,13 @@ export function Sheet({ owner, slug, version }: { owner: string; slug: string; v
     <div className="flex h-svh flex-col duration-200 animate-in fade-in zoom-in-[0.995] motion-reduce:animate-none">
       <AppBar
         workspace
-        crumbs={[{ label: data ? ownerLabel(data) : accountName(owner), href: `/${owner}` }, { label: data?.title ?? "Table", href: `/${owner}/${slug}` }, { label: version ? `Version ${version}` : "Sheet" }]}
+        crumbs={[{ label: data ? ownerLabel(data) : accountName(owner), href: `/${owner}` }, { label: data?.title ?? "Table", href: `/${owner}/${slug}` }, { label: version ? `Version ${version}` : mode === "board" ? "Board" : mode === "upcoming" ? "Upcoming" : "Sheet" }]}
         phoneTitle="Sheet"
         actions={
           <>
             {pendingSaves > 0 && <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><Spinner label="Saving changes" />Saving</span>}
             {data?.private && <Lock aria-label="Private" className="size-4 text-muted-foreground" />}
-            {data && !version && user?.accounts.includes(data.owner) && <AgentBuildButton table={data} label="Use agent" size="default" />}
+            {data && !version && user?.accounts.includes(data.owner) && <AgentBuildButton table={data} label="Use agent" size="default" template={startedFrom} defaultOpen={!!startedFrom} />}
             {data && <SheetOptions table={data} downloadTable={shown} canRun={canRun} onRows={(names) => void saveGrid({ addColumns: [], addRows: names, cells: [] })} onShortcuts={() => setHelping(true)} onChanged={retry} />}
             {data && !data.draft && !version && <ShareButton table={data} path={`${path}${viewSearch(view, selectedId)}`} size="sm" onChanged={retry} />}
           </>
@@ -748,24 +770,30 @@ export function Sheet({ owner, slug, version }: { owner: string; slug: string; v
       ) : data && shown ? (
         <>
           <VersionBanner table={data} />
-          <SheetToolbar table={data} xray={xray} onXray={() => setXray(!xray)} summaries={summarizing} onSummaries={() => setSummarizing(!summarizing)} onNext={data.draft && canRun ? () => goNext.current() : undefined} find={find} onFind={(next) => show({ find: next })} findInput={findInput} filters={filters} onFilters={(next) => show({ filters: next })} filtering={filtering} onFiltering={setFiltering} shown={shown.rows.length} />
+          <SheetToolbar viewControls={viewControls} gridShown={mode === "sheet"} table={data} xray={xray} onXray={() => setXray(!xray)} summaries={summarizing} onSummaries={() => setSummarizing(!summarizing)} onNext={data.draft && canRun ? () => goNext.current() : undefined} find={find} onFind={(next) => show({ find: next })} findInput={findInput} filters={filters} onFilters={(next) => show({ filters: next })} filtering={filtering} onFiltering={setFiltering} shown={shown.rows.length} />
 
-          <Grid
-            cellDetails={<FormulaBar compact frozen={!!version} table={data} onChanged={retry} selected={selectedCell(data, selectedId)} editing={editing} typed={typed} onEditing={(on) => { setEditing(on); if (!on) setTyped(undefined); }} onNext={() => goNext.current()} />}
-            summaries={summaries}
-            table={shown}
-            selectedId={selectedId}
-            select={(id) => { setEditing(false); setTyped(undefined); show({}, id); }}
-            xray={xray}
-            sort={sort}
-            onSort={(column) => show({ sort: nextSort(sort, column) })}
-            widths={widths}
-            onResize={(column, width) => setWidths((current) => ({ ...current, [column]: width }))}
-            onCopy={(text) => void copyText(text)}
-            edit={gridEdit}
-            emptyRows={data.draft ? Math.max(fullHeightRows - shown.rows.length, gridEdit?.addRow ? 5 : 0) : gridEdit?.addRow ? 1 : 0}
-            rowHref={(key) => rowPath(data, key)}
-          />
+          {mode === "board" && boardBy ? (
+            <BoardView table={shown} rows={shown.rows} column={boardBy} onMove={canType ? (row, value) => void saveGrid({ cells: [{ row, column: boardBy.id, value }] }) : undefined} />
+          ) : mode === "upcoming" && upcomingBy ? (
+            <UpcomingView table={shown} rows={shown.rows} column={upcomingBy} />
+          ) : (
+            <Grid
+              cellDetails={<FormulaBar compact frozen={!!version} table={data} onChanged={retry} selected={selectedCell(data, selectedId)} editing={editing} typed={typed} onEditing={(on) => { setEditing(on); if (!on) setTyped(undefined); }} onNext={() => goNext.current()} />}
+              summaries={summaries}
+              table={shown}
+              selectedId={selectedId}
+              select={(id) => { setEditing(false); setTyped(undefined); show({}, id); }}
+              xray={xray}
+              sort={sort}
+              onSort={(column) => show({ sort: nextSort(sort, column) })}
+              widths={widths}
+              onResize={(column, width) => setWidths((current) => ({ ...current, [column]: width }))}
+              onCopy={(text) => void copyText(text)}
+              edit={gridEdit}
+              emptyRows={data.draft ? Math.max(fullHeightRows - shown.rows.length, gridEdit?.addRow ? 5 : 0) : gridEdit?.addRow ? 1 : 0}
+              rowHref={(key) => rowPath(data, key)}
+            />
+          )}
           <StatusBar table={data} xray={xray} shown={shown.rows.length} refreshing={refreshing} refreshFailed={refreshFailed} retry={retry} />
         </>
       ) : (

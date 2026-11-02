@@ -7,7 +7,8 @@
     ".": "./src/index.ts",
     "./format": "./src/format.ts",
     "./share": "./src/share.ts",
-    "./columns": "./src/columns.ts"
+    "./columns": "./src/columns.ts",
+    "./templates": "./src/templates.ts"
   },
   "scripts": {
     "tables": "tsx src/cli.ts",

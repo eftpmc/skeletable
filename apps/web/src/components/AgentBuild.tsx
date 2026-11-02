@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { postJson } from "@/lib/api";
 import { copyText } from "@/lib/copy";
+import type { Template } from "@skeleton/tables/templates";
 
 const rules = "Use each subject's own official pages. Copy every quote word for word, and make sure it states the value. Never get around a block or a login. When no acceptable source states a value, say where you looked, and don't guess.";
 
@@ -39,7 +40,7 @@ function CopyBlock({ label, text, rows }: { label: string; text: string; rows: n
 }
 
 /** The one place to hand a table to the person's own agent. It does the reading, and a person keeps the final say. */
-export function AgentBuildButton({ table, label = "Agent", size = "sm" }: { table: { owner: string; slug: string; draft?: boolean; proof?: "required" | "optional"; columns: { instruction?: string }[] }; label?: string; size?: "sm" | "default" | "lg" }) {
+export function AgentBuildButton({ table, label = "Agent", size = "sm", template, defaultOpen = false }: { table: { owner: string; slug: string; draft?: boolean; proof?: "required" | "optional"; columns: { instruction?: string }[] }; label?: string; size?: "sm" | "default" | "lg"; template?: Template; defaultOpen?: boolean }) {
   const [token, setToken] = useState<string>();
   const [error, setError] = useState<string>();
   const [sending, setSending] = useState(false);
@@ -59,20 +60,22 @@ export function AgentBuildButton({ table, label = "Agent", size = "sm" }: { tabl
   const blank = table.draft && !table.columns.length;
   const dataset = table.proof === "optional";
   const hasAi = table.columns.some((column) => column.instruction);
-  const prompt = hasAi ? aiPrompt(at) : dataset ? datasetPrompt(at, subject) : blank ? buildPrompt(at, subject) : table.draft ? fillPrompt(at) : editPrompt(at);
+  const prompt = template ? template.prompt(at, subject.trim()) : hasAi ? aiPrompt(at) : dataset ? datasetPrompt(at, subject) : blank ? buildPrompt(at, subject) : table.draft ? fillPrompt(at) : editPrompt(at);
   const command = `claude mcp add --transport http skeletable ${location.origin}/mcp --header "Authorization: Bearer ${token ?? "YOUR_TOKEN"}"`;
   return (
-    <Dialog>
+    <Dialog defaultOpen={defaultOpen}>
       <DialogTrigger asChild><Button type="button" variant="outline" size={size}><Bot />{label}</Button></DialogTrigger>
       <DialogContent className="sm:max-w-xl">
         <DialogTitle>Edit this table with your agent</DialogTitle>
-        <DialogDescription>{hasAi ? "Your own agent answers each AI column's instruction, row by row, and this sheet fills in as it works. Anything a person typed stays as it is." : dataset ? "Your own agent adds rows and values, each marked with where it came from, and this sheet fills in as it works." : table.draft ? "Your own agent does the reading. Each value is tested before it's saved, and this sheet fills in as it works. Nothing goes public until you publish." : "Your own agent does the reading. Each change it finds comes to you under Proposals, with its proof already tested, and nothing changes until you accept it."}</DialogDescription>
+        <DialogDescription>{template ? `Your ${template.title.toLowerCase()} table is set up. Hand it to your own agent: it fills the rows, and this sheet fills in as it works. Each value says where it came from.` : hasAi ? "Your own agent answers each AI column's instruction, row by row, and this sheet fills in as it works. Anything a person typed stays as it is." : dataset ? "Your own agent adds rows and values, each marked with where it came from, and this sheet fills in as it works." : table.draft ? "Your own agent does the reading. Each value is tested before it's saved, and this sheet fills in as it works. Nothing goes public until you publish." : "Your own agent does the reading. Each change it finds comes to you under Proposals, with its proof already tested, and nothing changes until you accept it."}</DialogDescription>
         <div className="min-w-0 space-y-4">
           {!token && <Button type="button" variant="outline" size="sm" disabled={sending} aria-busy={sending} onClick={() => void makeToken()}>{sending && <Spinner label="Creating token" />}{sending ? "Creating token…" : "Make a token for this agent"}</Button>}
           {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
           {token && <p className="text-sm text-muted-foreground">The token is in the command below, and it's shown only once. You can remove it in Settings.</p>}
           <CopyBlock label="1. Connect it once" text={command} rows={3} />
-          {(blank || (dataset && !hasAi)) && <Input aria-label="What should this table cover?" placeholder="What should this table cover?" value={subject} onChange={(event) => setSubject(event.target.value)} />}
+          {template ? (
+            <Input aria-label="Anything to add?" placeholder={template.id === "job-tracker" ? "Anything to add? Like: my applications.md file" : "Anything to add? Like what it's about"} value={subject} onChange={(event) => setSubject(event.target.value)} />
+          ) : (blank || (dataset && !hasAi)) && <Input aria-label="What should this table cover?" placeholder="What should this table cover?" value={subject} onChange={(event) => setSubject(event.target.value)} />}
           <CopyBlock label="2. Ask it" text={prompt} rows={7} />
         </div>
       </DialogContent>

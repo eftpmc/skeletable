@@ -44,7 +44,7 @@ export function nextSort(sort: SheetSort, column: string): SheetSort {
 export type SheetFilters = Record<string, string[]>;
 
 /** How a sheet is being looked at. It lives in the address, so a copied link opens the same view of the live table. */
-export type SheetView = { sort: SheetSort; find: string; filters: SheetFilters };
+export type SheetView = { sort: SheetSort; find: string; filters: SheetFilters; mode?: "board" | "upcoming"; by?: string };
 
 /** The filter choice for a cell with no value. */
 export const BLANK = "__blank";
@@ -62,12 +62,21 @@ export function readView(search: string): SheetView {
     const split = filter.indexOf(":");
     if (split > 0) (filters[filter.slice(0, split)] ??= []).push(filter.slice(split + 1));
   }
-  return { sort: column ? { column, descending: params.has("desc") } : null, find: params.get("find") ?? "", filters };
+  const mode = params.get("view");
+  return {
+    sort: column ? { column, descending: params.has("desc") } : null,
+    find: params.get("find") ?? "",
+    filters,
+    ...((mode === "board" || mode === "upcoming") && { mode }),
+    ...(params.get("by") && { by: params.get("by")! }),
+  };
 }
 
 /** The address's search text for a view and a selected cell. */
-export function viewSearch({ sort, find, filters }: SheetView, cell?: string | null) {
+export function viewSearch({ sort, find, filters, mode, by }: SheetView, cell?: string | null) {
   const params = new URLSearchParams();
+  if (mode) params.set("view", mode);
+  if (mode && by) params.set("by", by);
   if (sort) params.set("sort", sort.column);
   if (sort?.descending) params.set("desc", "1");
   if (find) params.set("find", find);
