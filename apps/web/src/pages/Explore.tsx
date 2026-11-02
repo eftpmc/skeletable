@@ -30,7 +30,7 @@ const confirmedShare = ({ checks: { confirmed, summary, once, given = 0, gap } }
 const COLUMNS_SHOWN = 4;
 
 /** One table as a card: what it answers, what it holds, and how well it's checked. */
-function TableCard({ table }: { table: TableSummary }) {
+function TableCard({ table, showKind }: { table: TableSummary; showKind: boolean }) {
   const href = `/${table.owner}/${table.slug}`;
   const extra = table.columns.length - COLUMNS_SHOWN;
   return (
@@ -41,7 +41,7 @@ function TableCard({ table }: { table: TableSummary }) {
       >
         <div className="flex items-center justify-between gap-3">
           <p className="eyebrow truncate">{table.topic}</p>
-          <span className="shrink-0 font-mono text-[11px] text-muted-foreground uppercase">{table.proof === "optional" ? "Dataset" : "Sourced"}</span>
+          {showKind && <span className="shrink-0 font-mono text-[11px] text-muted-foreground uppercase">{table.proof === "optional" ? "Dataset" : "Sourced"}</span>}
         </div>
         <h2 className="mt-2 flex items-start gap-1 font-semibold tracking-tight text-balance">
           <span className="min-w-0 flex-1">{table.title}</span>
@@ -53,7 +53,7 @@ function TableCard({ table }: { table: TableSummary }) {
           {extra > 0 && <li className="px-1 py-0.5 font-mono text-[10px] text-muted-foreground">+{extra} more</li>}
         </ul>
         <div className="mt-auto pt-5">
-          <CheckBar table={table} className="w-full" />
+          <CheckBar table={table} className="w-full" large />
           <p className="mt-2.5 flex flex-wrap gap-x-1.5 text-xs text-muted-foreground tabular-nums">
             <span>{table.rows} rows</span>
             <span aria-hidden="true">&middot;</span>
@@ -74,6 +74,8 @@ export function Explore() {
   const [sort, setSort] = useState<keyof typeof sorts>("checked");
   // Browse is the public library, even when you can also see private tables.
   const library = all.data?.filter((table) => !table.private && isKind(table, kind));
+  // Only label a card's kind when the library has more than one kind to tell apart.
+  const mixedKinds = new Set(all.data?.filter((table) => !table.private).map((table) => table.proof === "optional")).size > 1;
   const topicCount = (name: string) => library?.filter((table) => table.topic === name).length ?? 0;
   const topics = [...new Set(library?.map((table) => table.topic))].sort();
   const shown = data?.filter((table) => !table.private && isKind(table, kind) && (!topic || table.topic === topic)).sort(sorts[sort].order);
@@ -133,7 +135,7 @@ export function Explore() {
           <>
             <p className="mb-3 text-sm text-muted-foreground" role="status">{shown.length} {shown.length === 1 ? "table" : "tables"}{topic ? ` in ${topic}` : ""}{query ? ` matching "${query}"` : ""}</p>
             <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {shown.map((table) => <TableCard key={`${table.owner}/${table.slug}`} table={table} />)}
+              {shown.map((table) => <TableCard key={`${table.owner}/${table.slug}`} table={table} showKind={mixedKinds} />)}
             </ul>
           </>
         ) : (

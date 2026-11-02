@@ -10,14 +10,21 @@ import { day, ownerLabel } from "@/lib/cells";
 import { statuses } from "@/lib/status";
 
 /** A small bar of how the table's values were checked, using the same colours as X-ray. */
-export function CheckBar({ table, className }: { table: TableSummary; className: string }) {
+export function CheckBar({ table, className, large = false }: { table: TableSummary; className: string; large?: boolean }) {
   const { confirmed, summary, once, given = 0, gap } = table.checks;
   const parts = [["confirmed", confirmed], ["summary", summary], ["once", once], ["linked", given], ["gap", gap]] as const;
   const total = confirmed + summary + once + given + gap;
   const filled = confirmed + summary + once;
   return (
     <div className={`shrink-0 ${className}`} title={`Double-checked means a filled value was confirmed by a second read or matched a summary. Missing values are excluded from the percentage. ${confirmed} confirmed by a blind read, ${summary} matched a summary, ${once} read once,${given ? ` ${given} without a quote,` : ""} ${gap} not stated`}>
-      <p className="mb-2 text-xs text-muted-foreground tabular-nums">{confirmed + summary ? `${Math.round(((confirmed + summary) / filled) * 100)}% double-checked` : once ? "Not double-checked yet" : given ? `${given} values, no quotes` : "No values yet"}</p>
+      {large && confirmed + summary ? (
+        <p className="mb-2 flex items-baseline gap-1.5 text-xs text-muted-foreground tabular-nums">
+          <span className="text-2xl font-semibold tracking-tight text-foreground">{Math.round(((confirmed + summary) / filled) * 100)}%</span>
+          double-checked
+        </p>
+      ) : (
+        <p className={`mb-2 text-xs text-muted-foreground tabular-nums ${large ? "flex h-8 items-end" : ""}`}>{confirmed + summary ? `${Math.round(((confirmed + summary) / filled) * 100)}% double-checked` : once ? "Not double-checked yet" : given ? `${given} values, no quotes` : "No values yet"}</p>
+      )}
       <div className="flex h-1.5 gap-px overflow-hidden rounded-full bg-muted" aria-hidden="true">
         {parts.filter(([, count]) => count).map(([status, count]) => <div key={status} className={statuses[status].solid} style={{ width: `${(count / total) * 100}%` }} />)}
       </div>
