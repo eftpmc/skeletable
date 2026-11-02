@@ -17,8 +17,8 @@ const sorts = {
   name: { label: "A to Z", order: (a: TableSummary, b: TableSummary) => a.title.localeCompare(b.title) },
 };
 
-/** Sourced tables quote a source for every value. Datasets say where each value came from instead. */
-const kinds = { all: "Everything", sourced: "Sourced", datasets: "Datasets" } as const;
+/** Sourced tables quote a source for every value. Datasets and trackers say where each value came from instead. */
+const kinds = { all: "Everything", sourced: "Sourced", datasets: "Datasets and trackers" } as const;
 type Kind = keyof typeof kinds;
 const isKind = (table: TableSummary, kind: Kind) => kind === "all" || (kind === "datasets") === (table.proof === "optional");
 
@@ -44,7 +44,7 @@ export function Explore() {
   return (
     <Page>
       <Content>
-        <PageHeader title="Browse tables" description="Every value here shows where it came from. Sourced tables quote a source for each one, and datasets say whether a value was linked, entered or generated. Fork any of them to make it your own." />
+        <PageHeader title="Browse tables" description="Every value here shows where it came from. Sourced tables quote a source for each one, and datasets and trackers say whether a value was linked, entered, imported or generated. Fork any of them to make it your own." />
         <div className="mb-4 inline-flex rounded-lg border p-0.5" role="group" aria-label="Kind of table">
           {(Object.keys(kinds) as Kind[]).map((name) => (
             <Button key={name} variant="ghost" size="sm" aria-pressed={kind === name} className={kind === name ? "bg-secondary text-foreground" : "text-muted-foreground"} onClick={() => { setKind(name); setTopic(undefined); }}>{kinds[name]}</Button>

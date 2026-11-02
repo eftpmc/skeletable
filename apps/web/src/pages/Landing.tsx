@@ -16,9 +16,9 @@ const demoColumns = ["statute", "notify_days", "notify_standard", "ag_notice"];
 const demoKey = ["confirmed", "once", "none", "gap"] satisfies CellStatus[];
 
 const points = [
-  { icon: Quote, title: "Proof, not just answers", body: "Open any value to see its exact quote, source, checks, and what the source did not state." },
+  { icon: Quote, title: "Every value knows where it came from", body: "A person, a file, an email, a model or a page. Tables that need it go further: each value quotes its source, with checks." },
   { icon: GitPullRequestArrow, title: "Changes stay reviewable", body: "Send related corrections together with their proof. Owners accept them together, and every edit stays in history." },
-  { icon: Bot, title: "People and agents use the same facts", body: "Read public tables over MCP, or let your own agent build and check a private draft." },
+  { icon: Bot, title: "Your agent does the filling", body: "Trackers, datasets and lists: your own agent adds rows, fills AI columns and keeps them current over MCP." },
 ];
 
 /** A real table to try on the page: select a cell and its proof opens. */
@@ -57,8 +57,8 @@ export function Landing() {
     <Page>
       <main className="mx-auto max-w-5xl px-4 pb-16 sm:px-6">
         <section className="mx-auto max-w-2xl pt-14 pb-10 text-center sm:pt-20">
-          <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl">Facts you can trace and improve</h1>
-          <p className="mt-4 text-lg text-muted-foreground">Source-backed tables for people and agents. Every value has proof, a review path, and a history.</p>
+          <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl">Tables you can trace</h1>
+          <p className="mt-4 text-lg text-muted-foreground">Tables for people and agents, where every value records where it came from and keeps its history. Public tables go further and quote a source for every value.</p>
           <div className="mt-7 flex items-center justify-center gap-2">
             <Button size="lg" asChild>
               <Link href="/explore">

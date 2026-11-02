@@ -41,7 +41,8 @@ describe.skipIf(!url)("building a table through an agent", () => {
     return { isError: result.isError, text: result.content[0]!.text, json: () => { try { return JSON.parse(result.content[0]!.text); } catch { throw new Error(result.content[0]!.text); } } };
   };
 
-  const draft = { title: "Keyboards", columns: [{ label: "Weight", type: "number", unit: "g" }, { label: "Colour", type: "text" }], rows: ["Alpha", "Beta"] };
+  // A table that requires proof, which a new table only does when asked.
+  const draft = { title: "Keyboards", proof: "required", columns: [{ label: "Weight", type: "number", unit: "g" }, { label: "Colour", type: "text" }], rows: ["Alpha", "Beta"] };
   const held = () => tables.find((table) => table.owner === "pat" && table.slug === "keyboards")!;
 
   beforeAll(() => {
@@ -320,6 +321,55 @@ describe.skipIf(!url)("building a table through an agent", () => {
     const sam = await person("sam@example.com");
     expect((await call("fork_table", { slug: "pat/pitches" }, sam)).text).toContain("no table");
     expect((await call("fork_table", { slug: "pat/pitches" })).json().slug).toBe("pitches-2");
+  });
+
+  it("builds a tracker with no web page behind any value: dates, a status list and imported values", async () => {
+    const statuses = ["Applied", "Interviewing", "Offer", "Rejected"];
+    const created = (await call("create_table", {
+      title: "Job applications",
+      columns: [{ label: "Status", type: "text", choices: statuses }, { label: "Applied", type: "date" }, { label: "Next step", type: "text" }],
+      rows: ["seed"],
+    })).json();
+    expect(created.slug).toBe("job-applications");
+    const tracker = () => tables.find((table) => table.slug === "job-applications")!;
+    // A new table doesn't require proof unless asked.
+    expect(tracker().proof).toBe("optional");
+    expect(tracker().columns[0]!.choices).toEqual(statuses);
+
+    const added = (await call("add_rows", {
+      slug: "job-applications",
+      rows: [
+        { key: "Acme", values: { status: "interviewing", applied: "Oct 28, 2026", "next step": "Prep for the onsite" }, origin: "imported", note: "Gmail: Interview invite from Acme, Oct 30" },
+        { key: "Globex", values: { status: "Applied", applied: "10/2/2026" }, origin: "imported", note: "applications.md" },
+        { key: "Initech", values: { status: "Ghosted" } },
+        { key: "Hooli", values: { applied: "next week" } },
+      ],
+    })).json();
+    expect(added).toMatchObject({ added: 2, names: ["Acme", "Globex"] });
+    expect(added.errors).toEqual([
+      { row: "Initech", error: "status: Status takes one of: Applied, Interviewing, Offer, Rejected." },
+      { row: "Hooli", error: "applied: Give Applied as a date, like 2026-10-28." },
+    ]);
+    const acme = tracker().rows.find((row) => row.key === "Acme")!.cells;
+    expect(acme).toMatchObject({ status: { value: "Interviewing", origin: "imported", note: "Gmail: Interview invite from Acme, Oct 30" }, applied: { value: "2026-10-28" } });
+    expect(tracker().rows.find((row) => row.key === "Globex")!.cells.applied).toMatchObject({ value: "2026-10-02" });
+
+    expect((await call("fill_cells", { slug: "job-applications", cells: [{ row: "Globex", column: "status", value: "Offer", origin: "entered" }] })).json()).toEqual({ saved: 1, of: 1 });
+    const summary = (await call("get_table", { slug: "job-applications", limit: 0 })).json().summaries;
+    expect(summary.applied).toMatchObject({ kind: "date", earliest: "2026-10-02", latest: "2026-10-28", months: [{ month: "2026-10", count: 2 }] });
+
+    expect((await call("create_table", { title: "Strict", proof: "required", columns: [{ label: "When", type: "date" }], rows: ["a"] })).text).toContain("optional");
+  });
+
+  it("tells agents values don't need a page behind them", async () => {
+    const response = await app.request("/mcp", {
+      method: "POST",
+      headers: { "content-type": "application/json", accept: "application/json, text/event-stream" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "test", version: "1" } } }),
+    });
+    const { instructions } = ((await response.json()) as { result: { instructions: string } }).result;
+    expect(instructions).toMatch(/^Skeletable holds tables for people and agents, where every value records where it came from/);
+    expect(instructions).toContain("nothing needs a web page behind it");
   });
 
   it("can't write to a published table, or someone else's draft", async () => {

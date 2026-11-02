@@ -12,14 +12,13 @@ const text = (value: unknown) => ({ content: [{ type: "text" as const, text: JSO
 const refuse = (message: string) => ({ content: [{ type: "text" as const, text: message }], isError: true });
 
 const instructions =
-  "Skeletable is a library of tables where every value links to the source that states it. Use list_tables to find a table, " +
-  "get_table to read it, get_cell for a value's source and exact quote, and check_claim to test a statement against a cell. A null value means no acceptable source stated it: " +
-  "say it's unknown rather than filling it in. Check a table's scope and lastRead before relying on it. When you use a value, cite the source and give the cell's `url`, so a reader can see the proof. " +
-  "With a token you can build a table: create_table makes a private draft, and fill_cells adds values with their proof. Use the owner's own pages, copy each quote word for word, never get around a block, and say where you looked when no source states a value. A person reviews and publishes a draft. " +
-  "A table whose `proof` is `optional` can also hold values without a quote, each saying where it came from: `link` (a page, given as `source`), `generated` (written or labeled by a model, with the prompt as `note`), `entered` (typed by a person) or `imported` (from a file). Use it for working data, such as a dataset to train or test a model, and say the origin truthfully. " +
-  "export_table gives any table you can read as CSV, and data_link gives a private address that loads it in a notebook or spreadsheet. " +
-  "To build a dataset fast, create_table and then add_rows with each row's values, up to 500 rows a call. An AI column has an instruction naming other columns in braces, like \"Classify {Pitch}\": " +
-  "call next_ai_cells for prompts, answer each one yourself, and send the answers with fill_ai_cells until nothing remains. save_version freezes a table so a result can name exactly what it used, and fork_table copies a table you can read into your own account.";
+  "Skeletable holds tables for people and agents, where every value records where it came from. Use it for any table: a tracker, a dataset, a list you're building. " +
+  "Most tables let a value say its origin: `link` (a page, given as `source`), `entered` (a person typed it), `imported` (from a file or another app, like a spreadsheet, notes or an email, said in `note`) or `generated` (written or labeled by a model). That's the default for a new table, so nothing needs a web page behind it. Say the origin truthfully. " +
+  "Some tables, like the public library, require proof: each value quotes its source word for word, and `proof` reads `required`. There, use the owner's own pages, copy each quote exactly, never get around a block, and say where you looked when no source states a value. " +
+  "To read: list_tables finds a table, get_table reads it with a summary of each column, get_cell shows one value's origin or source and quote, and check_claim tests a statement against a cell. A null value is blank: say it's unknown rather than filling it in. When you use a quoted value, cite its source and the cell's `url`. " +
+  "To build (with a token): create_table makes a private draft, add_rows adds up to 500 rows a call with their values, and fill_cells sets cells. Columns can be text, number, yes/no or date (YYYY-MM-DD), and a text column can have `choices`, like a status list. A person reviews and publishes a draft. " +
+  "An AI column has an instruction naming other columns in braces, like \"Classify {Pitch}\": call next_ai_cells for prompts, answer each one yourself, and send the answers with fill_ai_cells until nothing remains. " +
+  "export_table gives a table as CSV, data_link gives a private address that loads it in a notebook or spreadsheet, save_version freezes a table so a result can name exactly what it used, and fork_table copies a table into your account.";
 
 /** Reads a table's saved version. Only a server with a database has them. */
 export type LoadVersion = (table: PublishedTable, number: number) => Promise<VersionedTable | undefined>;
@@ -56,7 +55,7 @@ export function tablesMcpServer(tables: PublishedTable[], publicUrl: string, pro
     "get_table",
     {
       description:
-        "Read a table: its scope, its columns with the rule for each, a summary of what each column holds, and its rows. A null value means no acceptable source stated it. " +
+        "Read a table: its scope, its columns with the rule for each, a summary of what each column holds, and its rows. A null value is blank. " +
         "`origins` says where a row's unquoted values came from, `ai` says how far each AI column has got, and `versions` lists saved versions. For a big table, read the summaries first and page through rows with `offset` and `limit`.",
       inputSchema: {
         slug: z.string().max(120).describe("From list_tables"),
@@ -172,25 +171,25 @@ export function tablesMcpServer(tables: PublishedTable[], publicUrl: string, pro
     const writes = { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true };
     const columnsField = z.array(z.object({
       label: z.string().max(80),
-      type: z.enum(["text", "number", "boolean"]),
+      type: z.enum(["text", "number", "boolean", "date"]).describe("A date is written YYYY-MM-DD"),
       unit: z.string().max(30).optional(),
       rule: z.string().max(500).optional().describe("What counts as this value, so two readers would fill it in the same way"),
       instruction: z.string().max(1000).optional().describe("Makes it an AI column: what to work out for each row, naming other columns in braces, like \"Classify {Pitch} by genre\". Needs proof to be optional"),
-      choices: z.array(z.string().max(80)).max(50).optional().describe("For an AI text column, the only answers it takes"),
+      choices: z.array(z.string().max(80)).max(50).optional().describe("For a text column, the only values it takes, like a status list. An AI column answers with one of them"),
     })).min(1).max(20);
     const valueField = z.union([z.string().max(MAX_GIVEN_TEXT), z.number(), z.boolean()]);
 
     server.registerTool(
       "create_table",
       {
-        description: "Make a private draft table, ready to fill. Set `proof` to `optional` for working data whose values don't each need a quote. Only `title`, `columns` and `rows` are needed now, but give `question`, `scope`, and a `rule` for each column if you can: a person has to supply them before publishing. Returns the column ids fill_cells needs, and the sheet's link, so tell your person to open it and watch it fill. Needs a token.",
+        description: "Make a private draft table, ready to fill, for anything from a tracker to a dataset. Its values say where they came from unless you set `proof` to `required`. Only `title`, `columns` and `rows` are needed now, but give `question`, `scope`, and a `rule` for each column if you can: a person has to supply them before publishing. Returns the column ids fill_cells needs, and the sheet's link, so tell your person to open it and watch it fill. Needs a token.",
         inputSchema: {
           title: z.string().max(120),
           question: z.string().max(300).optional().describe("The question the table answers"),
           topic: z.string().max(40).optional().describe("A broad subject, like Law or Consumer tech"),
           scope: z.string().max(800).optional().describe("What belongs in the table and what doesn't"),
           owner: z.string().max(60).optional().describe("A team you're on. Leave out for your own account"),
-          proof: z.enum(["required", "optional"]).optional().describe("`required` (the default): every value needs a source and exact quote. `optional`: values can instead say where they came from, for working data like a training set"),
+          proof: z.enum(["optional", "required"]).optional().describe("`optional` (the default): each value says where it came from, like a person, a file, an email or a page. `required`: every value must quote a source word for word, for a table of public facts"),
           columns: columnsField,
           rows: z.array(z.string().max(120)).min(1).max(500).describe("Row names. To add rows with their values, create the table with one row and use add_rows"),
         },
@@ -216,8 +215,8 @@ export function tablesMcpServer(tables: PublishedTable[], publicUrl: string, pro
       "add_rows",
       {
         description:
-          "Add up to 500 rows to a table you run. Each row is a name, or an object with its `values` by column id or label, so a whole dataset goes in a few calls. A row without a `key` gets the next free number, and a name the table already has is skipped. " +
-          "Values need a table whose proof is optional, and say where they came from with `origin` (`generated` unless there's a `source`, then `link`) and an optional `note`. Rows with values can go into a published table whose proof is optional; rows by name only into a draft. Needs a token.",
+          "Add up to 500 rows to a table you run. Each row is a name, or an object with its `values` by column id or label, so a whole tracker or dataset goes in a few calls. A row without a `key` gets the next free number, and a name the table already has is skipped. " +
+          "Say where the values came from with `origin` (`entered`, `imported` with a `note` naming the file or email, `link` with a `source`, or `generated`, which is the default without a source). Rows with values can go into a published table too; rows by name only into a draft. A table that requires proof takes rows by name only. Needs a token.",
         inputSchema: {
           slug: z.string().max(120),
           rows: z.array(z.union([
@@ -240,9 +239,9 @@ export function tablesMcpServer(tables: PublishedTable[], publicUrl: string, pro
       "fill_cells",
       {
         description:
-          `Fill up to ${MAX_CELLS_PER_CALL} cells of a draft you run. A proved cell gives \`value\`, \`source\` and \`quote\`, where the quote is word for word from the source and states the value; each is checked and the page opened before it's saved, so send at most ${MAX_QUOTED_PER_CALL} of these at once. ` +
-          "If no acceptable source states it, give `checked` with the pages you read instead of a value, and add `none_stated` only if you read the whole source and it has no such value. " +
-          "In a table whose proof is optional, a cell can give `value` and `origin` with no quote: `link` with its `source`, `generated` with the prompt as `note`, `entered` or `imported`. Left out, the origin is `link` when there's a `source` and `generated` when there isn't. These can replace each other but never a quoted value, and they can go into a published table whose proof is optional. " +
+          `Set up to ${MAX_CELLS_PER_CALL} cells of a table you run. Usually a cell gives \`value\` and \`origin\` (\`entered\`, \`imported\` with a \`note\` like the file or email it came from, \`link\` with its \`source\`, or \`generated\`). Left out, the origin is \`link\` when there's a \`source\` and \`generated\` when there isn't. ` +
+          `These can go into a published table too, and never replace a quoted value. A date is written YYYY-MM-DD, and a column with choices takes only one of them. ` +
+          `In a table that requires proof, a cell instead gives \`value\`, \`source\` and \`quote\`, word for word from the source; each page is opened before it's saved, so send at most ${MAX_QUOTED_PER_CALL} of these at once, and only into a draft. If no acceptable source states it, give \`checked\` with the pages you read, and \`none_stated\` only if you read the whole source and it has no such value. ` +
           "The reply counts what saved and lists only the cells that didn't, with a reason, and `unchecked` names quoted values whose page couldn't be read. Needs a token.",
         inputSchema: {
           slug: z.string().max(120).describe("From create_table or list_tables"),

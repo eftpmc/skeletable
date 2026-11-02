@@ -42,7 +42,7 @@ function TableRow({ table, compact }: { table: TableSummary; compact: boolean })
             <h2 className={`${compact ? "text-base font-medium" : "text-lg font-semibold"} tracking-tight`}><Link href={`/${table.owner}/${table.slug}`} className="hover:text-brand focus-visible:text-brand focus-visible:underline focus-visible:outline-none">{table.title}</Link></h2>
             {compact && <span className="text-xs text-muted-foreground">{table.topic}</span>}
             {table.draft ? <Badge variant="outline">Draft</Badge> : table.private && <Badge variant="outline">Private</Badge>}
-            {table.proof === "optional" && <Badge variant="secondary" title="Values say where they came from instead of each quoting a source">Dataset</Badge>}
+            {table.proof !== "optional" && <Badge variant="secondary" title="Every value quotes the source that states it">Sourced</Badge>}
           </div>
           <Link href={`/${table.owner}/${table.slug}`} title={compact ? table.question : undefined} className={compact ? "mt-1 block line-clamp-2 text-sm text-muted-foreground sm:line-clamp-1" : "mt-1.5 block max-w-xl text-sm leading-relaxed text-muted-foreground"}>{table.question}</Link>
           <p className={`${compact ? "mt-2" : "mt-3"} flex flex-wrap gap-x-2 gap-y-1 text-xs text-muted-foreground`}>

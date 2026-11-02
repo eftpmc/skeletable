@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hasValue, isAnswered, isFound, isGiven, validateTable, type Table } from "../src/format.js";
+import { hasValue, isAnswered, isFound, isGiven, parseDay, validateTable, type Table } from "../src/format.js";
 import { cellStatus, draftChecklist, tableCsv } from "../src/share.js";
 
 const table = (proof?: "optional", cells: Table["rows"][number]["cells"] = {}): Table => ({
@@ -61,5 +61,19 @@ describe("tableCsv", () => {
       `ex-1,${generated.value},,,generated,12,https://policy.example,It has 12 words,quote`,
     ]);
     expect(tableCsv({ ...filled, proof: undefined, rows: [{ key: "ex-1", cells: { words: filled.rows[0]!.cells.words! } }] }, true).split("\r\n")[0]).toBe("Name,Text,Text: source,Text: quote,Words,Words: source,Words: quote");
+  });
+});
+
+describe("dates", () => {
+  it("reads the ways people write a day, and refuses ones that aren't real", () => {
+    expect(["2026-10-28", "2026-1-5", "10/28/2026", "Oct 28, 2026", "October 28th 2026", "28 Oct 2026", "  sept 3, 2026 "].map(parseDay)).toEqual(["2026-10-28", "2026-01-05", "2026-10-28", "2026-10-28", "2026-10-28", "2026-10-28", "2026-09-03"]);
+    expect(["2026-02-30", "13/01/2026", "next week", "Oct 2026", ""].map(parseDay)).toEqual([undefined, undefined, undefined, undefined, undefined]);
+  });
+
+  it("only fit a table whose proof is optional, written YYYY-MM-DD", () => {
+    const dated = (proof?: "optional", value = "2026-10-28"): Table => ({ ...table(proof), columns: [{ id: "when", label: "When", type: "date", rule: "The day it happened." }], rows: [{ key: "a", cells: { when: { value, origin: "entered", read: "2026-11-01" } } }] });
+    expect(validateTable(dated("optional")).problems).toEqual([]);
+    expect(validateTable(dated("optional", "Oct 28")).problems).toEqual(["a.when: should be a date like 2026-10-28"]);
+    expect(validateTable(dated()).problems).toContain("when: a date column needs a table whose proof is optional");
   });
 });

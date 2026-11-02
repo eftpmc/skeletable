@@ -1,6 +1,6 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { liveFetcher, verifyTable, type Fetcher } from "@skeleton/tables";
-import { validateTable, type Column, type FoundCell, type Table } from "@skeleton/tables/format";
+import { parseDay, validateTable, type Column, type FoundCell, type Table } from "@skeleton/tables/format";
 import type { Sql, TransactionSql } from "./db.js";
 
 export type ProposalInput = { owner: string; slug: string; row: string; column: string; value: string; source: string; quote: string; note?: string; bundleId?: string; title?: string };
@@ -11,11 +11,12 @@ const hash = (token: string) => createHash("sha256").update(token).digest("hex")
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-/** Read typed text as the kind of value the column holds. */
+/** Read typed text as the kind of value the column holds. A date comes back as YYYY-MM-DD. */
 export function asValue(column: Pick<Column, "type">, raw: string): FoundCell["value"] | undefined {
   const text = raw.trim();
   if (!text) return undefined;
   if (column.type === "text") return text;
+  if (column.type === "date") return parseDay(text);
   if (column.type === "number") {
     const number = Number(text.replace(/,/g, ""));
     return Number.isFinite(number) ? number : undefined;

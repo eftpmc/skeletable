@@ -1,5 +1,6 @@
 import type { Context, Hono } from "hono";
-import { MAX_GIVEN_TEXT, isGiven, proofOptional, type Cell } from "@skeleton/tables/format";
+import { matchChoice } from "@skeleton/tables/columns";
+import { MAX_GIVEN_TEXT, columnTypes, isGiven, proofOptional, type Cell, type Column } from "@skeleton/tables/format";
 import { draftChecklist, slugOfRow } from "@skeleton/tables/share";
 import { z } from "zod";
 import { MAX_COLUMNS, MAX_ROWS, addColumn, addRow, aiFields, choicesBody, columnBody, emptyCell, freeSlug, instructionBody, isOwner, runsTable, type SignedIn } from "./accounts.js";
@@ -15,7 +16,7 @@ const detailsBody = z.object({
 });
 
 // Leaving out `instruction` keeps the one a column has. An empty one makes it a plain column again.
-const columnChange = z.object({ label: z.string().trim().min(1).max(80), type: z.enum(["text", "number", "boolean"]).optional(), unit: z.string().trim().max(30).optional(), rule: z.string().trim().max(500), instruction: instructionBody.optional(), choices: choicesBody.optional() });
+const columnChange = z.object({ label: z.string().trim().min(1).max(80), type: z.enum(columnTypes).optional(), unit: z.string().trim().max(30).optional(), rule: z.string().trim().max(500), instruction: instructionBody.optional(), choices: choicesBody.optional() });
 const gridChange = z.object({
   addColumns: z.array(columnBody).max(MAX_COLUMNS).default([]),
   addRows: z.array(z.string().trim().min(1).max(120)).max(MAX_ROWS).default([]),
@@ -96,7 +97,11 @@ export function manageRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sign
         const [held] = await tx`select cell from cell_versions where row_id = ${rowId} and column_id = ${target.id} order by id desc limit 1`;
         const heldCell = held?.cell as Cell | undefined;
         if (heldCell && !("missing" in heldCell) && !isGiven(heldCell)) continue;
-        const parsed = value ? asValue({ type: target.type as "text" }, value) : undefined;
+        // A column with choices only takes one of them. Choices are read from the table, since a new column has none yet.
+        const choices = table.columns.find((column) => column.id === target.id)?.choices;
+        const chosen = value && choices ? matchChoice({ type: "text", choices } as Column, value) : value;
+        if (value && chosen === undefined) continue;
+        const parsed = chosen ? asValue({ type: target.type as "text" }, chosen) : undefined;
         if (open) {
           // A value that doesn't fit its column is skipped, not taken as clearing the cell.
           if (value && parsed === undefined) continue;
@@ -147,6 +152,7 @@ export function manageRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sign
     const given = found.table.rows.reduce((count, row) => count + Object.values(row.cells).filter(isGiven).length, 0);
     if (body.data.proof === "required" && given) return c.json({ error: `${given} ${given === 1 ? "value has" : "values have"} no quote. Prove or clear ${given === 1 ? "it" : "them"} first.` }, 409);
     if (body.data.proof === "required" && found.table.columns.some((column) => column.instruction)) return c.json({ error: "Turn the AI columns back into plain columns first." }, 409);
+    if (body.data.proof === "required" && found.table.columns.some((column) => column.type === "date")) return c.json({ error: "Date columns need proof to be optional. Change them to text first." }, 409);
     await sql`update data_tables set proof = ${body.data.proof} where id = ${found.id}`;
     return finish(c);
   });
@@ -166,6 +172,7 @@ export function manageRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sign
     if (!body.success || (!found.table.draft && !body.data.rule)) return c.json({ error: "Give the column a name and a rule." }, 400);
     if (found.table.columns.length >= MAX_COLUMNS) return c.json({ error: "This table has reached its column limit." }, 400);
     if (body.data.instruction?.trim() && !proofOptional(found.table)) return c.json({ error: "An AI column needs a table whose proof is optional." }, 400);
+    if (body.data.type === "date" && !proofOptional(found.table)) return c.json({ error: "A date column needs a table whose proof is optional." }, 400);
     await sql.begin((tx) => addColumn(tx, found.id, body.data));
     await refresh?.();
     return c.json({ ok: true }, 201);
@@ -183,6 +190,7 @@ export function manageRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sign
     const type = body.data.type && found.table.draft && !hasProof ? body.data.type : undefined;
     const held = found.table.columns.find((column) => column.id === columnId);
     if (!held) return c.json({ error: "No such column" }, 404);
+    if (type === "date" && !proofOptional(found.table)) return c.json({ error: "A date column needs a table whose proof is optional." }, 400);
     const kept = body.data.instruction === undefined;
     if (!kept && body.data.instruction && !proofOptional(found.table)) return c.json({ error: "An AI column needs a table whose proof is optional." }, 400);
     // Choices only go with an instruction on a text column, so a change of type can take them away.

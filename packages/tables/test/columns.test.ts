@@ -14,6 +14,10 @@ describe("columnSummary", () => {
     expect(columnSummary({ rows: rows(["b", "a", "a", "b", "a", undefined]) }, column("text"))).toEqual({ kind: "categories", filled: 5, blank: 1, origins: { generated: 5 }, values: [{ value: "a", count: 3 }, { value: "b", count: 2 }] });
   });
 
+  it("reads a column with choices as categories, however few rows it has", () => {
+    expect(columnSummary({ rows: rows(["Offer", "Applied"]) }, { ...column("text"), choices: ["Applied", "Offer"] })).toMatchObject({ kind: "categories", values: [{ value: "Applied", count: 1 }, { value: "Offer", count: 1 }] });
+  });
+
   it("reads varied text by its length, and counts repeats", () => {
     expect(columnSummary({ rows: rows(["one", "three", "one"]) }, column("text"))).toMatchObject({ kind: "text", shortest: 3, longest: 5, average: 4, duplicates: 1 });
   });

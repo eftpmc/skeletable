@@ -30,7 +30,7 @@ export type GridEdit = {
 const quietInput = "w-full min-w-0 bg-transparent outline-none placeholder:text-muted-foreground/70";
 
 /** Typing over a cell, as in a spreadsheet. Enter and Tab save and move on, Esc leaves it alone. */
-export function CellInput({ initial, numeric, onDone }: { initial: string; numeric: boolean; onDone: (text: string | null, move?: "down" | "right") => void }) {
+export function CellInput({ initial, numeric, choices, placeholder, onDone }: { initial: string; numeric: boolean; choices?: string[]; placeholder?: string; onDone: (text: string | null, move?: "down" | "right") => void }) {
   const [text, setText] = useState(initial);
   const finished = useRef(false);
   const finish = (result: string | null, move?: "down" | "right") => {
@@ -38,10 +38,15 @@ export function CellInput({ initial, numeric, onDone }: { initial: string; numer
     finished.current = true;
     onDone(result, move);
   };
+  const listId = choices ? "cell-choices" : undefined;
   return (
+    <>
+    {choices && <datalist id={listId}>{choices.map((choice) => <option key={choice} value={choice} />)}</datalist>}
     <input
       autoFocus
       aria-label="Cell value"
+      list={listId}
+      placeholder={placeholder}
       value={text}
       onChange={(event) => setText(event.target.value)}
       onClick={(event) => event.stopPropagation()}
@@ -56,6 +61,7 @@ export function CellInput({ initial, numeric, onDone }: { initial: string; numer
       }}
       className={`absolute inset-0 z-10 bg-background px-2 text-sm text-foreground ring-2 ring-brand outline-none ring-inset ${numeric ? "text-right" : ""}`}
     />
+    </>
   );
 }
 
@@ -154,7 +160,7 @@ export function ColumnDialog({ table, column, label = "", onClose, onChanged }: 
   };
   const save = (event: FormEvent) => {
     event.preventDefault();
-    const body = { ...form, instruction: ai ? form.instruction : "", choices: ai && form.type === "text" ? form.choices.split(",").map((choice) => choice.trim()).filter(Boolean) : [] };
+    const body = { ...form, instruction: ai ? form.instruction : "", choices: form.type === "text" ? form.choices.split(",").map((choice) => choice.trim()).filter(Boolean) : [] };
     void (column ? send("PATCH", `${base}/${column.id}`, body, "Column saved") : send("POST", base, body, "Column added"));
   };
   return (
@@ -171,12 +177,15 @@ export function ColumnDialog({ table, column, label = "", onClose, onChanged }: 
                   <option value="text">Text</option>
                   <option value="number">Number</option>
                   <option value="boolean">Yes or no</option>
+                  <option value="date">Date</option>
                 </NativeSelect>
               </Field>
             )}
             {form.type === "number" && <Field label="Unit"><Input maxLength={30} placeholder="g" value={form.unit} onChange={(event) => setForm({ ...form, unit: event.target.value })} /></Field>}
           </div>
           <Field label="What counts"><Input required={!table.draft} maxLength={500} placeholder="Weight as the maker states it" value={form.rule} onChange={(event) => setForm({ ...form, rule: event.target.value })} /></Field>
+          {form.type === "text" && <Field label="Allowed values (optional)"><Input maxLength={2000} placeholder="Applied, Interviewing, Offer, Rejected" value={form.choices} onChange={(event) => setForm({ ...form, choices: event.target.value })} /></Field>}
+          {form.type === "date" && !proofOptional(table) && <p className="text-xs text-destructive">A date column needs proof to be optional, in the table's settings.</p>}
           {proofOptional(table) ? (
             <div className="space-y-3 rounded-lg border p-3">
               <label className="flex items-center gap-2 text-sm font-medium">
@@ -188,8 +197,7 @@ export function ColumnDialog({ table, column, label = "", onClose, onChanged }: 
                   <Field label="Instruction">
                     <Textarea required rows={3} maxLength={1000} placeholder={others[0] ? `Classify {${others[0].label}} as…` : "What to work out for each row"} value={form.instruction} onChange={(event) => setForm({ ...form, instruction: event.target.value })} />
                   </Field>
-                  <p className="text-xs text-muted-foreground">Name other columns in braces{others.length ? <>, like {others.slice(0, 3).map((other) => <code key={other.id} className="mx-0.5">{`{${other.label}}`}</code>)}</> : null}. {"{Name}"} is the row's name. Values a person types are never overwritten.</p>
-                  {form.type === "text" && <Field label="Allowed answers (optional)"><Input maxLength={2000} placeholder="Horror, Puzzle, RPG" value={form.choices} onChange={(event) => setForm({ ...form, choices: event.target.value })} /></Field>}
+                  <p className="text-xs text-muted-foreground">Name other columns in braces{others.length ? <>, like {others.slice(0, 3).map((other) => <code key={other.id} className="mx-0.5">{`{${other.label}}`}</code>)}</> : null}. {"{Name}"} is the row's name. Answers keep to the allowed values above, and values a person types are never overwritten.</p>
                 </>
               )}
             </div>

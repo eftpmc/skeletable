@@ -78,7 +78,7 @@ export function searchTables(tables: Table[], query = ""): Table[] {
 const cellValue = (cell: Cell) => (hasValue(cell) ? cell.value : null);
 
 /**
- * A table's values, with null where no acceptable source stated one. Evidence is one get_cell away.
+ * A table's values, with null where a cell is blank. Evidence is one get_cell away.
  * In a table whose proof is optional, `origins` says where each value without a quote came from.
  */
 export function tableValues(table: PublishedTable & { version?: VersionInfo }, { offset = 0, limit = Infinity } = {}) {

@@ -14,7 +14,7 @@ export const MAX_CELLS_PER_CALL = 200;
 // A quoted value opens its page before it's saved, so fewer of those fit in one call.
 export const MAX_QUOTED_PER_CALL = 25;
 
-export type NewColumn = { label: string; type: "text" | "number" | "boolean"; unit?: string; rule?: string; instruction?: string; choices?: string[] };
+export type NewColumn = { label: string; type: "text" | "number" | "boolean" | "date"; unit?: string; rule?: string; instruction?: string; choices?: string[] };
 export type NewDraft = { owner?: string; title: string; question?: string; topic?: string; scope?: string; proof?: "required" | "optional"; columns: NewColumn[]; rows: string[] };
 export type NewRow = string | { key?: string; values?: Record<string, string | number | boolean>; origin?: Origin; source?: string; note?: string };
 export type AiAnswer = { row: string; value: string; basis: string };
@@ -66,7 +66,7 @@ export function agentActions(sql: Sql, tables: PublishedTable[], userId: string,
     const body = tableBody.safeParse({ ...input, owner, draft: true });
     if (!body.success) return { error: "A table needs a title, at least one column and at least one row." };
     if (new Set(body.data.rows).size !== body.data.rows.length) return { error: "Each row needs its own name." };
-    if (body.data.proof !== "optional" && body.data.columns.some((column) => column.instruction?.trim())) return { error: "An AI column needs a table whose proof is optional. Set `proof` to `optional`." };
+    if (body.data.proof !== "optional" && body.data.columns.some((column) => column.instruction?.trim() || column.type === "date")) return { error: "AI columns and date columns need a table whose proof is optional, which is the default. Leave `proof` out or set it to `optional`." };
     const created = await createTable(sql, tables, owner, body.data);
     if (!created) return { error: "That table isn't valid. Check its columns and rows." };
     await refresh?.();
@@ -111,13 +111,17 @@ export function agentActions(sql: Sql, tables: PublishedTable[], userId: string,
 
   /** A value that says where it came from instead of quoting a source, ready to save, or why it can't be. */
   const given = (table: PublishedTable, column: Column | undefined, raw: string | number | boolean | undefined, how: { origin?: Origin; source?: string; note?: string }): { cell: Cell } | { error: string } => {
-    if (!proofOptional(table)) return { error: "This table needs a source and exact quote for every value. Give `quote`, or ask its owner to make proof optional." };
+    if (!proofOptional(table)) return { error: "This table requires proof, so each value needs its `source` and exact `quote`. Its owner can make proof optional in the table's settings, or start a new table, where it's optional by default." };
     if (!column) return { error: "There's no such column." };
     const origin = how.origin ?? (how.source ? "link" : "generated");
     if (how.source !== undefined && !URL.canParse(how.source)) return { error: "`source` must be a full address." };
     if (origin === "link" && !how.source) return { error: "A value from a link needs its `source`." };
-    const value = asValue(column, raw === undefined ? "" : String(raw));
-    if (value === undefined) return { error: `Give a ${column.type === "text" ? "value" : column.type} for ${column.label}.` };
+    const text = raw === undefined ? "" : String(raw);
+    // A column with choices only takes one of them, matched ignoring case.
+    const chosen = column.choices ? matchChoice(column, text) : text;
+    if (chosen === undefined) return { error: `${column.label} takes one of: ${column.choices!.join(", ")}.` };
+    const value = asValue(column, chosen);
+    if (value === undefined) return { error: column.type === "date" ? `Give ${column.label} as a date, like 2026-10-28.` : `Give a ${column.type === "text" ? "value" : column.type} for ${column.label}.` };
     const note = how.note?.trim();
     return { cell: { value, origin, ...(how.source && { source: how.source }), ...(note && { note: note.slice(0, 500) }), read: today() } };
   };
@@ -132,7 +136,7 @@ export function agentActions(sql: Sql, tables: PublishedTable[], userId: string,
     if ("error" in found) return found;
     const { table } = found;
     if (!table.draft && !wantsValues) return { error: "Rows without values only go into a draft." };
-    if (wantsValues && !proofOptional(table)) return { error: "This table needs a source and exact quote for every value, so add rows by name here and fill them with fill_cells." };
+    if (wantsValues && !proofOptional(table)) return { error: "This table requires proof, so add rows by name here and fill them with fill_cells, each value with its source and exact quote. A new table doesn't require proof unless you ask for it." };
     const taken = new Map((await sql`select r.key, r.removed_at is not null as removed from table_rows r where r.table_id = ${await tableId(table)}`).map((row) => [row.key as string, row.removed as boolean]));
     let next = taken.size + 1;
     const nextKey = () => {
@@ -183,6 +187,7 @@ export function agentActions(sql: Sql, tables: PublishedTable[], userId: string,
     const { table } = found;
     if (table.columns.length + columns.length > MAX_COLUMNS) return { error: "That's more columns than a table can hold." };
     if (!proofOptional(table) && columns.some((column) => column.instruction?.trim())) return { error: "An AI column needs a table whose proof is optional." };
+    if (!proofOptional(table) && columns.some((column) => column.type === "date")) return { error: "A date column needs a table whose proof is optional." };
     const id = await tableId(table);
     const ids = [];
     for (const { rule = "", ...column } of columns) ids.push({ id: await sql.begin((tx) => addColumn(tx, id, { ...column, rule })), label: column.label });
@@ -357,7 +362,7 @@ export function agentActions(sql: Sql, tables: PublishedTable[], userId: string,
       const choice = column.type === "text" ? matchChoice(column, answer.value) : answer.value;
       const value = choice === undefined ? undefined : asValue(column, choice);
       if (value === undefined) {
-        problems.push({ row: answer.row, error: column.choices ? `Answer with one of: ${column.choices.join(", ")}.` : `Give a ${column.type === "text" ? "value" : column.type}.` });
+        problems.push({ row: answer.row, error: column.choices ? `Answer with one of: ${column.choices.join(", ")}.` : column.type === "date" ? "Answer with a date, like 2026-10-28." : `Give a ${column.type === "text" ? "value" : column.type}.` });
         continue;
       }
       batch.push({ row: row.key, column: column.id, cell: { value, origin: "generated", note: column.instruction.slice(0, 500), model: model.trim().slice(0, 80) || "unknown", basis: made.basis, read: today() } });

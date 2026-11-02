@@ -14,6 +14,7 @@ export type ColumnSummary = {
   | { kind: "text"; shortest: number; longest: number; average: number; duplicates: number }
   | { kind: "number"; min: number; max: number; median: number; histogram: number[] }
   | { kind: "boolean"; yes: number; no: number }
+  | { kind: "date"; earliest: string; latest: string; months: { month: string; count: number }[] }
   | { kind: "empty" }
 );
 
@@ -34,6 +35,12 @@ export function columnSummary(table: Pick<Table, "rows">, column: Column): Colum
   }
   const base = { filled: values.length, blank: cells.length - values.length, origins };
   if (!values.length) return { ...base, kind: "empty" };
+  if (column.type === "date") {
+    const days = (values as string[]).slice().sort();
+    const months = new Map<string, number>();
+    for (const day of days) months.set(day.slice(0, 7), (months.get(day.slice(0, 7)) ?? 0) + 1);
+    return { ...base, kind: "date", earliest: days[0]!, latest: days.at(-1)!, months: [...months].map(([month, count]) => ({ month, count })) };
+  }
   if (column.type === "boolean") return { ...base, kind: "boolean", yes: values.filter((value) => value === true).length, no: values.filter((value) => value === false).length };
   if (column.type === "number") {
     const numbers = (values as number[]).slice().sort((a, b) => a - b);
@@ -47,7 +54,8 @@ export function columnSummary(table: Pick<Table, "rows">, column: Column): Colum
   const texts = values as string[];
   const counts = new Map<string, number>();
   for (const text of texts) counts.set(text, (counts.get(text) ?? 0) + 1);
-  if (counts.size <= MAX_CATEGORIES && counts.size * 2 <= texts.length) {
+  // A column with choices is a set of categories however few rows it has.
+  if (column.choices || (counts.size <= MAX_CATEGORIES && counts.size * 2 <= texts.length)) {
     const sorted = [...counts].sort(([a, x], [b, y]) => y - x || a.localeCompare(b));
     return { ...base, kind: "categories", values: sorted.map(([value, count]) => ({ value, count })) };
   }

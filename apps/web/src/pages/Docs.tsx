@@ -49,7 +49,7 @@ export function Accuracy() {
           <Section title="Where the public tables stand" description="Live totals across every public table."><Totals /></Section>
           <Section title="How a value gets here">
             <Prose>
-              <p>Every value needs a source and the exact words that state it. A number has to appear in its quote, and each quote has to be on its page when we check. If no source we can use states a value, the cell stays blank and says where we looked.</p>
+              <p>This is how tables that require proof work, which includes every table in the public library. Other tables say where each value came from, like a person, a file or a model, and aren't checked this way. In a table that requires proof, every value needs a source and the exact words that state it. A number has to appear in its quote, and each quote has to be on its page when we check. If no source we can use states a value, the cell stays blank and says where we looked.</p>
               <p>For a second check, a separate reader answers the same question from the same source without seeing our value. Differences are settled against the source. Each day we also check that live quotes are still on their pages.</p>
             </Prose>
           </Section>

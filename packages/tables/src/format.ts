@@ -12,16 +12,19 @@ const text = (max: number) => z.string().trim().min(1).max(max);
 const url = z.string().url().max(2000);
 export const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
+export const columnTypes = ["text", "number", "boolean", "date"] as const;
+
 export const columnSchema = z.object({
   id: z.string().regex(/^[a-z][a-z0-9_]*$/),
   label: text(80),
-  type: z.enum(["text", "number", "boolean"]),
+  // A date is written YYYY-MM-DD, so it sorts as it reads.
+  type: z.enum(columnTypes),
   unit: text(30).optional(),
   // What counts as this value, so two readers would fill it in the same way. Only a draft can leave it empty.
   rule: z.string().trim().max(500),
   // An AI column: what a model is asked for each row, naming other columns in braces, like "Classify {Pitch}".
   instruction: z.string().trim().min(1).max(1000).optional(),
-  // The only answers an AI column takes, when it has a fixed set.
+  // The only values a text column takes, like a status list. An AI column answers with one of them.
   choices: z.array(z.string().trim().min(1).max(80)).min(1).max(50).optional(),
 });
 
@@ -68,7 +71,8 @@ export const missingCellSchema = z.object({
 
 /**
  * Where a value without a quote came from: a page it links to, a model that wrote or labeled it, a
- * person who typed it, or a file it was imported from. Only a table whose proof is optional holds these.
+ * person who typed it, or a file or another app it was imported from, like a spreadsheet or an email.
+ * Only a table whose proof is optional holds these.
  */
 export const origins = ["link", "generated", "entered", "imported"] as const;
 
@@ -80,7 +84,7 @@ export const givenCellSchema = z.object({
   origin: z.enum(origins),
   // The page it came from. A `link` value needs one.
   source: url.optional(),
-  // How it was made: the prompt that generated it, or the file it was imported from.
+  // How it was made: the prompt that generated it, or the file, email or app it was imported from.
   note: z.string().trim().min(1).max(500).optional(),
   // The model that wrote it, when one did.
   model: z.string().trim().min(1).max(80).optional(),
@@ -210,10 +214,39 @@ export function wordsBeyondQuote(value: string, quote: string): string[] {
   return words.filter((word) => !source.includes(word));
 }
 
+const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+
+/**
+ * A day as YYYY-MM-DD from the ways people write one: 2026-10-28, 10/28/2026, 28 Oct 2026 or
+ * October 28, 2026. Slashes read month first. Undefined when it isn't a real day.
+ */
+export function parseDay(text: string): string | undefined {
+  const value = text.trim().toLowerCase().replace(/,/g, " ").replace(/\s+/g, " ");
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const make = (y: number, m: number, d: number) => {
+    const iso = `${y}-${pad(m)}-${pad(d)}`;
+    return isDay(iso) ? iso : undefined;
+  };
+  let match = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(value);
+  if (match) return make(+match[1]!, +match[2]!, +match[3]!);
+  match = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(value);
+  if (match) return make(+match[3]!, +match[1]!, +match[2]!);
+  const month = (name: string) => MONTHS.indexOf(name.slice(0, 3)) + 1;
+  match = /^([a-z]+)\.? (\d{1,2})(?:st|nd|rd|th)? (\d{4})$/.exec(value);
+  if (match && month(match[1]!)) return make(+match[3]!, month(match[1]!), +match[2]!);
+  match = /^(\d{1,2})(?:st|nd|rd|th)? ([a-z]+)\.? (\d{4})$/.exec(value);
+  if (match && month(match[2]!)) return make(+match[3]!, month(match[2]!), +match[1]!);
+  return undefined;
+}
+
+/** Whether text is a real day written YYYY-MM-DD. */
+export const isDay = (text: string) => day.safeParse(text).success && !Number.isNaN(Date.parse(`${text}T00:00:00Z`)) && new Date(`${text}T00:00:00Z`).toISOString().startsWith(text);
+
 /** Why a value isn't the kind its column holds, if it isn't. */
 function typeProblem(column: Column, value: FoundCell["value"] | GivenCell["value"]): string | undefined {
-  const expected = column.type === "text" ? "string" : column.type;
+  const expected = column.type === "text" || column.type === "date" ? "string" : column.type;
   if (typeof value !== expected) return `should be ${column.type}`;
+  if (column.type === "date" && !isDay(value as string)) return "should be a date like 2026-10-28";
 }
 
 /** Why a stated value doesn't fit its column or its quote, if it doesn't. */
@@ -241,6 +274,8 @@ export function validateTable(input: unknown): { table?: Table; problems: string
   for (const column of table.columns) {
     if (column.instruction && !proofOptional(table)) problems.push(`${column.id}: has an instruction, and this table requires proof`);
     if (column.choices && column.type !== "text") problems.push(`${column.id}: only a text column can have choices`);
+    // A quote rarely writes a date the way the column stores it, so a date column holds values that say where they came from.
+    if (column.type === "date" && !proofOptional(table)) problems.push(`${column.id}: a date column needs a table whose proof is optional`);
   }
   const seen = new Set<string>();
   for (const row of table.rows) {

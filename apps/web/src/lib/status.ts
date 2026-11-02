@@ -23,7 +23,7 @@ export const statuses: Record<CellStatus, { label: string; detail: string; icon:
   linked: { label: statusLabels.linked, detail: "From a linked page", icon: Link, tint: "bg-indigo-500/15", solid: "bg-indigo-400" },
   generated: { label: statusLabels.generated, detail: "Written or labeled by a model", icon: Sparkles, tint: "bg-indigo-500/15", solid: "bg-indigo-400" },
   entered: { label: statusLabels.entered, detail: "Typed in by a person", icon: Keyboard, tint: "bg-indigo-500/15", solid: "bg-indigo-400" },
-  imported: { label: statusLabels.imported, detail: "Imported from a file", icon: FileInput, tint: "bg-indigo-500/15", solid: "bg-indigo-400" },
+  imported: { label: statusLabels.imported, detail: "Imported from a file or another app, like an email", icon: FileInput, tint: "bg-indigo-500/15", solid: "bg-indigo-400" },
   unproven: { label: statusLabels.unproven, detail: "Typed in, and not counted until it has a source", icon: PenLine, tint: "bg-muted", solid: "bg-muted-foreground/50", corner: "border-t-muted-foreground/60" },
   gap: { label: statusLabels.gap, detail: "No source we could use stated this", icon: CircleDashed, tint: "", solid: "bg-muted-foreground/30" },
   blank: { label: statusLabels.blank, detail: "Nobody has looked for this yet", icon: Square, tint: "", solid: "bg-muted-foreground/15" },

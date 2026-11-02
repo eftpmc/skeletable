@@ -20,8 +20,8 @@ const Document = ({ title, updated = true, children }: { title: string; updated?
 
 export const About = () => (
   <Document title="About" updated={false}>
-    <p>Skeletable is a public library of tables. Every value links to the exact words that state it, or says where we looked and found nothing.</p>
-    <p>Quotes are checked against their pages every day, each value shows how well it's been checked, and anyone can propose a correction with proof. Agents can read the same tables over MCP.</p>
+    <p>Skeletable is tables for people and agents, where every value records where it came from: a linked page, a person, a file or another app, or a model. Trackers, datasets and lists live here alongside a public library.</p>
+    <p>In tables that require proof, like the public library, every value links to the exact words that state it, or says where we looked and found nothing. Those quotes are checked against their pages every day, each value shows how well it's been checked, and anyone can propose a correction with proof. Agents read and build tables over MCP.</p>
     <h2>How far to trust it</h2>
     <p>Skeletable records what sources say. It can be wrong, and sources can be wrong too, so check the source before you rely on a value for anything important. This isn't legal, financial, medical or professional advice.</p>
   </Document>

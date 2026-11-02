@@ -1,5 +1,5 @@
-import { aiCellState, aiProgress, rowPrompt, tableSummaries, type ColumnSummary } from "@skeleton/tables/columns";
-import { hasValue, isAnswered, isFound, isGiven, proofOptional, type Cell, type Column } from "@skeleton/tables/format";
+import { aiCellState, aiProgress, matchChoice, rowPrompt, tableSummaries, type ColumnSummary } from "@skeleton/tables/columns";
+import { hasValue, isAnswered, isFound, isGiven, parseDay, proofOptional, type Cell, type Column } from "@skeleton/tables/format";
 import { ArrowDown, ArrowRight, ArrowUp, BarChart3, ChevronDown, History, Info, Lock, Pencil, ScanLine, Search, Sparkles, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent, type PointerEvent, type ReactNode, type RefObject } from "react";
 import { toast } from "sonner";
@@ -515,7 +515,7 @@ export function Grid({ table, selectedId, select, emptyRows = 0, focusOnLoad = t
                     style={{ ...(xray && { transitionDelay: `${rowIndex * 35}ms` }), ...(widths?.[column.id] && { maxWidth: widths[column.id] }) }}
                     className={`${edge} ${xray ? status.tint : ""} relative max-w-44 cursor-cell truncate px-2 py-1 transition-colors duration-200 hover:bg-muted/50 motion-reduce:transition-none focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset aria-selected:bg-brand/10 aria-selected:ring-2 aria-selected:ring-brand aria-selected:ring-inset sm:max-w-72 ${column.type === "number" ? "text-right" : ""} ${hasValue(cell) ? "" : "text-xs text-muted-foreground"}`}
                   >
-                    {typing?.id === id && <CellInput initial={typing.text} numeric={column.type === "number"} onDone={(text, move) => finishTyping(rowIndex, columnIndex, id, text, move)} />}
+                    {typing?.id === id && <CellInput initial={typing.text} numeric={column.type === "number"} choices={column.choices} placeholder={column.type === "date" ? "2026-10-28" : undefined} onDone={(text, move) => finishTyping(rowIndex, columnIndex, id, text, move)} />}
                     {xray && <StatusIcon className="mr-1.5 inline size-3 align-[-1px] text-foreground/70" aria-label={status.label} />}
                     {!xray && status.corner && <span aria-hidden="true" className={`absolute top-0 right-0 size-0 border-t-[7px] border-l-[7px] border-l-transparent ${status.corner}`} />}
                     {hasValue(cell) ? (
@@ -682,6 +682,12 @@ export function Sheet({ owner, slug, version }: { owner: string; slug: string; v
     const cell = data!.rows.find((candidate) => candidate.key === rowKey)!.cells[column.id]!;
     if (text.trim() === cellText(cell)) return false;
     if (canType && !isFound(cell)) {
+      // Said here, since the server quietly skips a value its column can't take.
+      const refused = !text.trim() ? undefined : column.choices && !matchChoice(column, text) ? `${column.label} takes one of: ${column.choices.join(", ")}` : column.type === "date" && !parseDay(text) ? `Write ${column.label} as a date, like 2026-10-28` : undefined;
+      if (refused) {
+        toast.error(refused);
+        return false;
+      }
       void saveGrid({ cells: [{ row: rowKey, column: column.id, value: text }] });
       return false;
     }

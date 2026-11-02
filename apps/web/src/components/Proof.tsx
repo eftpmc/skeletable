@@ -93,7 +93,7 @@ export const Conflicts = ({ cell }: { cell: FoundCell }) =>
 /** Where a value without a quote came from, used wherever a value is shown on its own. */
 export const OriginDetails = ({ cell, status, actions, prompt }: { cell: GivenCell; status: CellStatus; actions?: ReactNode; prompt?: { text: string; stale: boolean } }) => (
   <div className="space-y-1.5 text-sm">
-    <p className="text-muted-foreground">{statuses[status].detail}{prompt ? ", answering this row's prompt" : ""}. It has no quote, so check it before relying on it.</p>
+    <p className="text-muted-foreground">{statuses[status].detail}{prompt ? ", answering this row's prompt" : ""}.{cell.origin === "generated" ? " A model wrote it, so check it before relying on it." : ""}</p>
     {prompt ? (
       <>
         <p className="border-l-2 border-indigo-400 pl-3 break-words whitespace-pre-line text-xs text-muted-foreground">{prompt.text}</p>

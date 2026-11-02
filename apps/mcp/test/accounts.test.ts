@@ -115,7 +115,7 @@ describe.skipIf(!url)("accounts and creating tables", () => {
   it("keeps a draft to its people, and leaves unproven values out when it's published", async () => {
     const owner = await person("pat@example.com", "a");
     const stranger = await person("sam@example.com", "b");
-    const body = { title: "Sketch", draft: true, columns: [{ label: "Weight", type: "number", unit: "g" }], rows: ["Alpha", "Beta"] };
+    const body = { title: "Sketch", draft: true, proof: "required", columns: [{ label: "Weight", type: "number", unit: "g" }], rows: ["Alpha", "Beta"] };
     expect((await send("/api/tables", "POST", owner, body)).status).toBe(201);
     await send("/api/tables/pat/sketch/grid", "POST", owner, { cells: [{ row: "Alpha", column: "weight", value: "900" }, { row: "Beta", column: "weight", value: "850" }] });
     const held = () => tables.find((t) => t.owner === "pat" && t.slug === "sketch")!;
@@ -142,12 +142,13 @@ describe.skipIf(!url)("accounts and creating tables", () => {
     expect(await (await send("/api/tables/blank", "POST", owner)).json()).toMatchObject({ owner: "pat", slug: "untitled-table" });
     expect(await (await send("/api/tables/blank", "POST", owner)).json()).toEqual({ owner: "pat", slug: "untitled-table" });
     expect(tables.filter((t) => t.owner === "pat")).toHaveLength(1);
-    expect(tables.find((t) => t.owner === "pat")).toMatchObject({ draft: true, private: true, rows: [], columns: [] });
+    expect(tables.find((t) => t.owner === "pat")).toMatchObject({ draft: true, private: true, rows: [], columns: [], proof: "optional" });
   });
 
-  it("takes what's typed or pasted into a draft, and leaves proof alone", async () => {
+  it("takes what's typed or pasted into a draft that requires proof as values waiting for it, and leaves proof alone", async () => {
     const owner = await person("pat@example.com", "a");
     await send("/api/tables/blank", "POST", owner);
+    await send("/api/tables/pat/untitled-table/proof", "PUT", owner, { proof: "required" });
     const grid = "/api/tables/pat/untitled-table/grid";
     const held = () => tables.find((t) => t.owner === "pat")!;
     expect((await send(grid, "POST", owner, {

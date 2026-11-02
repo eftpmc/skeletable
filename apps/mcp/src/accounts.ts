@@ -1,4 +1,4 @@
-import { TABLE_FORMAT, validateTable, type Cell, type Table } from "@skeleton/tables/format";
+import { TABLE_FORMAT, columnTypes, validateTable, type Cell, type Table } from "@skeleton/tables/format";
 import type { Context, Hono } from "hono";
 import { z } from "zod";
 import { everyone, readable } from "./access.js";
@@ -59,17 +59,17 @@ export const choicesBody = z.array(z.string().trim().min(1).max(80)).max(50);
 
 export const columnBody = z.object({
   label: z.string().trim().min(1).max(80),
-  type: z.enum(["text", "number", "boolean"]),
+  type: z.enum(columnTypes),
   unit: z.string().trim().max(30).optional(),
   rule: z.string().trim().max(500).default(""),
   instruction: instructionBody.optional(),
   choices: choicesBody.optional(),
 });
 
-/** A column's instruction and choices as stored: an empty one is none. Choices only go with an instruction on a text column. */
+/** A column's instruction and choices as stored: an empty one is none. Only a text column has choices. */
 export function aiFields(column: { type: string; instruction?: string; choices?: string[] }) {
   const instruction = column.instruction?.trim() || undefined;
-  const choices = instruction && column.type === "text" && column.choices?.length ? [...new Set(column.choices.map((choice) => choice.trim()).filter(Boolean))] : undefined;
+  const choices = column.type === "text" && column.choices?.length ? [...new Set(column.choices.map((choice) => choice.trim()).filter(Boolean))] : undefined;
   return { instruction, choices: choices?.length ? choices : undefined };
 }
 
@@ -77,7 +77,8 @@ export const tableBody = z.object({
   owner: z.string().trim().optional(),
   private: z.boolean().default(false),
   draft: z.boolean().default(false),
-  proof: z.enum(["required", "optional"]).default("required"),
+  // A new table holds values that say where they came from. Requiring a quoted source for each is the stricter choice.
+  proof: z.enum(["required", "optional"]).default("optional"),
   title: z.string().trim().min(1).max(120),
   question: z.string().trim().max(300).default(""),
   topic: z.string().trim().max(40).default(""),
@@ -288,7 +289,7 @@ export function accountRoutes(app: Hono, sql: Sql, tables: PublishedTable[], sig
     const owner = account.handle as string;
     const untouched = tables.find((t) => t.owner === owner && t.draft && t.title === UNTITLED && !t.rows.length && !t.columns.length);
     if (untouched) return c.json({ owner, slug: untouched.slug });
-    const created = await createTable(sql, tables, owner, { title: UNTITLED, draft: true, private: true, question: "", topic: "", scope: "", columns: [], rows: [] });
+    const created = await createTable(sql, tables, owner, { title: UNTITLED, draft: true, private: true, proof: "optional", question: "", topic: "", scope: "", columns: [], rows: [] });
     await refresh?.();
     return c.json(created, 201);
   });

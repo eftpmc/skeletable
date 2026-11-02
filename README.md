@@ -1,6 +1,6 @@
 # Skeletable
 
-Tables you can trust, and tables you can work in. Every value says where it came from. In a table that requires proof, which is the default and every table in the library, each value links to the source and exact words that state it, or says where we looked. A table whose proof is optional can also hold values from a linked page, a model, a person or a file, each marked with its origin, for working data like a dataset to train a model. People read tables on the site, and agents read and build them through an MCP server.
+Tables for people and agents, where every value records where it came from: a linked page, a person, a file or another app, or a model. Use one for a tracker, a dataset or a list. A new table works this way by default. A table can also require proof, as every table in the public library does: then each value links to the source and exact words that state it, or says where we looked. People read tables on the site, and agents read and build them through an MCP server.
 
 ## Connect
 

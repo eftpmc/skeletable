@@ -212,6 +212,8 @@ export function ColumnSummaryView({ summary, column, compact = false }: { summar
       }
       case "boolean":
         return <p className="tabular-nums">{summary.yes} yes · {summary.no} no</p>;
+      case "date":
+        return <p className="tabular-nums">{summary.earliest === summary.latest ? day(summary.earliest) : `${day(summary.earliest)} – ${day(summary.latest)}`}{summary.months.length > 1 ? ` · busiest ${new Date(`${[...summary.months].sort((a, b) => b.count - a.count)[0]!.month}-01T00:00:00Z`).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" })}` : ""}</p>;
       default:
         return <p>No values yet</p>;
     }

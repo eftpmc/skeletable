@@ -15,6 +15,7 @@ const files = await loadTables(fileURLToPath(new URL("../../../tables", import.m
 
 const newTable = {
   title: "My keyboards",
+  proof: "required",
   question: "Which keyboards?",
   topic: "Tech",
   scope: "Keyboards.",
