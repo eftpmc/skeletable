@@ -60,13 +60,14 @@ export function AppBar({ crumbs = [], phoneTitle, actions, workspace = false }: 
       )}
       <Link href="/" aria-label="Skeletable home" className={`shrink-0 items-center gap-2.5 font-semibold tracking-tight ${back ? "hidden md:flex" : "flex"}`}>
         <Logo className="size-8" />
-        {!current && "Skeletable"}
+        <span className={current ? "hidden lg:inline" : ""}>Skeletable</span>
       </Link>
       {current && <p className="min-w-0 truncate font-medium md:hidden">{phoneTitle ?? current.label}</p>}
       {current && (
         <nav aria-label="Where you are" className="hidden min-w-0 items-center gap-1.5 text-sm md:flex">
           {crumbs.map(({ label, href, editor }, index) => (
             <span key={`${index}-${label}`} className="flex min-w-0 items-center gap-1.5">
+              {index === 0 && <span aria-hidden="true" className="hidden text-muted-foreground lg:inline">/</span>}
               {index > 0 && <span aria-hidden="true" className="text-muted-foreground">/</span>}
               {editor ?? (href && index < crumbs.length - 1 ? (
                 <Link href={href} className="max-w-32 truncate text-muted-foreground transition-colors hover:text-foreground">{label}</Link>
@@ -102,7 +103,7 @@ export function AppBar({ crumbs = [], phoneTitle, actions, workspace = false }: 
 function Footer() {
   const links = [["/about", "About"], ["/blog", "Blog"], ["/methodology", "Methodology"], ["/accuracy", "Accuracy"], ["/developers", "Developers"], ["/help", "Help"], ["/terms", "Terms"], ["/privacy", "Privacy"]];
   return (
-    <footer className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-1 px-4 py-6 text-sm text-muted-foreground sm:px-6">
+    <footer className="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-4 gap-y-1 px-4 py-6 text-sm text-muted-foreground sm:px-6">
       <Link href="/" className="font-medium hover:text-foreground">Skeletable home</Link>
       {links.map(([href, label]) => <Link key={href} href={href!} className="hover:text-foreground">{label}</Link>)}
       <span className="sm:ml-auto">Tables under CC BY 4.0</span>
@@ -113,9 +114,9 @@ function Footer() {
 export function Page({ crumbs, children }: { crumbs?: Crumb[]; children: ReactNode }) {
   const [location] = useLocation();
   return (
-    <div className="min-h-svh">
+    <div className="flex min-h-svh flex-col">
       <AppBar crumbs={crumbs} />
-      <div key={location} className="duration-200 animate-in fade-in slide-in-from-bottom-1 motion-reduce:animate-none">{children}</div>
+      <div key={location} className="flex-1 duration-200 animate-in fade-in slide-in-from-bottom-1 motion-reduce:animate-none">{children}</div>
       <Footer />
     </div>
   );

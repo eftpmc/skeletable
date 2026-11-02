@@ -68,7 +68,7 @@ export function Account({ owner }: { owner: string }) {
                 action={<Button size="sm" asChild><Link href="/new">New table</Link></Button>}
               />
             ) : (
-              <TableList tables={tables} />
+              <TableList tables={tables} showOwner={false} />
             )}
           </>
         )}

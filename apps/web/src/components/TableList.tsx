@@ -17,7 +17,7 @@ function CheckBar({ table, className }: { table: TableSummary; className: string
   const filled = confirmed + summary + once;
   return (
     <div className={`shrink-0 sm:w-36 ${className}`} title={`Double-checked means a filled value was confirmed by a second read or matched a summary. Missing values are excluded from the percentage. ${confirmed} confirmed by a blind read, ${summary} matched a summary, ${once} read once,${given ? ` ${given} without a quote,` : ""} ${gap} not stated`}>
-      <p className="mb-2 text-xs text-muted-foreground tabular-nums">{filled ? `${Math.round(((confirmed + summary) / filled) * 100)}% double-checked` : given ? `${given} values, no quotes` : "No values yet"}</p>
+      <p className="mb-2 text-xs text-muted-foreground tabular-nums">{confirmed + summary ? `${Math.round(((confirmed + summary) / filled) * 100)}% double-checked` : once ? "Not double-checked yet" : given ? `${given} values, no quotes` : "No values yet"}</p>
       <div className="flex h-1 gap-px overflow-hidden rounded-full bg-muted" aria-hidden="true">
         {parts.filter(([, count]) => count).map(([status, count]) => <div key={status} className={statuses[status].solid} style={{ width: `${(count / total) * 100}%` }} />)}
       </div>
@@ -25,7 +25,7 @@ function CheckBar({ table, className }: { table: TableSummary; className: string
   );
 }
 
-function TableRow({ table, compact }: { table: TableSummary; compact: boolean }) {
+function TableRow({ table, compact, showOwner }: { table: TableSummary; compact: boolean; showOwner: boolean }) {
   const checked = day(table.lastChecked);
   const date = compact && table.lastChecked.startsWith(String(new Date().getFullYear())) ? checked.replace(/,? \d{4}$/, "") : checked;
   const metadata = [
@@ -46,11 +46,11 @@ function TableRow({ table, compact }: { table: TableSummary; compact: boolean })
           </div>
           <Link href={`/${table.owner}/${table.slug}`} title={compact ? table.question : undefined} className={compact ? "mt-1 block line-clamp-2 text-sm text-muted-foreground sm:line-clamp-1" : "mt-1.5 block max-w-xl text-sm leading-relaxed text-muted-foreground"}>{table.question}</Link>
           <p className={`${compact ? "mt-2" : "mt-3"} flex flex-wrap gap-x-2 gap-y-1 text-xs text-muted-foreground`}>
-            <Link href={`/${table.owner}`} className="inline-flex items-center gap-1.5 hover:text-foreground focus-visible:text-foreground focus-visible:outline-none">
+            {showOwner && <Link href={`/${table.owner}`} className="inline-flex items-center gap-1.5 hover:text-foreground focus-visible:text-foreground focus-visible:outline-none">
               <AccountMark handle={table.owner} name={ownerLabel(table)} kind={table.ownerName ? "team" : "person"} className="size-4 text-[9px]" />
               <span>by {ownerLabel(table)}</span>
-            </Link>
-            {metadata.map((item, index) => <span key={index} className="inline-flex items-center gap-2"><span aria-hidden="true">&middot;</span>{item}</span>)}
+            </Link>}
+            {metadata.map((item, index) => <span key={index} className="inline-flex items-center gap-2">{(showOwner || index > 0) && <span aria-hidden="true">&middot;</span>}{item}</span>)}
           </p>
           <CheckBar table={table} className={`${compact ? "mt-2" : "mt-4"} max-w-36 sm:hidden`} />
         </div>
@@ -65,8 +65,8 @@ function TableRow({ table, compact }: { table: TableSummary; compact: boolean })
 
 const PAGE = 25;
 
-/** Tables as an easy list to scan, a page at a time. `tables` is empty while they load. */
-export function TableList({ tables, compact = true }: { tables?: TableSummary[]; compact?: boolean }) {
+/** Tables as an easy list to scan, a page at a time. `tables` is empty while they load. Leave out the owner where the page already says who it is. */
+export function TableList({ tables, compact = true, showOwner = true }: { tables?: TableSummary[]; compact?: boolean; showOwner?: boolean }) {
   const [shown, setShown] = useState(PAGE);
   if (!tables) {
     return <ListSkeleton label="Loading tables" compact={compact} />;
@@ -74,7 +74,7 @@ export function TableList({ tables, compact = true }: { tables?: TableSummary[];
   return (
     <>
       <ul className="overflow-hidden rounded-xl border">
-        {tables.slice(0, shown).map((table) => <TableRow key={`${table.owner}/${table.slug}`} table={table} compact={compact} />)}
+        {tables.slice(0, shown).map((table) => <TableRow key={`${table.owner}/${table.slug}`} table={table} compact={compact} showOwner={showOwner} />)}
       </ul>
       {tables.length > shown && (
         <div className="mt-3 text-center"><Button variant="outline" size="sm" onClick={() => setShown(shown + PAGE)}>Show more</Button></div>
