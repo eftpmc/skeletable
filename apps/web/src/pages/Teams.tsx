@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { postJson, sendJson, useJson, useMe, type Team } from "@/lib/api";
 import { Message } from "@/pages/Message";
+import { siteHost } from "@/lib/site";
 
 type Role = Team["role"];
 type Invite = { id: string; handle: string; name: string; role: Role };
@@ -216,7 +217,7 @@ export function TeamSettings({ handle }: { handle: string }) {
         <>
           <div>
             <h2 className="text-xl font-semibold tracking-tight">{team.name}</h2>
-            <Link href={`/${team.handle}`} className="text-sm text-muted-foreground hover:text-foreground hover:underline">skeletable.com/{team.handle}</Link>
+            <Link href={`/${team.handle}`} className="text-sm text-muted-foreground hover:text-foreground hover:underline">{siteHost}/{team.handle}</Link>
           </div>
           <FormError error={error} />
           {team.role === "owner" && <Section title="Team details"><TeamProfile key={team.name + team.bio} team={team} onChanged={changed} onError={setError} /></Section>}

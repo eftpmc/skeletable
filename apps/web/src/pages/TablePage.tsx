@@ -40,6 +40,7 @@ function Health({ table }: { table: PublishedTable }) {
   const total = [...counts.values()].reduce((sum, count) => sum + count, 0);
   const best = ["confirmed", "summary", "none", "once", "gone", "fracture", "linked", "imported", "entered", "generated", "unproven", "gap", "blank"] satisfies CellStatus[];
   const shown = best.filter((status) => counts.has(status));
+  if (!total) return <p className="text-sm text-muted-foreground">No values yet.</p>;
   return (
     <>
       <div className="flex h-2 gap-0.5 overflow-hidden rounded-full" role="img" aria-label="How the table's values were checked">
@@ -133,7 +134,7 @@ function Overview({ table, canDecide, onChanged }: { table: PublishedTable; canD
         {selectedId && <FormulaBar table={table} onChanged={onChanged} selected={selectedCell(table, selectedId)} />}
         <Grid table={{ ...table, rows: table.rows.slice(0, PREVIEW_ROWS) }} selectedId={selectedId} select={setSelectedId} emptyRows={0} focusOnLoad={false} rowHref={(key) => rowPath(table, key)} />
         <Link href={selectedId ? `${sheet}?cell=${selectedId}` : sheet} className="flex items-center justify-between gap-3 bg-muted px-3 py-2 text-sm transition-colors hover:bg-accent">
-          <span className="min-w-0 truncate text-muted-foreground">{table.rows.length > PREVIEW_ROWS ? `Showing ${PREVIEW_ROWS} of ${table.rows.length} rows. Select any value to see its proof` : "Select any value to see its proof"}</span>
+          <span className="min-w-0 truncate text-muted-foreground">{table.rows.length === 0 ? "No rows yet" : table.rows.length > PREVIEW_ROWS ? `Showing ${PREVIEW_ROWS} of ${table.rows.length} rows. Select any value to see its proof` : "Select any value to see its proof"}</span>
           <span className="flex shrink-0 items-center gap-1 font-medium">Open full sheet<ArrowRight className="size-3.5" /></span>
         </Link>
       </section>
@@ -197,11 +198,11 @@ function TableDetails({ table, view, onChanged }: { table: PublishedTable; view?
           <p className="mt-1.5 max-w-2xl text-muted-foreground">{table.question}</p>
           <ForkedFrom table={table} />
         </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {!table.draft && <ShareButton table={table} path={`/${table.owner}/${table.slug}`} onChanged={onChanged} />}
           {((!table.draft && !table.private) || canManage) && <ForkButton table={table} />}
           <DownloadButton table={table} canRun={canManage} />
-          {canManage && <AgentBuildButton table={table} />}
+          {canManage && <AgentBuildButton table={table} size="lg" />}
           {canManage && (
             <Button variant="outline" size="icon-lg" aria-label="Table settings" asChild>
               <Link href={`/${table.owner}/${table.slug}/settings`}><Settings2 /></Link>

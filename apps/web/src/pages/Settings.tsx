@@ -7,8 +7,10 @@ import { SettingsLayout } from "@/components/SettingsLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { postJson, sendJson, useJson, useMe } from "@/lib/api";
+import { ownsAccount } from "@/lib/account";
 import { day } from "@/lib/cells";
 import { copyText } from "@/lib/copy";
+import { siteHost } from "@/lib/site";
 
 type Token = { id: string; name: string; created_at: string; last_used_at: string | null };
 
@@ -27,7 +29,7 @@ function ProfileForm({ handle, name, bio }: { handle: string; name: string; bio:
   return (
     <form onSubmit={save} className="space-y-4">
       <Field label="Name"><Input required maxLength={80} value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></Field>
-      <Field label="Public name" hint={<>Your tables live at <Link href={`/${handle}`} className="underline">skeletable.com/{handle}</Link>. Changing this changes their addresses.</>}>
+      <Field label="Public name" hint={<>Your tables live at <Link href={`/${handle}`} className="underline">{siteHost}/{handle}</Link>. Changing this changes their addresses.</>}>
         <Input required maxLength={39} value={form.handle} onChange={(event) => setForm({ ...form, handle: event.target.value.toLowerCase() })} />
       </Field>
       <Field label="Description" hint="Shown on your public page."><Input maxLength={160} value={form.bio} onChange={(event) => setForm({ ...form, bio: event.target.value })} /></Field>
@@ -147,10 +149,13 @@ const visitGroups = [
 
 /** How the site is being found over the last 30 days, for the official account's owners. */
 export function VisitSettings() {
+  const { user } = useMe();
   const { data, status, retry } = useJson<{ name: string; count: number }[]>("/api/stats");
   return (
     <SettingsLayout title="Visits" crumbs={[{ label: "Visits" }]}>
-      {status === "failed" ? (
+      {!ownsAccount(user, "skeletable") ? (
+        <p className="text-sm text-muted-foreground">Visits are only shown to the people who run Skeletable.</p>
+      ) : status === "failed" ? (
         <LoadFailed what="Visits" retry={retry} />
       ) : status === "missing" || !data ? (
         <LoadingList rows={3} label="Loading visits" />

@@ -21,7 +21,7 @@ export type GridEdit = {
   // Says whether the selection should stay put, because the value still needs its proof.
   typeIn: (rowKey: string, column: Column, text: string) => boolean;
   paste?: (rowIndex: number, columnIndex: number, text: string) => void;
-  addRow?: (name: string) => Promise<boolean>;
+  addRow?: (name: string, fillIn?: boolean) => Promise<boolean>;
   addColumn?: (heading: string) => void;
   columnMenu?: (column: Column) => void;
   rowMenu?: (rowKey: string) => void;
@@ -73,13 +73,13 @@ const moveBetweenNewRows = (event: KeyboardEvent<HTMLInputElement>, index: numbe
 };
 
 /** An empty row's name. Typing one here is how a row gets added. */
-export function NewRowInput({ index, onAdd, onPaste }: { index: number; onAdd: (name: string) => Promise<boolean>; onPaste?: (text: string) => void }) {
+export function NewRowInput({ index, onAdd, onPaste }: { index: number; onAdd: (name: string, fillIn?: boolean) => Promise<boolean>; onPaste?: (text: string) => void }) {
   const [text, setText] = useState("");
-  const add = async () => {
+  const add = async (fillIn?: boolean) => {
     const name = text.trim();
     if (!name) return;
     setText("");
-    if (!(await onAdd(name))) setText(name);
+    if (!(await onAdd(name, fillIn))) setText(name);
   };
   const paste = (event: ClipboardEvent) => {
     const pasted = event.clipboardData.getData("text");
@@ -99,6 +99,10 @@ export function NewRowInput({ index, onAdd, onPaste }: { index: number; onAdd: (
       onPaste={paste}
       onKeyDown={(event) => {
         if (event.key === "Enter") void add();
+        if (event.key === "Tab" && !event.shiftKey && text.trim()) {
+          event.preventDefault();
+          void add(true);
+        }
         moveBetweenNewRows(event, index);
       }}
     />

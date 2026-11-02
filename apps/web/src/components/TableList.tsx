@@ -17,7 +17,7 @@ function CheckBar({ table, className }: { table: TableSummary; className: string
   const filled = confirmed + summary + once;
   return (
     <div className={`shrink-0 sm:w-36 ${className}`} title={`Double-checked means a filled value was confirmed by a second read or matched a summary. Missing values are excluded from the percentage. ${confirmed} confirmed by a blind read, ${summary} matched a summary, ${once} read once,${given ? ` ${given} without a quote,` : ""} ${gap} not stated`}>
-      <p className="mb-2 text-xs text-muted-foreground tabular-nums">{confirmed + summary ? `${Math.round(((confirmed + summary) / filled) * 100)}% double-checked` : once ? "Not double-checked yet" : given ? `${given} values, no quotes` : "No values yet"}</p>
+      <p className="mb-2 text-xs text-muted-foreground tabular-nums">{confirmed + summary ? `${Math.round(((confirmed + summary) / filled) * 100)}% double-checked` : once ? "Not double-checked yet" : given ? `${given} ${given === 1 ? "value" : "values"}, no quotes` : "No values yet"}</p>
       <div className="flex h-1 gap-px overflow-hidden rounded-full bg-muted" aria-hidden="true">
         {parts.filter(([, count]) => count).map(([status, count]) => <div key={status} className={statuses[status].solid} style={{ width: `${(count / total) * 100}%` }} />)}
       </div>
@@ -26,12 +26,13 @@ function CheckBar({ table, className }: { table: TableSummary; className: string
 }
 
 function TableRow({ table, compact, showOwner }: { table: TableSummary; compact: boolean; showOwner: boolean }) {
-  const checked = day(table.lastChecked);
-  const date = compact && table.lastChecked.startsWith(String(new Date().getFullYear())) ? checked.replace(/,? \d{4}$/, "") : checked;
+  // A new table hasn't been checked, so it has no date to show.
+  const checked = table.lastChecked && day(table.lastChecked);
+  const date = checked && compact && table.lastChecked.startsWith(String(new Date().getFullYear())) ? checked.replace(/,? \d{4}$/, "") : checked;
   const metadata = [
-    `${table.rows} rows`,
+    `${table.rows} ${table.rows === 1 ? "row" : "rows"}`,
     compact ? table.filled.replace(/(\d+) of (\d+)/, "$1/$2") : table.filled,
-    `Checked ${date}`,
+    ...(date ? [`Checked ${date}`] : []),
   ];
   return (
     <li className="border-b last:border-b-0">

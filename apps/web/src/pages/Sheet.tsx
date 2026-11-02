@@ -391,10 +391,14 @@ export function Grid({ table, selectedId, select, emptyRows = 0, focusOnLoad = t
   const focused = useRef(focusOnLoad ? null : selectedId);
   const [typing, setTyping] = useState<{ id: string; text: string } | null>(null);
 
+  // A cell can be selected before its row has loaded, like a row just added, so this waits for it to appear.
   useEffect(() => {
-    if (selectedId && selectedId !== focused.current) grid.current?.querySelector<HTMLElement>(`[data-cell="${selectedId}"]`)?.focus();
+    if (!selectedId || selectedId === focused.current) return void (focused.current = selectedId);
+    const cell = grid.current?.querySelector<HTMLElement>(`[data-cell="${selectedId}"]`);
+    if (!cell) return;
+    cell.focus();
     focused.current = selectedId;
-  }, [selectedId]);
+  }, [selectedId, table.rows]);
 
   const onKeyDown = (event: KeyboardEvent, rowIndex: number, columnIndex: number) => {
     if (event.key === "Escape") return select(null);
@@ -711,8 +715,14 @@ export function Sheet({ owner, slug, version }: { owner: string; slug: string; v
     typeIn,
     ...(canType && { paste }),
     ...(canRun && {
-      addRow: async (name: string) => {
+      addRow: async (name: string, fillIn?: boolean) => {
         const ok = await addTableRow(data, name);
+        // Tab from a new row's name goes on to its first value, as in a spreadsheet.
+        if (ok && fillIn && data.columns[0]) {
+          setEditing(false);
+          setTyped(undefined);
+          show({}, cellId(name, data.columns[0].id));
+        }
         retry();
         return ok;
       },
@@ -733,7 +743,7 @@ export function Sheet({ owner, slug, version }: { owner: string; slug: string; v
       <AppBar
         workspace
         crumbs={[{ label: data ? ownerLabel(data) : accountName(owner), href: `/${owner}` }, { label: data?.title ?? "Table", href: `/${owner}/${slug}` }, { label: version ? `Version ${version}` : "Sheet" }]}
-        phoneTitle="Sheet"
+        phoneTitle={data?.title ?? "Sheet"}
         actions={
           <>
             {pendingSaves > 0 && <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><Spinner label="Saving changes" />Saving</span>}
