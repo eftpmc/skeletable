@@ -205,7 +205,13 @@ export function ColumnSummaryView({ summary, column, compact = false }: { summar
         const peak = Math.max(...summary.histogram);
         return (
           <div className="space-y-1">
-            <div className="flex h-5 items-end gap-px" aria-hidden="true">{summary.histogram.map((count, index) => <span key={index} className={`flex-1 rounded-t-sm ${statuses.generated.solid}`} style={{ height: `${peak ? Math.max((count / peak) * 100, count ? 8 : 0) : 0}%` }} />)}</div>
+            <div className="flex h-6 items-end gap-0.5 border-b border-border" aria-hidden="true">
+              {summary.histogram.map((count, index) => (
+                <span key={index} className="flex h-full flex-1 items-end rounded-t-sm bg-muted">
+                  <span className={`w-full rounded-t-sm ${statuses.generated.solid}`} style={{ height: `${peak ? Math.max((count / peak) * 100, count ? 12 : 0) : 0}%` }} />
+                </span>
+              ))}
+            </div>
             <p className="tabular-nums">{display(summary.min)}–{display(summary.max)}{column.unit ? ` ${column.unit}` : ""}, middle {display(summary.median)}</p>
           </div>
         );

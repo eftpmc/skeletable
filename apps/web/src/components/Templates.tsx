@@ -35,8 +35,10 @@ const card = "group flex h-full w-full flex-col items-start gap-2 rounded-xl bor
 /** The templates as cards, and a blank table first when asked. */
 export function TemplateCards({ blank, onBlank }: { blank?: boolean; onBlank?: () => void }) {
   const { start, starting } = useStartTemplate();
+  // Three across, unless that would leave one card alone on the last line.
+  const count = templates.length + (blank ? 1 : 0);
   return (
-    <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <ul className={`grid gap-3 sm:grid-cols-2 ${count % 3 === 1 ? "" : "lg:grid-cols-3"}`}>
       {blank && (
         <li>
           <button type="button" className={card} onClick={onBlank}>

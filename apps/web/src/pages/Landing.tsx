@@ -14,7 +14,7 @@ import { FormulaBar, Grid, selectedCell } from "@/pages/Sheet";
 const demoTable = "skeletable/data-breach-laws";
 const demoRows = ["California", "Colorado", "Florida", "New Jersey", "New York", "Texas", "Washington"];
 const demoColumns = ["statute", "notify_days", "notify_standard", "ag_notice"];
-const demoKey = ["confirmed", "once", "none", "gap"] satisfies CellStatus[];
+const demoKey = ["confirmed", "once", "none"] satisfies CellStatus[];
 
 const points = [
   { icon: Quote, title: "Every value knows where it came from", body: "A person, a file, an email, a model or a page. Tables that need it go further: each value quotes its source, with checks." },
@@ -31,9 +31,6 @@ function Demo() {
   const shown = { ...data, columns: data.columns.filter((column) => demoColumns.includes(column.id)), rows: data.rows.filter((row) => demoRows.includes(row.key)) };
   return (
     <>
-      <p className="mb-3 text-center text-sm text-muted-foreground">
-        Select a value to inspect its proof. If it needs changing, send a sourced proposal for the owner to review—nothing changes silently.
-      </p>
       <div className="flex flex-col overflow-hidden rounded-xl border bg-background shadow-lg">
         <FormulaBar selected={selectedCell(shown, selectedId)} />
         <Grid table={shown} selectedId={selectedId} select={setSelectedId} emptyRows={0} focusOnLoad={false} />
@@ -75,12 +72,12 @@ export function Landing() {
           <TemplateCards />
         </section>
         <section className="mt-16" aria-labelledby="library">
-          <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+          <div className="mb-3 flex items-end justify-between gap-4">
             <div>
               <h2 id="library" className="font-medium">The public library</h2>
               <p className="text-sm text-muted-foreground">Sourced tables, where every value quotes the page that states it. Select a value to see its proof.</p>
             </div>
-            <Button variant="ghost" size="sm" asChild><Link href="/explore">Browse all<ArrowRight /></Link></Button>
+            <Button variant="ghost" size="sm" className="-mr-3 shrink-0" asChild><Link href="/explore">Browse all<ArrowRight /></Link></Button>
           </div>
           <Demo />
         </section>
