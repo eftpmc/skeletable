@@ -20,11 +20,10 @@ import { statusCounts, statuses, type CellStatus, type PublishedTable } from "@/
 import { FormulaBar, Grid, selectedCell } from "@/pages/Sheet";
 import { Activity, AllChanges, AllProposals } from "@/pages/TableActivity";
 import { TableSettings } from "@/pages/TableSettings";
+import type { TableView } from "@/lib/views";
 
 const PREVIEW_ROWS = 8;
 
-export const tableViews = ["proposals", "history", "settings"] as const;
-export type TableView = (typeof tableViews)[number];
 
 const viewLabels: Record<TableView, string> = { proposals: "Proposals", history: "History", settings: "Settings" };
 

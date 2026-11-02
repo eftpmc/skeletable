@@ -69,6 +69,12 @@ export function createApp(tables: PublishedTable[], webDir?: string, auth?: Auth
     // Auth-backed servers replace these with the real proposal and history routes above.
     app.get("/api/tables/:owner/:slug/proposals", (c) => c.json([]));
     app.get("/api/tables/:owner/:slug/history", (c) => c.json([]));
+    // Without accounts in a database, an account is whoever owns a public table.
+    app.get("/api/accounts/:handle", (c) => {
+      const handle = c.req.param("handle");
+      if (!readable(tables, everyone).some((table) => table.owner === handle)) return c.json({ error: "No such account" }, 404);
+      return c.json({ handle, team: false, bio: "" });
+    });
   }
   app.get("/api/tables", async (c) => c.json(searchTables(readable(tables, await viewerOf(c)), c.req.query("q")).map((table) => ({ ...summarize(table), checks: checkCounts(table) }))));
   // A table you can't read is just a missing one.

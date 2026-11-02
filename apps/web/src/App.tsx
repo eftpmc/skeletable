@@ -1,25 +1,75 @@
-import { useEffect } from "react";
+import { createElement, Suspense, use, useEffect, type ComponentType } from "react";
 import { toast } from "sonner";
 import { useRoute } from "wouter";
 import { ListSkeleton, Spinner } from "@/components/Loading";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Toaster } from "@/components/ui/sonner";
 import { MeContext, useJson, type Me } from "@/lib/api";
-import { BlogIndex, BlogPost } from "@/pages/Blog";
-import { Accuracy, Developers, Methodology } from "@/pages/Docs";
-import { Account } from "@/pages/Account";
-import { Explore } from "@/pages/Explore";
-import { Help } from "@/pages/Help";
-import { Landing } from "@/pages/Landing";
-import { About, Privacy, Terms } from "@/pages/Legal";
-import { NotFound } from "@/pages/Message";
-import { NewTable } from "@/pages/NewTable";
-import { AccountSettings, ProfileSettings, TokenSettings, VisitSettings } from "@/pages/Settings";
-import { RowPage } from "@/pages/RowPage";
-import { Sheet } from "@/pages/Sheet";
-import { TablePage, tableViews, type TableView } from "@/pages/TablePage";
-import { TeamSettings, Teams } from "@/pages/Teams";
-import { YourHome } from "@/pages/YourHome";
+import { tableViews, type TableView } from "@/lib/views";
+
+// Pages load apart from the first screen, so the first visit stays small.
+type Loading<T> = Promise<T> & { status?: "fulfilled"; value?: T };
+
+/** Loads a page's file once. Marking it loaded lets React show it at once, without a loading frame. */
+function loader<T>(load: () => Promise<T>) {
+  let promise: Loading<T> | undefined;
+  return () => {
+    if (promise) return promise;
+    const loading: Loading<T> = load().then((loaded) => {
+      loading.status = "fulfilled";
+      loading.value = loaded;
+      return loaded;
+    });
+    return (promise = loading);
+  };
+}
+
+/** A page from a file that loads when first needed. */
+function page<M, K extends keyof M>(load: () => Promise<M>, name: K): M[K] {
+  return ((props: object) => createElement(use(load())[name] as ComponentType<object>, props)) as M[K];
+}
+
+const pages = {
+  Blog: loader(() => import("@/pages/Blog")),
+  Docs: loader(() => import("@/pages/Docs")),
+  Account: loader(() => import("@/pages/Account")),
+  Explore: loader(() => import("@/pages/Explore")),
+  Help: loader(() => import("@/pages/Help")),
+  Landing: loader(() => import("@/pages/Landing")),
+  Legal: loader(() => import("@/pages/Legal")),
+  Message: loader(() => import("@/pages/Message")),
+  NewTable: loader(() => import("@/pages/NewTable")),
+  Settings: loader(() => import("@/pages/Settings")),
+  RowPage: loader(() => import("@/pages/RowPage")),
+  Sheet: loader(() => import("@/pages/Sheet")),
+  TablePage: loader(() => import("@/pages/TablePage")),
+  Teams: loader(() => import("@/pages/Teams")),
+  YourHome: loader(() => import("@/pages/YourHome")),
+};
+const BlogIndex = page(pages.Blog, "BlogIndex");
+const BlogPost = page(pages.Blog, "BlogPost");
+const Accuracy = page(pages.Docs, "Accuracy");
+const Developers = page(pages.Docs, "Developers");
+const Methodology = page(pages.Docs, "Methodology");
+const Account = page(pages.Account, "Account");
+const Explore = page(pages.Explore, "Explore");
+const Help = page(pages.Help, "Help");
+const Landing = page(pages.Landing, "Landing");
+const About = page(pages.Legal, "About");
+const Privacy = page(pages.Legal, "Privacy");
+const Terms = page(pages.Legal, "Terms");
+const NotFound = page(pages.Message, "NotFound");
+const NewTable = page(pages.NewTable, "NewTable");
+const AccountSettings = page(pages.Settings, "AccountSettings");
+const ProfileSettings = page(pages.Settings, "ProfileSettings");
+const TokenSettings = page(pages.Settings, "TokenSettings");
+const VisitSettings = page(pages.Settings, "VisitSettings");
+const RowPage = page(pages.RowPage, "RowPage");
+const Sheet = page(pages.Sheet, "Sheet");
+const TablePage = page(pages.TablePage, "TablePage");
+const TeamSettings = page(pages.Teams, "TeamSettings");
+const Teams = page(pages.Teams, "Teams");
+const YourHome = page(pages.YourHome, "YourHome");
 
 function Routes({ me }: { me: Me }) {
   const [isHome] = useRoute("/");
@@ -75,9 +125,17 @@ function Routes({ me }: { me: Me }) {
   return <NotFound />;
 }
 
+const loadingFrame = <div className="min-h-svh"><div className="flex h-14 items-center gap-2 border-b px-4 text-sm text-muted-foreground"><Spinner label="Loading Skeletable" />Loading Skeletable</div><div className="mx-auto max-w-5xl px-6 py-8"><ListSkeleton label="Loading page" /></div></div>;
+
 export function App() {
   const { data, status, retry } = useJson<Me>("/api/me");
   const me = { ...(data ?? { canSignIn: false, user: null }), refresh: retry };
+
+  // Once the first page is up, fetch the rest so moving between pages doesn't wait.
+  useEffect(() => {
+    const timer = setTimeout(() => { for (const load of Object.values(pages)) load().catch(() => {}); }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
   // A failed sign-in lands back here with this in the address.
   useEffect(() => {
@@ -88,11 +146,13 @@ export function App() {
   }, []);
 
   // Waiting here keeps the frame from flashing from public to signed-in.
-  if (status === "loading" && !data) return <div className="min-h-svh"><div className="flex h-14 items-center gap-2 border-b px-4 text-sm text-muted-foreground"><Spinner label="Loading Skeletable" />Loading Skeletable</div><div className="mx-auto max-w-5xl px-6 py-8"><ListSkeleton label="Loading page" /></div></div>;
+  if (status === "loading" && !data) return loadingFrame;
   return (
     <MeContext.Provider value={me}>
       <ErrorBoundary>
-        <Routes me={me} />
+        <Suspense fallback={loadingFrame}>
+          <Routes me={me} />
+        </Suspense>
       </ErrorBoundary>
       <Toaster />
     </MeContext.Provider>

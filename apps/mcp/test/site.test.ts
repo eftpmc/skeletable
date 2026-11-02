@@ -35,6 +35,11 @@ it("gives a whole table, evidence included", async () => {
   expect(table.rows.find((row) => row.key === "Grok 4.7")?.cells.output_usd).toMatchObject({ quote: expect.stringContaining("$6.00") });
 });
 
+it("shows the account that owns the public tables, even without a database", async () => {
+  expect(await (await app.request("/api/accounts/skeletable")).json()).toEqual({ handle: "skeletable", team: false, bio: "" });
+  expect((await app.request("/api/accounts/nobody")).status).toBe(404);
+});
+
 it("answers wrong API addresses with a 404", async () => {
   for (const path of ["/api/tables/skeletable/nope", "/api/tables/nobody/e-readers", "/api/nope"]) expect((await app.request(path)).status).toBe(404);
 });
