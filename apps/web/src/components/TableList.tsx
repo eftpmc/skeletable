@@ -18,7 +18,7 @@ function CheckBar({ table, className }: { table: TableSummary; className: string
   return (
     <div className={`shrink-0 sm:w-36 ${className}`} title={`Double-checked means a filled value was confirmed by a second read or matched a summary. Missing values are excluded from the percentage. ${confirmed} confirmed by a blind read, ${summary} matched a summary, ${once} read once,${given ? ` ${given} without a quote,` : ""} ${gap} not stated`}>
       <p className="mb-2 text-xs text-muted-foreground tabular-nums">{confirmed + summary ? `${Math.round(((confirmed + summary) / filled) * 100)}% double-checked` : once ? "Not double-checked yet" : given ? `${given} values, no quotes` : "No values yet"}</p>
-      <div className="flex h-1 gap-px overflow-hidden rounded-full bg-muted" aria-hidden="true">
+      <div className="flex h-1.5 gap-px overflow-hidden rounded-full bg-muted" aria-hidden="true">
         {parts.filter(([, count]) => count).map(([status, count]) => <div key={status} className={statuses[status].solid} style={{ width: `${(count / total) * 100}%` }} />)}
       </div>
     </div>
@@ -39,8 +39,8 @@ function TableRow({ table, compact, showOwner }: { table: TableSummary; compact:
         <div className="min-w-0 flex-1">
           {!compact && <p className="mb-2 text-[11px] font-medium tracking-widest text-muted-foreground uppercase">{table.topic}</p>}
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <h2 className={`${compact ? "text-base font-medium" : "text-lg font-semibold"} tracking-tight`}><Link href={`/${table.owner}/${table.slug}`} className="hover:text-brand focus-visible:text-brand focus-visible:underline focus-visible:outline-none">{table.title}</Link></h2>
-            {compact && <span className="text-xs text-muted-foreground">{table.topic}</span>}
+            <h2 className={`${compact ? "text-base font-medium" : "text-lg font-semibold"} tracking-tight`}><Link href={`/${table.owner}/${table.slug}`} className="hover:text-brand-ink focus-visible:text-brand-ink focus-visible:underline focus-visible:outline-none">{table.title}</Link></h2>
+            {compact && <span className="font-mono text-[11px] tracking-wide text-muted-foreground uppercase">{table.topic}</span>}
             {table.draft ? <Badge variant="outline">Draft</Badge> : table.private && <Badge variant="outline">Private</Badge>}
             {table.proof !== "optional" && <Badge variant="secondary" title="Every value quotes the source that states it">Sourced</Badge>}
           </div>
@@ -71,10 +71,12 @@ export function TableList({ tables, compact = true, showOwner = true }: { tables
   if (!tables) {
     return <ListSkeleton label="Loading tables" compact={compact} />;
   }
+  // Saying "by" the same owner on every row tells nobody anything.
+  const mixed = new Set(tables.map((table) => table.owner)).size > 1;
   return (
     <>
-      <ul className="overflow-hidden rounded-xl border">
-        {tables.slice(0, shown).map((table) => <TableRow key={`${table.owner}/${table.slug}`} table={table} compact={compact} showOwner={showOwner} />)}
+      <ul className="overflow-hidden rounded-xl border bg-card">
+        {tables.slice(0, shown).map((table) => <TableRow key={`${table.owner}/${table.slug}`} table={table} compact={compact} showOwner={showOwner && mixed} />)}
       </ul>
       {tables.length > shown && (
         <div className="mt-3 text-center"><Button variant="outline" size="sm" onClick={() => setShown(shown + PAGE)}>Show more</Button></div>

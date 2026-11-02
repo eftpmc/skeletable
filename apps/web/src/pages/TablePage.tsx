@@ -22,6 +22,7 @@ import { Activity, AllChanges, AllProposals } from "@/pages/TableActivity";
 import { TableSettings } from "@/pages/TableSettings";
 
 const PREVIEW_ROWS = 8;
+const SOURCES_SHOWN = 8;
 
 export const tableViews = ["proposals", "history", "settings"] as const;
 export type TableView = (typeof tableViews)[number];
@@ -30,7 +31,7 @@ const viewLabels: Record<TableView, string> = { proposals: "Proposals", history:
 
 const SideSection = ({ title, children }: { title: string; children: ReactNode }) => (
   <section className="border-b pb-5 last:border-b-0">
-    <h2 className="mb-2.5 text-sm font-semibold">{title}</h2>
+    <h2 className="eyebrow mb-3 text-muted-foreground">{title}</h2>
     {children}
   </section>
 );
@@ -72,10 +73,14 @@ function Sources({ table }: { table: PublishedTable }) {
       sites.set(site, { url: cell.source, cells: (sites.get(site)?.cells ?? 0) + 1 });
     }
   }
+  const [all, setAll] = useState(false);
   if (!sites.size) return <p className="text-sm text-muted-foreground">No sources yet.</p>;
+  const sorted = [...sites].sort(([, a], [, b]) => b.cells - a.cells);
+  const shown = all ? sorted : sorted.slice(0, SOURCES_SHOWN);
   return (
+    <>
     <ul className="space-y-1.5 text-sm">
-      {[...sites].sort(([, a], [, b]) => b.cells - a.cells).map(([site, { url, cells }]) => (
+      {shown.map(([site, { url, cells }]) => (
         <li key={site}>
           <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground">
             <span className="truncate">{site}</span>
@@ -85,6 +90,12 @@ function Sources({ table }: { table: PublishedTable }) {
         </li>
       ))}
     </ul>
+    {sorted.length > SOURCES_SHOWN && (
+      <button type="button" className="mt-2.5 text-sm font-medium text-brand-ink hover:underline" onClick={() => setAll(!all)}>
+        {all ? "Show fewer" : `Show all ${sorted.length} sources`}
+      </button>
+    )}
+    </>
   );
 }
 
@@ -130,7 +141,7 @@ function Overview({ table, canDecide, onChanged }: { table: PublishedTable; canD
   const sheet = `/${table.owner}/${table.slug}/sheet`;
   return (
     <div className="space-y-8">
-      <section className="flex flex-col overflow-hidden rounded-xl border shadow-sm">
+      <section className="flex flex-col overflow-hidden rounded-xl border bg-background shadow-sm">
         {selectedId && <FormulaBar table={table} onChanged={onChanged} selected={selectedCell(table, selectedId)} />}
         <Grid table={{ ...table, rows: table.rows.slice(0, PREVIEW_ROWS) }} selectedId={selectedId} select={setSelectedId} emptyRows={0} focusOnLoad={false} rowHref={(key) => rowPath(table, key)} />
         <Link href={selectedId ? `${sheet}?cell=${selectedId}` : sheet} className="flex items-center justify-between gap-3 bg-muted px-3 py-2 text-sm transition-colors hover:bg-accent">
@@ -141,7 +152,6 @@ function Overview({ table, canDecide, onChanged }: { table: PublishedTable; canD
       <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_15rem]">
         <div className="min-w-0 space-y-6">
           {table.draft && canDecide && <PublishDraft table={table} onChanged={onChanged} />}
-          <Activity table={table} canDecide={canDecide} />
         <section className="overflow-hidden rounded-xl border">
           <h2 className="border-b bg-muted px-3 py-2 text-sm font-medium">About this data</h2>
           <div className="space-y-5 p-4">
@@ -168,6 +178,7 @@ function Overview({ table, canDecide, onChanged }: { table: PublishedTable; canD
             </div>
           </div>
         </section>
+          <Activity table={table} canDecide={canDecide} />
         </div>
         <About table={table} canManage={canDecide} onChanged={onChanged} />
       </div>
@@ -175,7 +186,7 @@ function Overview({ table, canDecide, onChanged }: { table: PublishedTable; canD
   );
 }
 
-function TableDetails({ table, view, onChanged }: { table: PublishedTable; view?: TableView; onChanged: () => void }) {
+function TableDetails({ table, view, tabs, onChanged }: { table: PublishedTable; view?: TableView; tabs: ReactNode; onChanged: () => void }) {
   const { user } = useMe();
   const canManage = !!user?.accounts.includes(table.owner);
 
@@ -183,16 +194,21 @@ function TableDetails({ table, view, onChanged }: { table: PublishedTable; view?
     document.title = `${table.title} · Skeletable`;
   }, [table.title]);
 
-  if (view === "proposals") return <AllProposals table={table} canDecide={canManage} />;
-  if (view === "history") return <AllChanges table={table} />;
-  if (view === "settings") return <TableSettings table={table} onChanged={onChanged} />;
+  if (view === "proposals") return <>{tabs}<AllProposals table={table} canDecide={canManage} /></>;
+  if (view === "history") return <>{tabs}<AllChanges table={table} /></>;
+  if (view === "settings") return <>{tabs}<TableSettings table={table} onChanged={onChanged} /></>;
 
   return (
     <>
       <section className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
         <div className="min-w-0 flex-1 basis-96">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{table.title}</h1>
+          <p className="eyebrow flex flex-wrap items-center gap-x-2">
+            <span>{table.topic}</span>
+            <span aria-hidden="true" className="text-muted-foreground">/</span>
+            <span className="text-muted-foreground">{proofOptional(table) ? "Dataset" : "Sourced"}</span>
+          </p>
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <h1 className="text-2xl font-semibold tracking-tight text-balance sm:text-3xl">{table.title}</h1>
             <Badge variant="outline">{table.draft ? "Draft" : table.private ? "Private" : "Public"}</Badge>
           </div>
           <p className="mt-1.5 max-w-2xl text-muted-foreground">{table.question}</p>
@@ -216,7 +232,8 @@ function TableDetails({ table, view, onChanged }: { table: PublishedTable; view?
           </Button>
         </div>
       </section>
-      <div className="mt-6"><Overview table={table} canDecide={canManage} onChanged={onChanged} /></div>
+      <div className="mt-6">{tabs}</div>
+      <Overview table={table} canDecide={canManage} onChanged={onChanged} />
     </>
   );
 }
@@ -229,18 +246,30 @@ export function TablePage({ owner, slug, view }: { owner: string; slug: string; 
     { label: data?.title ?? "Table", href: `/${owner}/${slug}` },
     ...(view ? [{ label: viewLabels[view] }] : []),
   ];
+  const current = view ? `/${view}` : "";
+  const tabs = (
+    <nav aria-label="Table navigation" className="mb-6 flex gap-5 overflow-x-auto border-b text-sm">
+      {[["", "Overview"], ["/proposals", "Proposals"], ["/history", "History"]].map(([suffix, label]) => (
+        <Link
+          key={label}
+          href={`/${owner}/${slug}${suffix}`}
+          aria-current={current === suffix ? "page" : undefined}
+          className="-mb-px border-b-2 border-transparent py-2.5 whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground aria-[current=page]:border-brand aria-[current=page]:font-medium aria-[current=page]:text-foreground"
+        >
+          {label}
+        </Link>
+      ))}
+    </nav>
+  );
   return (
     <Page crumbs={crumbs}>
       <Content>
-        {data && <nav aria-label="Table navigation" className="mb-6 flex gap-1 overflow-x-auto border-b pb-2">
-          {[["", "Overview"], ["/proposals", "Proposals"], ["/history", "History"]].map(([suffix, label]) => <Button key={label} asChild size="sm" variant={(view ? `/${view}` : "") === suffix ? "secondary" : "ghost"}><Link href={`/${owner}/${slug}${suffix}`} aria-current={(view ? `/${view}` : "") === suffix ? "page" : undefined}>{label}</Link></Button>)}
-        </nav>}
         {status === "missing" ? (
           <NoTable />
         ) : status === "failed" ? (
           <LoadFailed what="This table" retry={retry} />
         ) : data ? (
-          <TableDetails table={data} view={view} onChanged={retry} />
+          <TableDetails table={data} view={view} tabs={tabs} onChanged={retry} />
         ) : (
           <div className="space-y-4" aria-label="Loading table">
             <Skeleton className="h-9 w-2/3" />

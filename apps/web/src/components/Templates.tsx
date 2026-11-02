@@ -30,17 +30,17 @@ export function useStartTemplate() {
   return { start, starting };
 }
 
-const card = "group flex h-full w-full flex-col items-start gap-2 rounded-xl border bg-card p-4 text-left transition-colors hover:border-brand/60 hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none disabled:opacity-60";
+const card = "group flex h-full w-full flex-col items-start gap-2 rounded-xl border bg-card p-4 text-left transition-all hover:-translate-y-0.5 hover:border-brand/50 hover:shadow-md hover:shadow-brand/5 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none disabled:opacity-60";
 
 /** The templates as cards, and a blank table first when asked. */
 export function TemplateCards({ blank, onBlank }: { blank?: boolean; onBlank?: () => void }) {
   const { start, starting } = useStartTemplate();
   return (
-    <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <ul className={`grid gap-3 sm:grid-cols-2 ${blank ? "lg:grid-cols-3" : "lg:grid-cols-4"}`}>
       {blank && (
         <li>
           <button type="button" className={card} onClick={onBlank}>
-            <FilePlus className="size-5 text-muted-foreground" />
+            <span className="mb-1 flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground"><FilePlus className="size-4.5" /></span>
             <span className="font-medium">Blank table</span>
             <span className="text-sm text-muted-foreground">Name your own columns and rows, or let your agent set them up.</span>
           </button>
@@ -51,10 +51,10 @@ export function TemplateCards({ blank, onBlank }: { blank?: boolean; onBlank?: (
         return (
           <li key={template.id}>
             <button type="button" className={card} disabled={!!starting} aria-busy={starting === template.id} onClick={() => void start(template)}>
-              {starting === template.id ? <Spinner label={`Starting ${template.title}`} /> : <Icon className="size-5 text-brand" />}
+              <span className="mb-1 flex size-9 items-center justify-center rounded-lg bg-brand-soft text-brand-ink">{starting === template.id ? <Spinner label={`Starting ${template.title}`} /> : <Icon className="size-4.5" />}</span>
               <span className="font-medium">{template.title}</span>
               <span className="text-sm text-muted-foreground">{template.summary}</span>
-              <span className="mt-auto pt-1 text-xs text-muted-foreground">{[template.rowsAre, ...template.columns.map((column) => column.label)].join(" · ")}</span>
+              <span className="mt-auto flex flex-wrap gap-1 pt-2">{[template.rowsAre, ...template.columns.map((column) => column.label)].map((label) => <span key={label} className="rounded border bg-muted/60 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">{label}</span>)}</span>
             </button>
           </li>
         );

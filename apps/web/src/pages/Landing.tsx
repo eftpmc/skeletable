@@ -31,10 +31,7 @@ function Demo() {
   const shown = { ...data, columns: data.columns.filter((column) => demoColumns.includes(column.id)), rows: data.rows.filter((row) => demoRows.includes(row.key)) };
   return (
     <>
-      <p className="mb-3 text-center text-sm text-muted-foreground">
-        Select a value to inspect its proof. If it needs changing, send a sourced proposal for the owner to review—nothing changes silently.
-      </p>
-      <div className="flex flex-col overflow-hidden rounded-xl border bg-background shadow-lg">
+      <div className="flex flex-col overflow-hidden rounded-xl border bg-background shadow-xl shadow-brand/5 ring-4 ring-brand-soft/60">
         <FormulaBar selected={selectedCell(shown, selectedId)} />
         <Grid table={shown} selectedId={selectedId} select={setSelectedId} emptyRows={0} focusOnLoad={false} />
         <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t bg-muted px-3 py-2 text-xs text-muted-foreground" aria-label="What the corner of a cell means">
@@ -56,11 +53,18 @@ export function Landing() {
   }, []);
   return (
     <Page>
-      <main className="mx-auto max-w-5xl px-4 pb-16 sm:px-6">
-        <section className="mx-auto max-w-2xl pt-14 pb-10 text-center sm:pt-20">
-          <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl">Tables your agent keeps for you</h1>
-          <p className="mt-4 text-lg text-muted-foreground">Track job applications, build a dataset, keep a reading list. Your agent fills it from your email, your files and the web, and every value records where it came from.</p>
-          <div className="mt-7 flex items-center justify-center gap-2">
+      <div className="relative overflow-hidden">
+        <div aria-hidden="true" className="bg-ruled pointer-events-none absolute inset-0 -top-px" />
+        <section className="relative mx-auto max-w-3xl px-4 pt-16 pb-14 text-center sm:px-6 sm:pt-24 sm:pb-20">
+          <p className="mx-auto inline-flex items-center gap-2 rounded-full border bg-background/80 px-3 py-1 font-mono text-xs text-muted-foreground backdrop-blur">
+            <span aria-hidden="true" className="size-1.5 rounded-full bg-brand" />
+            Every value says where it came from
+          </p>
+          <h1 className="mt-6 text-4xl font-semibold tracking-tighter text-balance sm:text-6xl">
+            Tables your agent <span className="text-brand-ink">keeps for you</span>
+          </h1>
+          <p className="mx-auto mt-5 max-w-xl text-lg text-pretty text-muted-foreground">Track job applications, build a dataset, keep a reading list. Your agent fills it from your email, your files and the web, and every value records its source.</p>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
             <Button size="lg" asChild>
               <Link href="/new">
                 Start a table
@@ -70,26 +74,32 @@ export function Landing() {
             <AgentButton label="Connect an agent" />
           </div>
         </section>
+      </div>
+      <main className="mx-auto max-w-5xl px-4 pb-20 sm:px-6">
         <section aria-labelledby="templates">
-          <h2 id="templates" className="mb-3 text-sm font-medium text-muted-foreground">Start from a template</h2>
+          <div className="mb-4">
+            <p className="eyebrow">Templates</p>
+            <h2 id="templates" className="mt-1 text-xl font-semibold tracking-tight">Start from a template</h2>
+          </div>
           <TemplateCards />
         </section>
-        <section className="mt-16" aria-labelledby="library">
-          <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
-            <div>
-              <h2 id="library" className="font-medium">The public library</h2>
-              <p className="text-sm text-muted-foreground">Sourced tables, where every value quotes the page that states it. Select a value to see its proof.</p>
+        <section className="mt-20" aria-labelledby="library">
+          <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+            <div className="max-w-xl">
+              <p className="eyebrow">The public library</p>
+              <h2 id="library" className="mt-1 text-xl font-semibold tracking-tight">Sourced tables you can check yourself</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Every value quotes the page that states it. Select one to see its proof. Corrections go to the owner as a sourced proposal, so nothing changes silently.</p>
             </div>
-            <Button variant="ghost" size="sm" asChild><Link href="/explore">Browse all<ArrowRight /></Link></Button>
+            <Button variant="outline" size="sm" asChild><Link href="/explore">Browse all tables<ArrowRight /></Link></Button>
           </div>
           <Demo />
         </section>
-        <section className="mt-14 grid gap-6 sm:grid-cols-3">
+        <section className="mt-20 grid gap-3 sm:grid-cols-3" aria-label="How it works">
           {points.map(({ icon: Icon, title, body }) => (
-            <div key={title}>
-              <Icon className="size-5 text-green-600" />
-              <h2 className="mt-2 font-medium">{title}</h2>
-              <p className="mt-1 text-sm text-muted-foreground">{body}</p>
+            <div key={title} className="rounded-xl border bg-card p-5">
+              <span className="flex size-9 items-center justify-center rounded-lg bg-brand-soft text-brand-ink"><Icon className="size-4.5" /></span>
+              <h2 className="mt-4 font-medium">{title}</h2>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{body}</p>
             </div>
           ))}
         </section>
