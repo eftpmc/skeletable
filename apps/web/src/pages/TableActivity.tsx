@@ -185,7 +185,7 @@ export function Activity({ table, canDecide }: { table: PublishedTable; canDecid
     return (
       <section>
         <Heading title="Activity" />
-        <p className="rounded-xl border px-4 py-6 text-center text-sm text-muted-foreground">No proposals or changes yet. Open the sheet and select a cell to suggest one.</p>
+        <p className="rounded-xl border border-dashed px-4 py-4 text-sm text-muted-foreground">No proposals or changes yet. Open the sheet and select a cell to suggest one.</p>
       </section>
     );
   }
