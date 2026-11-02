@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import type { Fetcher } from "@skeleton/tables";
 import postgres from "postgres";
 import { createApp } from "../src/app.js";
-import { importTables, migrate, readTables, type Sql } from "../src/db.js";
+import { importTables, migrate, librarySync, readTables, type Sql } from "../src/db.js";
 import { loadTables } from "../src/library.js";
 import { watchDueTables } from "../src/watcher.js";
 
@@ -33,9 +33,9 @@ describe.skipIf(!url)("proposals, history and tokens", () => {
   const propose = (headers: Record<string, string>, body = proposal) =>
     app.request("/api/tables/skeletable/home-batteries/proposals", { method: "POST", headers, body: JSON.stringify(body) });
 
-  const refresh = async () => {
-    tables.splice(0, tables.length, ...(await readTables(sql)));
-  };
+  // The server's own way of keeping its tables current: only tables whose revision moved are reread.
+  let sync: () => Promise<void>;
+  const refresh = () => sync();
 
   beforeAll(() => {
     sql = postgres(url!, { onnotice: () => {} });
@@ -46,7 +46,9 @@ describe.skipIf(!url)("proposals, history and tokens", () => {
     await sql`create schema public`;
     await migrate(sql);
     await importTables(sql, files);
-    tables = await readTables(sql);
+    tables = [];
+    sync = librarySync(sql, tables);
+    await sync();
     page = "<p>Now covered for 12 years</p>";
     app = createApp(tables, undefined, { sql, clientId: "id", clientSecret: "secret", publicUrl: "https://skeletable.test", tables, refresh, pages });
   });

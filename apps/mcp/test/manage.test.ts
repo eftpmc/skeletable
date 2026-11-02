@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import postgres from "postgres";
 import { ensureAccount } from "../src/accounts.js";
 import { createApp } from "../src/app.js";
-import { importTables, migrate, readTables, type Sql } from "../src/db.js";
+import { importTables, migrate, librarySync, readTables, type Sql } from "../src/db.js";
 import { loadTables } from "../src/library.js";
 
 const url = process.env.TEST_DATABASE_URL;
@@ -36,9 +36,9 @@ describe.skipIf(!url)("managing a table", () => {
   let pat: Headers;
 
   const pages = async () => ({ status: 200, contentType: "text/html", body: "<p>Weighs 900 g</p>" });
-  const refresh = async () => {
-    tables.splice(0, tables.length, ...(await readTables(sql)));
-  };
+  // The server's own way of keeping its tables current: only tables whose revision moved are reread.
+  let sync: () => Promise<void>;
+  const refresh = () => sync();
 
   const person = async (email: string) => {
     const [user] = await sql`insert into users (email, name) values (${email}, 'Someone') returning id`;
@@ -62,7 +62,9 @@ describe.skipIf(!url)("managing a table", () => {
     await sql`create schema public`;
     await migrate(sql);
     await importTables(sql, files, { managed: true });
-    tables = await readTables(sql);
+    tables = [];
+    sync = librarySync(sql, tables);
+    await sync();
     app = createApp(tables, dir, { sql, clientId: "id", clientSecret: "secret", publicUrl: "https://skeletable.test", tables, refresh, pages });
     pat = await person("pat@example.com");
     await send("/api/tables", "POST", pat, newTable);

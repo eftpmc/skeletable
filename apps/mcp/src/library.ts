@@ -30,15 +30,29 @@ function noWatchYet(error: NodeJS.ErrnoException) {
 
 const cells = (table: Table) => table.rows.flatMap((row) => Object.values(row.cells));
 
+/**
+ * Work done once per table rather than once per request. A refresh replaces a table's object only
+ * when that table changed, so keying by the object keeps each answer current.
+ */
+function once<T, U extends object>(work: (table: U) => T) {
+  const saved = new WeakMap<U, T>();
+  return (table: U) => {
+    if (!saved.has(table)) saved.set(table, work(table));
+    return saved.get(table)!;
+  };
+}
+
 /** The newest day any cell in the table was read. */
 export const lastRead = (table: Table) => cells(table).reduce((latest, cell) => (cell.read > latest ? cell.read : latest), "");
 
 /** What a reader needs to choose a table, without its rows. */
-export function summarize(table: PublishedTable) {
+export const summarize = (table: PublishedTable) => ({ ...shape(table), ...(table.private && { private: true }) });
+
+// Whether a table is private can change in place, so that's added on each time.
+const shape = once((table: PublishedTable) => {
   return {
     owner: table.owner,
     ...(table.ownerName && { ownerName: table.ownerName }),
-    ...(table.private && { private: true }),
     ...(table.draft && { draft: true }),
     slug: table.slug,
     topic: table.topic,
@@ -51,10 +65,10 @@ export function summarize(table: PublishedTable) {
     lastRead: lastRead(table),
     lastChecked: table.watch?.ran ?? lastRead(table),
   };
-}
+});
 
 /** How each table's values stand, for showing it at a glance in a list. */
-export function checkCounts(table: Table) {
+export const checkCounts = once((table: Table) => {
   const counts = { confirmed: 0, summary: 0, once: 0, given: 0, gap: 0 };
   for (const cell of cells(table)) {
     if (isGiven(cell)) counts.given += 1;
@@ -64,15 +78,15 @@ export function checkCounts(table: Table) {
     else counts.once += 1;
   }
   return counts;
-}
+});
+
+const searchText = once((table: Table) => normalize([table.slug, table.title, table.question, ...table.columns.map((c) => c.label), ...table.rows.map((r) => r.key)].join(" ")));
 
 /** Tables with every word of the query somewhere in their text or rows. No query means all of them. */
-export function searchTables(tables: Table[], query = ""): Table[] {
+export function searchTables<T extends Table>(tables: T[], query = ""): T[] {
   const words = normalize(query).split(" ").filter(Boolean);
-  return tables.filter((table) => {
-    const text = normalize([table.slug, table.title, table.question, ...table.columns.map((c) => c.label), ...table.rows.map((r) => r.key)].join(" "));
-    return words.every((word) => text.includes(word));
-  });
+  if (!words.length) return tables;
+  return tables.filter((table) => words.every((word) => searchText(table).includes(word)));
 }
 
 const cellValue = (cell: Cell) => (hasValue(cell) ? cell.value : null);

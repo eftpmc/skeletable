@@ -1,7 +1,8 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
 import postgres from "postgres";
-import { importTables, migrate, readTables, type Sql } from "../src/db.js";
+import { importTables, librarySync, migrate, readTables, type Sql } from "../src/db.js";
+import type { PublishedTable } from "../src/library.js";
 import { loadTables } from "../src/library.js";
 
 const url = process.env.TEST_DATABASE_URL;
@@ -29,7 +30,55 @@ describe.skipIf(!url)("database", () => {
 
   it("runs each migration once", async () => {
     await migrate(sql);
-    expect(await sql`select version from schema_migrations`).toHaveLength(13);
+    expect(await sql`select version from schema_migrations`).toHaveLength(14);
+  });
+
+  it("keeps tables current by rereading only the ones that changed", async () => {
+    await importTables(sql, tables);
+    const held: PublishedTable[] = [];
+    const problems: string[] = [];
+    const sync = librarySync(sql, held, (message) => problems.push(message));
+    await sync();
+    expect(held.map((table) => table.slug)).toEqual([...tables].map((table) => table.slug).sort());
+    const before = new Map(held.map((table) => [table.slug, table]));
+    const reread = (slug: string) => held.find((table) => table.slug === slug) !== before.get(slug);
+
+    // Nothing changed, so nothing is read again.
+    await sync();
+    expect(held.filter((table) => reread(table.slug))).toEqual([]);
+
+    // A new cell version rereads only its own table.
+    const [row] = await sql`select r.id from table_rows r join data_tables t on t.id = r.table_id where t.slug = 'e-readers' order by r.position limit 1`;
+    const column = held.find((table) => table.slug === "e-readers")!.columns[0]!.id;
+    await sql`insert into cell_versions (row_id, column_id, cell) values (${row!.id}, ${column}, ${sql.json({ missing: true, checked: [], read: "2026-11-02" })})`;
+    await sync();
+    expect(held.filter((table) => reread(table.slug)).map((table) => table.slug)).toEqual(["e-readers"]);
+    expect(held.find((table) => table.slug === "e-readers")!.rows[0]!.cells[column]).toMatchObject({ missing: true });
+
+    // Row, column, version and account changes count too, and a deleted table goes.
+    const marks = async (change: () => Promise<unknown>) => {
+      const [{ revision }] = await sql`select revision from data_tables where slug = 'home-batteries'` as unknown as [{ revision: string }];
+      await change();
+      const [after] = await sql`select revision from data_tables where slug = 'home-batteries'`;
+      return after!.revision !== revision;
+    };
+    const id = (await sql`select id from data_tables where slug = 'home-batteries'`)[0]!.id;
+    expect(await marks(() => sql`update table_rows set position = position where table_id = ${id}`)).toBe(true);
+    expect(await marks(() => sql`update table_columns set label = label where table_id = ${id}`)).toBe(true);
+    expect(await marks(() => sql`insert into table_versions (table_id, number, data) values (${id}, 1, ${sql.json({ rows: [] })})`)).toBe(true);
+    expect(await marks(() => sql`update accounts set name = 'Skeletable team'`)).toBe(true);
+    expect(await marks(() => sql`update data_tables set title = title where id = ${id}`)).toBe(true);
+    await sql`delete from data_tables where slug = 'national-park-fees'`;
+    await sync();
+    expect(held.some((table) => table.slug === "national-park-fees")).toBe(false);
+    expect(held.find((table) => table.slug === "home-batteries")!.ownerName).toBe("Skeletable team");
+
+    // A table that fails its checks keeps its last good version, and the rest carry on.
+    const kept = held.find((table) => table.slug === "e-readers")!;
+    await sql`insert into cell_versions (row_id, column_id, cell) values (${row!.id}, ${column}, ${sql.json({ nonsense: true })})`;
+    await sync();
+    expect(held.find((table) => table.slug === "e-readers")).toBe(kept);
+    expect(problems).toEqual([expect.stringContaining("Keeping the last good skeletable/e-readers")]);
   });
 
   it("gives back exactly what went in", async () => {

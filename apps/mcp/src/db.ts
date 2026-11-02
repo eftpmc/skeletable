@@ -8,8 +8,8 @@ export type TransactionSql = postgres.TransactionSql;
 /** The team behind the public library. Nobody can take its name. */
 export const OFFICIAL_ACCOUNT = "skeletable";
 
-// How often a running server picks up changes made in the database.
-const REFRESH_MS = 60_000;
+// How often a running server looks for changes another server made. Only changed tables are reread.
+const REFRESH_MS = 10_000;
 
 /**
  * Each entry runs once, in order, and is never edited after it ships: a change is a new entry.
@@ -188,6 +188,36 @@ const migrations = [
     unique (table_id, number)
   );
   `,
+  `
+  create sequence table_revisions;
+  alter table data_tables add column revision bigint not null default nextval('table_revisions');
+
+  -- Any change to a table, its account, rows, columns, cells or versions gives it a new revision,
+  -- so a server reloads only the tables whose revision moved.
+  create function bump_own_revision() returns trigger language plpgsql as $$
+  begin new.revision := nextval('table_revisions'); return new; end $$;
+  create trigger data_tables_revision before update on data_tables
+    for each row when (old.revision = new.revision) execute function bump_own_revision();
+
+  create function bump_tables(ids bigint[]) returns void language sql as $$
+    update data_tables set revision = nextval('table_revisions') where id = any(ids) $$;
+
+  create function bump_from_cells() returns trigger language plpgsql as $$
+  begin perform bump_tables(array(select distinct r.table_id from changed c join table_rows r on r.id = c.row_id)); return null; end $$;
+  create trigger cell_versions_revision after insert on cell_versions referencing new table as changed for each statement execute function bump_from_cells();
+
+  create function bump_from_children() returns trigger language plpgsql as $$
+  begin perform bump_tables(array(select distinct table_id from changed)); return null; end $$;
+  create trigger table_rows_added after insert on table_rows referencing new table as changed for each statement execute function bump_from_children();
+  create trigger table_rows_changed after update on table_rows referencing new table as changed for each statement execute function bump_from_children();
+  create trigger table_columns_added after insert on table_columns referencing new table as changed for each statement execute function bump_from_children();
+  create trigger table_columns_changed after update on table_columns referencing new table as changed for each statement execute function bump_from_children();
+  create trigger table_versions_added after insert on table_versions referencing new table as changed for each statement execute function bump_from_children();
+
+  create function bump_from_accounts() returns trigger language plpgsql as $$
+  begin perform bump_tables(array(select t.id from data_tables t join changed c on c.id = t.account_id)); return null; end $$;
+  create trigger accounts_changed after update on accounts referencing new table as changed for each statement execute function bump_from_accounts();
+  `,
 
 ];
 
@@ -274,17 +304,27 @@ export async function importTables(sql: Sql, tables: PublishedTable[], { managed
   });
 }
 
-/** Every table with the newest version of each cell, held to the same checks as a table on disk. */
-export async function readTables(sql: Sql): Promise<PublishedTable[]> {
+/** A table as read from the database, with what identifies it there, or why it didn't pass its checks. */
+type Loaded = { id: string; revision: string; key: string; table?: PublishedTable; problem?: string };
+
+/**
+ * Tables with the newest version of each cell, held to the same checks as a table on disk. With
+ * `ids`, only those tables are read, which is what keeps a refresh cheap as the library grows.
+ */
+async function loadFromDatabase(sql: Sql, ids?: string[]): Promise<Loaded[]> {
+  const only = ids ? sql`where t.id = any(${ids}::bigint[])` : sql``;
   const tables = await sql`
-    select t.id, a.handle as owner, a.name as owner_name, a.team, t.slug, t.topic, t.title, t.question, t.scope, t.watch, t.private, t.managed, t.draft, t.proof, t.forked_from
-    from data_tables t join accounts a on a.id = t.account_id
+    select t.id, t.revision, a.handle as owner, a.name as owner_name, a.team, t.slug, t.topic, t.title, t.question, t.scope, t.watch, t.private, t.managed, t.draft, t.proof, t.forked_from
+    from data_tables t join accounts a on a.id = t.account_id ${only}
     order by a.handle, t.slug`;
+  if (!tables.length) return [];
+  const tableIds = tables.map((table) => table.id as string);
   // Removed rows and columns stay for the history, out of the table.
-  const columns = await sql`select * from table_columns where removed_at is null order by table_id, position`;
-  const rows = await sql`select * from table_rows where removed_at is null order by table_id, position`;
-  const cells = await sql`select distinct on (row_id, column_id) row_id, column_id, cell from cell_versions order by row_id, column_id, id desc`;
-  const versions = await sql`select table_id, number, note, created_at, jsonb_array_length(data->'rows') as rows from table_versions order by table_id, number`;
+  const columns = await sql`select * from table_columns where removed_at is null and table_id = any(${tableIds}::bigint[]) order by table_id, position`;
+  const rows = await sql`select * from table_rows where removed_at is null and table_id = any(${tableIds}::bigint[]) order by table_id, position`;
+  const rowIds = rows.map((row) => row.id as string);
+  const cells = await sql`select distinct on (row_id, column_id) row_id, column_id, cell from cell_versions where row_id = any(${rowIds}::bigint[]) order by row_id, column_id, id desc`;
+  const versions = await sql`select table_id, number, note, created_at, jsonb_array_length(data->'rows') as rows from table_versions where table_id = any(${tableIds}::bigint[]) order by table_id, number`;
   // Grouped once, so a big table doesn't make every row look through every cell.
   const group = <T extends Record<string, unknown>>(items: readonly T[], key: string) => {
     const groups = new Map<unknown, T[]>();
@@ -300,7 +340,8 @@ export async function readTables(sql: Sql): Promise<PublishedTable[]> {
   const cellsOf = group(cells, "row_id");
   const versionsOf = group(versions, "table_id");
 
-  return tables.map((table) => {
+  return tables.map((table): Loaded => {
+    const loaded = { id: String(table.id), revision: String(table.revision), key: `${table.owner}/${table.slug}` };
     const live = new Set(columnsOf(table.id).map((column) => column.id as string));
     const { problems, table: checked } = validateTable({
       format: 1,
@@ -320,12 +361,58 @@ export async function readTables(sql: Sql): Promise<PublishedTable[]> {
           cells: Object.fromEntries(cellsOf(row.id).filter((cell) => live.has(cell.column_id)).map((cell): [string, Cell] => [cell.column_id, cell.cell])),
         })),
     });
-    if (!checked || problems.length) throw new Error(`${table.owner}/${table.slug}: ${problems.join("; ")}`);
+    // A broken table can have a problem in every cell, so the log names the first few and counts the rest.
+    if (!checked || problems.length) return { ...loaded, problem: `${loaded.key}: ${problems.slice(0, 5).join("; ")}${problems.length > 5 ? `; and ${problems.length - 5} more` : ""}` };
     // A person's account name can be the name they signed in with, so only a team's goes out with its tables.
     const moved = Object.fromEntries(rowsOf(table.id).flatMap((row) => (row.former_slugs as string[]).map((slug) => [slug, row.key as string])));
     const saved = versionsOf(table.id).map((version) => ({ number: version.number as number, note: version.note as string, created: (version.created_at as Date).toISOString().slice(0, 10), rows: version.rows as number }));
-    return { ...checked, ...(saved.length && { versions: saved }), ...(table.forked_from && { forkedFrom: table.forked_from as string }), ...(Object.keys(moved).length && { moved }), ...(table.team && { ownerName: table.owner_name as string }), ...(table.private && { private: true }), ...(table.managed && { managed: true }), ...(table.watch && { watch: watchFileSchema.parse(table.watch) }) };
+    return { ...loaded, table: { ...checked, ...(saved.length && { versions: saved }), ...(table.forked_from && { forkedFrom: table.forked_from as string }), ...(Object.keys(moved).length && { moved }), ...(table.team && { ownerName: table.owner_name as string }), ...(table.private && { private: true }), ...(table.managed && { managed: true }), ...(table.watch && { watch: watchFileSchema.parse(table.watch) }) } };
   });
+}
+
+/** Every table. One that fails its checks stops the read, so nothing goes out unchecked. */
+export async function readTables(sql: Sql): Promise<PublishedTable[]> {
+  const loaded = await loadFromDatabase(sql);
+  const failed = loaded.find((entry) => entry.problem);
+  if (failed) throw new Error(failed.problem);
+  return loaded.map((entry) => entry.table!);
+}
+
+const byAddress = (a: PublishedTable, b: PublishedTable) => (a.owner === b.owner ? (a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0) : a.owner < b.owner ? -1 : 1);
+
+/**
+ * Keeps `tables` in step with the database by reloading only the tables whose revision changed
+ * since the last look, and dropping deleted ones. A table that fails its checks keeps its last good
+ * version and is tried again next time. Calls run one at a time, so two never interleave.
+ */
+export function librarySync(sql: Sql, tables: PublishedTable[], log: (message: string) => void = console.error) {
+  const known = new Map<string, { revision: string; key: string }>();
+  const sync = async () => {
+    const now = await sql`select id, revision from data_tables`;
+    const current = new Map(now.map((row) => [String(row.id), String(row.revision)]));
+    const changed = [...current].filter(([id, revision]) => known.get(id)?.revision !== revision).map(([id]) => id);
+    const gone = [...known.keys()].filter((id) => !current.has(id));
+    if (!changed.length && !gone.length) return;
+    const loaded = changed.length ? await loadFromDatabase(sql, changed) : [];
+    const drop = new Set(gone.map((id) => known.get(id)!.key));
+    for (const id of gone) known.delete(id);
+    const fresh: PublishedTable[] = [];
+    for (const entry of loaded) {
+      if (entry.problem) {
+        log(`Keeping the last good ${entry.key}: ${entry.problem}`);
+        continue;
+      }
+      const before = known.get(entry.id);
+      if (before) drop.add(before.key);
+      drop.add(entry.key);
+      known.set(entry.id, { revision: entry.revision, key: entry.key });
+      fresh.push(entry.table!);
+    }
+    const kept = tables.filter((table) => !drop.has(`${table.owner}/${table.slug}`));
+    tables.splice(0, tables.length, ...[...kept, ...fresh].sort(byAddress));
+  };
+  let running: Promise<void> = Promise.resolve();
+  return () => (running = running.catch(() => {}).then(sync));
 }
 
 export const connect = (url: string): Sql => postgres(url, { max: 5, onnotice: () => {} });
@@ -337,8 +424,11 @@ export const connect = (url: string): Sql => postgres(url, { max: 5, onnotice: (
 export async function openLibrary(sql: Sql, dir: string) {
   await migrate(sql);
   await importTables(sql, await loadTables(dir), { managed: true });
-  const tables = await readTables(sql);
-  const refresh = () => readTables(sql).then((fresh) => tables.splice(0, tables.length, ...fresh));
-  setInterval(() => refresh().catch((error) => console.error(`Keeping the last good tables: ${error}`)), REFRESH_MS).unref();
+  const tables: PublishedTable[] = [];
+  const sync = librarySync(sql, tables);
+  await sync();
+  // After a write, and every few seconds for changes another server made. Each look costs one small query.
+  const refresh = sync;
+  setInterval(() => refresh().catch((error) => console.error(`Couldn't refresh the tables: ${error}`)), REFRESH_MS).unref();
   return { tables, refresh };
 }
